@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outcomes | {{ patient.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body class="app-shell">
+    <div class="container py-4 py-lg-5">
+        <div class="feature-shell mx-auto">
+            <div class="feature-head mb-4">
+                <div>
+                    <p class="eyebrow mb-2">Outcome Tracking</p>
+                    <h1 class="h2 mb-1">{{ patient.name }}</h1>
+                    <p class="text-muted mb-0">Capture progress in a lightweight, repeatable way.</p>
+                </div>
+                <a href="/dashboard" class="btn btn-outline-dark">Back to Dashboard</a>
+            </div>
+
+            {% if flash %}
+            <div class="alert alert-{{ flash.category }} mb-4">{{ flash.message }}</div>
+            {% endif %}
+
+            <div class="row g-4">
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4">
+                            <form method="post" action="/outcomes/add">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                                <div class="mb-3">
+                                    <label class="form-label">Improvement</label>
+                                    <select name="improvement_status" class="form-select" required>
+                                        <option value="Not recorded yet" selected>Not recorded yet</option>
+                                        <option value="Better">Better</option>
+                                        <option value="Same">Same</option>
+                                        <option value="Worse">Worse</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Related Case</label>
+                                    <select name="case_id" class="form-select">
+                                        <option value="">No linked case</option>
+                                        {% for case in cases %}
+                                        <option value="{{ case.id }}">{{ case.diagnosis }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label d-flex justify-content-between">
+                                        <span>Symptom Score</span>
+                                        <span id="score-output">5</span>
+                                    </label>
+                                    <input name="symptom_score" id="score-range" type="range" min="1" max="10" value="5" class="form-range">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Date</label>
+                                    <input name="outcome_date" type="date" class="form-control">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Notes</label>
+                                    <textarea name="notes" class="form-control" rows="4" placeholder="Brief progress notes"></textarea>
+                                </div>
+                                <button class="btn btn-primary w-100">Save Outcome</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-7">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body p-4 p-lg-5">
+                            <div class="section-heading">
+                                <div>
+                                    <p class="eyebrow mb-2">History</p>
+                                    <h2 class="h4 mb-1">Recorded outcomes</h2>
+                                </div>
+                            </div>
+                            <div class="stack-list mt-4">
+                                {% for outcome in outcomes %}
+                                <div class="stack-item stack-item-stretch">
+                                    <div>
+                                        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                                            <strong>{{ outcome.improvement_status }}</strong>
+                                            <span class="pill">Score {{ outcome.symptom_score }}/10</span>
+                                            <span class="text-muted small">{{ outcome.date }}</span>
+                                        </div>
+                                        <p class="mb-0 text-muted">{{ outcome.notes or "No notes added." }}</p>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <p class="text-muted mb-0">No outcomes logged yet for this patient.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', path='js/outcome_form.js') }}"></script>
+</body>
+</html>

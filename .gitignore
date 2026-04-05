@@ -1,0 +1,51 @@
+# Environment
+.env
+.env.*
+!.env.example
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+*.jsonl
+
+# Backups
+backups/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+
+# Vector store (binary, rebuilt locally)
+vector_store/
+*.faiss
+*.pkl
+
+# PDFs and Samhita files
+samhita_pdfs/
+knowledge_base/samhita/
+*.pdf
+
+# Patient data
+data/prescriptions/
+data/ai_cache.json
+
+# Venv
+venv/
+.venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Diagnostic files
+diagnostic_report.txt

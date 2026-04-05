@@ -1,0 +1,32 @@
+[
+  {
+    "key": "fever",
+    "label": "Fever",
+    "diagnosis": "Jwara",
+    "medicines": [
+      {"name": "Sudarshan Churna", "dosage": "1 tsp", "frequency": "Twice daily"},
+      {"name": "Guduchi Satva", "dosage": "500 mg", "frequency": "Twice daily"}
+    ],
+    "advice": "Take warm fluids, rest well, and avoid heavy oily meals until fever settles."
+  },
+  {
+    "key": "cough",
+    "label": "Cough",
+    "diagnosis": "Kasa",
+    "medicines": [
+      {"name": "Sitopaladi Churna", "dosage": "1 tsp", "frequency": "Twice daily with honey"},
+      {"name": "Talisadi Churna", "dosage": "1 tsp", "frequency": "Twice daily"}
+    ],
+    "advice": "Use warm water, avoid cold foods, and steam inhalation may help."
+  },
+  {
+    "key": "acidity",
+    "label": "Acidity",
+    "diagnosis": "Amlapitta",
+    "medicines": [
+      {"name": "Avipattikar Churna", "dosage": "1 tsp", "frequency": "After lunch and dinner"},
+      {"name": "Kamdudha Ras", "dosage": "1 tablet", "frequency": "Twice daily"}
+    ],
+    "advice": "Prefer lighter meals, avoid late dinners, and reduce spicy or fried food."
+  }
+]

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AyurvedaOS | Pricing for Clinics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body class="landing-shell">
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
+
+    <header class="marketing-nav container py-4">
+        <div class="brand-lockup">
+            <span class="brand-mark">AO</span>
+            <div>
+                <p class="eyebrow mb-1">Pricing</p>
+                <h1 class="brand-name mb-0">AyurvedaOS</h1>
+            </div>
+        </div>
+        <nav class="marketing-links">
+            <a href="/">Home</a>
+            <a href="/pricing" class="active">Pricing</a>
+            <a href="/investors">Investor Brief</a>
+            <a href="/login">Login</a>
+        </nav>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="/signup" class="btn btn-primary">Start Pilot</a>
+        </div>
+    </header>
+
+    <main class="container pb-5">
+        <section class="hero-spotlight">
+            <div class="hero-copy">
+                <p class="eyebrow">Clinic Pricing</p>
+                <h2 class="display-4 mb-3">Simple pricing for solo practitioners, growing clinics, and multi-doctor teams.</h2>
+                <p class="hero-lead">Sell this as a revenue and workflow system, not software overhead. The pricing is intentionally easy to understand in a live sales call.</p>
+            </div>
+            <aside class="hero-board">
+                <div class="metric-card">
+                    <span>Sales Wedge</span>
+                    <strong>14-day pilot</strong>
+                    <p>Offer a quick pilot to prove documentation speed, AI support, and follow-up visibility.</p>
+                </div>
+                <div class="metric-card">
+                    <span>Monetization</span>
+                    <strong>Recurring SaaS</strong>
+                    <p>Monthly subscriptions create predictable revenue while clinics adopt the core workflow.</p>
+                </div>
+            </aside>
+        </section>
+
+        <section class="pricing-grid">
+            <article class="price-card">
+                <p class="eyebrow mb-2">Starter</p>
+                <h3>For solo doctors</h3>
+                <div class="price-tag">Rs 2,999<span>/month</span></div>
+                <ul class="feature-list">
+                    <li>Patient registration and case sheets</li>
+                    <li>Appointment scheduling</li>
+                    <li>Follow-up tracking dashboard</li>
+                    <li>Single doctor workspace</li>
+                </ul>
+                <a href="/signup" class="btn btn-outline-dark w-100">Start Starter Pilot</a>
+            </article>
+
+            <article class="price-card featured">
+                <p class="eyebrow mb-2">Growth</p>
+                <h3>For premium clinics</h3>
+                <div class="price-tag">Rs 7,499<span>/month</span></div>
+                <ul class="feature-list">
+                    <li>Everything in Starter</li>
+                    <li>AI symptom analyzer and grounded consultation support</li>
+                    <li>Priority onboarding for clinic staff</li>
+                    <li>Investor/demo-ready premium experience</li>
+                </ul>
+                <a href="/signup" class="btn btn-primary w-100">Start Growth Pilot</a>
+            </article>
+
+            <article class="price-card">
+                <p class="eyebrow mb-2">Scale</p>
+                <h3>For chains and teams</h3>
+                <div class="price-tag">Custom<span>pricing</span></div>
+                <ul class="feature-list">
+                    <li>Multi-doctor workflow</li>
+                    <li>Operational onboarding</li>
+                    <li>Deployment support and process setup</li>
+                    <li>Custom partnership pricing</li>
+                </ul>
+                <a href="/signup" class="btn btn-outline-dark w-100">Request Scale Pilot</a>
+            </article>
+        </section>
+
+        <section class="investor-grid">
+            <article class="feature-panel">
+                <p class="eyebrow mb-2">How To Sell</p>
+                <h3>Pitch clinics on outcomes, not features</h3>
+                <ul class="feature-list">
+                    <li>Reduce note-writing time per consultation</li>
+                    <li>Make the clinic feel premium and modern</li>
+                    <li>Improve follow-up compliance and repeat visits</li>
+                    <li>Give doctors AI help without replacing judgment</li>
+                </ul>
+            </article>
+            <article class="feature-panel">
+                <p class="eyebrow mb-2">Pilot Offer</p>
+                <h3>Recommended go-to-market package</h3>
+                <ul class="feature-list">
+                    <li>14-day pilot for one doctor and staff</li>
+                    <li>Manual onboarding and white-glove support</li>
+                    <li>Measure consultations, case sheets, and follow-ups created</li>
+                    <li>Convert to Growth tier after proof of usage</li>
+                </ul>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

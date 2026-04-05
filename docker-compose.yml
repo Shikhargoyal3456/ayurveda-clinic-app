@@ -1,0 +1,73 @@
+services:
+  fastapi:
+    build: .
+    container_name: ayurvedaos-fastapi
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      OLLAMA_API_URL: http://ollama:11434
+      REDIS_URL: redis://redis:6379/0
+      AI_CACHE_ENABLED: "true"
+      DATABASE_URL: sqlite:///./ayurveda_clinic.db
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+    volumes:
+      - ./:/app
+      - ./vector_store:/app/vector_store
+      - ./samhita_pdfs:/app/samhita_pdfs
+    depends_on:
+      - ollama
+      - redis
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2g
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ayurvedaos-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4g
+
+  redis:
+    image: redis:7-alpine
+    container_name: ayurvedaos-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: ayurvedaos-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - fastapi
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
+
+volumes:
+  ollama_data:
+  redis_data:
