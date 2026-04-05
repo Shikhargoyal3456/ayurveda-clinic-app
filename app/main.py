@@ -77,10 +77,11 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "script-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; "
+            "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; "
+            "img-src 'self' data: https://checkout.razorpay.com; "
             "font-src 'self' https://cdn.jsdelivr.net; "
-            "connect-src 'self'; "
+            "connect-src 'self' https://checkout.razorpay.com https://lumberjack.razorpay.com; "
+            "frame-src https://api.razorpay.com https://checkout.razorpay.com; "
             "frame-ancestors 'none';"
         )
         clear_request_id()

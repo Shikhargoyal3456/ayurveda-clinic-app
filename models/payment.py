@@ -16,6 +16,11 @@ class Payment(Base):
     amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     status: Mapped[str] = mapped_column(String(20), default="paid", index=True)
     date: Mapped[date] = mapped_column(Date, index=True)
+    razorpay_order_id: Mapped[str | None] = mapped_column(
+        String(100), nullable=True, default=None
+    )
+    payment_method: Mapped[str] = mapped_column(
+        String(20), default="manual"
+    )
 
     patient = relationship("Patient")
-

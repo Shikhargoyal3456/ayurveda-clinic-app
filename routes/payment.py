@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
+import razorpay
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -103,3 +106,132 @@ def add_payment(
     set_flash(request, "Payment recorded.", "success")
     return RedirectResponse(url="/payments/daily", status_code=303)
 
+
+@router.post("/payments/razorpay/create-order")
+async def create_razorpay_order(
+    request: Request,
+    patient_id: int = Form(...),
+    amount: str = Form(...),
+    payment_date: str = Form(""),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    patient = _patient_for_doctor(db, doctor.id, patient_id)
+    try:
+        parsed_amount = Decimal(amount)
+    except (InvalidOperation, TypeError):
+        return JSONResponse({"error": "Invalid amount."}, status_code=400)
+    if parsed_amount <= 0:
+        return JSONResponse({"error": "Amount must be greater than zero."}, status_code=400)
+
+    try:
+        client = razorpay.Client(
+            auth=(settings.razorpay_key_id, settings.razorpay_key_secret)
+        )
+        order = client.order.create({
+            "amount": int(parsed_amount * 100),
+            "currency": "INR",
+            "receipt": f"pay_{patient.id}_{int(parsed_amount)}",
+            "notes": {
+                "patient_name": patient.name,
+                "doctor_id": str(doctor.id),
+            }
+        })
+    except Exception as exc:
+        return JSONResponse({"error": f"Razorpay order creation failed: {exc}"}, status_code=500)
+
+    try:
+        parsed_date = datetime.strptime(payment_date, "%Y-%m-%d").date() if payment_date else date.today()
+    except ValueError:
+        parsed_date = date.today()
+
+    payment = Payment(
+        patient_id=patient.id,
+        amount=parsed_amount,
+        status="pending",
+        date=parsed_date,
+        razorpay_order_id=order["id"],
+        payment_method="razorpay",
+    )
+    db.add(payment)
+    commit_with_retry(db)
+    write_audit_event(
+        "razorpay_order_created", request,
+        payment_id=payment.id, patient_id=patient.id,
+        order_id=order["id"]
+    )
+    return JSONResponse({
+        "order_id": order["id"],
+        "amount": int(parsed_amount * 100),
+        "currency": "INR",
+        "key_id": settings.razorpay_key_id,
+        "patient_name": patient.name,
+        "payment_db_id": payment.id,
+    })
+
+
+@router.post("/payments/razorpay/verify")
+async def verify_razorpay_payment(
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON."}, status_code=400)
+
+    razorpay_order_id = body.get("razorpay_order_id", "")
+    razorpay_payment_id = body.get("razorpay_payment_id", "")
+    razorpay_signature = body.get("razorpay_signature", "")
+    payment_db_id = body.get("payment_db_id")
+
+    expected = hmac.new(
+        settings.razorpay_key_secret.encode(),
+        f"{razorpay_order_id}|{razorpay_payment_id}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected, razorpay_signature):
+        return JSONResponse({"error": "Payment verification failed."}, status_code=400)
+
+    payment = db.query(Payment).filter(
+        Payment.id == payment_db_id,
+        Payment.razorpay_order_id == razorpay_order_id,
+    ).first()
+
+    if payment is None:
+        return JSONResponse({"error": "Payment record not found."}, status_code=404)
+
+    payment.status = "paid"
+    commit_with_retry(db)
+    write_audit_event(
+        "razorpay_payment_verified", request,
+        payment_id=payment.id, razorpay_payment_id=razorpay_payment_id
+    )
+    return JSONResponse({"success": True, "payment_id": payment.id})
+
+
+@router.post("/payments/razorpay/failed")
+async def razorpay_payment_failed(
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON."}, status_code=400)
+
+    payment_db_id = body.get("payment_db_id")
+    if payment_db_id:
+        payment = db.query(Payment).filter(Payment.id == payment_db_id).first()
+        if payment:
+            payment.status = "failed"
+            commit_with_retry(db)
+            write_audit_event(
+                "razorpay_payment_failed", request,
+                payment_id=payment.id
+            )
+    return JSONResponse({"received": True})

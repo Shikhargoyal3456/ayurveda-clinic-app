@@ -60,6 +60,39 @@
                             </form>
                         </div>
                     </div>
+
+                    <div class="card border-0 shadow-sm mt-4">
+                      <div class="card-body p-4">
+                        <p class="eyebrow mb-1">Online Payment</p>
+                        <h2 class="h6 mb-3">Collect via Razorpay</h2>
+                        <div class="mb-3">
+                          <label class="form-label">Patient</label>
+                          <select id="rz-patient" class="form-select">
+                            <option value="">Select patient</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id }}" data-name="{{ patient.name }}">
+                              {{ patient.name }}
+                            </option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Amount (Rs)</label>
+                          <input id="rz-amount" type="number" min="1" step="0.01"
+                                 class="form-control" placeholder="Enter amount">
+                        </div>
+                        <div class="mb-4">
+                          <label class="form-label">Date</label>
+                          <input id="rz-date" type="date" class="form-control"
+                                 value="{{ today }}">
+                        </div>
+                        <button id="rz-pay-btn" class="btn btn-success w-100"
+                                onclick="startRazorpay()">
+                          Pay Online
+                        </button>
+                        <div id="rz-status" class="mt-3 small text-muted"></div>
+                      </div>
+                    </div>
                 </div>
 
                 <div class="col-lg-8">
@@ -87,9 +120,12 @@
                                             <td><strong>{{ payment.patient.name }}</strong></td>
                                             <td>Rs {{ payment.amount }}</td>
                                             <td>
-                                                <span class="pill {% if payment.status == 'paid' %}pill-success{% else %}pill-muted{% endif %}">
+                                                <span class="pill {% if payment.status == 'paid' %}pill-success{% elif payment.status == 'pending' %}pill-warning{% else %}pill-muted{% endif %}">
                                                     {{ payment.status }}
                                                 </span>
+                                                {% if payment.payment_method == 'razorpay' %}
+                                                <span class="pill pill-info ms-1" style="font-size:0.7rem">online</span>
+                                                {% endif %}
                                             </td>
                                             <td>{{ payment.date }}</td>
                                         </tr>
@@ -107,5 +143,107 @@
             </div>
         </div>
     </div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+    const CSRF_TOKEN = "{{ csrf_token }}";
+
+    async function startRazorpay() {
+      const patientSelect = document.getElementById("rz-patient");
+      const patientId = patientSelect.value;
+      const patientName = patientSelect.options[patientSelect.selectedIndex]?.dataset?.name || "";
+      const amount = document.getElementById("rz-amount").value;
+      const paymentDate = document.getElementById("rz-date").value;
+      const statusEl = document.getElementById("rz-status");
+
+      if (!patientId || !amount || parseFloat(amount) <= 0) {
+        statusEl.textContent = "Please select a patient and enter a valid amount.";
+        statusEl.className = "mt-3 small text-danger";
+        return;
+      }
+
+      statusEl.textContent = "Creating order...";
+      statusEl.className = "mt-3 small text-muted";
+      document.getElementById("rz-pay-btn").disabled = true;
+
+      const formData = new FormData();
+      formData.append("patient_id", patientId);
+      formData.append("amount", amount);
+      formData.append("payment_date", paymentDate);
+      formData.append("csrf_token", CSRF_TOKEN);
+
+      let orderData;
+      try {
+        const res = await fetch("/payments/razorpay/create-order", {
+          method: "POST", body: formData
+        });
+        orderData = await res.json();
+        if (orderData.error) {
+          statusEl.textContent = "Error: " + orderData.error;
+          statusEl.className = "mt-3 small text-danger";
+          document.getElementById("rz-pay-btn").disabled = false;
+          return;
+        }
+      } catch (err) {
+        statusEl.textContent = "Failed to create order. Try again.";
+        statusEl.className = "mt-3 small text-danger";
+        document.getElementById("rz-pay-btn").disabled = false;
+        return;
+      }
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Ayurveda Clinic",
+        description: `Payment for ${patientName}`,
+        order_id: orderData.order_id,
+        handler: async function(response) {
+          statusEl.textContent = "Verifying payment...";
+          try {
+            const verifyRes = await fetch("/payments/razorpay/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                payment_db_id: orderData.payment_db_id,
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              statusEl.textContent = "Payment successful!";
+              statusEl.className = "mt-3 small text-success";
+              setTimeout(() => window.location.reload(), 1500);
+            } else {
+              statusEl.textContent = "Verification failed: " + (verifyData.error || "Unknown error");
+              statusEl.className = "mt-3 small text-danger";
+            }
+          } catch(e) {
+            statusEl.textContent = "Verification error. Contact support.";
+            statusEl.className = "mt-3 small text-danger";
+          }
+          document.getElementById("rz-pay-btn").disabled = false;
+        },
+        modal: {
+          ondismiss: async function() {
+            statusEl.textContent = "Payment cancelled.";
+            statusEl.className = "mt-3 small text-muted";
+            document.getElementById("rz-pay-btn").disabled = false;
+            await fetch("/payments/razorpay/failed", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payment_db_id: orderData.payment_db_id })
+            });
+          }
+        },
+        prefill: { name: patientName },
+        theme: { color: "#198754" }
+      };
+
+      const rzp = new Razorpay(options);
+      rzp.open();
+    }
+    </script>
 </body>
 </html>

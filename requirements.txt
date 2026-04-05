@@ -12,6 +12,7 @@ groq
 ollama
 google-genai>=1.0.0
 google-cloud-speech>=2.21.0
+razorpay>=1.4.0
 sentence-transformers
 faiss-cpu
 pymupdf

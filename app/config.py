@@ -67,6 +67,8 @@ class Settings:
     ollama_keep_alive: str
     gemini_api_key: str
     gemini_model: str
+    razorpay_key_id: str
+    razorpay_key_secret: str
     redis_url: str
     ai_cache_enabled: bool
     ai_cache_ttl_seconds: int
@@ -149,6 +151,8 @@ def _build_settings() -> Settings:
         ollama_keep_alive=os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
         gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        razorpay_key_id=os.getenv("RAZORPAY_KEY_ID", ""),
+        razorpay_key_secret=os.getenv("RAZORPAY_KEY_SECRET", ""),
         redis_url=os.getenv("REDIS_URL", ""),
         ai_cache_enabled=_get_bool("AI_CACHE_ENABLED", False),
         ai_cache_ttl_seconds=_get_int("AI_CACHE_TTL_SECONDS", 3600),
