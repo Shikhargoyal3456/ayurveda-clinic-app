@@ -49,3 +49,6 @@ env/
 
 # Diagnostic files
 diagnostic_report.txt
+
+*.db-shm
+*.db-wal
