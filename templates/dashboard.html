@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AyurvedaOS | Dashboard</title>
+    <title>NirogAI | Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 </head>
@@ -42,6 +42,11 @@
                 <p class="eyebrow mb-2">Clinic Dashboard</p>
                 <h1 class="dashboard-title">A cleaner view of your day, {{ doctor.full_name or doctor.username }}</h1>
                 <p class="dashboard-subtitle mb-0">Track appointments, collections, outcomes, and prescriptions from one calm workspace.</p>
+                {% if doctor.specialty %}
+                <span class="pill pill-muted mt-2" style="text-transform:capitalize">
+                    {{ doctor.specialty | replace('_', ' ') }}
+                </span>
+                {% endif %}
             </div>
             <div class="dashboard-actions">
                 <a href="#add-patient" class="btn btn-primary btn-lg rounded-pill dashboard-cta">Add Patient</a>

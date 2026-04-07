@@ -355,7 +355,12 @@ def generate_ai_prescription(
         f"Patient prakriti: {case.prakriti}. Current diagnosis: {case.diagnosis}. Notes: {case.notes or 'None'}."
     )
     try:
-        rag_result = get_rag_engine().generate_clinical_response(case.symptoms, patient_context=patient_context)
+        specialty = getattr(case.patient.doctor, "specialty", "ayurveda")
+        rag_result = get_rag_engine().generate_clinical_response(
+            case.symptoms,
+            patient_context=patient_context,
+            specialty=specialty,
+        )
     except Exception:
         set_flash(
             request,

@@ -20,6 +20,8 @@ from app.config import settings
 from app.database import init_db
 from app.health import build_health_report
 from app.logging_config import clear_request_id, configure_logging, set_request_id
+from models.care_plan import PatientCarePlan  # noqa: F401
+from models.subscription import ClinicSubscription  # noqa: F401
 from app.pdf_loader import ensure_runtime_dirs
 from app.rag_engine import get_rag_engine
 from app.security import ensure_https_request
@@ -77,7 +79,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self' https://cdn.jsdelivr.net; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
-            "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; "
+            "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net; "
             "img-src 'self' data: https://checkout.razorpay.com; "
             "font-src 'self' https://cdn.jsdelivr.net; "
             "connect-src 'self' https://checkout.razorpay.com https://lumberjack.razorpay.com; "

@@ -101,6 +101,7 @@ def signup(
     username: str = Form(..., min_length=3, max_length=120),
     password: str = Form(..., min_length=10, max_length=256),
     full_name: str = Form("", max_length=160),
+    specialty: str = Form("ayurveda"),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("signup", limit=5, window_seconds=300)),
     __: None = Depends(verify_csrf),
@@ -122,9 +123,17 @@ def signup(
         set_flash(request, "Username already exists.", "danger")
         return RedirectResponse(url="/signup", status_code=303)
 
+    valid_specialties = {
+        "ayurveda", "modern_medicine", "homeopathy",
+        "dental", "physiotherapy"
+    }
+    if specialty not in valid_specialties:
+        specialty = "ayurveda"
+
     doctor = Doctor(
         username=normalized,
         full_name=full_name.strip(),
+        specialty=specialty,
         password_hash=hash_password(password),
     )
     db.add(doctor)

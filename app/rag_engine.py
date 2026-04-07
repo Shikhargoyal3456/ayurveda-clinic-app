@@ -286,7 +286,13 @@ class AyurvedaRAGEngine:
             logger.exception("FAISS retrieval failed: %s", exc)
             return []
 
-    def _build_prompt(self, symptoms: str, patient_context: str, passages: list[RetrievalResult]) -> str:
+    def _build_prompt(
+        self,
+        symptoms: str,
+        patient_context: str,
+        passages: list[RetrievalResult],
+        specialty: str = "ayurveda",
+    ) -> str:
         def _compact_text(value: str, limit: int) -> str:
             compact = " ".join(value.split())
             if len(compact) <= limit:
@@ -298,17 +304,48 @@ class AyurvedaRAGEngine:
             f"- {Path(item.source_file).name} [{item.chunk_id}]: {_compact_text(item.text, 220)}"
             for item in selected_passages
         )
+        specialty_prompts = {
+            "ayurveda": (
+                "You are an experienced Ayurvedic physician. "
+                "Use the retrieved Samhita context below. "
+                "Return: 1. Possible Ayurvedic diagnosis "
+                "2. Dosha imbalance 3. Suggested approach. "
+                "Keep under 180 words."
+            ),
+            "modern_medicine": (
+                "You are an experienced MBBS/MD physician. "
+                "Provide evidence-based clinical guidance. "
+                "Return: 1. Likely diagnosis 2. Differential diagnoses "
+                "3. Suggested investigations 4. Treatment approach. "
+                "Keep under 180 words."
+            ),
+            "homeopathy": (
+                "You are an experienced homeopathic physician. "
+                "Return: 1. Constitutional analysis "
+                "2. Suggested remedies with potency "
+                "3. Lifestyle advice. Keep under 180 words."
+            ),
+            "dental": (
+                "You are an experienced dental surgeon. "
+                "Return: 1. Likely dental diagnosis "
+                "2. Recommended procedure 3. Patient instructions. "
+                "Keep under 180 words."
+            ),
+            "physiotherapy": (
+                "You are an experienced physiotherapist. "
+                "Return: 1. Assessment findings "
+                "2. Rehabilitation protocol "
+                "3. Home exercise plan. Keep under 180 words."
+            ),
+        }
+        system_instruction = specialty_prompts.get(
+            specialty, specialty_prompts["ayurveda"]
+        )
         prompt = (
-            "You are an experienced Ayurvedic physician assisting a clinic EMR.\n"
-            "Use only the retrieved context below. Be concise and practical.\n\n"
+            f"{system_instruction}\n\n"
             f"Retrieved Context:\n{context_block}\n\n"
             f"Patient Context:\n{_compact_text(patient_context or 'Not provided.', 180)}\n\n"
             f"Symptoms:\n{_compact_text(symptoms, 220)}\n\n"
-            "Return exactly these short sections:\n"
-            "1. Possible Ayurvedic diagnosis\n"
-            "2. Dosha imbalance\n"
-            "3. Suggested approach\n"
-            "Keep the full answer under 180 words."
         )
         return _compact_text(prompt, 1400)
 
@@ -369,7 +406,12 @@ class AyurvedaRAGEngine:
             "warning": "Primary AI model unavailable. Using fallback knowledge base.",
         }
 
-    def generate_clinical_response(self, symptoms: str, patient_context: str = "") -> dict[str, Any]:
+    def generate_clinical_response(
+        self,
+        symptoms: str,
+        patient_context: str = "",
+        specialty: str = "ayurveda",
+    ) -> dict[str, Any]:
         normalized = symptoms.strip()
         if not normalized:
             return {"answer": "Symptoms are required before AI analysis can run.", "sources": [], "context_passages": [], "source": "validation", "mode": "validation"}
@@ -387,7 +429,11 @@ class AyurvedaRAGEngine:
             return dict(self._memory_cache[cache_key])
 
         passages = self.retrieve(normalized, top_k=self._top_k())
-        if not passages:
+        # For non-Ayurveda specialties, skip RAG and go
+        # directly to Gemini with symptom context only
+        if specialty != "ayurveda":
+            passages = []
+        if specialty == "ayurveda" and not passages:
             payload = {
                 "answer": "No Samhita knowledge is indexed yet. Add PDFs to `samhita_pdfs/` and rebuild the vector store.",
                 "sources": [],
@@ -403,7 +449,9 @@ class AyurvedaRAGEngine:
             self._memory_cache[cache_key] = payload
             return payload
 
-        prompt = self._build_prompt(normalized, patient_context, passages)
+        prompt = self._build_prompt(
+            normalized, patient_context, passages, specialty
+        )
         last_error: str | None = None
         if settings.is_testing:
             payload = self._fallback_payload(normalized, patient_context, passages)

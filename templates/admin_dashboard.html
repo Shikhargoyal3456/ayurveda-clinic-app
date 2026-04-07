@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AyurvedaOS | Admin</title>
+    <title>NirogAI | Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 </head>
@@ -12,7 +12,7 @@
         <div class="hero-panel mb-4">
             <div>
                 <p class="eyebrow mb-2">Administration</p>
-                <h1 class="display-6 mb-2">System Dashboard</h1>
+                <h1 class="display-6 mb-2">NirogAI System Dashboard</h1>
                 <p class="text-muted mb-0">Operational metrics, health signals, and usage visibility for production support.</p>
             </div>
             <div class="d-flex gap-2">
@@ -32,6 +32,224 @@
                 <pre class="mb-0">{{ metrics.health | tojson(indent=2) }}</pre>
             </div>
         </div>
+
+        <!-- SaaS Analytics Section -->
+        <div class="mt-4">
+          <div class="hero-panel mb-4">
+            <div>
+              <p class="eyebrow mb-2">SaaS Analytics</p>
+              <h2 class="h4 mb-1">Founder Dashboard</h2>
+              <p class="text-muted mb-0">
+                Real-time metrics across doctors, patients, subscriptions,
+                and revenue.
+              </p>
+            </div>
+            <button class="btn btn-outline-primary btn-sm"
+                    onclick="loadSaasStats()">Refresh</button>
+          </div>
+
+          <!-- Top KPI row -->
+          <div class="row g-3 mb-4" id="saas-kpi-row">
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Total Doctors</span>
+                <strong id="s-total-doctors">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>New Doctors (24h)</span>
+                <strong id="s-new-doctors-24h">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Total Patients</span>
+                <strong id="s-total-patients">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>New Patients (24h)</span>
+                <strong id="s-new-patients-24h">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscription row -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-2">
+              <div class="stat-card">
+                <span>Total Subs</span>
+                <strong id="s-total-subs">—</strong>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-card">
+                <span>Active Subs</span>
+                <strong id="s-active-subs">—</strong>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-card">
+                <span>Trial</span>
+                <strong id="s-trial-subs">—</strong>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-card">
+                <span>Basic Plan</span>
+                <strong id="s-basic-subs">—</strong>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-card">
+                <span>Premium Plan</span>
+                <strong id="s-premium-subs">—</strong>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="stat-card">
+                <span>Care Plans</span>
+                <strong id="s-active-care">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revenue row -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Revenue Today</span>
+                <strong id="s-rev-today">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Revenue (7d)</span>
+                <strong id="s-rev-7d">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Revenue (30d)</span>
+                <strong id="s-rev-30d">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>All-time Revenue</span>
+                <strong id="s-rev-all">—</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Growth chart -->
+          <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+              <h3 class="h5 mb-3">Doctor Signups — Last 7 Days</h3>
+              <canvas id="signupChart" height="80"></canvas>
+            </div>
+          </div>
+
+          <!-- Usage row -->
+          <div class="row g-3 mb-4">
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Total Cases</span>
+                <strong id="s-total-cases">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>Total Appointments</span>
+                <strong id="s-total-appts">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>New Doctors (7d)</span>
+                <strong id="s-new-7d">—</strong>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-card">
+                <span>New Doctors (30d)</span>
+                <strong id="s-new-30d">—</strong>
+              </div>
+            </div>
+          </div>
+        </div>
     </div>
+    <!-- Chart.js + SaaS stats JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+    let signupChart = null;
+
+    async function loadSaasStats() {
+      try {
+        const res = await fetch("/api/admin/saas-stats");
+        const d = await res.json();
+
+        document.getElementById("s-total-doctors").textContent = d.doctors.total;
+        document.getElementById("s-new-doctors-24h").textContent = d.doctors.new_24h;
+        document.getElementById("s-new-7d").textContent = d.doctors.new_7d;
+        document.getElementById("s-new-30d").textContent = d.doctors.new_30d;
+
+        document.getElementById("s-total-patients").textContent = d.patients.total;
+        document.getElementById("s-new-patients-24h").textContent = d.patients.new_24h;
+
+        document.getElementById("s-total-cases").textContent = d.usage.total_cases;
+        document.getElementById("s-total-appts").textContent = d.usage.total_appointments;
+
+        document.getElementById("s-total-subs").textContent = d.subscriptions.total;
+        document.getElementById("s-active-subs").textContent = d.subscriptions.active;
+        document.getElementById("s-trial-subs").textContent = d.subscriptions.trial;
+        document.getElementById("s-basic-subs").textContent = d.subscriptions.basic;
+        document.getElementById("s-premium-subs").textContent = d.subscriptions.premium;
+        document.getElementById("s-active-care").textContent = d.care_plans.active;
+
+        const fmt = v => "Rs " + parseFloat(v).toLocaleString("en-IN",
+          {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById("s-rev-today").textContent = fmt(d.revenue.today);
+        document.getElementById("s-rev-7d").textContent = fmt(d.revenue.last_7d);
+        document.getElementById("s-rev-30d").textContent = fmt(d.revenue.last_30d);
+        document.getElementById("s-rev-all").textContent = fmt(d.revenue.all_time);
+
+        const labels = d.doctors.daily_signups.map(x => x.date);
+        const counts = d.doctors.daily_signups.map(x => x.count);
+        if (signupChart) signupChart.destroy();
+        signupChart = new Chart(
+          document.getElementById("signupChart"),
+          {
+            type: "line",
+            data: {
+              labels,
+              datasets: [{
+                label: "Doctor Signups",
+                data: counts,
+                borderColor: "#198754",
+                backgroundColor: "rgba(25,135,84,0.1)",
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+              }
+            }
+          }
+        );
+      } catch(e) {
+        console.error("Failed to load SaaS stats:", e);
+      }
+    }
+
+    loadSaasStats();
+    </script>
 </body>
 </html>
