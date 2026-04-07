@@ -80,7 +80,7 @@ def _format_ai_prescription(raw_text: str | None) -> dict[str, object] | None:
 def _get_patient_or_404(db: Session, doctor_id: int, patient_id: int) -> Patient:
     patient = (
         db.query(Patient)
-        .options(joinedload(Patient.cases))
+        .options(joinedload(Patient.cases), joinedload(Patient.doctor))
         .filter(Patient.id == patient_id, Patient.doctor_id == doctor_id)
         .first()
     )
@@ -159,6 +159,7 @@ def add_case_page(
         "add_case.html",
         {
             "patient": patient,
+            "specialty": patient.doctor.specialty or "ayurveda",
             "flash": pop_flash(request),
             "csrf_token": ensure_csrf_token(request),
             "voice_transcript": "",
@@ -197,6 +198,7 @@ async def transcribe_case_audio(
             "add_case.html",
             {
                 "patient": patient,
+                "specialty": patient.doctor.specialty or "ayurveda",
                 "flash": {"category": "success", "message": "Audio transcribed successfully. Review before saving."},
                 "csrf_token": ensure_csrf_token(request),
                 "voice_transcript": transcript,
@@ -245,10 +247,12 @@ async def transcribe_live_audio(
         transcript = transcribe_audio(temp_path, language=language)
         structured_case = structure_case_sheet(transcript, patient.name)
         prefill = _structured_case_defaults(transcript, structured_case)
+        specialty = getattr(patient.doctor, "specialty", "ayurveda")
         return JSONResponse({
             "transcript": transcript,
             "structured_case": structured_case,
             "prefill": prefill,
+            "specialty": specialty,
         })
     except Exception as exc:
         return JSONResponse({"error": str(exc)}, status_code=500)
@@ -264,10 +268,22 @@ async def transcribe_live_audio(
 def save_case(
     patient_id: int,
     request: Request,
-    prakriti: str = Form(..., max_length=80),
-    diagnosis: str = Form(..., max_length=255),
-    symptoms: str = Form(..., max_length=5000),
+    prakriti: str = Form("", max_length=80),
+    diagnosis: str = Form("", max_length=255),
+    symptoms: str = Form("", max_length=5000),
     notes: str = Form("", max_length=5000),
+    vitals: str = Form(""),
+    icd_code: str = Form(""),
+    tooth_number: str = Form(""),
+    pain_scale: str = Form(""),
+    constitution: str = Form(""),
+    remedy: str = Form(""),
+    procedure: str = Form(""),
+    chief_complaint: str = Form(""),
+    lab_notes: str = Form(""),
+    miasm_notes: str = Form(""),
+    rehab_protocol: str = Form(""),
+    specialty: str = Form("ayurveda"),
     followup_date: str = Form(""),
     followup_notes: str = Form("", max_length=2000),
     db: Session = Depends(get_db),
@@ -281,12 +297,60 @@ def save_case(
         set_flash(request, "Follow-up date must use the YYYY-MM-DD format.", "danger")
         return RedirectResponse(url=f"/patients/{patient.id}/cases/new", status_code=303)
 
+    valid_specialties = {
+        "ayurveda", "modern_medicine", "homeopathy",
+        "dental", "physiotherapy"
+    }
+    if specialty not in valid_specialties:
+        specialty = "ayurveda"
+
+    if specialty == "modern_medicine":
+        final_symptoms = chief_complaint.strip() or symptoms.strip()
+        final_diagnosis = (
+            f"{icd_code.strip()} - {diagnosis.strip()}"
+            if icd_code.strip() else diagnosis.strip()
+        )
+        final_prakriti = (
+            f"Vitals: {vitals.strip()}" if vitals.strip() else "N/A"
+        )
+        final_notes = lab_notes.strip() or notes.strip()
+
+    elif specialty == "homeopathy":
+        final_symptoms = chief_complaint.strip() or symptoms.strip()
+        final_diagnosis = remedy.strip() or diagnosis.strip()
+        final_prakriti = constitution.strip() or prakriti.strip()
+        final_notes = miasm_notes.strip() or notes.strip()
+
+    elif specialty == "dental":
+        final_symptoms = chief_complaint.strip() or symptoms.strip()
+        final_diagnosis = procedure.strip() or diagnosis.strip()
+        final_prakriti = (
+            f"Tooth {tooth_number.strip()}"
+            if tooth_number.strip() else prakriti.strip()
+        )
+        final_notes = notes.strip()
+
+    elif specialty == "physiotherapy":
+        final_symptoms = symptoms.strip()
+        final_diagnosis = diagnosis.strip()
+        final_prakriti = (
+            f"Pain {pain_scale.strip()}/10"
+            if pain_scale.strip() else prakriti.strip()
+        )
+        final_notes = rehab_protocol.strip() or notes.strip()
+
+    else:
+        final_symptoms = symptoms.strip()
+        final_diagnosis = diagnosis.strip()
+        final_prakriti = prakriti.strip()
+        final_notes = notes.strip()
+
     case = CaseSheet(
         patient_id=patient.id,
-        prakriti=prakriti.strip(),
-        diagnosis=diagnosis.strip(),
-        symptoms=symptoms.strip(),
-        notes=notes.strip(),
+        prakriti=final_prakriti,
+        diagnosis=final_diagnosis,
+        symptoms=final_symptoms,
+        notes=final_notes,
         followup_date=parsed_followup,
         followup_notes=followup_notes.strip() or None,
     )

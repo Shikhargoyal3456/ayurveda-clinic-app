@@ -99,35 +99,182 @@
                 </div>
                 <form method="post" action="/patients/{{ patient.id }}/cases">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="specialty" value="{{ specialty }}">
+
+                    {% if specialty == "modern_medicine" %}
+                    <!-- Modern Medicine fields -->
+                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
+                    <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
+                    <textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Prakriti</label>
-                            <input name="prakriti" class="form-control" placeholder="Vata / Pitta / Kapha" value="{{ prefill_case.get('prakriti', '') }}" required>
+                        <div class="col-12">
+                            <label class="form-label">Chief Complaint</label>
+                            <textarea name="chief_complaint" class="form-control"
+                                      rows="3" required
+                                      placeholder="Primary reason for visit">{{ prefill_case.get('symptoms', '') }}</textarea>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Working Diagnosis</label>
-                            <input name="diagnosis" class="form-control" value="{{ prefill_case.get('diagnosis', '') }}" required>
+                        <div class="col-md-8">
+                            <label class="form-label">Diagnosis</label>
+                            <input name="diagnosis" class="form-control" required
+                                   value="{{ prefill_case.get('diagnosis', '') }}"
+                                   placeholder="e.g. Upper respiratory infection">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">ICD-10 Code</label>
+                            <input name="icd_code" class="form-control"
+                                   placeholder="e.g. J06.9">
                         </div>
                         <div class="col-12">
-                            <label class="form-label">Symptoms</label>
-                            <textarea name="symptoms" class="form-control" rows="4" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                            <label class="form-label">Vitals</label>
+                            <input name="vitals" class="form-control"
+                                   placeholder="BP, Pulse, Temp, SpO2, Weight">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Lab / Investigation Notes</label>
+                            <textarea name="lab_notes" class="form-control"
+                                      rows="3"
+                                      placeholder="CBC, X-ray findings, etc.">{{ prefill_case.get('notes', '') }}</textarea>
+                        </div>
+                    </div>
+
+                    {% elif specialty == "homeopathy" %}
+                    <!-- Homeopathy fields -->
+                    <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
+                    <input type="hidden" name="diagnosis" value="{{ prefill_case.get('diagnosis', '') }}">
+                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
+                    <textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Chief Complaint</label>
+                            <textarea name="chief_complaint" class="form-control"
+                                      rows="3" required
+                                      placeholder="Main presenting symptoms">{{ prefill_case.get('symptoms', '') }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Remedy</label>
+                            <input name="remedy" class="form-control" required
+                                   value="{{ prefill_case.get('diagnosis', '') }}"
+                                   placeholder="e.g. Arsenicum Album 30C">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Constitution</label>
+                            <input name="constitution" class="form-control"
+                                   value="{{ prefill_case.get('prakriti', '') }}"
+                                   placeholder="e.g. Phosphoric, Calcic">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Miasm / Case Notes</label>
+                            <textarea name="miasm_notes" class="form-control"
+                                      rows="3"
+                                      placeholder="Miasm analysis, modalities, concomitants">{{ prefill_case.get('notes', '') }}</textarea>
+                        </div>
+                    </div>
+
+                    {% elif specialty == "dental" %}
+                    <!-- Dental fields -->
+                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
+                    <input type="hidden" name="diagnosis" value="{{ prefill_case.get('diagnosis', '') }}">
+                    <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Tooth Number(s)</label>
+                            <input name="tooth_number" class="form-control"
+                                   placeholder="e.g. 16, 17, 36">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Procedure / Diagnosis</label>
+                            <input name="procedure" class="form-control" required
+                                   value="{{ prefill_case.get('diagnosis', '') }}"
+                                   placeholder="e.g. Root Canal Treatment">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Chief Complaint</label>
+                            <textarea name="chief_complaint" class="form-control"
+                                      rows="3" required
+                                      placeholder="Pain, sensitivity, swelling etc.">{{ prefill_case.get('symptoms', '') }}</textarea>
                         </div>
                         <div class="col-12">
                             <label class="form-label">Clinical Notes</label>
-                            <textarea name="notes" class="form-control" rows="4">{{ prefill_case.get('notes', '') }}</textarea>
+                            <textarea name="notes" class="form-control" rows="3"
+                                      placeholder="X-ray findings, treatment notes">{{ prefill_case.get('notes', '') }}</textarea>
                         </div>
+                    </div>
+
+                    {% elif specialty == "physiotherapy" %}
+                    <!-- Physiotherapy fields -->
+                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
+                    <textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Pain Scale (0-10)</label>
+                            <input name="pain_scale" type="number" min="0" max="10"
+                                   class="form-control" placeholder="7">
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Condition / Diagnosis</label>
+                            <input name="diagnosis" class="form-control" required
+                                   value="{{ prefill_case.get('diagnosis', '') }}"
+                                   placeholder="e.g. Lumbar disc herniation">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Symptoms / Presentation</label>
+                            <textarea name="symptoms" class="form-control"
+                                      rows="3" required
+                                      placeholder="ROM limitations, pain location, onset">{{ prefill_case.get('symptoms', '') }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Rehabilitation Protocol</label>
+                            <textarea name="rehab_protocol" class="form-control"
+                                      rows="4"
+                                      placeholder="Exercises, frequency, duration, goals">{{ prefill_case.get('notes', '') }}</textarea>
+                        </div>
+                    </div>
+
+                    {% else %}
+                    <!-- Ayurveda fields (default) -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prakriti</label>
+                            <input name="prakriti" class="form-control"
+                                   placeholder="Vata / Pitta / Kapha"
+                                   value="{{ prefill_case.get('prakriti', '') }}"
+                                   required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Working Diagnosis</label>
+                            <input name="diagnosis" class="form-control"
+                                   value="{{ prefill_case.get('diagnosis', '') }}"
+                                   required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Symptoms</label>
+                            <textarea name="symptoms" class="form-control"
+                                      rows="4" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Clinical Notes</label>
+                            <textarea name="notes" class="form-control"
+                                      rows="4">{{ prefill_case.get('notes', '') }}</textarea>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Common fields for all specialties -->
+                    <div class="row g-3 mt-1">
                         <div class="col-md-6">
                             <label class="form-label">Follow-up Date</label>
                             <input type="date" name="followup_date" class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Follow-up Notes</label>
-                            <input name="followup_notes" class="form-control" value="{{ prefill_case.get('followup_notes', '') }}">
+                            <input name="followup_notes" class="form-control"
+                                   value="{{ prefill_case.get('followup_notes', '') }}">
                         </div>
                     </div>
                     <div class="mt-4 d-flex gap-2">
                         <button class="btn btn-success">Save Case</button>
-                        <a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-dark">View Cases</a>
+                        <a href="/patients/{{ patient.id }}/cases"
+                           class="btn btn-outline-dark">View Cases</a>
                     </div>
                 </form>
             </div>
