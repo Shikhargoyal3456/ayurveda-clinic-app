@@ -8,6 +8,29 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
 </head>
 <body class="auth-shell">
+    <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const selectedPlan = urlParams.get("plan");
+
+    if (selectedPlan && (selectedPlan === "basic" || selectedPlan === "pro")) {
+      document.addEventListener("DOMContentLoaded", function() {
+        const planName = selectedPlan.charAt(0).toUpperCase()
+                         + selectedPlan.slice(1);
+        const notice = document.createElement("div");
+        notice.className = "alert alert-info mb-3";
+        notice.textContent = "You selected the " + planName
+          + " plan. Create your account to continue to payment.";
+        const form = document.querySelector("form");
+        if (form) form.insertAdjacentElement("beforebegin", notice);
+
+        const planInput = document.createElement("input");
+        planInput.type = "hidden";
+        planInput.name = "selected_plan";
+        planInput.value = selectedPlan;
+        if (form) form.appendChild(planInput);
+      });
+    }
+    </script>
     <div class="auth-layout">
         <section class="auth-story">
             <p class="eyebrow">Clinic Pilot</p>
@@ -38,6 +61,10 @@
             {% endif %}
             <form method="post" action="/signup" data-loading-form>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                {% if request.query_params.get("plan") %}
+                <input type="hidden" name="selected_plan"
+                       value="{{ request.query_params.get('plan') }}">
+                {% endif %}
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
                     <input name="full_name" class="form-control">

@@ -104,6 +104,7 @@ def signup(
     password: str = Form(..., min_length=10, max_length=256),
     full_name: str = Form("", max_length=160),
     specialty: str = Form("ayurveda"),
+    selected_plan: str = Form(""),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("signup", limit=5, window_seconds=300)),
     __: None = Depends(verify_csrf),
@@ -142,6 +143,19 @@ def signup(
     commit_with_retry(db)
     write_audit_event("signup_success", request, username=normalized, doctor_id=doctor.id)
     track_event("doctor_signup", doctor_id=doctor.id, username=doctor.username, specialty=doctor.specialty)
+    valid_plans = {"basic", "pro"}
+    if selected_plan.strip().lower() in valid_plans:
+        set_flash(
+            request,
+            f"Account created! Complete your "
+            f"{selected_plan.title()} plan payment to activate.",
+            "success"
+        )
+        return RedirectResponse(
+            url=f"/pricing?plan={selected_plan.strip().lower()}",
+            status_code=303
+        )
+
     set_flash(request, "Account created. Please log in.", "success")
     return RedirectResponse(url="/login", status_code=303)
 
