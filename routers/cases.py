@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -43,34 +44,107 @@ def _format_ai_prescription(raw_text: str | None) -> dict[str, object] | None:
         "Diet Recommendations": "Diet",
         "Lifestyle Advice": "Lifestyle",
         "Ayurvedic Explanation": "Treatment",
+        "Nidana": "Nidana",
+        "Samprapti": "Samprapti",
+        "Chikitsa": "Chikitsa",
+        "Pathya-Apathya": "Pathya-Apathya",
+        "Differential Diagnosis": "Differential Diagnosis",
+        "Red Flag Symptoms": "Red Flag Symptoms",
+        "Investigations Suggested": "Investigations Suggested",
+        "First-line Treatment": "First-line Treatment",
+        "Patient Counselling": "Patient Counselling",
+        "Patient Counseling": "Patient Counselling",
+        "Constitutional Analysis": "Constitutional Analysis",
+        "Rubric Selection": "Rubric Selection",
+        "Remedy Indicated": "Remedy Indicated",
+        "Auxiliary Measures": "Auxiliary Measures",
+        "Clinical Assessment": "Clinical Assessment",
+        "Radiographic Recommendation": "Radiographic Recommendation",
+        "Treatment Plan": "Treatment Plan",
+        "Patient Instructions": "Patient Instructions",
+        "Clinical Reasoning": "Clinical Reasoning",
+        "Assessment Findings to Confirm": "Assessment Findings to Confirm",
+        "Treatment Protocol": "Treatment Protocol",
+        "Home Exercise Program": "Home Exercise Program",
+        "Goals and Prognosis": "Goals and Prognosis",
     }
 
     answer_text, _, sources_text = raw_text.partition("\n\nSources:\n")
-    grouped_sections: dict[str, list[str]] = {
-        "Diagnosis": [],
-        "Treatment": [],
-        "Diet": [],
-        "Lifestyle": [],
-        "Medicines": [],
-    }
+    section_order = [
+        "Diagnosis",
+        "Treatment",
+        "Diet",
+        "Lifestyle",
+        "Medicines",
+        "Nidana",
+        "Samprapti",
+        "Chikitsa",
+        "Pathya-Apathya",
+        "Differential Diagnosis",
+        "Red Flag Symptoms",
+        "Investigations Suggested",
+        "First-line Treatment",
+        "Patient Counselling",
+        "Constitutional Analysis",
+        "Rubric Selection",
+        "Remedy Indicated",
+        "Auxiliary Measures",
+        "Clinical Assessment",
+        "Radiographic Recommendation",
+        "Treatment Plan",
+        "Patient Instructions",
+        "Clinical Reasoning",
+        "Assessment Findings to Confirm",
+        "Treatment Protocol",
+        "Home Exercise Program",
+        "Goals and Prognosis",
+    ]
+    grouped_sections: dict[str, list[str]] = {heading: [] for heading in section_order}
     current_heading: str | None = None
+
+    def _extract_heading_and_body(line: str) -> tuple[str | None, str]:
+        stripped = line.strip()
+        if not stripped:
+            return None, ""
+        numbered_match = re.match(r"^\d+\.\s*(.*)$", stripped)
+        if numbered_match:
+            stripped = numbered_match.group(1).strip()
+        if stripped.startswith("**") and ":**" in stripped:
+            heading_text, remainder = stripped[2:].split(":**", 1)
+            heading = heading_map.get(heading_text.strip())
+            return heading, remainder.strip()
+        if stripped.startswith("**") and stripped.endswith("**"):
+            stripped = stripped[2:-2].strip()
+        if ":" in stripped:
+            heading_text, remainder = stripped.split(":", 1)
+            heading = heading_map.get(heading_text.strip())
+            if heading is not None:
+                return heading, remainder.strip()
+        if stripped.endswith(":"):
+            stripped = stripped[:-1].strip()
+        if stripped in heading_map:
+            return heading_map[stripped], ""
+        return None, ""
 
     for line in answer_text.splitlines():
         stripped = line.strip()
         if not stripped:
             continue
-        if stripped.endswith(":"):
-            current_heading = heading_map.get(stripped[:-1], stripped[:-1])
+        normalized_heading, inline_body = _extract_heading_and_body(stripped)
+        if normalized_heading is not None:
+            current_heading = normalized_heading
+            if inline_body:
+                grouped_sections[current_heading].append(inline_body)
             continue
         if current_heading in grouped_sections:
             grouped_sections[current_heading].append(stripped)
 
     sources = [line.strip()[2:] for line in sources_text.splitlines() if line.strip().startswith("- ")] if sources_text else []
-    section_order = ["Diagnosis", "Treatment", "Diet", "Lifestyle", "Medicines"]
     sections = [
         {"heading": heading, "body": "\n".join(lines).strip()}
         for heading in section_order
         for lines in [grouped_sections[heading]]
+        if "\n".join(lines).strip()
     ]
     if not any(section["body"] for section in sections) and answer_text.strip():
         sections = [{"heading": "Treatment", "body": answer_text.strip()}]

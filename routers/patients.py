@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
@@ -14,6 +14,11 @@ from app.database import commit_with_retry, get_db
 from app.models import Appointment, CaseSheet, Doctor, Patient
 from models.payment import Payment
 from models.prescription import Prescription
+from utils.subscription_utils import (
+    build_paywall_response,
+    check_subscription_access,
+    increment_subscription_usage as increment_usage,
+)
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -304,6 +309,9 @@ def create_patient(
     doctor: Doctor = Depends(get_current_doctor),
     _: None = Depends(verify_csrf),
 ):
+    access = check_subscription_access(doctor, "patients")
+    if not access["allowed"]:
+        return JSONResponse(build_paywall_response(doctor, "patients"), status_code=403)
     patient = Patient(
         doctor_id=doctor.id,
         name=name.strip(),
@@ -323,6 +331,7 @@ def create_patient(
         else:
             set_flash(request, "Patient could not be saved because of a data conflict.", "danger")
         return RedirectResponse(url="/dashboard", status_code=303)
+    increment_usage(doctor, "patients")
     write_audit_event("patient_created", request, patient_id=patient.id, patient_name=patient.name)
     set_flash(request, f"Patient {patient.name} added successfully.", "success")
     return RedirectResponse(url="/dashboard", status_code=303)

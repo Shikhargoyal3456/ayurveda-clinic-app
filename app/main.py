@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from contextlib import asynccontextmanager
 from threading import Thread
@@ -17,9 +18,10 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.analytics import track_event
 from app.config import settings
-from app.database import init_db
+from app.database import SessionLocal, init_db
 from app.health import build_health_report
 from app.logging_config import clear_request_id, configure_logging, set_request_id
+from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
 from models.subscription import ClinicSubscription  # noqa: F401
 from app.pdf_loader import ensure_runtime_dirs
@@ -31,10 +33,16 @@ from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.cases import router as cases_router
 from routers.patients import router as patients_router
+from routers.subscriptions import router as subscriptions_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
 from routes.payment import router as payment_router
 from routes.prescription import router as prescription_router
+from utils.subscription_utils import (
+    build_paywall_response,
+    check_subscription_access,
+    increment_subscription_usage as increment_usage,
+)
 
 
 logging.basicConfig(
@@ -45,6 +53,19 @@ logging.basicConfig(
 
 configure_logging()
 logger = logging.getLogger(__name__)
+
+
+def _subscription_feature_for_request(request: Request) -> str | None:
+    path = request.url.path
+    if request.method != "POST":
+        return None
+    if path in {"/api/ai/analyze"}:
+        return None
+    if path.endswith("/cases/transcribe-audio") or path.endswith("/cases/transcribe-live"):
+        return "voice"
+    if re.fullmatch(r"/cases/\d+/generate-ai", path) or re.fullmatch(r"/cases/\d+/generate-diet", path):
+        return "ai_call"
+    return None
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -154,12 +175,39 @@ def create_app() -> FastAPI:
                 return RedirectResponse(url=secure_url, status_code=307)
         return await call_next(request)
 
+    @application.middleware("http")
+    async def subscription_enforcement_middleware(request: Request, call_next):
+        feature = _subscription_feature_for_request(request)
+        try:
+            doctor_id = request.session.get("doctor_id")
+        except AssertionError:
+            return await call_next(request)
+        if not feature or not doctor_id:
+            return await call_next(request)
+
+        db = SessionLocal()
+        try:
+            doctor = db.get(Doctor, doctor_id)
+            if doctor is None:
+                return await call_next(request)
+            access = check_subscription_access(doctor, feature)
+            logger.info("Subscription check: user=%s, feature=%s, allowed=%s", doctor.id, feature, access["allowed"])
+            if not access["allowed"]:
+                return JSONResponse(build_paywall_response(doctor, feature), status_code=403)
+            response = await call_next(request)
+            if 200 <= response.status_code < 400:
+                increment_usage(doctor, feature)
+            return response
+        finally:
+            db.close()
+
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
     application.include_router(auth_router)
     application.include_router(patients_router)
     application.include_router(cases_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
+    application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(prescription_router)
     application.include_router(payment_router)

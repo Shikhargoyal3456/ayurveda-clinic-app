@@ -16,6 +16,11 @@ from app.config import settings
 from app.models import Doctor
 from app.rag_engine import get_rag_engine
 from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, GROQ_API_KEY, GROQ_MODEL
+from utils.subscription_utils import (
+    build_paywall_response,
+    check_subscription_access,
+    increment_subscription_usage as increment_usage,
+)
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -69,11 +74,15 @@ def ai_analyzer_page(request: Request, _: Doctor = Depends(get_current_doctor)):
 @router.post("/api/ai/analyze")
 async def analyze_symptoms(
     request: Request,
-    _: Doctor = Depends(get_current_doctor),
+    doctor: Doctor = Depends(get_current_doctor),
     ____: None = Depends(_ai_rate_limit),
     __: None = Depends(rate_limit_dependency("ai-analyze", limit=12, window_seconds=60)),
     ___: None = Depends(verify_csrf),
 ):
+    access = check_subscription_access(doctor, "ai_call")
+    logger.info("Subscription check: user=%s, feature=ai_call, allowed=%s", doctor.id, access["allowed"])
+    if not access["allowed"]:
+        return JSONResponse(build_paywall_response(doctor, "ai_call"), status_code=403)
     symptoms = await _extract_symptoms(request)
     if not symptoms:
         raise HTTPException(status_code=400, detail="Symptoms are required.")
@@ -97,6 +106,8 @@ async def analyze_symptoms(
         }
     write_audit_event("ai_analyzer_used", request, symptom_length=len(symptoms), source_count=len(result.get("sources", [])))
     track_event("ai_analyzer_used", doctor_id=request.session.get("doctor_id"), mode=result.get("mode", "unknown"))
+    if result.get("mode") != "error":
+        increment_usage(doctor, "ai_call")
     return JSONResponse(result)
 
 

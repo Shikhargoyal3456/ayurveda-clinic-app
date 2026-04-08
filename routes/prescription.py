@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import textwrap
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 import fitz
@@ -21,6 +21,11 @@ from app.prescription_library import (
 )
 from models.prescription import Prescription
 from services.whatsapp import build_whatsapp_link, send_whatsapp_message
+from utils.subscription_utils import (
+    build_paywall_response,
+    check_subscription_access,
+    increment_subscription_usage as increment_usage,
+)
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -122,6 +127,7 @@ def prescription_form(
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
 ):
+    specialty = (doctor.specialty or "ayurveda").strip().lower()
     patient = (
         db.query(Patient)
         .options(joinedload(Patient.cases), joinedload(Patient.doctor))
@@ -139,7 +145,7 @@ def prescription_form(
             "flash": pop_flash(request),
             "csrf_token": ensure_csrf_token(request),
             "prescription_templates": get_prescription_templates(),
-            "medicine_catalog": get_medicine_catalog(),
+            "medicine_catalog": get_medicine_catalog(specialty),
             "last_prescription": last_prescription,
             "recent_prescriptions": _recent_prescriptions_for_patient(db, doctor.id, patient.id),
             "clinic_name": settings.clinic_name,
@@ -162,6 +168,9 @@ def create_prescription(
     doctor: Doctor = Depends(get_current_doctor),
     _: None = Depends(verify_csrf),
 ):
+    access = check_subscription_access(doctor, "prescription")
+    if not access["allowed"]:
+        return JSONResponse(build_paywall_response(doctor, "prescription"), status_code=403)
     patient = _patient_for_doctor(db, doctor.id, patient_id)
     cleaned_diagnosis = diagnosis.strip()
     medicines = _build_medicines(medicine_name, medicine_dosage, medicine_frequency)
@@ -185,6 +194,7 @@ def create_prescription(
     )
     db.add(prescription)
     commit_with_retry(db)
+    increment_usage(doctor, "prescription")
 
     send_whatsapp_message(
         patient.phone,

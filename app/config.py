@@ -69,6 +69,11 @@ class Settings:
     gemini_model: str
     razorpay_key_id: str
     razorpay_key_secret: str
+    whatsapp_access_token: str
+    whatsapp_phone_number_id: str
+    whatsapp_api_version: str
+    whatsapp_template_name: str
+    whatsapp_template_language_code: str
     redis_url: str
     ai_cache_enabled: bool
     ai_cache_ttl_seconds: int
@@ -153,6 +158,11 @@ def _build_settings() -> Settings:
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
         razorpay_key_id=os.getenv("RAZORPAY_KEY_ID", ""),
         razorpay_key_secret=os.getenv("RAZORPAY_KEY_SECRET", ""),
+        whatsapp_access_token=os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip(),
+        whatsapp_phone_number_id=os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip(),
+        whatsapp_api_version=os.getenv("WHATSAPP_API_VERSION", "v23.0").strip() or "v23.0",
+        whatsapp_template_name=os.getenv("WHATSAPP_TEMPLATE_NAME", "").strip(),
+        whatsapp_template_language_code=os.getenv("WHATSAPP_TEMPLATE_LANGUAGE_CODE", "en_US").strip() or "en_US",
         redis_url=os.getenv("REDIS_URL", ""),
         ai_cache_enabled=_get_bool("AI_CACHE_ENABLED", False),
         ai_cache_ttl_seconds=_get_int("AI_CACHE_TTL_SECONDS", 3600),
