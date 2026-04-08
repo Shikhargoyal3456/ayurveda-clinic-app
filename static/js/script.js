@@ -14,6 +14,8 @@ async function analyzeSymptoms() {
     const form = document.getElementById("ai-analyzer-form");
     const symptoms = document.getElementById("symptoms").value.trim();
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+    const analyzeButton = document.getElementById("analyze-button");
+    const loadingIndicator = document.getElementById("analysis-loading");
 
     if (!symptoms) {
         result.textContent = "Enter symptoms before running the analyzer.";
@@ -21,6 +23,14 @@ async function analyzeSymptoms() {
     }
 
     result.textContent = "Analyzing symptoms against the indexed samhita knowledge...";
+    if (loadingIndicator) {
+        loadingIndicator.classList.remove("d-none");
+    }
+    if (analyzeButton instanceof HTMLButtonElement) {
+        analyzeButton.disabled = true;
+        analyzeButton.dataset.originalText = analyzeButton.textContent || "Analyze with AI";
+        analyzeButton.textContent = analyzeButton.dataset.loadingText || "Analyzing...";
+    }
 
     try {
         const response = await fetchWithTimeout(form.action, {
@@ -41,6 +51,14 @@ async function analyzeSymptoms() {
     } catch (error) {
         console.error(error);
         result.textContent = "Error connecting to the AI service.";
+    } finally {
+        if (loadingIndicator) {
+            loadingIndicator.classList.add("d-none");
+        }
+        if (analyzeButton instanceof HTMLButtonElement) {
+            analyzeButton.disabled = false;
+            analyzeButton.textContent = analyzeButton.dataset.originalText || "Analyze with AI";
+        }
     }
 }
 

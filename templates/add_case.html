@@ -73,7 +73,8 @@
                     <div id="panel-upload" class="d-none">
                       <form method="post"
                             action="/patients/{{ patient.id }}/cases/transcribe-audio"
-                            enctype="multipart/form-data">
+                            enctype="multipart/form-data"
+                            data-loading-form>
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="language" id="upload-language-input" value="auto">
                         <div class="row g-3 align-items-end">
@@ -83,7 +84,7 @@
                                    accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" required>
                           </div>
                           <div class="col-md-4">
-                            <button class="btn btn-outline-primary w-100">Transcribe Audio</button>
+                            <button class="btn btn-outline-primary w-100" data-loading-text="Transcribing...">Transcribe Audio</button>
                           </div>
                         </div>
                       </form>
@@ -97,7 +98,7 @@
                     </div>
                   </div>
                 </div>
-                <form method="post" action="/patients/{{ patient.id }}/cases">
+                <form method="post" action="/patients/{{ patient.id }}/cases" data-loading-form>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="specialty" value="{{ specialty }}">
 
@@ -272,7 +273,7 @@
                         </div>
                     </div>
                     <div class="mt-4 d-flex gap-2">
-                        <button class="btn btn-success">Save Case</button>
+                        <button class="btn btn-success" data-loading-text="Saving...">Save Case</button>
                         <a href="/patients/{{ patient.id }}/cases"
                            class="btn btn-outline-dark">View Cases</a>
                     </div>
@@ -368,5 +369,6 @@
     };
   }
 </script>
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 </body>
 </html>

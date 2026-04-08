@@ -38,9 +38,16 @@ def patient_outcomes(
         db.query(Outcome)
         .filter(Outcome.patient_id == patient.id)
         .order_by(Outcome.date.desc(), Outcome.id.desc())
+        .limit(200)
         .all()
     )
-    cases = db.query(CaseSheet).filter(CaseSheet.patient_id == patient.id).order_by(CaseSheet.created_at.desc()).all()
+    cases = (
+        db.query(CaseSheet)
+        .filter(CaseSheet.patient_id == patient.id)
+        .order_by(CaseSheet.created_at.desc())
+        .limit(200)
+        .all()
+    )
     return templates.TemplateResponse(
         request,
         "outcomes/list.html",

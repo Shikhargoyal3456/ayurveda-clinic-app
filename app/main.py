@@ -9,7 +9,7 @@ from time import perf_counter
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
@@ -145,7 +145,7 @@ async def lifespan(_: FastAPI):
 def create_app() -> FastAPI:
     application = FastAPI(
         title="Ayurvedic Clinic Management System",
-        version="1.1.0",
+        version=settings.app_version,
         lifespan=lifespan,
     )
     application.add_middleware(
@@ -220,11 +220,17 @@ def create_app() -> FastAPI:
 
     @application.get("/health")
     def simple_healthcheck():
-        return {"status": "ok"}
+        return JSONResponse(build_health_report())
 
     @application.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
         logger.exception("Unhandled error during request %s %s", request.method, request.url.path, exc_info=exc)
+        accept_header = request.headers.get("accept", "").lower()
+        if "text/html" in accept_header:
+            return HTMLResponse(
+                status_code=500,
+                content="<h2>Something went wrong. Please try again.</h2>",
+            )
         return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
     return application

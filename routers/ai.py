@@ -96,17 +96,17 @@ async def analyze_symptoms(
         logger.exception("AI analyzer failed unexpectedly: %s", exc)
         result = {
             "answer": (
-                "AI analysis is temporarily unavailable right now. "
-                "Please retry in a moment or continue the consultation without AI assistance."
+            "AI analysis is temporarily unavailable right now. "
+            "Please retry in a moment or continue the consultation without AI assistance."
             ),
             "sources": [],
             "context_passages": [],
-            "mode": "error",
-            "warning": "Primary AI pipeline failed unexpectedly.",
+            "mode": "fallback",
+            "warning": "Primary AI pipeline failed unexpectedly. A fallback response was returned.",
         }
     write_audit_event("ai_analyzer_used", request, symptom_length=len(symptoms), source_count=len(result.get("sources", [])))
     track_event("ai_analyzer_used", doctor_id=request.session.get("doctor_id"), mode=result.get("mode", "unknown"))
-    if result.get("mode") != "error":
+    if result.get("mode") not in {"error", "fallback", "validation"}:
         increment_usage(doctor, "ai_call")
     return JSONResponse(result)
 

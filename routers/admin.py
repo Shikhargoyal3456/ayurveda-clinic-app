@@ -26,7 +26,8 @@ templates = Jinja2Templates(directory=str(settings.templates_dir))
 
 
 def _require_admin(doctor: Doctor) -> Doctor:
-    if settings.admin_usernames and doctor.username not in settings.admin_usernames:
+    allowed_admins = settings.admin_usernames or ["admin@ayurveda.com"]
+    if doctor.username not in allowed_admins:
         raise HTTPException(status_code=403, detail="Admin access required.")
     return doctor
 

@@ -36,7 +36,7 @@
             {% if flash %}
             <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
             {% endif %}
-            <form method="post" action="/signup">
+            <form method="post" action="/signup" data-loading-form>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <div class="mb-3">
                     <label class="form-label">Full Name</label>
@@ -60,10 +60,19 @@
                     <label class="form-label">Password</label>
                     <input type="password" name="password" class="form-control" required>
                 </div>
-                <button class="btn btn-success w-100">Create My Clinic</button>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" name="consent" id="consent" required>
+                    <label class="form-check-label" for="consent">
+                        I agree to the
+                        <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>
+                        and Terms of Service
+                    </label>
+                </div>
+                <button class="btn btn-success w-100" data-loading-text="Creating...">Create My Clinic</button>
             </form>
             <p class="mt-3 mb-0 text-muted">Already registered? <a href="/login">Go to login</a></p>
         </section>
     </div>
+    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 </body>
 </html>

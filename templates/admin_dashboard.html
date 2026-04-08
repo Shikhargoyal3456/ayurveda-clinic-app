@@ -47,6 +47,7 @@
             <button class="btn btn-outline-primary btn-sm"
                     onclick="loadSaasStats()">Refresh</button>
           </div>
+          <div id="saas-error" class="alert alert-danger d-none" role="alert"></div>
 
           <!-- Top KPI row -->
           <div class="row g-3 mb-4" id="saas-kpi-row">
@@ -189,7 +190,11 @@
     async function loadSaasStats() {
       try {
         const res = await fetch("/api/admin/saas-stats");
+        if (!res.ok) {
+          throw new Error("Unable to load SaaS stats.");
+        }
         const d = await res.json();
+        document.getElementById("saas-error").classList.add("d-none");
 
         document.getElementById("s-total-doctors").textContent = d.doctors.total;
         document.getElementById("s-new-doctors-24h").textContent = d.doctors.new_24h;
@@ -246,6 +251,9 @@
         );
       } catch(e) {
         console.error("Failed to load SaaS stats:", e);
+        const errorBanner = document.getElementById("saas-error");
+        errorBanner.textContent = "SaaS analytics are temporarily unavailable. Please refresh and try again.";
+        errorBanner.classList.remove("d-none");
       }
     }
 

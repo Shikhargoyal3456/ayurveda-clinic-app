@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -24,6 +25,7 @@ from utils.subscription_utils import (
 
 
 router = APIRouter(tags=["subscriptions"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("/plans")
@@ -94,10 +96,11 @@ async def subscribe(
     try:
         remote_subscription = create_remote_subscription(doctor, normalized_plan)
     except Exception as exc:
+        logger.exception("Subscription creation failed for doctor_id=%s: %s", doctor.id, exc)
         return JSONResponse(
             {
                 "error": "subscription_creation_failed",
-                "message": f"Unable to create Razorpay subscription: {exc}",
+                "message": "Unable to create Razorpay subscription right now.",
                 "upgrade_required": False,
             },
             status_code=500,
@@ -168,10 +171,11 @@ def cancel_subscription(
     try:
         result = cancel_user_subscription(db, doctor)
     except Exception as exc:
+        logger.exception("Subscription cancellation failed for doctor_id=%s: %s", doctor.id, exc)
         return JSONResponse(
             {
                 "error": "cancel_failed",
-                "message": f"Unable to cancel subscription: {exc}",
+                "message": "Unable to cancel subscription right now.",
                 "upgrade_required": False,
             },
             status_code=500,

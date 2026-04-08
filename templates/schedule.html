@@ -48,7 +48,7 @@
                     <button type="button" class="demo-chip" data-demo-date-offset="3" data-demo-time="10:00" data-demo-reason="Chronic care review">3-day review</button>
                     <button type="button" class="demo-chip" data-demo-date-offset="7" data-demo-time="17:30" data-demo-reason="Lifestyle adherence check">1-week review</button>
                 </div>
-                <form method="post" action="/patients/{{ patient.id }}/appointments">
+                <form method="post" action="/patients/{{ patient.id }}/appointments" data-loading-form>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <div class="row g-3">
                         <div class="col-md-4">
@@ -64,11 +64,12 @@
                             <input id="appointment-reason" name="reason" class="form-control" placeholder="Consultation / Follow-up">
                         </div>
                     </div>
-                    <button class="btn btn-primary mt-4">Save Appointment</button>
+                    <button class="btn btn-primary mt-4" data-loading-text="Saving...">Save Appointment</button>
                 </form>
             </div>
         </div>
         <script src="{{ url_for('static', path='js/script.js') }}"></script>
+        <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
     </div>
 </body>
 </html>

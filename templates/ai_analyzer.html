@@ -46,10 +46,11 @@
                         <textarea id="symptoms" name="symptoms" class="form-control" rows="5" placeholder="Example: fever, headache, agnimandya, body pain"></textarea>
                     </div>
                     <div class="d-flex gap-2 mb-3">
-                        <button type="submit" class="btn btn-primary">Analyze with AI</button>
+                        <button type="submit" class="btn btn-primary" id="analyze-button" data-loading-text="Analyzing...">Analyze with AI</button>
                         <button type="button" class="btn btn-outline-dark" id="load-demo-copy">Load Best Demo</button>
                     </div>
                 </form>
+                <div id="analysis-loading" class="text-muted small mb-3 d-none">Running AI analysis...</div>
                 <p class="text-muted small mb-3">The analyzer retrieves the top 3 Samhita passages from the local FAISS index and sends that context to Ollama.</p>
                 <div class="ai-demo-grid">
                     <div id="result" class="ai-response">AI response will appear here.</div>

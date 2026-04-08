@@ -1,9 +1,7 @@
-import json
 import logging
 import os
 from pathlib import Path
 
-from google.cloud import speech
 from services.ai_provider import GEMINI_API_KEY, chat_with_fallback, chat_with_gemini, parse_json_response
 
 
@@ -54,7 +52,7 @@ def transcribe_audio(audio_file_path: str, language: str = "auto") -> str:
 
     config = speech.RecognitionConfig(**config_kwargs)
 
-    response = client.recognize(config=config, audio=audio)
+    response = client.recognize(config=config, audio=audio, timeout=30)
     transcript = " ".join(
         result.alternatives[0].transcript
         for result in response.results

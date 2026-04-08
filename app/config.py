@@ -41,6 +41,7 @@ load_dotenv(BASE_DIR / ".env")
 
 @dataclass(frozen=True)
 class Settings:
+    app_version: str
     environment: str
     debug: bool
     base_dir: Path
@@ -130,6 +131,7 @@ def _build_settings() -> Settings:
     logs_dir = base_dir / "logs"
 
     settings = Settings(
+        app_version=os.getenv("APP_VERSION", "1.0.0").strip() or "1.0.0",
         environment=environment,
         debug=debug,
         base_dir=base_dir,
@@ -177,8 +179,8 @@ def _build_settings() -> Settings:
         host=os.getenv("HOST", "0.0.0.0"),
         port=_get_int("PORT", 8000),
         reload=_get_bool("UVICORN_RELOAD", False),
-        startup_rag_warmup=_get_bool("STARTUP_RAG_WARMUP", True),
-        startup_llm_warmup=_get_bool("STARTUP_LLM_WARMUP", True),
+        startup_rag_warmup=_get_bool("STARTUP_RAG_WARMUP", environment != "production"),
+        startup_llm_warmup=_get_bool("STARTUP_LLM_WARMUP", environment != "production"),
         allowed_origins=_get_list("ALLOWED_ORIGINS", ["http://127.0.0.1:8000", "http://localhost:8000"]),
         trusted_hosts=_get_list("TRUSTED_HOSTS", ["127.0.0.1", "localhost", "testserver"]),
         admin_usernames=_get_list("ADMIN_USERNAMES"),

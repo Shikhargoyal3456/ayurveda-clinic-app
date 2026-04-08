@@ -13,6 +13,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.audit import write_audit_event
+from app.analytics import track_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
 from app.config import settings
 from app.database import commit_with_retry, get_db
@@ -43,6 +44,7 @@ def daily_payments(
         .join(Patient, Patient.id == Payment.patient_id)
         .filter(Patient.doctor_id == doctor.id, Payment.date == today)
         .order_by(Payment.id.desc())
+        .limit(200)
         .all()
     )
     todays_total = (
@@ -51,7 +53,7 @@ def daily_payments(
         .filter(Patient.doctor_id == doctor.id, Payment.date == today, Payment.status == "paid")
         .scalar()
     )
-    patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).order_by(Patient.name.asc()).all()
+    patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).order_by(Patient.name.asc()).limit(500).all()
     return templates.TemplateResponse(
         request,
         "payments/daily.html",
@@ -103,6 +105,7 @@ def add_payment(
     db.add(payment)
     commit_with_retry(db)
     write_audit_event("payment_added", request, payment_id=payment.id, patient_id=patient.id, status=payment.status)
+    track_event("payment_recorded", doctor_id=doctor.id, patient_id=patient.id, status=payment.status)
     set_flash(request, "Payment recorded.", "success")
     return RedirectResponse(url="/payments/daily", status_code=303)
 
@@ -139,7 +142,8 @@ async def create_razorpay_order(
             }
         })
     except Exception as exc:
-        return JSONResponse({"error": f"Razorpay order creation failed: {exc}"}, status_code=500)
+        write_audit_event("razorpay_order_failed", request, patient_id=patient.id)
+        return JSONResponse({"error": "Razorpay order creation failed. Please try again."}, status_code=502)
 
     try:
         parsed_date = datetime.strptime(payment_date, "%Y-%m-%d").date() if payment_date else date.today()
@@ -176,6 +180,7 @@ async def verify_razorpay_payment(
     request: Request,
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
 ):
     try:
         body = await request.json()
@@ -210,6 +215,7 @@ async def verify_razorpay_payment(
         "razorpay_payment_verified", request,
         payment_id=payment.id, razorpay_payment_id=razorpay_payment_id
     )
+    track_event("payment_recorded", doctor_id=doctor.id, patient_id=payment.patient_id, status="paid")
     return JSONResponse({"success": True, "payment_id": payment.id})
 
 
@@ -218,6 +224,7 @@ async def razorpay_payment_failed(
     request: Request,
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
 ):
     try:
         body = await request.json()

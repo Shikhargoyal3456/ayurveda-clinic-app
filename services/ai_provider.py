@@ -5,12 +5,8 @@ import time
 from enum import Enum
 from typing import Dict, List
 
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-
-
-load_dotenv()
 
 
 class AIProvider(Enum):
@@ -68,6 +64,7 @@ def chat_with_gemini(
             system_instruction=system_prompt,
             temperature=temperature,
             max_output_tokens=2048,
+            timeout=AI_TIMEOUT,
         ),
     )
     elapsed = time.time() - start_time

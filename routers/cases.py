@@ -1,14 +1,17 @@
 from datetime import datetime
+import logging
 import os
 import re
 import tempfile
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
+from app.analytics import track_event
 from app.audit import write_audit_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
 from app.config import settings
@@ -22,6 +25,7 @@ from services.whatsapp import build_whatsapp_link
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["cases"])
+logger = logging.getLogger(__name__)
 
 
 def _format_ai_prescription(raw_text: str | None) -> dict[str, object] | None:
@@ -265,8 +269,9 @@ async def transcribe_case_audio(
         with os.fdopen(handle_fd, "wb") as handle:
             handle.write(await audio_file.read())
         language = str(form.get("language", "auto"))
-        transcript = transcribe_audio(temp_path, language=language)
-        structured_case = structure_case_sheet(transcript, patient.name)
+        transcript = await run_in_threadpool(transcribe_audio, temp_path, language)
+        structured_case = await run_in_threadpool(structure_case_sheet, transcript, patient.name)
+        track_event("voice_transcription_used", doctor_id=doctor.id, patient_id=patient.id, mode="upload")
         return templates.TemplateResponse(
             request,
             "add_case.html",
@@ -280,7 +285,8 @@ async def transcribe_case_audio(
                 "prefill_case": _structured_case_defaults(transcript, structured_case),
             },
         )
-    except Exception:
+    except Exception as exc:
+        logger.exception("Uploaded audio transcription failed for patient_id=%s: %s", patient.id, exc)
         set_flash(request, "Voice transcription is temporarily unavailable. Please type the case details manually.", "danger")
         return RedirectResponse(url=f"/patients/{patient.id}/cases/new", status_code=303)
     finally:
@@ -318,10 +324,11 @@ async def transcribe_live_audio(
         handle_fd, temp_path = tempfile.mkstemp(suffix=suffix)
         with os.fdopen(handle_fd, "wb") as handle:
             handle.write(await audio_blob.read())
-        transcript = transcribe_audio(temp_path, language=language)
-        structured_case = structure_case_sheet(transcript, patient.name)
+        transcript = await run_in_threadpool(transcribe_audio, temp_path, language)
+        structured_case = await run_in_threadpool(structure_case_sheet, transcript, patient.name)
         prefill = _structured_case_defaults(transcript, structured_case)
         specialty = getattr(patient.doctor, "specialty", "ayurveda")
+        track_event("voice_transcription_used", doctor_id=doctor.id, patient_id=patient.id, mode="live")
         return JSONResponse({
             "transcript": transcript,
             "structured_case": structured_case,
@@ -329,7 +336,8 @@ async def transcribe_live_audio(
             "specialty": specialty,
         })
     except Exception as exc:
-        return JSONResponse({"error": str(exc)}, status_code=500)
+        logger.exception("Live transcription failed for patient_id=%s: %s", patient.id, exc)
+        return JSONResponse({"error": "Voice transcription is temporarily unavailable."}, status_code=503)
     finally:
         if temp_path and os.path.exists(temp_path):
             try:
@@ -431,6 +439,7 @@ def save_case(
     db.add(case)
     commit_with_retry(db)
     write_audit_event("case_created", request, case_id=case.id, patient_id=patient.id, diagnosis=case.diagnosis)
+    track_event("case_sheet_saved", doctor_id=doctor.id, patient_id=patient.id, case_id=case.id)
     set_flash(request, "Case sheet saved.", "success")
     return RedirectResponse(url=f"/patients/{patient.id}/cases", status_code=303)
 
@@ -444,7 +453,13 @@ def view_cases(
 ):
     patient = _get_patient_or_404(db, doctor.id, patient_id)
     diet_result = _pop_case_ai_result(request, "_diet_plan_result")
-    cases = sorted(patient.cases, key=lambda item: item.created_at, reverse=True)
+    cases = (
+        db.query(CaseSheet)
+        .filter(CaseSheet.patient_id == patient.id)
+        .order_by(CaseSheet.created_at.desc(), CaseSheet.id.desc())
+        .limit(100)
+        .all()
+    )
     cases_with_ai = [
         {
             "record": case,
@@ -499,7 +514,8 @@ def generate_ai_prescription(
             patient_context=patient_context,
             specialty=specialty,
         )
-    except Exception:
+    except Exception as exc:
+        logger.exception("AI prescription generation failed for case_id=%s: %s", case.id, exc)
         set_flash(
             request,
             "AI prescription generation is temporarily unavailable. The case was kept safely without AI output.",
@@ -511,6 +527,7 @@ def generate_ai_prescription(
     case.ai_prescription = f"{rag_result['answer']}{source_block}"
     commit_with_retry(db)
     write_audit_event("ai_prescription_generated", request, case_id=case.id, patient_id=case.patient_id)
+    track_event("ai_prescription_generated", doctor_id=doctor.id, patient_id=case.patient_id, case_id=case.id)
     set_flash(request, "AI prescription generated.", "success")
     return RedirectResponse(url=f"/patients/{case.patient_id}/cases", status_code=303)
 
@@ -557,6 +574,9 @@ def generate_case_diet_plan(
             },
         )
         set_flash(request, "AI diet plan generated.", "success")
-    except Exception:
+    except Exception as exc:
+        logger.exception("Diet plan generation failed for case_id=%s: %s", case.id, exc)
         set_flash(request, "Diet AI is temporarily unavailable for this case.", "danger")
+    else:
+        track_event("diet_plan_generated", doctor_id=doctor.id, patient_id=case.patient_id, case_id=case.id)
     return RedirectResponse(url=f"/patients/{case.patient_id}/cases", status_code=303)

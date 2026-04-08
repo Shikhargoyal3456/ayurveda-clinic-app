@@ -97,6 +97,7 @@ def build_health_report() -> dict[str, Any]:
     return {
         "status": overall,
         "api": "ok",
+        "version": settings.app_version,
         "database": database["status"],
         "ai": ai["status"],
         "rag": rag["status"],

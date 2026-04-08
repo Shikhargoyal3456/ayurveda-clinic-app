@@ -27,7 +27,7 @@
                 <div class="col-lg-5">
                     <div class="card border-0 shadow-sm">
                         <div class="card-body p-4">
-                            <form method="post" action="/outcomes/add">
+                            <form method="post" action="/outcomes/add" data-loading-form>
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <input type="hidden" name="patient_id" value="{{ patient.id }}">
                                 <div class="mb-3">
@@ -63,7 +63,7 @@
                                     <label class="form-label">Notes</label>
                                     <textarea name="notes" class="form-control" rows="4" placeholder="Brief progress notes"></textarea>
                                 </div>
-                                <button class="btn btn-primary w-100">Save Outcome</button>
+                                <button class="btn btn-primary w-100" data-loading-text="Saving...">Save Outcome</button>
                             </form>
                         </div>
                     </div>
@@ -101,5 +101,6 @@
         </div>
     </div>
     <script src="{{ url_for('static', path='js/outcome_form.js') }}"></script>
+    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 </body>
 </html>

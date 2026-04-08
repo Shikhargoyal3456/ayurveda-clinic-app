@@ -82,6 +82,7 @@ def appointments_page(
         .options(joinedload(Appointment.patient))
         .filter(Patient.doctor_id == doctor.id, Appointment.date == today)
         .order_by(Appointment.time.asc())
+        .limit(100)
         .all()
     )
     upcoming_appointments = (
@@ -126,6 +127,7 @@ def followups_page(
         .options(joinedload(CaseSheet.patient))
         .filter(Patient.doctor_id == doctor.id, CaseSheet.followup_date == today)
         .order_by(CaseSheet.followup_date.asc(), CaseSheet.created_at.desc())
+        .limit(100)
         .all()
     )
     pending_cases = (
@@ -134,6 +136,7 @@ def followups_page(
         .options(joinedload(CaseSheet.patient))
         .filter(Patient.doctor_id == doctor.id, CaseSheet.followup_date > today)
         .order_by(CaseSheet.followup_date.asc(), CaseSheet.created_at.desc())
+        .limit(250)
         .all()
     )
     overdue_cases = (
@@ -142,6 +145,7 @@ def followups_page(
         .options(joinedload(CaseSheet.patient))
         .filter(Patient.doctor_id == doctor.id, CaseSheet.followup_date < today)
         .order_by(CaseSheet.followup_date.asc(), CaseSheet.created_at.desc())
+        .limit(250)
         .all()
     )
     return templates.TemplateResponse(

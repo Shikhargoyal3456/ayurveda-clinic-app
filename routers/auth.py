@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from app.analytics import track_event
 from app.audit import write_audit_event
 from app.auth import (
     ensure_csrf_token,
@@ -79,6 +80,7 @@ def login(
     doctor.last_login_at = datetime.now(timezone.utc)
     commit_with_retry(db)
     write_audit_event("login_success", request, doctor_id=doctor.id, username=doctor.username)
+    track_event("doctor_login", doctor_id=doctor.id, username=doctor.username)
     set_flash(request, f"Welcome back, {doctor.full_name or doctor.username}.", "success")
     return RedirectResponse(url="/dashboard", status_code=303)
 
@@ -139,8 +141,14 @@ def signup(
     db.add(doctor)
     commit_with_retry(db)
     write_audit_event("signup_success", request, username=normalized, doctor_id=doctor.id)
+    track_event("doctor_signup", doctor_id=doctor.id, username=doctor.username, specialty=doctor.specialty)
     set_flash(request, "Account created. Please log in.", "success")
     return RedirectResponse(url="/login", status_code=303)
+
+
+@router.get("/privacy")
+def privacy_page(request: Request):
+    return templates.TemplateResponse(request, "privacy.html", {})
 
 
 @router.get("/logout")

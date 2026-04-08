@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.audit import write_audit_event
+from app.analytics import track_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
 from app.config import settings
 from app.database import commit_with_retry, get_db
@@ -93,6 +94,7 @@ def dashboard(
         db.query(Patient)
         .filter(Patient.doctor_id == doctor.id)
         .order_by(Patient.created_at.desc())
+        .limit(500)
         .all()
     )
     total_patients = db.query(func.count(Patient.id)).filter(Patient.doctor_id == doctor.id).scalar() or 0
@@ -333,5 +335,6 @@ def create_patient(
         return RedirectResponse(url="/dashboard", status_code=303)
     increment_usage(doctor, "patients")
     write_audit_event("patient_created", request, patient_id=patient.id, patient_name=patient.name)
+    track_event("patient_created", doctor_id=doctor.id, patient_id=patient.id)
     set_flash(request, f"Patient {patient.name} added successfully.", "success")
     return RedirectResponse(url="/dashboard", status_code=303)

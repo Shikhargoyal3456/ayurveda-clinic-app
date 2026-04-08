@@ -33,7 +33,7 @@
                                 <p class="mb-0 text-muted small">{{ today }}</p>
                             </div>
 
-                            <form method="post" action="/payments/add">
+                            <form method="post" action="/payments/add" data-loading-form>
                                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <div class="mb-3">
                                     <label class="form-label">Patient</label>
@@ -56,7 +56,7 @@
                                     <input class="form-check-input" type="checkbox" role="switch" id="payment_status" name="payment_status" value="paid" checked>
                                     <label class="form-check-label" for="payment_status">Mark as paid</label>
                                 </div>
-                                <button class="btn btn-primary w-100">Save Payment</button>
+                                <button class="btn btn-primary w-100" data-loading-text="Saving...">Save Payment</button>
                             </form>
                         </div>
                     </div>
@@ -144,6 +144,7 @@
         </div>
     </div>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
     <script>
     const CSRF_TOKEN = "{{ csrf_token }}";
 
@@ -202,7 +203,7 @@
           try {
             const verifyRes = await fetch("/payments/razorpay/verify", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -230,11 +231,16 @@
             statusEl.textContent = "Payment cancelled.";
             statusEl.className = "mt-3 small text-muted";
             document.getElementById("rz-pay-btn").disabled = false;
-            await fetch("/payments/razorpay/failed", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ payment_db_id: orderData.payment_db_id })
-            });
+            try {
+              await fetch("/payments/razorpay/failed", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
+                body: JSON.stringify({ payment_db_id: orderData.payment_db_id })
+              });
+            } catch (e) {
+              statusEl.textContent = "Payment cancelled. We could not update the failure status automatically.";
+              statusEl.className = "mt-3 small text-warning";
+            }
           }
         },
         prefill: { name: patientName },
