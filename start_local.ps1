@@ -1,4 +1,4 @@
-# start_local.ps1 - Ayurveda Clinic Management System Launcher
+# start_local.ps1 - Kash ai Launcher
 # Simplified working version
 
 $ErrorActionPreference = "Stop"
@@ -9,7 +9,7 @@ $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $EnvFile = Join-Path $ProjectRoot ".env"
 
 Write-Host ""
-Write-Host "=== Ayurveda Clinic Management System ===" -ForegroundColor Green
+Write-Host "=== Kash ai ===" -ForegroundColor Green
 Write-Host ""
 
 # Check if Python exists

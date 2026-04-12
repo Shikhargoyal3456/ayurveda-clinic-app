@@ -68,6 +68,8 @@ class Settings:
     ollama_keep_alive: str
     gemini_api_key: str
     gemini_model: str
+    # Google Maps API key for Places & Distance Matrix
+    google_maps_api_key: str
     razorpay_key_id: str
     razorpay_key_secret: str
     whatsapp_access_token: str
@@ -143,7 +145,7 @@ def _build_settings() -> Settings:
         samhita_pdfs_dir=base_dir / "samhita_pdfs",
         vector_store_dir=base_dir / "vector_store",
         database_url=os.getenv("DATABASE_URL", "sqlite:///./ayurveda_clinic.db"),
-        clinic_name=os.getenv("CLINIC_NAME", "AyurvedaOS Clinic"),
+        clinic_name=os.getenv("CLINIC_NAME", "Kash AI"),
         ollama_api_url=os.getenv("OLLAMA_API_URL", "http://localhost:11434"),
         ollama_model=os.getenv("OLLAMA_MODEL", "phi3:mini"),
         embedding_model=os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
@@ -158,6 +160,7 @@ def _build_settings() -> Settings:
         ollama_keep_alive=os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
         gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", ""),
         razorpay_key_id=os.getenv("RAZORPAY_KEY_ID", ""),
         razorpay_key_secret=os.getenv("RAZORPAY_KEY_SECRET", ""),
         whatsapp_access_token=os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip(),

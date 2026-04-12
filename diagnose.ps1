@@ -208,7 +208,7 @@ function Show-TableOrText {
     Write-Report ($Value | Out-String).TrimEnd()
 }
 
-Write-Report "Ayurveda Clinic Management System - External Access Diagnostic Report"
+Write-Report "Kash ai - External Access Diagnostic Report"
 Write-Report "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss zzz')"
 Write-Report "Project Root: $ProjectRoot"
 Write-Report "Python Runtime: $PythonPath"
@@ -292,13 +292,13 @@ $firewallProfiles = Get-FirewallProfilesSummary
 Write-Report "Firewall profile summary:"
 Show-TableOrText $firewallProfiles
 
-$firewallRule = Get-FirewallRuleSummary -RuleName "Ayurveda Clinic App"
-Write-Report "Firewall rule summary for 'Ayurveda Clinic App':"
+$firewallRule = Get-FirewallRuleSummary -RuleName "Kash ai"
+Write-Report "Firewall rule summary for 'Kash ai':"
 Show-TableOrText $firewallRule
 
 $ruleText = ($firewallRule | Out-String)
 if ($ruleText -match "No rules match" -or $ruleText -match "not found" -or $ruleText -match "failed") {
-    Add-Finding "Windows Firewall rule 'Ayurveda Clinic App' was not confirmed."
+    Add-Finding "Windows Firewall rule 'Kash ai' was not confirmed."
     Add-Fix "Run as Administrator: powershell -ExecutionPolicy Bypass -File .\scripts\open_firewall.ps1"
 }
 
@@ -397,7 +397,7 @@ Write-Report "Invoke-WebRequest 'http://[2405:201:4039:7036:6012:7791:485:a1ed]:
 Write-Report "Listener check:"
 Write-Report "netstat -ano -p TCP | findstr :8000"
 Write-Report "Firewall rule check:"
-Write-Report "netsh advfirewall firewall show rule name=`"Ayurveda Clinic App`""
+Write-Report "netsh advfirewall firewall show rule name=`"Kash ai`""
 Write-Report "GCP firewall command:"
 Write-Report "gcloud compute firewall-rules create allow-ayurveda-app --allow tcp:8000 --source-ranges 0.0.0.0/0 --target-tags ayurveda-app"
 

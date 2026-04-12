@@ -175,21 +175,17 @@ def get_rebuild_status(_: Doctor = Depends(get_current_doctor)):
 @router.get("/ai/status")
 def ai_status():
     engine = get_rag_engine()
-    groq_configured = bool(GROQ_API_KEY)
     gemini_configured = bool(GEMINI_API_KEY)
+    groq_configured = bool(GROQ_API_KEY)
     gemini_status = engine.gemini_status()
-    ollama_status = engine.ollama_status(timeout_seconds=2, allow_retries=False)
-
-    if settings.is_testing:
-        rag_mode = ollama_status.get("mode", "fallback")
-        rag_warning = ollama_status.get("warning")
-        rag_provider = ollama_status.get("provider")
-        active_strategy = "groq_configured_rag_fallback" if groq_configured else "fallback_only"
-    else:
-        rag_mode = "gemini" if gemini_configured else "fallback"
-        rag_warning = None if gemini_configured else "Gemini API key not configured."
-        rag_provider = "gemini" if gemini_configured else "fallback"
-        active_strategy = "gemini_rag" if gemini_configured else "fallback"
+    rag_mode = "gemini" if gemini_configured else ("groq" if groq_configured else "fallback")
+    rag_warning = None if gemini_configured or groq_configured else "No remote AI provider is configured."
+    rag_provider = "gemini" if gemini_configured else ("groq" if groq_configured else "fallback")
+    active_strategy = (
+        "gemini_primary_groq_fallback"
+        if gemini_configured and groq_configured
+        else ("gemini_only" if gemini_configured else ("groq_only" if groq_configured else "fallback_only"))
+    )
 
     return JSONResponse(
         {
@@ -199,17 +195,19 @@ def ai_status():
             },
             "groq": {
                 "configured": groq_configured,
+                "enabled": groq_configured,
                 "model": GROQ_MODEL,
             },
             "ollama": {
-                "reachable": ollama_status.get("available"),
-                "model": ollama_status.get("model", settings.ollama_model),
-                "host": ollama_status.get("url", settings.ollama_api_url),
+                "reachable": False,
+                "enabled": False,
+                "model": None,
+                "host": None,
             },
             "rag_engine": {
                 "mode": rag_mode,
                 "warning": rag_warning,
-                "model": gemini_status.get("model") if gemini_configured and not settings.is_testing else ollama_status.get("model"),
+                "model": gemini_status.get("model") if gemini_configured else (GROQ_MODEL if groq_configured else None),
                 "provider": rag_provider,
             },
             "active_strategy": active_strategy,

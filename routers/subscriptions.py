@@ -115,7 +115,7 @@ async def subscribe(
             "checkout": {
                 "subscription_id": remote_subscription.get("id"),
                 "key": settings.razorpay_key_id,
-                "name": "AyurvedaClinic.app",
+                "name": "Kash ai",
                 "description": f"{normalized_plan.title()} monthly subscription",
             },
         }

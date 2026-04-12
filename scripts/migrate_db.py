@@ -388,7 +388,7 @@ def check_migration_needed():
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="SQLite migration helper for Ayurveda Clinic Management System")
+    parser = argparse.ArgumentParser(description="SQLite migration helper for Kash ai")
     parser.add_argument("--check-only", action="store_true", help="Only report whether migration is required")
     args = parser.parse_args()
     return run_migration(check_only=args.check_only)

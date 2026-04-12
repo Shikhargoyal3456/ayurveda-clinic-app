@@ -58,13 +58,13 @@ try {
     & $PythonPath (Join-Path $ProjectRoot "scripts\migrate_db.py")
 
     $Desktop = [Environment]::GetFolderPath("Desktop")
-    $ShortcutPath = Join-Path $Desktop "Ayurveda Clinic Management System.lnk"
+    $ShortcutPath = Join-Path $Desktop "Kash ai.lnk"
     $Shell = New-Object -ComObject WScript.Shell
     $Shortcut = $Shell.CreateShortcut($ShortcutPath)
     $Shortcut.TargetPath = "powershell.exe"
     $Shortcut.Arguments = "-ExecutionPolicy Bypass -File `"$ProjectRoot\start_local.ps1`""
     $Shortcut.WorkingDirectory = $ProjectRoot
-    $Shortcut.Description = "Launch Ayurveda Clinic Management System"
+    $Shortcut.Description = "Launch Kash ai"
     $Shortcut.Save()
     Write-Status "Created desktop shortcut: $ShortcutPath" "Green"
 

@@ -33,6 +33,7 @@ from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.cases import router as cases_router
 from routers.patients import router as patients_router
+from routers.pharmacy import router as pharmacy_router
 from routers.subscriptions import router as subscriptions_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
@@ -207,6 +208,7 @@ def create_app() -> FastAPI:
     application.include_router(cases_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
+    application.include_router(pharmacy_router)
     application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(prescription_router)

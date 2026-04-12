@@ -15,7 +15,7 @@ try {
         throw "This script must be run as Administrator."
     }
 
-    $ruleName = "Ayurveda Clinic App"
+    $ruleName = "Kash ai"
     $existingRule = Get-NetFirewallRule -DisplayName $ruleName -ErrorAction SilentlyContinue
     if ($existingRule) {
         Write-Status "Firewall rule '$ruleName' already exists." "Yellow"

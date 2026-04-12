@@ -119,6 +119,7 @@ def init_db() -> None:
     from app.models import Appointment, CaseSheet, Doctor, Patient  # noqa: F401
     from models.outcome import Outcome  # noqa: F401
     from models.payment import Payment  # noqa: F401
+    from models.medicine import Medicine, MedicineOrder, Pharmacy  # noqa: F401
     from models.prescription import Prescription  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

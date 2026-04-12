@@ -12,17 +12,14 @@ from google.genai import types
 class AIProvider(Enum):
     GEMINI = "gemini"
     GROQ = "groq"
-    OLLAMA = "ollama"
 
 
 logger = logging.getLogger("ai_provider")
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "30"))
 
 
@@ -61,10 +58,10 @@ def chat_with_gemini(
         model=GEMINI_MODEL,
         contents=user_prompt,
         config=types.GenerateContentConfig(
+            http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
             system_instruction=system_prompt,
             temperature=temperature,
             max_output_tokens=2048,
-            timeout=AI_TIMEOUT,
         ),
     )
     elapsed = time.time() - start_time
@@ -76,62 +73,57 @@ def chat_with_gemini(
     return text.strip()
 
 
+def chat_with_groq(
+    system_prompt: str,
+    user_prompt: str,
+    temperature: float = 0.3,
+) -> str:
+    """
+    Call Groq chat completions. Returns response text.
+    Raises RuntimeError if Groq is not configured or the SDK is not installed.
+    """
+    if not GROQ_API_KEY:
+        raise RuntimeError("GROQ_API_KEY is not configured.")
+
+    try:
+        import groq
+    except ImportError as exc:
+        raise RuntimeError("Groq SDK is not installed. Install requirements.txt in the app runtime.") from exc
+
+    client = groq.Groq(api_key=GROQ_API_KEY)
+    start_time = time.time()
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=temperature,
+        timeout=AI_TIMEOUT,
+    )
+    elapsed = time.time() - start_time
+    logger.info("Groq responded in %.2fs using model=%s", elapsed, GROQ_MODEL)
+
+    content = response.choices[0].message.content or ""
+    if not content.strip():
+        raise RuntimeError("Groq returned an empty response.")
+    return content.strip()
+
+
 def chat_with_fallback(
     system_prompt: str,
     user_prompt: str,
     temperature: float = 0.3,
 ) -> tuple[str, AIProvider]:
     """
-    Try Groq first. If it fails or no API key, fall back to Ollama.
-    Returns (response_text, provider_used).
-    Logs provider used, response time, and whether fallback occurred.
+    Use the configured remote AI provider without falling back to Ollama.
+    Gemini is preferred when configured; Groq is used as the secondary provider.
     """
+    if GEMINI_API_KEY:
+        return chat_with_gemini(system_prompt, user_prompt, temperature), AIProvider.GEMINI
     if GROQ_API_KEY:
-        try:
-            import groq
-
-            client = groq.Groq(api_key=GROQ_API_KEY)
-            start_time = time.time()
-            response = client.chat.completions.create(
-                model=GROQ_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                temperature=temperature,
-                timeout=AI_TIMEOUT,
-            )
-            elapsed = time.time() - start_time
-            logger.info("Groq responded in %.2fs", elapsed)
-            content = response.choices[0].message.content or ""
-            return content.strip(), AIProvider.GROQ
-        except Exception as exc:
-            logger.warning("Groq failed (%s), falling back to Ollama", exc)
-    else:
-        logger.info("Groq API key not configured, using Ollama directly")
-
-    try:
-        import ollama
-
-        os.environ["OLLAMA_HOST"] = OLLAMA_HOST
-        start_time = time.time()
-        response = ollama.chat(
-            model=OLLAMA_MODEL,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            options={"temperature": temperature},
-        )
-        elapsed = time.time() - start_time
-        logger.info("Ollama responded in %.2fs (fallback used)", elapsed)
-        return response["message"]["content"].strip(), AIProvider.OLLAMA
-    except Exception as exc:
-        logger.error("Ollama also failed: %s", exc)
-        raise RuntimeError(
-            "Both Groq and Ollama failed. "
-            "Check your GROQ_API_KEY and ensure Ollama is running."
-        ) from exc
+        return chat_with_groq(system_prompt, user_prompt, temperature), AIProvider.GROQ
+    raise RuntimeError("Neither GEMINI_API_KEY nor GROQ_API_KEY is configured. AI provider is unavailable.")
 
 
 def parse_json_response(raw: str) -> dict:

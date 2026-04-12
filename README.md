@@ -1,4 +1,4 @@
-# Ayurveda Clinic Management System
+# Kash ai
 
 ![status](https://img.shields.io/badge/status-launch--prep-green)
 ![tests](https://img.shields.io/badge/tests-17%20passed%20%2F%202%20skipped-brightgreen)

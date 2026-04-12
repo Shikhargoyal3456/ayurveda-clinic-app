@@ -24,16 +24,16 @@ def database_health() -> dict[str, Any]:
 
 
 def ai_health() -> dict[str, Any]:
-    engine_instance = get_rag_engine()
-    available, message = engine_instance.ensure_ollama_available(timeout_seconds=2, allow_retries=False)
     fallback = fallback_health_status()
     gemini_configured = bool(settings.gemini_api_key)
     groq_configured = bool(GROQ_API_KEY)
-    primary_provider = "gemini" if gemini_configured else "ollama"
-    ai_available = available or gemini_configured
-    status_message = message
-    if gemini_configured and not available:
-        status_message = "Gemini is configured and available as the primary AI provider."
+    primary_provider = "gemini" if gemini_configured else ("groq" if groq_configured else "none")
+    ai_available = gemini_configured or groq_configured
+    status_message = (
+        "Gemini is configured as the primary AI provider."
+        if gemini_configured
+        else ("Groq is configured as the AI provider." if groq_configured else "No remote AI provider is configured.")
+    )
     return {
         "status": "ok" if ai_available else "degraded",
         "available": ai_available,
@@ -42,7 +42,7 @@ def ai_health() -> dict[str, Any]:
         "primary_provider": primary_provider,
         "gemini_configured": gemini_configured,
         "groq_configured": groq_configured,
-        "ollama_reachable": available,
+        "ollama_reachable": False,
         "fallback": fallback,
     }
 

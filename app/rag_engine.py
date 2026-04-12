@@ -5,6 +5,7 @@ import json
 import logging
 import pickle
 import time
+import warnings
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from dataclasses import dataclass
 from pathlib import Path
@@ -17,10 +18,16 @@ import requests
 from app.ai_fallback import fallback_handler
 from app.config import settings
 from app.pdf_loader import build_vector_store, ensure_runtime_dirs
-from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, chat_with_gemini
+from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, GROQ_API_KEY, GROQ_MODEL, chat_with_gemini, chat_with_groq
 
 try:
-    import faiss  # type: ignore
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r"builtin type (SwigPyPacked|SwigPyObject|swigvarlink) has no __module__ attribute",
+            category=DeprecationWarning,
+        )
+        import faiss  # type: ignore
 except ImportError as exc:  # pragma: no cover
     raise RuntimeError("faiss-cpu is required for retrieval.") from exc
 
@@ -188,8 +195,11 @@ class AyurvedaRAGEngine:
         return report
 
     def warm_up_llm(self) -> dict[str, Any]:
-        available, message = self.ensure_ollama_available()
-        return {"llm_warmed": available, "message": message}
+        if GEMINI_API_KEY:
+            return {"llm_warmed": True, "message": "Gemini API key is configured.", "provider": "gemini"}
+        if GROQ_API_KEY:
+            return {"llm_warmed": True, "message": "Groq API key is configured.", "provider": "groq"}
+        return {"llm_warmed": False, "message": "No remote AI provider is configured.", "provider": "fallback"}
 
     def ensure_ollama_available(self, timeout_seconds: int = 3, allow_retries: bool = True) -> tuple[bool, str | None]:
         probe_url = f"{self._ollama_url().rstrip('/')}/api/tags"
@@ -252,6 +262,12 @@ class AyurvedaRAGEngine:
         return {
             "configured": bool(GEMINI_API_KEY),
             "model": GEMINI_MODEL,
+        }
+
+    def groq_status(self) -> dict[str, Any]:
+        return {
+            "configured": bool(GROQ_API_KEY),
+            "model": GROQ_MODEL,
         }
 
     def retrieve(self, query: str, top_k: int = 3) -> list[RetrievalResult]:
@@ -428,6 +444,13 @@ class AyurvedaRAGEngine:
         ]
         return chat_with_gemini(messages)
 
+    def _request_groq(self, prompt: str) -> str:
+        return chat_with_groq(
+            "You are an Ayurveda clinical assistant.",
+            prompt,
+            temperature=0.3,
+        )
+
     def _extract_ollama_error(self, response: requests.Response) -> str:
         try:
             payload = response.json()
@@ -537,7 +560,30 @@ class AyurvedaRAGEngine:
                 return payload
             except Exception as e:
                 last_error = str(e)
-                logger.warning("Gemini failed, falling back: %s", e)
+                logger.warning("Gemini failed, trying Groq fallback if configured: %s", e)
+
+        if GROQ_API_KEY:
+            try:
+                response = self._request_groq(prompt)
+                payload = {
+                    "answer": response,
+                    "sources": [item.source_file for item in passages],
+                    "context_passages": self._context_passages(passages),
+                    "source": "groq",
+                    "mode": "groq",
+                    "provider": "groq",
+                    "source_metadata": {"provider": "groq", "model": GROQ_MODEL},
+                }
+                self._memory_cache[cache_key] = payload
+                if cache is not None:
+                    try:
+                        cache.setex(cache_key, 3600, json.dumps(payload))
+                    except Exception:
+                        pass
+                return payload
+            except Exception as e:
+                last_error = str(e)
+                logger.warning("Groq failed, using fallback response: %s", e)
 
         payload = self._fallback_payload(normalized, patient_context, passages)
         payload["warning"] = last_error or payload["warning"]

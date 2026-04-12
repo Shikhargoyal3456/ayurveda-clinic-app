@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kash AI | Pharmacy Dashboard</title>
+    <meta property="og:title" content="Kash AI" />
+    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
+    <meta property="og:site_name" content="Kash AI" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
+</head>
+<body class="app-shell">
+    <div class="container py-4 py-lg-5">
+        <section class="app-topbar mb-4">
+            <a href="/" style="display:inline-flex;align-items:center;text-decoration:none;gap:10px;">
+                <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}"
+                     alt="Kash AI"
+                     style="height:40px;width:auto;">
+            </a>
+            <div>
+                <p class="eyebrow mb-1">Pharmacy Dashboard</p>
+                <strong>Manage incoming medicine orders</strong>
+            </div>
+        </section>
+
+        <section class="dashboard-hero mb-4">
+            <div>
+                <p class="eyebrow mb-2">Medicine Orders</p>
+                <h1 class="dashboard-title">Pharmacy Dashboard</h1>
+                <p class="dashboard-subtitle mb-0">Manage incoming medicine orders</p>
+            </div>
+        </section>
+
+        {% if orders %}
+        <section class="order-list">
+            {% for order in orders %}
+            <article class="card shadow-sm border-0 mb-3">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                        <div>
+                            <p class="eyebrow mb-1">Order ID</p>
+                            <h2 class="h5 mb-0">#{{ order.id }}</h2>
+                            <p class="text-muted mb-0">
+                                {{ order.created_at.strftime('%d %b, %I:%M %p') }}
+                            </p>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-2">
+                            {% if order.status == "pending" %}
+                            <span class="badge bg-warning text-dark">pending</span>
+                            {% elif order.status == "confirmed" %}
+                            <span class="badge bg-primary">confirmed</span>
+                            {% elif order.status == "dispatched" %}
+                            <span class="badge bg-dark">dispatched</span>
+                            {% elif order.status == "delivered" %}
+                            <span class="badge bg-success">delivered</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ order.status }}</span>
+                            {% endif %}
+                            {% if order.payment_status != "paid" %}
+                            <span class="badge bg-danger">unpaid</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="eyebrow mb-2">Patient</p>
+                        <p class="mb-1"><strong>{{ order.patient_name }}</strong></p>
+                        <p class="mb-2">
+                            <a href="tel:{{ order.patient_phone }}">{{ order.patient_phone }}</a>
+                        </p>
+                        <a class="btn btn-outline-success rounded-pill btn-sm mb-2"
+                           href="https://wa.me/{{ order.patient_phone }}"
+                           target="_blank"
+                           rel="noopener">
+                            Chat on WhatsApp
+                        </a>
+                        <p class="text-muted mb-0">{{ order.patient_address }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <p class="eyebrow mb-2">Medicines</p>
+                        <div class="medicine-items" data-items='{{ order.medicines_json | e }}'>
+                            <pre class="mb-0 text-wrap">{{ order.medicines_json }}</pre>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Total amount</span>
+                        <strong>₹{{ order.total_amount }}</strong>
+                    </div>
+
+                    {% if order.status == "pending" %}
+                    <form method="post" action="/pharmacy/order/{{ order.id }}/confirm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button class="btn btn-primary rounded-pill w-100"
+                                type="submit"
+                                onclick="this.disabled=true; this.innerText='Processing...'; this.form.submit();">
+                            Confirm Order
+                        </button>
+                    </form>
+                    {% elif order.status == "confirmed" %}
+                    <form method="post" action="/pharmacy/order/{{ order.id }}/dispatch">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button class="btn btn-dark rounded-pill w-100"
+                                type="submit"
+                                onclick="this.disabled=true; this.innerText='Processing...'; this.form.submit();">
+                            Mark as Dispatched
+                        </button>
+                    </form>
+                    {% elif order.status == "dispatched" %}
+                    <p class="text-muted mb-0">Out for delivery</p>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+        {% else %}
+        <section class="card shadow-sm border-0">
+            <div class="card-body p-4 text-center">
+                <p class="text-muted mb-0">No orders yet</p>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    <script>
+        document.querySelectorAll(".medicine-items").forEach((container) => {
+            try {
+                const items = JSON.parse(container.dataset.items || "[]");
+                if (!Array.isArray(items) || !items.length) {
+                    return;
+                }
+                container.innerHTML = "";
+                const list = document.createElement("ul");
+                list.className = "list-group list-group-flush";
+                items.forEach((item) => {
+                    const row = document.createElement("li");
+                    row.className = "list-group-item px-0 d-flex justify-content-between";
+                    const name = item.name || `Medicine #${item.medicine_id || ""}`;
+                    const qty = item.qty || item.quantity || 1;
+                    const nameEl = document.createElement("span");
+                    const qtyEl = document.createElement("strong");
+                    nameEl.textContent = name;
+                    qtyEl.textContent = `Qty ${qty}`;
+                    row.appendChild(nameEl);
+                    row.appendChild(qtyEl);
+                    list.appendChild(row);
+                });
+                container.appendChild(list);
+            } catch (error) {
+                return;
+            }
+        });
+    </script>
+</body>
+</html>

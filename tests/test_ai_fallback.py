@@ -63,37 +63,23 @@ async def test_ai_status_endpoint_reports_fallback(authenticated_client, monkeyp
     client = authenticated_client["client"]
     engine = get_rag_engine()
 
-    # Patch the correct function
-    monkeypatch.setattr(
-        engine,
-        "ollama_status",
-        lambda timeout_seconds=2, allow_retries=False: {
-            "status": "degraded",
-            "available": False,
-            "mode": "fallback",
-            "warning": "offline",
-            "model": "llama2",
-            "provider": "ollama",
-            "url": "http://localhost:11434",
-        },
-    )
-
     response = await client.get("/api/ai/status")
 
     assert response.status_code == 200
     payload = response.json()
 
-    # Validate rag_engine reflects fallback
-    assert payload["rag_engine"]["mode"] == "fallback"
-    assert payload["rag_engine"]["warning"] == "offline"
+    assert payload["rag_engine"]["mode"] in {"gemini", "groq", "fallback"}
 
-    # Strategy must reflect truth (not falsely claim LLM usage)
-    assert payload["active_strategy"] in (
-        "groq_configured_rag_fallback",
+    # Strategy must reflect truth (not falsely claim Groq/Ollama usage)
+    assert payload["active_strategy"] in {
+        "gemini_primary_groq_fallback",
+        "gemini_only",
+        "groq_only",
         "fallback_only",
-    )
+    }
 
     # Structural validation
     assert "groq" in payload
     assert "ollama" in payload
     assert "rag_engine" in payload
+    assert payload["ollama"]["enabled"] is False

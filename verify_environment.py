@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import engine
-from app.rag_engine import get_rag_engine
+from services.ai_provider import GROQ_API_KEY
 
 
 REQUIRED_MODULES = [
@@ -18,11 +18,13 @@ REQUIRED_MODULES = [
     "passlib",
     "requests",
     "numpy",
+    "google.genai",
+    "groq",
 ]
 
 
 def main() -> int:
-    print("Ayurveda environment verification")
+    print("Kash ai environment verification")
     print(f"Python version: {sys.version}")
     if sys.version_info < (3, 13):
         print("[ERROR] Python 3.13+ is recommended.")
@@ -45,14 +47,15 @@ def main() -> int:
         print(f"[ERROR] Database connectivity: {exc}")
         return 1
 
-    try:
-        ai_ok, message = get_rag_engine().ensure_ollama_available(timeout_seconds=2, allow_retries=False)
-        if ai_ok:
-            print("[OK] Ollama is reachable")
-        else:
-            print(f"[WARN] Ollama unavailable: {message}")
-    except Exception as exc:
-        print(f"[WARN] Ollama check failed: {exc}")
+    if settings.gemini_api_key:
+        print("[OK] Gemini API key configured")
+    else:
+        print("[WARN] Gemini API key is not configured")
+
+    if GROQ_API_KEY:
+        print("[OK] Groq API key configured")
+    else:
+        print("[WARN] Groq API key is not configured")
 
     if missing:
         print(f"[ERROR] Missing modules: {', '.join(missing)}")

@@ -13,7 +13,13 @@ import numpy as np
 from app.config import settings
 
 try:
-    import faiss  # type: ignore
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message=r"builtin type (SwigPyPacked|SwigPyObject|swigvarlink) has no __module__ attribute",
+            category=DeprecationWarning,
+        )
+        import faiss  # type: ignore
 except ImportError as exc:  # pragma: no cover
     raise RuntimeError("faiss-cpu is required to build the vector store.") from exc
 

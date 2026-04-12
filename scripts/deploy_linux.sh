@@ -26,7 +26,7 @@ python3 -m pip install -r "$PROJECT_ROOT/requirements.txt"
 echo "Configuring systemd service..."
 sudo tee "$SERVICE_FILE" >/dev/null <<EOF
 [Unit]
-Description=Ayurveda Clinic Management System
+Description=Kash ai
 After=network.target
 
 [Service]

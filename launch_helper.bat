@@ -16,7 +16,7 @@ set "PATH=%RUNTIME_DIR%;%PATH%"
 set "PYTHONPATH=%PROJECT_DIR%"
 
 cd /d "%PROJECT_DIR%"
-echo Launching Ayurveda Clinic Management System...
+echo Launching Kash ai...
 "%RUNTIME_PYTHON%" run_server.py
 if errorlevel 1 (
     echo [ERROR] Application exited with an error.
