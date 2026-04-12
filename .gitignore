@@ -52,3 +52,6 @@ diagnostic_report.txt
 
 *.db-shm
 *.db-wal
+
+.tools/
+.codex_start_server.ps1
