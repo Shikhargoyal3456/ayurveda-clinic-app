@@ -5,7 +5,10 @@ import hmac
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
-import razorpay
+try:
+    import razorpay
+except ImportError:  # pragma: no cover
+    razorpay = None
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -127,6 +130,9 @@ async def create_razorpay_order(
         return JSONResponse({"error": "Invalid amount."}, status_code=400)
     if parsed_amount <= 0:
         return JSONResponse({"error": "Amount must be greater than zero."}, status_code=400)
+    if razorpay is None:
+        write_audit_event("razorpay_order_failed", request, patient_id=patient.id)
+        return JSONResponse({"error": "Razorpay is temporarily unavailable."}, status_code=503)
 
     try:
         client = razorpay.Client(

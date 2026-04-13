@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 import fitz
+from itsdangerous import URLSafeTimedSerializer
 
 from app.audit import write_audit_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
@@ -20,7 +21,8 @@ from app.prescription_library import (
     get_prescription_templates,
 )
 from models.prescription import Prescription
-from services.whatsapp import build_whatsapp_link, send_whatsapp_message
+from services.communication import send_patient_message
+from services.whatsapp import build_whatsapp_link
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
@@ -30,6 +32,21 @@ from utils.subscription_utils import (
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["prescriptions"])
+PRESCRIPTION_ORDER_SALT = "prescription-order"
+
+
+def _prescription_order_token(prescription_id: int) -> str:
+    serializer = URLSafeTimedSerializer(settings.secret_key, salt=PRESCRIPTION_ORDER_SALT)
+    return serializer.dumps({"prescription_id": prescription_id})
+
+
+def _prescription_order_url(request: Request, prescription_id: int) -> str:
+    return str(
+        request.url_for(
+            "prescription_medicine_order_page",
+            prescription_token=_prescription_order_token(prescription_id),
+        )
+    )
 
 
 def _patient_for_doctor(db: Session, doctor_id: int, patient_id: int) -> Patient:
@@ -196,9 +213,11 @@ def create_prescription(
     commit_with_retry(db)
     increment_usage(doctor, "prescription")
 
-    send_whatsapp_message(
+    send_patient_message(
         patient.phone,
-        f"Hello {patient.name}, your prescription for {prescription.diagnosis} is ready.",
+        patient.email,
+        f"Your prescription is ready. Order medicines here: {_prescription_order_url(request, prescription.id)}",
+        subject="Your Kash AI prescription is ready",
     )
     write_audit_event(
         "prescription_created",
@@ -225,6 +244,7 @@ def view_prescription(
         "prescriptions/detail.html",
         {
             "prescription": prescription,
+            "prescription_token": _prescription_order_token(prescription.id),
             "patient": prescription.patient,
             "doctor": doctor,
             "flash": pop_flash(request),
@@ -274,7 +294,13 @@ def share_prescription(
         medicines=prescription.medicines or [],
         advice=prescription.advice or "",
     )
-    send_whatsapp_message(prescription.patient.phone, share_message)
+    share_message = f"{share_message}\n\nOrder your medicines here: {_prescription_order_url(request, prescription.id)}"
+    send_patient_message(
+        prescription.patient.phone,
+        prescription.patient.email,
+        share_message,
+        subject="Your Kash AI prescription",
+    )
     whatsapp_link = build_whatsapp_link(prescription.patient.phone, share_message)
     write_audit_event(
         "prescription_shared_whatsapp",

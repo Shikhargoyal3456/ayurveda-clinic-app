@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.orm import Session, joinedload
 
 from app.analytics import track_event
@@ -17,7 +18,14 @@ from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash
 from app.config import settings
 from app.database import commit_with_retry, get_db
 from app.models import CaseSheet, Doctor, Patient
-from app.rag_engine import get_rag_engine
+try:
+    from app.rag_engine import get_rag_engine
+except Exception as exc:
+    _rag_import_error = str(exc)
+
+    def get_rag_engine():
+        raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
+from models.prescription import Prescription
 from services.diet_ai import generate_diet_plan, generate_whatsapp_message
 from services.voice_ai import structure_case_sheet, transcribe_audio
 from services.whatsapp import build_whatsapp_link
@@ -26,6 +34,32 @@ from services.whatsapp import build_whatsapp_link
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["cases"])
 logger = logging.getLogger(__name__)
+PRESCRIPTION_ORDER_SALT = "prescription-order"
+
+
+def _load_prescription_order_token(prescription_token: str) -> int:
+    serializer = URLSafeTimedSerializer(settings.secret_key, salt=PRESCRIPTION_ORDER_SALT)
+    payload = serializer.loads(prescription_token, max_age=60 * 60 * 24 * 30)
+    return int(payload["prescription_id"])
+
+
+def _prescription_medicines_for_order(prescription: Prescription) -> list[dict[str, object]]:
+    medicines: list[dict[str, object]] = []
+    for medicine in prescription.medicines or []:
+        if not isinstance(medicine, dict):
+            continue
+        name = str(medicine.get("name", "")).strip()
+        if not name:
+            continue
+        medicines.append(
+            {
+                "name": name,
+                "dosage": str(medicine.get("dosage", "")).strip(),
+                "frequency": str(medicine.get("frequency", "")).strip(),
+                "qty": 1,
+            }
+        )
+    return medicines
 
 
 def _format_ai_prescription(raw_text: str | None) -> dict[str, object] | None:
@@ -169,6 +203,46 @@ def _get_patient_or_404(db: Session, doctor_id: int, patient_id: int) -> Patient
 
 def _set_case_ai_result(request: Request, key: str, payload: dict[str, object]) -> None:
     request.session[key] = payload
+
+
+@router.get("/pharmacy/order/{prescription_token}")
+def prescription_medicine_order_page(
+    prescription_token: str,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    try:
+        prescription_id = _load_prescription_order_token(prescription_token)
+    except (BadSignature, SignatureExpired, KeyError, TypeError, ValueError) as exc:
+        logger.warning("Invalid prescription order token: %s", exc)
+        raise HTTPException(status_code=404, detail="Prescription not found") from exc
+
+    prescription = (
+        db.query(Prescription)
+        .options(joinedload(Prescription.patient))
+        .filter(Prescription.id == prescription_id)
+        .first()
+    )
+    if prescription is None or prescription.patient is None:
+        raise HTTPException(status_code=404, detail="Prescription not found")
+
+    medicines_json = _prescription_medicines_for_order(prescription)
+    return templates.TemplateResponse(
+        "patient_order.html",
+        {
+            "request": request,
+            "token": prescription_token,
+            "csrf_token": ensure_csrf_token(request),
+            "prefill_medicines": medicines_json,
+            "prefill_patient": {
+                "name": prescription.patient.name,
+                "phone": prescription.patient.phone or "",
+                "address": prescription.patient.address or "",
+            },
+            "prefill_order_source": "prescription",
+            "prefill_prescription_id": prescription.id,
+        },
+    )
 
 
 def _pop_case_ai_result(request: Request, key: str) -> dict[str, object] | None:

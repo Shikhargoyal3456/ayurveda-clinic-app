@@ -81,18 +81,21 @@
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <input type="hidden" id="medicines_json" name="medicines_json">
                 <input type="hidden" id="pharmacyId" name="pharmacy_id">
+                <input type="hidden" name="order_source" value="{{ prefill_order_source | default('') }}">
+                <input type="hidden" name="prescription_id" value="{{ prefill_prescription_id | default('') }}">
+                <input type="hidden" name="source_order_id" value="{{ prefill_source_order_id | default('') }}">
 
                 <div class="mb-3">
                     <label for="patientName" class="form-label">Name</label>
-                    <input id="patientName" name="patient_name" class="form-control" type="text" autocomplete="name" required>
+                    <input id="patientName" name="patient_name" class="form-control" type="text" autocomplete="name" value="{{ (prefill_patient.name if prefill_patient is defined else '') | e }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="patientPhone" class="form-label">Phone</label>
-                    <input id="patientPhone" name="patient_phone" class="form-control" type="tel" pattern="[0-9]{10}" autocomplete="tel" required>
+                    <input id="patientPhone" name="patient_phone" class="form-control" type="tel" pattern="[0-9]{10}" autocomplete="tel" value="{{ (prefill_patient.phone if prefill_patient is defined else '') | e }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="patientAddress" class="form-label">Address</label>
-                    <textarea id="patientAddress" name="patient_address" class="form-control" rows="3" autocomplete="street-address" required></textarea>
+                    <textarea id="patientAddress" name="patient_address" class="form-control" rows="3" autocomplete="street-address" required>{{ (prefill_patient.address if prefill_patient is defined else '') | e }}</textarea>
                 </div>
                 <button id="orderButton" class="btn btn-dark btn-lg rounded-pill w-100" type="submit">Proceed to Payment</button>
                 <div id="orderMessage" class="alert alert-light border mt-3 mb-0 d-none"></div>
@@ -113,6 +116,7 @@
     </div>
 
     <script>
+        window.prefillMedicines = {{ prefill_medicines | default(none) | tojson | safe }};
         const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         const medicineList = document.getElementById("medicineList");
         const medicineEmpty = document.getElementById("medicineEmpty");
@@ -235,10 +239,54 @@
             renderCart();
         }
 
+        function applyPrefillMedicines() {
+            if (cart.length || !Array.isArray(window.prefillMedicines)) {
+                return;
+            }
+            if (!window.prefillMedicines.length) {
+                orderMessage.textContent = "No medicines available for ordering";
+                orderMessage.classList.remove("d-none");
+                return;
+            }
+
+            const matchedMedicines = [];
+            const unavailableNames = [];
+            window.prefillMedicines.forEach((prefillItem) => {
+                const requestedName = String(prefillItem.name || "").trim().toLowerCase();
+                if (!requestedName) {
+                    return;
+                }
+                const matched = medicines.find((medicine) => medicine.name.trim().toLowerCase() === requestedName);
+                if (!matched) {
+                    unavailableNames.push(prefillItem.name);
+                    return;
+                }
+                matchedMedicines.push({ medicine: matched, qty: Number(prefillItem.qty || 1) });
+            });
+
+            matchedMedicines.forEach((entry) => {
+                addToCart(entry.medicine);
+                const cartItem = cart.find((item) => item.medicine_id === entry.medicine.id);
+                if (cartItem) {
+                    cartItem.qty = Math.max(cartItem.qty, entry.qty);
+                }
+            });
+            renderCart();
+
+            if (!matchedMedicines.length) {
+                orderMessage.textContent = "No medicines available for ordering";
+                orderMessage.classList.remove("d-none");
+            } else if (unavailableNames.length) {
+                orderMessage.textContent = `Some prescription medicines are not in the pharmacy catalog: ${unavailableNames.join(", ")}`;
+                orderMessage.classList.remove("d-none");
+            }
+        }
+
         async function loadMedicines() {
             const response = await fetch("/patient/medicines");
             medicines = await response.json();
             renderMedicines();
+            applyPrefillMedicines();
         }
 
         medicineSearch.addEventListener("input", renderMedicines);

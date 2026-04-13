@@ -121,6 +121,7 @@ def init_db() -> None:
     from models.payment import Payment  # noqa: F401
     from models.medicine import Medicine, MedicineOrder, Pharmacy  # noqa: F401
     from models.prescription import Prescription  # noqa: F401
+    from models.subscription import ClinicSubscription, SubscriptionUsage  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _ensure_feature_schema()
@@ -173,5 +174,34 @@ def _ensure_feature_schema() -> None:
             if "follow_up_days" not in columns:
                 with engine.begin() as connection:
                     connection.execute(text("ALTER TABLE prescriptions ADD COLUMN follow_up_days INTEGER"))
+        if "medicine_orders" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("medicine_orders")}
+            if "paid_at" not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text("ALTER TABLE medicine_orders ADD COLUMN paid_at DATETIME"))
+            if "notification_failed" not in columns:
+                with engine.begin() as connection:
+                    connection.execute(text("ALTER TABLE medicine_orders ADD COLUMN notification_failed BOOLEAN DEFAULT 0"))
+        if "clinic_subscriptions" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("clinic_subscriptions")}
+            with engine.begin() as connection:
+                if "user_id" not in columns:
+                    connection.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN user_id INTEGER"))
+                    if "doctor_id" in columns:
+                        connection.execute(text("UPDATE clinic_subscriptions SET user_id = doctor_id WHERE user_id IS NULL"))
+                if "plan_id" not in columns:
+                    connection.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN plan_id VARCHAR(20) DEFAULT 'free'"))
+                    if "plan" in columns:
+                        connection.execute(text("UPDATE clinic_subscriptions SET plan_id = plan WHERE plan_id IS NULL OR plan_id = 'free'"))
+                if "trial_end_date" not in columns:
+                    connection.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN trial_end_date DATE"))
+                if "razorpay_subscription_id" not in columns:
+                    connection.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN razorpay_subscription_id VARCHAR(100)"))
+                if "current_period_end" not in columns:
+                    connection.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN current_period_end DATETIME"))
+                    if "expires_at" in columns:
+                        connection.execute(
+                            text("UPDATE clinic_subscriptions SET current_period_end = expires_at WHERE current_period_end IS NULL")
+                        )
     except Exception as exc:  # pragma: no cover
         logger.warning("Feature schema compatibility check failed: %s", exc)

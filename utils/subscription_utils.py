@@ -5,8 +5,12 @@ import hmac
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-import razorpay
+try:
+    import razorpay
+except ImportError:  # pragma: no cover
+    razorpay = None
 from sqlalchemy.orm import Session, object_session
+from sqlalchemy import inspect, text
 
 from app.config import settings
 from app.database import SessionLocal, commit_with_retry
@@ -132,6 +136,30 @@ def ensure_subscription_schema(db: Session) -> None:
         return
     ClinicSubscription.__table__.create(bind=bind, checkfirst=True)
     SubscriptionUsage.__table__.create(bind=bind, checkfirst=True)
+    try:
+        inspector = inspect(bind)
+        columns = {column["name"] for column in inspector.get_columns("clinic_subscriptions")}
+        if not {"user_id", "plan_id", "trial_end_date", "razorpay_subscription_id", "current_period_end"} <= columns:
+            if "user_id" not in columns:
+                db.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN user_id INTEGER"))
+                if "doctor_id" in columns:
+                    db.execute(text("UPDATE clinic_subscriptions SET user_id = doctor_id WHERE user_id IS NULL"))
+            if "plan_id" not in columns:
+                db.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN plan_id VARCHAR(20) DEFAULT 'free'"))
+                if "plan" in columns:
+                    db.execute(text("UPDATE clinic_subscriptions SET plan_id = plan WHERE plan_id IS NULL OR plan_id = 'free'"))
+            if "trial_end_date" not in columns:
+                db.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN trial_end_date DATE"))
+            if "razorpay_subscription_id" not in columns:
+                db.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN razorpay_subscription_id VARCHAR(100)"))
+            if "current_period_end" not in columns:
+                db.execute(text("ALTER TABLE clinic_subscriptions ADD COLUMN current_period_end DATETIME"))
+                if "expires_at" in columns:
+                    db.execute(text("UPDATE clinic_subscriptions SET current_period_end = expires_at WHERE current_period_end IS NULL"))
+            commit_with_retry(db)
+    except Exception:
+        db.rollback()
+        raise
 
 
 def ensure_free_trial_for_user(db: Session, user: Doctor) -> ClinicSubscription:
@@ -374,6 +402,8 @@ def summarize_subscription_status(db: Session, user: Doctor) -> dict[str, Any]:
 
 
 def get_razorpay_client() -> razorpay.Client:
+    if razorpay is None:
+        raise RuntimeError("Razorpay SDK is not installed.")
     return razorpay.Client(auth=(settings.razorpay_key_id, settings.razorpay_key_secret))
 
 

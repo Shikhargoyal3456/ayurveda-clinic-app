@@ -84,6 +84,20 @@ def memory_health() -> dict[str, Any]:
         return {"status": "unknown", "error": str(exc)}
 
 
+def analytics_health() -> dict[str, Any]:
+    try:
+        from services.analytics_service import get_error_summary, load_events
+
+        load_events()
+        error_summary = get_error_summary()
+        return {
+            "status": "working",
+            "errors_logged": int(error_summary.get("total_errors") or 0),
+        }
+    except Exception as exc:
+        return {"status": "degraded", "errors_logged": 0, "error": str(exc)}
+
+
 def build_health_report() -> dict[str, Any]:
     database = database_health()
     ai = ai_health()
@@ -91,6 +105,7 @@ def build_health_report() -> dict[str, Any]:
     whatsapp = whatsapp_health_status()
     disk = disk_health()
     memory = memory_health()
+    analytics = analytics_health()
     overall = "ok"
     if any(item.get("status") == "error" for item in (database, ai, rag, disk)):
         overall = "degraded"
@@ -100,10 +115,14 @@ def build_health_report() -> dict[str, Any]:
         "version": settings.app_version,
         "database": database["status"],
         "ai": ai["status"],
+        "ai_readiness": "working" if ai["status"] == "ok" else ai["status"],
+        "analytics": analytics["status"],
+        "errors_logged": analytics["errors_logged"],
         "rag": rag["status"],
         "whatsapp": whatsapp["status"],
         "database_detail": database,
         "ai_detail": ai,
+        "analytics_detail": analytics,
         "rag_detail": rag,
         "whatsapp_detail": whatsapp,
         "disk": disk,

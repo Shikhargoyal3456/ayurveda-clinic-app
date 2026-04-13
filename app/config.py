@@ -77,6 +77,8 @@ class Settings:
     whatsapp_api_version: str
     whatsapp_template_name: str
     whatsapp_template_language_code: str
+    email_user: str
+    email_password: str
     redis_url: str
     ai_cache_enabled: bool
     ai_cache_ttl_seconds: int
@@ -168,6 +170,8 @@ def _build_settings() -> Settings:
         whatsapp_api_version=os.getenv("WHATSAPP_API_VERSION", "v23.0").strip() or "v23.0",
         whatsapp_template_name=os.getenv("WHATSAPP_TEMPLATE_NAME", "").strip(),
         whatsapp_template_language_code=os.getenv("WHATSAPP_TEMPLATE_LANGUAGE_CODE", "en_US").strip() or "en_US",
+        email_user=os.getenv("EMAIL_USER", "").strip(),
+        email_password=os.getenv("EMAIL_PASSWORD", "").strip(),
         redis_url=os.getenv("REDIS_URL", ""),
         ai_cache_enabled=_get_bool("AI_CACHE_ENABLED", False),
         ai_cache_ttl_seconds=_get_int("AI_CACHE_TTL_SECONDS", 3600),

@@ -8,6 +8,11 @@ from typing import Dict, List
 from google import genai
 from google.genai import types
 
+from app.config import BASE_DIR, load_dotenv
+
+
+load_dotenv(BASE_DIR / ".env")
+
 
 class AIProvider(Enum):
     GEMINI = "gemini"
@@ -27,6 +32,8 @@ def chat_with_gemini(
     system_prompt: str | List[Dict[str, str]],
     user_prompt: str = "",
     temperature: float = 0.3,
+    response_mime_type: str | None = None,
+    max_output_tokens: int = 2048,
 ) -> str:
     """
     Call Gemini via google-genai. Returns response text.
@@ -54,15 +61,19 @@ def chat_with_gemini(
     client = genai.Client(api_key=GEMINI_API_KEY)
 
     start_time = time.time()
+    config_kwargs = {
+        "http_options": types.HttpOptions(timeout=AI_TIMEOUT * 1000),
+        "system_instruction": system_prompt,
+        "temperature": temperature,
+        "max_output_tokens": max_output_tokens,
+    }
+    if response_mime_type:
+        config_kwargs["response_mime_type"] = response_mime_type
+
     response = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=user_prompt,
-        config=types.GenerateContentConfig(
-            http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
-            system_instruction=system_prompt,
-            temperature=temperature,
-            max_output_tokens=2048,
-        ),
+        config=types.GenerateContentConfig(**config_kwargs),
     )
     elapsed = time.time() - start_time
     logger.info("Gemini responded in %.2fs using model=%s", elapsed, GEMINI_MODEL)
@@ -114,13 +125,21 @@ def chat_with_fallback(
     system_prompt: str,
     user_prompt: str,
     temperature: float = 0.3,
+    response_mime_type: str | None = None,
+    max_output_tokens: int = 2048,
 ) -> tuple[str, AIProvider]:
     """
     Use the configured remote AI provider without falling back to Ollama.
     Gemini is preferred when configured; Groq is used as the secondary provider.
     """
     if GEMINI_API_KEY:
-        return chat_with_gemini(system_prompt, user_prompt, temperature), AIProvider.GEMINI
+        return chat_with_gemini(
+            system_prompt,
+            user_prompt,
+            temperature,
+            response_mime_type,
+            max_output_tokens,
+        ), AIProvider.GEMINI
     if GROQ_API_KEY:
         return chat_with_groq(system_prompt, user_prompt, temperature), AIProvider.GROQ
     raise RuntimeError("Neither GEMINI_API_KEY nor GROQ_API_KEY is configured. AI provider is unavailable.")

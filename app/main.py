@@ -19,13 +19,25 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.analytics import track_event
 from app.config import settings
 from app.database import SessionLocal, init_db
-from app.health import build_health_report
+try:
+    from app.health import build_health_report
+except Exception as exc:
+    _health_import_error = str(exc)
+
+    def build_health_report() -> dict[str, str]:
+        return {"status": "degraded", "error": f"Health report unavailable: {_health_import_error}"}
 from app.logging_config import clear_request_id, configure_logging, set_request_id
 from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
 from models.subscription import ClinicSubscription  # noqa: F401
 from app.pdf_loader import ensure_runtime_dirs
-from app.rag_engine import get_rag_engine
+try:
+    from app.rag_engine import get_rag_engine
+except Exception as exc:
+    _rag_import_error = str(exc)
+
+    def get_rag_engine():
+        raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
 from app.security import ensure_https_request
 from routers.admin import router as admin_router
 from routers.ai import router as ai_router
@@ -33,6 +45,7 @@ from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.cases import router as cases_router
 from routers.patients import router as patients_router
+from routers.order_medicines import router as order_medicines_router
 from routers.pharmacy import router as pharmacy_router
 from routers.subscriptions import router as subscriptions_router
 from routes.demo import router as demo_router
@@ -113,7 +126,11 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
 
 def _run_startup_warmups() -> None:
-    rag_engine = get_rag_engine()
+    try:
+        rag_engine = get_rag_engine()
+    except Exception as exc:
+        logger.exception("Startup warmups skipped because RAG engine is unavailable: %s", exc)
+        return
 
     if settings.startup_rag_warmup:
         try:
@@ -209,6 +226,7 @@ def create_app() -> FastAPI:
     application.include_router(appointments_router)
     application.include_router(ai_router)
     application.include_router(pharmacy_router)
+    application.include_router(order_medicines_router)
     application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(prescription_router)

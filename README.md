@@ -18,9 +18,17 @@ FastAPI-based AI EMR for Ayurvedic clinics. The system covers doctor authenticat
 ## Documentation
 - Deployment: [DEPLOYMENT.md](DEPLOYMENT.md)
 - User guide: [USER_MANUAL.md](USER_MANUAL.md)
+- QA checklist: [QA_CHECKLIST.md](QA_CHECKLIST.md)
+- Operations runbook: [OPERATIONS_RUNBOOK.md](OPERATIONS_RUNBOOK.md)
 
 ## Operations
 - Environment check: `verify_environment.py`
 - Admin metrics: `/api/admin/metrics`
 - Health check: `/healthz`
 - AI status: `/api/ai/status`
+
+## 🚀 Deployment Steps
+1. Set `ENVIRONMENT=production`.
+2. Install dependencies: `pip install -r requirements.txt`.
+3. Run migrations, if any.
+4. Start server: `uvicorn main:app --host 0.0.0.0 --port 8000`.

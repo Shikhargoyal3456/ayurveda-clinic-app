@@ -12,7 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 def _normalized_phone(phone: str) -> str:
-    return "".join(character for character in (phone or "").strip() if character.isdigit())
+    digits = "".join(character for character in (phone or "").strip() if character.isdigit())
+    if len(digits) == 10:
+        return f"91{digits}"
+    if len(digits) == 11 and digits.startswith("0"):
+        return f"91{digits[1:]}"
+    return digits
 
 
 def _meta_whatsapp_config() -> dict[str, str]:

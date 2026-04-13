@@ -1,7 +1,23 @@
 import json
 import logging
 
-from services.ai_provider import GEMINI_API_KEY, chat_with_fallback, chat_with_gemini, parse_json_response
+try:
+    from services.ai_provider import GEMINI_API_KEY, chat_with_fallback, chat_with_gemini, parse_json_response
+except Exception as exc:
+    _ai_provider_import_error = str(exc)
+    GEMINI_API_KEY = ""
+
+    def chat_with_fallback(*args, **kwargs):
+        raise RuntimeError(f"AI provider unavailable: {_ai_provider_import_error}")
+
+    def chat_with_gemini(*args, **kwargs):
+        raise RuntimeError(f"Gemini provider unavailable: {_ai_provider_import_error}")
+
+    def parse_json_response(raw: str) -> dict:
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return {"summary": raw}
 
 
 logger = logging.getLogger(__name__)
@@ -16,18 +32,36 @@ def generate_diet_plan(patient_data: dict) -> dict:
         f"Patient data:\n{json.dumps(patient_data, indent=2, ensure_ascii=True)}"
     )
 
-    if GEMINI_API_KEY:
-        raw = chat_with_gemini(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]
-        )
-        logger.info("Diet plan generated using gemini")
-    else:
-        raw, provider = chat_with_fallback(system_prompt, user_prompt, temperature=0.3)
-        logger.info("Diet plan generated using %s", provider.value)
-    return parse_json_response(raw)
+    try:
+        if GEMINI_API_KEY:
+            raw = chat_with_gemini(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_mime_type="application/json",
+                max_output_tokens=4096,
+            )
+            logger.info("Diet plan generated using gemini")
+        else:
+            raw, provider = chat_with_fallback(
+                system_prompt,
+                user_prompt,
+                temperature=0.3,
+                response_mime_type="application/json",
+                max_output_tokens=4096,
+            )
+            logger.info("Diet plan generated using %s", provider.value)
+        return parse_json_response(raw)
+    except Exception as exc:
+        logger.exception("Diet AI unavailable, returning safe fallback: %s", exc)
+        return {
+            "diagnosis_summary": "Diet plan AI is temporarily unavailable.",
+            "foods_to_favor": [],
+            "foods_to_avoid": [],
+            "lifestyle_tips": ["Doctor review required before sharing diet advice."],
+            "precautions": ["Use clinical judgment and retry AI generation later."],
+        }
 
 
 def generate_whatsapp_message(patient_name: str, diet_plan: dict) -> str:

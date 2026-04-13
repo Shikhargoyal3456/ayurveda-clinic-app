@@ -2,7 +2,20 @@ import logging
 import os
 from pathlib import Path
 
-from services.ai_provider import GEMINI_API_KEY, chat_with_fallback, chat_with_gemini, parse_json_response
+try:
+    from services.ai_provider import GEMINI_API_KEY, chat_with_fallback, chat_with_gemini, parse_json_response
+except Exception as exc:
+    _ai_provider_import_error = str(exc)
+    GEMINI_API_KEY = ""
+
+    def chat_with_fallback(*args, **kwargs):
+        raise RuntimeError(f"AI provider unavailable: {_ai_provider_import_error}")
+
+    def chat_with_gemini(*args, **kwargs):
+        raise RuntimeError(f"Gemini provider unavailable: {_ai_provider_import_error}")
+
+    def parse_json_response(raw: str) -> dict:
+        return {"raw_answer": raw}
 
 
 logger = logging.getLogger(__name__)
@@ -75,15 +88,33 @@ def structure_case_sheet(raw_transcript: str, patient_name: str) -> dict:
         f"Transcript:\n{raw_transcript}"
     )
 
-    if GEMINI_API_KEY:
-        raw = chat_with_gemini(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]
-        )
-        logger.info("Case sheet structured using gemini")
-    else:
-        raw, provider = chat_with_fallback(system_prompt, user_prompt, temperature=0.1)
-        logger.info("Case sheet structured using %s", provider.value)
-    return parse_json_response(raw)
+    try:
+        if GEMINI_API_KEY:
+            raw = chat_with_gemini(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                response_mime_type="application/json",
+                max_output_tokens=4096,
+            )
+            logger.info("Case sheet structured using gemini")
+        else:
+            raw, provider = chat_with_fallback(
+                system_prompt,
+                user_prompt,
+                temperature=0.1,
+                response_mime_type="application/json",
+                max_output_tokens=4096,
+            )
+            logger.info("Case sheet structured using %s", provider.value)
+        return parse_json_response(raw)
+    except Exception as exc:
+        logger.exception("Case sheet structuring AI unavailable, returning transcript fallback: %s", exc)
+        return {
+            "patient_name": patient_name,
+            "raw_transcript": raw_transcript,
+            "diagnosis": "",
+            "treatment_plan": "",
+            "warning": "AI structuring is temporarily unavailable. Doctor review required.",
+        }

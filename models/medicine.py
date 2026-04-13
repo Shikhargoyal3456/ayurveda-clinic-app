@@ -61,11 +61,14 @@ class MedicineOrder(Base):
     patient_address: Mapped[str] = mapped_column(String(255), nullable=False)
     medicines_json: Mapped[str] = mapped_column(Text)
     total_amount: Mapped[int] = mapped_column(Integer)
+    # pending, confirmed, dispatched, delivered
     status: Mapped[str] = mapped_column(String(40), default="pending", index=True)
     pharmacy_id: Mapped[int] = mapped_column(ForeignKey("pharmacies.id"), index=True)
     razorpay_order_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
     # pending, paid, failed
     payment_status: Mapped[str] = mapped_column(String(40), default="pending")
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    notification_failed: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
 
     pharmacy: Mapped["Pharmacy"] = relationship(back_populates="orders")

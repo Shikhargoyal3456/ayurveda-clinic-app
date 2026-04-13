@@ -98,6 +98,7 @@
             <div class="d-flex flex-wrap gap-3">
                 <button type="button" id="print-prescription-btn" class="btn btn-primary">Print Prescription</button>
                 <a href="/prescriptions/{{ prescription.id }}/download" class="btn btn-outline-primary">Download PDF</a>
+                <a href="/pharmacy/order/{{ prescription_token }}" class="btn btn-success rounded-pill">Order Medicines</a>
                 <form method="post" action="/prescriptions/{{ prescription.id }}/share" data-loading-form>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button class="btn btn-outline-success" data-loading-text="Sharing...">Send via WhatsApp</button>

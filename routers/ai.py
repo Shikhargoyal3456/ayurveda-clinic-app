@@ -14,8 +14,22 @@ from app.audit import write_audit_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, rate_limit_dependency, verify_csrf
 from app.config import settings
 from app.models import Doctor
-from app.rag_engine import get_rag_engine
-from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, GROQ_API_KEY, GROQ_MODEL
+try:
+    from app.rag_engine import get_rag_engine
+except Exception as exc:
+    _rag_import_error = str(exc)
+
+    def get_rag_engine():
+        raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
+
+try:
+    from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, GROQ_API_KEY, GROQ_MODEL
+except Exception as exc:
+    _ai_provider_import_error = str(exc)
+    GEMINI_API_KEY = ""
+    GEMINI_MODEL = settings.gemini_model
+    GROQ_API_KEY = ""
+    GROQ_MODEL = ""
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
@@ -35,6 +49,20 @@ rebuild_status = {
 }
 _rebuild_status_lock = Lock()
 _AI_RATE_LIMIT_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
+_AI_EMERGENCY_KEYWORDS = ["chest pain", "bleeding", "unconscious"]
+
+
+def _wrap_ai_safety_response(symptoms: str, result: dict[str, object]) -> dict[str, object]:
+    try:
+        answer = str(result.get("answer", "") or "")
+        prefixes = ["This is advisory. Doctor review required."]
+        symptom_text = symptoms.lower()
+        if any(keyword in symptom_text for keyword in _AI_EMERGENCY_KEYWORDS):
+            prefixes.insert(0, "Emergency: Seek immediate medical help.")
+        result["answer"] = "\n\n".join([*prefixes, answer]).strip()
+    except Exception as exc:  # pragma: no cover
+        logger.exception("AI safety wrapper failed: %s", exc)
+    return result
 
 
 async def _extract_symptoms(request: Request) -> str:
@@ -108,6 +136,7 @@ async def analyze_symptoms(
     track_event("ai_analyzer_used", doctor_id=request.session.get("doctor_id"), mode=result.get("mode", "unknown"))
     if result.get("mode") not in {"error", "fallback", "validation"}:
         increment_usage(doctor, "ai_call")
+    result = _wrap_ai_safety_response(symptoms, result)
     return JSONResponse(result)
 
 
@@ -174,7 +203,36 @@ def get_rebuild_status(_: Doctor = Depends(get_current_doctor)):
 @router.get("/api/ai/status")
 @router.get("/ai/status")
 def ai_status():
-    engine = get_rag_engine()
+    try:
+        engine = get_rag_engine()
+    except Exception as exc:
+        logger.exception("AI status degraded because RAG engine is unavailable: %s", exc)
+        return JSONResponse(
+            {
+                "gemini": {
+                    "configured": bool(GEMINI_API_KEY),
+                    "model": GEMINI_MODEL,
+                },
+                "groq": {
+                    "configured": bool(GROQ_API_KEY),
+                    "enabled": bool(GROQ_API_KEY),
+                    "model": GROQ_MODEL,
+                },
+                "ollama": {
+                    "reachable": False,
+                    "enabled": False,
+                    "model": None,
+                    "host": None,
+                },
+                "rag_engine": {
+                    "mode": "unavailable",
+                    "warning": str(exc),
+                    "model": None,
+                    "provider": "unavailable",
+                },
+                "active_strategy": "unavailable",
+            }
+        )
     gemini_configured = bool(GEMINI_API_KEY)
     groq_configured = bool(GROQ_API_KEY)
     gemini_status = engine.gemini_status()
