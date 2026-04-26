@@ -203,6 +203,304 @@
         {% else %}
         <div class="alert alert-warning">No cases found for this patient.</div>
         {% endfor %}
+        <!-- Kash AI Prescription Scanner -->
+        <div class="kash-scanner-section" style="
+          margin-top: 30px;
+          background: linear-gradient(135deg, #f0faf4, #e8f5e9);
+          border-radius: 16px;
+          padding: 24px;
+          border: 2px solid #2d9e6b;
+          font-family: inherit;
+        ">
+          <!-- Header -->
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+            <div style="
+              background: #1a6b3c;
+              border-radius: 50%;
+              width: 48px; height: 48px;
+              display:flex; align-items:center; justify-content:center;
+              font-size: 24px;
+            ">🔍</div>
+            <div>
+              <h3 style="margin:0; color:#1a6b3c; font-size:20px;">
+                Kash AI Prescription Scanner
+              </h3>
+              <p style="margin:0; color:#666; font-size:13px;">
+                Upload your prescription for instant AI analysis
+              </p>
+            </div>
+          </div>
+
+          <!-- Upload Zone -->
+          <div id="kashUploadZone" style="
+            border: 2px dashed #2d9e6b;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            cursor: pointer;
+            background: white;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+          "
+          onclick="document.getElementById('kashFileInput').click()"
+          ondragover="event.preventDefault(); this.style.background='#e8f5e9'"
+          ondragleave="this.style.background='white'"
+          ondrop="handleKashDrop(event)"
+          >
+            <div style="font-size:48px; margin-bottom:8px;">📋</div>
+            <p style="color:#1a6b3c; font-weight:600; margin:0; font-size:16px;">
+              Drop prescription image here
+            </p>
+            <p style="color:#999; font-size:13px; margin:6px 0 0;">
+              or click to browse • JPG, PNG, PDF supported
+            </p>
+            <div id="kashFileName" style="
+              margin-top:10px; color:#2d9e6b; 
+              font-weight:600; display:none;
+            "></div>
+          </div>
+
+          <input type="file" id="kashFileInput" 
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            style="display:none" onchange="handleKashFileSelect(this)">
+
+          <!-- Optional WhatsApp -->
+          <div style="margin-bottom:16px;">
+            <label style="color:#555; font-size:13px; display:block; margin-bottom:6px;">
+              📱 Send analysis to WhatsApp (optional)
+            </label>
+            <input type="tel" id="kashPhone" 
+              placeholder="+91XXXXXXXXXX"
+              style="
+                width:100%; padding:10px 14px;
+                border:1px solid #ddd; border-radius:8px;
+                font-size:14px; box-sizing:border-box;
+                outline:none;
+              "
+            >
+          </div>
+
+          <!-- Scan Button -->
+          <button id="kashScanBtn" onclick="kashScanPrescription()" style="
+            width: 100%;
+            background: linear-gradient(135deg, #1a6b3c, #2d9e6b);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+          ">
+            🔍 Scan & Analyze Prescription
+          </button>
+
+          <!-- Loading -->
+          <div id="kashLoading" style="display:none; text-align:center; padding:20px;">
+            <div style="font-size:32px; animation: spin 1s linear infinite;">⏳</div>
+            <p style="color:#1a6b3c; font-weight:600;" id="kashLoadingText">
+              Uploading prescription...
+            </p>
+            <div style="
+              background:#e8f5e9; border-radius:8px; padding:12px; margin-top:10px;
+            ">
+              <div id="kashStep1" style="color:#999; font-size:13px;">⬜ Uploading image</div>
+              <div id="kashStep2" style="color:#999; font-size:13px;">⬜ AI scanning medicines</div>
+              <div id="kashStep3" style="color:#999; font-size:13px;">⬜ Generating analysis</div>
+            </div>
+          </div>
+
+          <!-- Results -->
+          <div id="kashResults" style="display:none; margin-top:20px;">
+            
+            <!-- Medicines detected -->
+            <div style="margin-bottom:16px;">
+              <h4 style="color:#1a6b3c; margin:0 0 10px;">💊 Medicines Detected</h4>
+              <div id="kashMedicinesBadges"></div>
+            </div>
+
+            <!-- Full Analysis -->
+            <div style="
+              background:white; border-radius:10px; padding:16px;
+              border-left: 4px solid #2d9e6b; margin-bottom:12px;
+              max-height: 400px; overflow-y: auto;
+            ">
+              <h4 style="color:#1a6b3c; margin:0 0 10px;">📋 Full Analysis</h4>
+              <div id="kashAnalysisText" style="
+                white-space:pre-wrap; font-size:13px; 
+                line-height:1.6; color:#333;
+              "></div>
+            </div>
+
+            <!-- Disclaimer -->
+            <div style="
+              background:#fff8e1; border-radius:10px; padding:14px;
+              border-left: 4px solid #f9a825; margin-bottom:12px;
+            ">
+              <p style="margin:0; font-size:12px; color:#795548;">
+                ⚕️ <strong>Medical Disclaimer:</strong> This analysis is AI-generated 
+                for educational purposes only. Always consult your doctor before 
+                making any changes to your medication. 
+                <em>— Kash AI Smart Clinic Platform</em>
+              </p>
+            </div>
+
+            <!-- Send to WhatsApp button -->
+            <button id="kashWhatsappBtn" style="
+              display:none;
+              width:100%; background:#25D366; color:white;
+              border:none; padding:12px; border-radius:10px;
+              font-size:15px; font-weight:600; cursor:pointer;
+            ">
+              📱 Analysis Sent to Your WhatsApp ✅
+            </button>
+
+            <!-- Scan again -->
+            <button onclick="kashReset()" style="
+              width:100%; background:transparent; color:#1a6b3c;
+              border:2px solid #1a6b3c; padding:10px; border-radius:10px;
+              font-size:14px; cursor:pointer; margin-top:8px;
+            ">
+              🔄 Scan Another Prescription
+            </button>
+          </div>
+        </div>
+
+        <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        </style>
+
+        <script>
+        let kashSelectedFile = null;
+
+        function handleKashFileSelect(input) {
+          if (input.files[0]) {
+            kashSelectedFile = input.files[0];
+            document.getElementById('kashFileName').style.display = 'block';
+            document.getElementById('kashFileName').textContent = '✅ ' + kashSelectedFile.name;
+          }
+        }
+
+        function handleKashDrop(e) {
+          e.preventDefault();
+          document.getElementById('kashUploadZone').style.background = 'white';
+          const file = e.dataTransfer.files[0];
+          if (file) {
+            kashSelectedFile = file;
+            document.getElementById('kashFileName').style.display = 'block';
+            document.getElementById('kashFileName').textContent = '✅ ' + file.name;
+          }
+        }
+
+        async function kashScanPrescription() {
+          if (!kashSelectedFile) {
+            alert('Please select a prescription image first');
+            return;
+          }
+
+          // Show loading
+          document.getElementById('kashLoading').style.display = 'block';
+          document.getElementById('kashScanBtn').style.display = 'none';
+          document.getElementById('kashResults').style.display = 'none';
+
+          // Animate steps
+          setTimeout(() => {
+            document.getElementById('kashStep1').style.color = '#2d9e6b';
+            document.getElementById('kashStep1').textContent = '✅ Image uploaded';
+            document.getElementById('kashStep2').style.color = '#f9a825';
+            document.getElementById('kashStep2').textContent = '🔄 AI scanning medicines...';
+            document.getElementById('kashLoadingText').textContent = 'Kash AI is analyzing your prescription...';
+          }, 1000);
+
+          setTimeout(() => {
+            document.getElementById('kashStep2').style.color = '#2d9e6b';
+            document.getElementById('kashStep2').textContent = '✅ Medicines detected';
+            document.getElementById('kashStep3').style.color = '#f9a825';
+            document.getElementById('kashStep3').textContent = '🔄 Generating full analysis...';
+          }, 3000);
+
+          try {
+            const formData = new FormData();
+            formData.append('prescription_image', kashSelectedFile);
+            
+            const phone = document.getElementById('kashPhone').value.trim();
+            if (phone) formData.append('phone', phone);
+
+            // Use Python app endpoint (which forwards to Node.js)
+            const response = await fetch('/scan-prescription/', {
+              method: 'POST',
+              body: formData
+            });
+
+            const data = await response.json();
+            if (!response.ok || data.success === false || data.error) {
+              throw new Error(data.error || 'Prescription scanner failed. Please try again.');
+            }
+
+            document.getElementById('kashStep3').style.color = '#2d9e6b';
+            document.getElementById('kashStep3').textContent = '✅ Analysis complete!';
+
+            setTimeout(() => {
+              document.getElementById('kashLoading').style.display = 'none';
+              showKashResults(data, phone);
+            }, 500);
+
+          } catch (err) {
+            document.getElementById('kashLoading').style.display = 'none';
+            document.getElementById('kashScanBtn').style.display = 'block';
+            alert('Scanner error: ' + err.message + '\nPlease try again.');
+          }
+        }
+
+        function showKashResults(data, phone) {
+          document.getElementById('kashResults').style.display = 'block';
+
+          // Show medicine badges
+          const badgesDiv = document.getElementById('kashMedicinesBadges');
+          badgesDiv.innerHTML = '';
+          if (data.medicines && data.medicines.length > 0) {
+            data.medicines.forEach(med => {
+              const badge = document.createElement('span');
+              badge.style.cssText = `
+                display:inline-block; background:#1a6b3c; color:white;
+                padding:4px 12px; border-radius:20px; font-size:13px;
+                margin:4px; font-weight:500;
+              `;
+              badge.textContent = '💊 ' + med;
+              badgesDiv.appendChild(badge);
+            });
+          } else {
+            badgesDiv.innerHTML = '<span style="color:#999">Medicines listed in analysis below</span>';
+          }
+
+          // Show analysis
+          document.getElementById('kashAnalysisText').textContent = 
+            data.fullAnalysis || data.analysis || JSON.stringify(data, null, 2);
+
+          // Show WhatsApp confirmation
+          if (phone && data.success) {
+            const btn = document.getElementById('kashWhatsappBtn');
+            btn.style.display = 'block';
+          }
+        }
+
+        function kashReset() {
+          kashSelectedFile = null;
+          document.getElementById('kashFileInput').value = '';
+          document.getElementById('kashFileName').style.display = 'none';
+          document.getElementById('kashFileName').textContent = '';
+          document.getElementById('kashPhone').value = '';
+          document.getElementById('kashResults').style.display = 'none';
+          document.getElementById('kashScanBtn').style.display = 'block';
+          document.getElementById('kashStep1').style.color = '#999';
+          document.getElementById('kashStep1').textContent = '⬜ Uploading image';
+          document.getElementById('kashStep2').style.color = '#999';
+          document.getElementById('kashStep2').textContent = '⬜ AI scanning medicines';
+          document.getElementById('kashStep3').style.color = '#999';
+          document.getElementById('kashStep3').textContent = '⬜ Generating analysis';
+        }
+        </script>
     </div>
 </body>
 </html>

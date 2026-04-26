@@ -22,6 +22,7 @@ from app.prescription_library import (
 )
 from models.prescription import Prescription
 from services.communication import send_patient_message
+from services.node_whatsapp import send_prescription_via_node_whatsapp
 from services.whatsapp import build_whatsapp_link
 from utils.subscription_utils import (
     build_paywall_response,
@@ -135,6 +136,16 @@ def _build_prescription_pdf_bytes(prescription: Prescription, doctor: Doctor) ->
     pdf_bytes = document.tobytes()
     document.close()
     return pdf_bytes
+
+
+def _doctor_display_name(doctor: Doctor) -> str:
+    return (doctor.full_name or doctor.username or "Doctor").strip()
+
+
+def _prescription_duration_label(prescription: Prescription) -> str:
+    if prescription.follow_up_days:
+        return f"{prescription.follow_up_days} days"
+    return "As prescribed"
 
 
 @router.get("/patients/{patient_id}/prescriptions/new")
@@ -295,6 +306,30 @@ def share_prescription(
         advice=prescription.advice or "",
     )
     share_message = f"{share_message}\n\nOrder your medicines here: {_prescription_order_url(request, prescription.id)}"
+
+    node_result = send_prescription_via_node_whatsapp(
+        patient_name=prescription.patient.name,
+        patient_phone=prescription.patient.phone or "",
+        diagnosis=prescription.diagnosis or "",
+        medicines=prescription.medicines or [],
+        advice=prescription.advice or "",
+        duration=_prescription_duration_label(prescription),
+        doctor_name=_doctor_display_name(doctor),
+    )
+
+    if node_result.get("sent"):
+        write_audit_event(
+            "prescription_shared_twilio_whatsapp",
+            request,
+            prescription_id=prescription.id,
+            patient_id=prescription.patient_id,
+            doctor_id=doctor.id,
+            message_sid=node_result.get("message_sid"),
+            status=node_result.get("status"),
+        )
+        set_flash(request, "Prescription sent on WhatsApp via Kash AI.", "success")
+        return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
+
     send_patient_message(
         prescription.patient.phone,
         prescription.patient.email,

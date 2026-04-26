@@ -1,0 +1,47 @@
+name: Render Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run tests
+        env:
+          APP_ENV: testing
+          DATABASE_URL: sqlite:///./ci_test.db
+          ALLOW_PUBLIC_SIGNUP: "true"
+          AI_ENABLED: "true"
+          REDIS_URL: ""
+          SECRET_KEY: test-secret-key
+          SESSION_HTTPS_ONLY: "false"
+          HTTPS_REDIRECT_ENABLED: "false"
+          UVICORN_RELOAD: "false"
+          ADMIN_USERNAMES: ""
+          TRUSTED_HOSTS: 127.0.0.1,localhost,testserver
+        run: pytest -q
+
+      - name: Trigger Render deploy
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: curl -fsSL -X POST "$RENDER_DEPLOY_HOOK_URL"

@@ -1,76 +1,36 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: postgresql+psycopg2://ayurveda:ayurveda@postgres:5432/ayurveda
-      OLLAMA_API_URL: http://ollama:11434
+  kash-ai:
+    build: .
     ports:
-      - "8000:8000"
-    volumes:
-      - app_logs:/app/logs
-      - app_data:/app/data
-      - app_backups:/app/backups
-      - app_vectors:/app/vector_store
+      - "8000:8080"
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg2://kash:ai123@postgres:5432/kash_ai
+      REDIS_URL: redis://redis:6379/0
+      PORT: 8080
     depends_on:
-      postgres:
-        condition: service_healthy
-      ollama:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 20s
+      - redis
+      - postgres
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
     restart: unless-stopped
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: ayurveda
-      POSTGRES_USER: ayurveda
-      POSTGRES_PASSWORD: ayurveda
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ayurveda -d ayurveda"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  ollama:
-    image: ollama/ollama:latest
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: ["gpu"]
-    volumes:
-      - ollama_data:/root/.ollama
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:1.27-alpine
+      POSTGRES_DB: kash_ai
+      POSTGRES_USER: kash
+      POSTGRES_PASSWORD: ai123
     ports:
-      - "80:80"
-      - "443:443"
+      - "5432:5432"
     volumes:
-      - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
-      - app_logs:/var/log/nginx
-    depends_on:
-      app:
-        condition: service_healthy
+      - kash_ai_postgres:/var/lib/postgresql/data
     restart: unless-stopped
 
 volumes:
-  app_logs:
-  app_data:
-  app_backups:
-  app_vectors:
-  postgres_data:
-  ollama_data:
+  kash_ai_postgres:

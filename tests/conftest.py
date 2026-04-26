@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import time
 import uuid
 from pathlib import Path
@@ -31,6 +32,8 @@ os.environ.setdefault("UVICORN_RELOAD", "false")
 os.environ.setdefault("ADMIN_USERNAMES", "")
 os.environ.setdefault("APP_ENV", "testing")
 os.environ.setdefault("TRUSTED_HOSTS", "127.0.0.1,localhost,testserver")
+os.environ.setdefault("TEST_MODE", "true")
+os.environ.setdefault("TEST_UPLOADS_DIR", str(PROJECT_ROOT / "temp" / "test-uploads"))
 
 from app.database import SessionLocal, engine, init_db  # noqa: E402
 from app.main import app  # noqa: E402
@@ -81,6 +84,14 @@ def initialized_database():
     for suffix in ("", "-shm", "-wal"):
         db_file = Path(f"{TEST_DB_PATH}{suffix}")
         _unlink_with_retry(db_file, ignore_final_permission_error=True)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_uploads():
+    upload_root = PROJECT_ROOT / "temp" / "test-uploads"
+    upload_root.mkdir(parents=True, exist_ok=True)
+    yield upload_root
+    shutil.rmtree(upload_root, ignore_errors=True)
 
 
 @pytest.fixture(autouse=True)

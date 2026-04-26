@@ -35,6 +35,44 @@ def _get_list(name: str, default: list[str] | None = None) -> list[str]:
     return [item.strip() for item in raw_value.split(",") if item.strip()]
 
 
+def normalize_database_url(database_url: str) -> str:
+    # PROD-FIX-6: Make SQLite safer for concurrent production smoke traffic.
+    if not database_url.startswith("sqlite"):
+        return database_url
+    if "timeout=" in database_url and "cache=" in database_url:
+        return database_url
+    separator = "&" if "?" in database_url else "?"
+    additions = []
+    if "cache=" not in database_url:
+        additions.append("cache=shared")
+    if "timeout=" not in database_url:
+        additions.append("timeout=30")
+    return f"{database_url}{separator}{'&'.join(additions)}" if additions else database_url
+
+
+def resolve_razorpay_mode(environment: str, configured_mode: str = "") -> str:
+    # PROD-FIX-4: Default Razorpay mode from environment while allowing explicit override.
+    mode = (configured_mode or ("test" if environment == "development" else "live")).strip().lower()
+    return mode if mode in {"test", "live"} else ("test" if environment == "development" else "live")
+
+
+def production_validation_errors(
+    environment: str,
+    secret_key: str,
+    session_https_only: bool,
+    require_https_in_production: bool,
+) -> list[str]:
+    # PROD-FIX-2: Production startup must fail if secure sessions are disabled.
+    if environment != "production":
+        return []
+    errors: list[str] = []
+    if secret_key == "change-this-secret-before-production":
+        errors.append("SECRET_KEY must be set to a strong value in production.")
+    if require_https_in_production and not session_https_only:
+        errors.append("HTTPS required: SESSION_HTTPS_ONLY must be true in production.")
+    return errors
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
@@ -44,6 +82,7 @@ class Settings:
     app_version: str
     environment: str
     debug: bool
+    app_name: str
     base_dir: Path
     templates_dir: Path
     static_dir: Path
@@ -72,6 +111,7 @@ class Settings:
     google_maps_api_key: str
     razorpay_key_id: str
     razorpay_key_secret: str
+    razorpay_mode: str
     whatsapp_access_token: str
     whatsapp_phone_number_id: str
     whatsapp_api_version: str
@@ -80,6 +120,13 @@ class Settings:
     email_user: str
     email_password: str
     redis_url: str
+    db_pool_size: int
+    db_max_overflow: int
+    db_pool_timeout_seconds: int
+    db_pool_recycle_seconds: int
+    sentry_dsn: str
+    cloud_run_memory: str
+    cloud_run_concurrency: int
     ai_cache_enabled: bool
     ai_cache_ttl_seconds: int
     ai_enabled: bool
@@ -104,6 +151,8 @@ class Settings:
     schema_log_path: Path
     verify_ollama_on_startup: bool
     require_https_in_production: bool
+    max_concurrent_requests: int
+    overload_queue_timeout_seconds: float
     runtime_python: str
 
     @property
@@ -117,6 +166,21 @@ class Settings:
     @property
     def is_development(self) -> bool:
         return self.environment == "development"
+
+    @property
+    def SENTRY_DSN(self) -> str:
+        # PROD-LAUNCH-1: Compatibility alias for launch scripts/tests that use env-style names.
+        return self.sentry_dsn
+
+    @property
+    def REDIS_URL(self) -> str:
+        # PROD-LAUNCH-1: Compatibility alias for launch scripts/tests that use env-style names.
+        return self.redis_url
+
+    @property
+    def ENVIRONMENT(self) -> str:
+        # PROD-LAUNCH-1: Compatibility alias for launch scripts/tests that use env-style names.
+        return self.environment
 
 
 def _detect_environment() -> str:
@@ -138,6 +202,7 @@ def _build_settings() -> Settings:
         app_version=os.getenv("APP_VERSION", "1.0.0").strip() or "1.0.0",
         environment=environment,
         debug=debug,
+        app_name=os.getenv("APP_NAME", os.getenv("CLINIC_NAME", "kash-ai")).strip() or "kash-ai",
         base_dir=base_dir,
         templates_dir=base_dir / "templates",
         static_dir=base_dir / "static",
@@ -146,7 +211,8 @@ def _build_settings() -> Settings:
         backups_dir=base_dir / "backups",
         samhita_pdfs_dir=base_dir / "samhita_pdfs",
         vector_store_dir=base_dir / "vector_store",
-        database_url=os.getenv("DATABASE_URL", "sqlite:///./ayurveda_clinic.db"),
+        # PROD-FIX-6: Normalize SQLite URL with timeout/cache query options.
+        database_url=normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./ayurveda_clinic.db")),
         clinic_name=os.getenv("CLINIC_NAME", "Kash AI"),
         ollama_api_url=os.getenv("OLLAMA_API_URL", "http://localhost:11434"),
         ollama_model=os.getenv("OLLAMA_MODEL", "phi3:mini"),
@@ -165,6 +231,7 @@ def _build_settings() -> Settings:
         google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", ""),
         razorpay_key_id=os.getenv("RAZORPAY_KEY_ID", ""),
         razorpay_key_secret=os.getenv("RAZORPAY_KEY_SECRET", ""),
+        razorpay_mode=resolve_razorpay_mode(environment, os.getenv("RAZORPAY_MODE", "")),
         whatsapp_access_token=os.getenv("WHATSAPP_ACCESS_TOKEN", "").strip(),
         whatsapp_phone_number_id=os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip(),
         whatsapp_api_version=os.getenv("WHATSAPP_API_VERSION", "v23.0").strip() or "v23.0",
@@ -173,6 +240,13 @@ def _build_settings() -> Settings:
         email_user=os.getenv("EMAIL_USER", "").strip(),
         email_password=os.getenv("EMAIL_PASSWORD", "").strip(),
         redis_url=os.getenv("REDIS_URL", ""),
+        db_pool_size=_get_int("DB_POOL_SIZE", 12),
+        db_max_overflow=_get_int("DB_MAX_OVERFLOW", 18),
+        db_pool_timeout_seconds=_get_int("DB_POOL_TIMEOUT_SECONDS", 15),
+        db_pool_recycle_seconds=_get_int("DB_POOL_RECYCLE_SECONDS", 1800),
+        sentry_dsn=os.getenv("SENTRY_DSN", "").strip(),
+        cloud_run_memory=os.getenv("CLOUD_RUN_MEMORY", "512Mi").strip() or "512Mi",
+        cloud_run_concurrency=_get_int("CLOUD_RUN_CONCURRENCY", 80),
         ai_cache_enabled=_get_bool("AI_CACHE_ENABLED", False),
         ai_cache_ttl_seconds=_get_int("AI_CACHE_TTL_SECONDS", 3600),
         ai_enabled=_get_bool("AI_ENABLED", True),
@@ -197,17 +271,21 @@ def _build_settings() -> Settings:
         schema_log_path=logs_dir / "schema_migrations.log",
         verify_ollama_on_startup=_get_bool("VERIFY_OLLAMA_ON_STARTUP", False),
         require_https_in_production=_get_bool("REQUIRE_HTTPS_IN_PRODUCTION", True),
+        max_concurrent_requests=_get_int("MAX_CONCURRENT_REQUESTS", 120),
+        overload_queue_timeout_seconds=float(os.getenv("OVERLOAD_QUEUE_TIMEOUT_SECONDS", "2.5").strip() or "2.5"),
         runtime_python=os.getenv(
             "RUNTIME_PYTHON",
             r"C:\Users\goyal\AppData\Local\ayurveda-runtime\Scripts\python.exe",
         ),
     )
 
-    if settings.is_production:
-        if settings.secret_key == "change-this-secret-before-production":
-            raise ValueError("SECRET_KEY must be set to a strong value in production.")
-        if settings.require_https_in_production and not settings.session_https_only:
-            raise ValueError("SESSION_HTTPS_ONLY must be true in production.")
+    for error in production_validation_errors(
+        settings.environment,
+        settings.secret_key,
+        settings.session_https_only,
+        settings.require_https_in_production,
+    ):
+        raise ValueError(error)
 
     return settings
 

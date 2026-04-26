@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kash AI Ayurveda Diagnosis</title>
+  <meta name="description" content="AI Ayurveda diagnosis with instant dosha analysis, diet guidance, herbs, and consultation booking.">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    :root {
+      --leaf: #1f7a43;
+      --leaf-dark: #14532d;
+      --mint: #e9f7ef;
+      --sage: #d7eadc;
+      --gold: #d99a18;
+      --ink: #173322;
+      --muted: #627568;
+      --paper: #fffdf7;
+      --white: #ffffff;
+      --danger: #a23a2d;
+      --shadow: 0 18px 60px rgba(23, 51, 34, 0.14);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(31, 122, 67, 0.14), transparent 28rem),
+        linear-gradient(180deg, #f5fbf4 0%, #fffdf7 46%, #eef7f0 100%);
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--leaf), #3a9f5f);
+      font-weight: 900;
+    }
+
+    .health-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid rgba(31, 122, 67, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.74);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 99px;
+      background: var(--gold);
+      box-shadow: 0 0 0 4px rgba(217, 154, 24, 0.14);
+    }
+
+    .dot.ok {
+      background: var(--leaf);
+      box-shadow: 0 0 0 4px rgba(31, 122, 67, 0.14);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(340px, 0.78fr);
+      gap: 34px;
+      align-items: start;
+      padding: 28px 0 46px;
+    }
+
+    .hero-copy {
+      padding-top: 26px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 11px;
+      border-radius: 8px;
+      background: var(--mint);
+      color: var(--leaf-dark);
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 18px 0 16px;
+      font-size: clamp(2.25rem, 6vw, 4.8rem);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 650px;
+      color: var(--muted);
+      font-size: 1.15rem;
+      line-height: 1.7;
+      margin: 0 0 24px;
+    }
+
+    .trust-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 650px;
+    }
+
+    .trust-item {
+      min-height: 86px;
+      border: 1px solid rgba(31, 122, 67, 0.16);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 14px;
+    }
+
+    .trust-item strong {
+      display: block;
+      font-size: 1.25rem;
+      color: var(--leaf-dark);
+    }
+
+    .trust-item span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(31, 122, 67, 0.16);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 188px;
+      resize: vertical;
+      border: 1px solid rgba(31, 122, 67, 0.24);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--ink);
+      background: #fbfff9;
+      font: inherit;
+      line-height: 1.55;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: var(--leaf);
+      box-shadow: 0 0 0 4px rgba(31, 122, 67, 0.12);
+    }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 16px;
+    }
+
+    .chip {
+      border: 1px solid rgba(31, 122, 67, 0.2);
+      background: var(--mint);
+      color: var(--leaf-dark);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    button,
+    .button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      background: var(--leaf);
+      color: white;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    button.secondary,
+    .button.secondary {
+      background: #ffffff;
+      color: var(--leaf-dark);
+      border: 1px solid rgba(31, 122, 67, 0.22);
+    }
+
+    button:disabled {
+      opacity: 0.62;
+      cursor: wait;
+    }
+
+    .status {
+      min-height: 24px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .status.error {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .results {
+      display: none;
+      padding: 4px 0 70px;
+    }
+
+    .results.visible {
+      display: block;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      letter-spacing: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: 18px;
+    }
+
+    .dosha-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .dosha-row {
+      display: grid;
+      gap: 8px;
+    }
+
+    .dosha-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 800;
+    }
+
+    .bar {
+      overflow: hidden;
+      height: 13px;
+      border-radius: 8px;
+      background: #e5efe6;
+    }
+
+    .bar span {
+      display: block;
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--leaf), #65ae73);
+      transition: width 560ms ease;
+    }
+
+    .care-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .mini-card {
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid rgba(31, 122, 67, 0.14);
+      padding: 14px;
+      min-height: 132px;
+    }
+
+    .mini-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .mini-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .answer-box {
+      white-space: pre-wrap;
+      color: var(--muted);
+      line-height: 1.65;
+      margin-top: 12px;
+    }
+
+    .consult {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: linear-gradient(135deg, var(--leaf-dark), var(--leaf));
+      color: white;
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .consult p {
+      margin: 4px 0 0;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .consult .button {
+      background: #ffffff;
+      color: var(--leaf-dark);
+      min-width: 210px;
+    }
+
+    .history {
+      margin-top: 22px;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .history-item {
+      border-radius: 8px;
+      border: 1px solid rgba(31, 122, 67, 0.13);
+      background: rgba(255, 255, 255, 0.74);
+      padding: 12px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .history-item strong {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .notice {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fff7df;
+      color: #6f5411;
+      border: 1px solid rgba(217, 154, 24, 0.26);
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+
+    footer {
+      padding: 24px 0 40px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-copy {
+        padding-top: 4px;
+      }
+
+      .care-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 20px, 1160px);
+      }
+
+      header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .health-pill {
+        width: 100%;
+      }
+
+      .hero {
+        padding-top: 8px;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .trust-row {
+        grid-template-columns: 1fr;
+      }
+
+      .consult {
+        grid-template-columns: 1fr;
+      }
+
+      .consult .button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand" aria-label="Kash AI">
+        <span class="brand-mark">K</span>
+        <span>Kash AI Ayurveda Clinic</span>
+      </div>
+      <div class="health-pill" id="healthPill">
+        <span class="dot" id="healthDot"></span>
+        <span id="healthText">Checking clinic status</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">Patient-first Ayurveda AI</span>
+          <h1>AI Ayurveda Diagnosis - Instant Dosha Analysis</h1>
+          <p class="lead">
+            Share your symptoms and receive an instant Vata, Pitta, Kapha reading with practical diet, herb, and care guidance. For urgent or severe symptoms, speak with a qualified doctor immediately.
+          </p>
+          <div class="trust-row" aria-label="Clinic highlights">
+            <div class="trust-item">
+              <strong>V/P/K</strong>
+              <span>Dosha balance estimate</span>
+            </div>
+            <div class="trust-item">
+              <strong>₹299</strong>
+              <span>Doctor consultation booking</span>
+            </div>
+            <div class="trust-item">
+              <strong>Private</strong>
+              <span>History saved only on this device</span>
+            </div>
+          </div>
+        </div>
+
+        <form class="panel" id="symptomForm">
+          <label for="symptoms">Describe your symptoms</label>
+          <textarea id="symptoms" name="symptoms" required maxlength="2000" placeholder="Example: acidity after meals, bloating, disturbed sleep, burning sensation, stress, low appetite..."></textarea>
+          <div class="examples" aria-label="Example symptoms">
+            <button class="chip" type="button" data-example="Acidity after meals, burning sensation, disturbed sleep, and irritability.">Acidity</button>
+            <button class="chip" type="button" data-example="Joint stiffness, dry skin, gas, constipation, and anxiety.">Vata signs</button>
+            <button class="chip" type="button" data-example="Cold, cough, heaviness, low energy, and congestion.">Cough</button>
+          </div>
+          <div class="actions">
+            <button id="analyzeButton" type="submit">Analyze</button>
+            <a class="button secondary" href="/order-medicines">Order Ayurvedic Medicines</a>
+          </div>
+          <div class="status" id="statusText"></div>
+          <div class="notice">
+            This tool gives wellness guidance only. It is not an emergency service and does not replace a clinician's diagnosis.
+          </div>
+        </form>
+      </section>
+
+      <section class="results" id="results">
+        <div class="section-title">
+          <h2>Your Ayurveda Plan</h2>
+          <button class="secondary" id="clearHistoryButton" type="button">Clear History</button>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h2>Dosha Scores</h2>
+            <div class="dosha-list" id="doshaList"></div>
+          </div>
+
+          <div class="panel">
+            <h2>Treatment Plan</h2>
+            <div class="answer-box" id="treatmentText"></div>
+            <div class="care-grid">
+              <div class="mini-card">
+                <h3>Diet</h3>
+                <ul id="dietList"></ul>
+              </div>
+              <div class="mini-card">
+                <h3>Herbs</h3>
+                <ul id="herbList"></ul>
+              </div>
+              <div class="mini-card">
+                <h3>Medicines</h3>
+                <ul id="medicineList"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="consult">
+          <div>
+            <strong>Need a doctor to review this?</strong>
+            <p>Book a Kash AI Ayurveda consultation and continue with a guided treatment plan.</p>
+          </div>
+          <button class="button" id="bookButton" type="button">Book Consultation ₹299</button>
+        </div>
+
+        <div class="history panel">
+          <h2>Patient History</h2>
+          <div class="history-list" id="historyList"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Kash AI Ayurveda Clinic. Advisory wellness support for patients. For severe pain, breathlessness, chest pain, fainting, bleeding, or rapidly worsening symptoms, seek emergency care.
+    </footer>
+  </div>
+
+  <script>
+    const API = {
+      health: "/health",
+      analyze: "/analyze",
+      analyzeFallback: "/api/ai/analyze",
+      book: "/book"
+    };
+
+    const state = {
+      lastAnalysis: null,
+      lastSymptoms: ""
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem("kash_ai_patient_history") || "[]");
+      } catch {
+        return [];
+      }
+    }
+
+    function saveHistory(entry) {
+      const next = [entry, ...getHistory()].slice(0, 8);
+      localStorage.setItem("kash_ai_patient_history", JSON.stringify(next));
+      renderHistory();
+    }
+
+    function textList(items, fallback) {
+      const list = Array.isArray(items) && items.length ? items : fallback;
+      return list.map((item) => `<li>${escapeHtml(String(item))}</li>`).join("");
+    }
+
+    function escapeHtml(value) {
+      return value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function deriveDoshas(symptoms) {
+      const text = symptoms.toLowerCase();
+      let vata = 28;
+      let pitta = 28;
+      let kapha = 24;
+
+      if (/gas|constipation|dry|anxiety|insomnia|pain|stiff|cramp|bloating/.test(text)) vata += 28;
+      if (/acid|burn|heat|anger|irrit|loose|rash|inflammation|headache/.test(text)) pitta += 30;
+      if (/cold|cough|mucus|heavy|slow|sleepy|congestion|weight|swelling/.test(text)) kapha += 30;
+      if (/stress|sleep|fatigue|tired/.test(text)) vata += 10;
+      if (/fever|infection/.test(text)) pitta += 12;
+
+      const total = vata + pitta + kapha;
+      return {
+        Vata: Math.round((vata / total) * 100),
+        Pitta: Math.round((pitta / total) * 100),
+        Kapha: Math.round((kapha / total) * 100)
+      };
+    }
+
+    function localPlan(symptoms) {
+      const dosha = deriveDoshas(symptoms);
+      const dominant = Object.entries(dosha).sort((a, b) => b[1] - a[1])[0][0];
+      const base = {
+        Vata: {
+          treatment: "Your symptoms suggest Vata aggravation. Focus on warmth, routine, gentle oil massage, early sleep, and easy-to-digest meals.",
+          diet: ["Warm cooked meals", "Ghee in moderation", "Moong dal khichdi"],
+          herbs: ["Ashwagandha", "Dashmool", "Triphala at night if constipated"],
+          medicines: ["Ashwagandha", "Triphala", "Mahanarayan oil"]
+        },
+        Pitta: {
+          treatment: "Your symptoms suggest Pitta aggravation. Focus on cooling foods, regular meals, reducing spicy and fried food, and calming the digestive fire.",
+          diet: ["Coconut water", "Amla", "Coriander and fennel water"],
+          herbs: ["Amla", "Guduchi", "Shatavari"],
+          medicines: ["Amla Juice", "Avipattikar Churna", "Guduchi tablets"]
+        },
+        Kapha: {
+          treatment: "Your symptoms suggest Kapha aggravation. Focus on light warm meals, movement, steam inhalation when congested, and avoiding excess cold or sweet foods.",
+          diet: ["Warm soups", "Ginger tea", "Light early dinner"],
+          herbs: ["Tulsi", "Trikatu", "Sitopaladi"],
+          medicines: ["Tulsi drops", "Trikatu Churna", "Sitopaladi Churna"]
+        }
+      };
+
+      return {
+        dosha,
+        dominant,
+        treatment: base[dominant].treatment,
+        diet: base[dominant].diet,
+        herbs: base[dominant].herbs,
+        medicines: base[dominant].medicines,
+        source: "local"
+      };
+    }
+
+    async function postJson(url, body) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        throw new Error(`${url} returned ${response.status}`);
+      }
+      return response.json();
+    }
+
+    function normalizeAnalysis(payload, symptoms) {
+      const fallback = localPlan(symptoms);
+      const responseText = payload?.response || payload?.answer || payload?.treatment || payload?.plan || "";
+      const dosha = payload?.dosha_scores || payload?.dosha || payload?.scores || fallback.dosha;
+      const treatment = responseText || fallback.treatment;
+
+      return {
+        dosha: {
+          Vata: Number(dosha.Vata ?? dosha.vata ?? fallback.dosha.Vata),
+          Pitta: Number(dosha.Pitta ?? dosha.pitta ?? fallback.dosha.Pitta),
+          Kapha: Number(dosha.Kapha ?? dosha.kapha ?? fallback.dosha.Kapha)
+        },
+        dominant: payload?.dominant_dosha || fallback.dominant,
+        treatment,
+        diet: payload?.diet || payload?.diet_plan || fallback.diet,
+        herbs: payload?.herbs || fallback.herbs,
+        medicines: payload?.medicines || payload?.medicine || fallback.medicines,
+        source: payload ? "backend" : "local"
+      };
+    }
+
+    async function analyzeSymptoms(symptoms) {
+      try {
+        const payload = await postJson(API.analyze, { symptoms });
+        return normalizeAnalysis(payload, symptoms);
+      } catch (firstError) {
+        try {
+          const payload = await postJson(API.analyzeFallback, { symptoms });
+          return normalizeAnalysis(payload, symptoms);
+        } catch {
+          return localPlan(symptoms);
+        }
+      }
+    }
+
+    function renderDoshas(scores) {
+      $("doshaList").innerHTML = Object.entries(scores)
+        .map(([name, value]) => {
+          const safeValue = Math.max(0, Math.min(100, Number(value) || 0));
+          return `
+            <div class="dosha-row">
+              <div class="dosha-head"><span>${name}</span><span>${safeValue}%</span></div>
+              <div class="bar"><span style="width:${safeValue}%"></span></div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    function renderResults(analysis, symptoms) {
+      state.lastAnalysis = analysis;
+      state.lastSymptoms = symptoms;
+      renderDoshas(analysis.dosha);
+      $("treatmentText").textContent = analysis.treatment;
+      $("dietList").innerHTML = textList(analysis.diet, ["Warm, fresh, seasonal meals"]);
+      $("herbList").innerHTML = textList(analysis.herbs, ["Amla", "Tulsi", "Triphala"]);
+      $("medicineList").innerHTML = textList(analysis.medicines, ["Doctor review recommended"]);
+      $("results").classList.add("visible");
+      $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      if (!history.length) {
+        $("historyList").innerHTML = '<div class="history-item">No saved analysis yet.</div>';
+        return;
+      }
+      $("historyList").innerHTML = history.map((item, index) => `
+        <button class="history-item" type="button" data-history-index="${index}">
+          <strong>${escapeHtml(item.date)} · ${escapeHtml(item.dominant || "Dosha review")}</strong>
+          ${escapeHtml(item.symptoms.slice(0, 150))}${item.symptoms.length > 150 ? "..." : ""}
+        </button>
+      `).join("");
+    }
+
+    async function checkHealth() {
+      try {
+        const response = await fetch(API.health, { headers: { Accept: "application/json" } });
+        if (!response.ok) throw new Error("Health check failed");
+        const data = await response.json().catch(() => ({}));
+        $("healthDot").classList.add("ok");
+        $("healthText").textContent = data?.status ? `Clinic online: ${data.status}` : "Clinic online";
+      } catch {
+        $("healthText").textContent = "Clinic status unavailable";
+      }
+    }
+
+    async function bookConsultation() {
+      $("bookButton").disabled = true;
+      $("bookButton").textContent = "Opening payment...";
+      const symptoms = state.lastSymptoms || $("symptoms").value.trim();
+
+      try {
+        const payload = await postJson(API.book, {
+          symptoms,
+          amount: 29900,
+          currency: "INR",
+          service: "ayurveda_consultation"
+        });
+
+        if (payload?.razorpay_order_id && window.Razorpay) {
+          const options = {
+            key: payload.key_id || payload.key || "",
+            amount: payload.amount || 29900,
+            currency: payload.currency || "INR",
+            name: "Kash AI Ayurveda Clinic",
+            description: "Ayurveda Consultation",
+            order_id: payload.razorpay_order_id,
+            handler: function () {
+              alert("Payment successful. Our clinic team will contact you soon.");
+            },
+            prefill: payload.prefill || {},
+            theme: { color: "#1f7a43" }
+          };
+          new Razorpay(options).open();
+        } else {
+          window.location.href = payload?.payment_url || "/payments/daily";
+        }
+      } catch {
+        window.location.href = "/payments/daily";
+      } finally {
+        $("bookButton").disabled = false;
+        $("bookButton").textContent = "Book Consultation ₹299";
+      }
+    }
+
+    $("symptomForm").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const symptoms = $("symptoms").value.trim();
+      if (!symptoms) {
+        $("statusText").textContent = "Please describe your symptoms first.";
+        $("statusText").classList.add("error");
+        return;
+      }
+
+      $("statusText").classList.remove("error");
+      $("statusText").textContent = "Analyzing symptoms and preparing your Ayurveda plan...";
+      $("analyzeButton").disabled = true;
+
+      try {
+        const analysis = await analyzeSymptoms(symptoms);
+        renderResults(analysis, symptoms);
+        saveHistory({
+          date: new Date().toLocaleString(),
+          symptoms,
+          dominant: analysis.dominant,
+          analysis
+        });
+        $("statusText").textContent = analysis.source === "backend"
+          ? "Analysis completed from Kash AI."
+          : "Analysis completed with offline guidance while the AI endpoint is unavailable.";
+      } finally {
+        $("analyzeButton").disabled = false;
+      }
+    });
+
+    document.querySelectorAll("[data-example]").forEach((button) => {
+      button.addEventListener("click", () => {
+        $("symptoms").value = button.dataset.example;
+        $("symptoms").focus();
+      });
+    });
+
+    $("historyList").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-history-index]");
+      if (!button) return;
+      const entry = getHistory()[Number(button.dataset.historyIndex)];
+      if (!entry) return;
+      $("symptoms").value = entry.symptoms;
+      renderResults(entry.analysis, entry.symptoms);
+    });
+
+    $("clearHistoryButton").addEventListener("click", () => {
+      localStorage.removeItem("kash_ai_patient_history");
+      renderHistory();
+    });
+
+    $("bookButton").addEventListener("click", bookConsultation);
+
+    checkHealth();
+    renderHistory();
+  </script>
+</body>
+</html>

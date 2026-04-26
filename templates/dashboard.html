@@ -24,6 +24,8 @@
                 <a href="/payments/daily">Payments</a>
                 <a href="/followups">Follow-ups</a>
                 <a href="/ai-analyzer">AI analyzer</a>
+                <!-- POLISH-1-ORDER-BUTTONS: Sidebar entry for direct patient ordering. -->
+                <a href="/medicines">Order Medicines</a>
                 <a href="/pharmacy/dashboard">Pharmacy</a>
             </nav>
             <div class="emr-sidebar-footer">
@@ -40,7 +42,10 @@
                     <p class="mb-0">Today: {{ current_datetime.strftime('%d %b %Y, %I:%M %p') }}</p>
                 </div>
                 <div class="emr-topbar-actions">
+                    <!-- POLISH-3-ROLE-UX: Separate doctor work from patient ordering in the main action strip. -->
+                    <span class="badge text-bg-light align-self-center">Doctor Flow</span>
                     <a href="#add-patient" class="btn btn-primary">Add Patient</a>
+                    <a href="/medicines" class="btn btn-success">Order Medicines</a>
                     {% if patients %}
                     <a href="/patients/{{ patients[0].id }}/prescriptions/new" class="btn btn-dark">New Prescription</a>
                     {% else %}
@@ -52,7 +57,7 @@
             {% if demo_mode_active %}
             <section class="emr-banner">
                 <div>
-                    <strong>Demo mode is active</strong>
+                    <strong>Demo Mode is active</strong>
                     <p class="mb-0">Sample patients and visits are loaded for this account.</p>
                 </div>
                 <form method="post" action="/demo/reset" data-confirm-submit="Reset demo data for this account?" data-loading-form>
@@ -68,10 +73,12 @@
 
             <section class="emr-hero">
                 <div>
-                    <p class="emr-kicker">Today</p>
-                    <h2>Keep the clinic moving with the next right action.</h2>
-                    <p>Appointments, collections, follow-ups, and prescriptions are organized around the work your team needs to finish today.</p>
-                </div>
+                            <p class="emr-kicker">Today</p>
+                            <h2>Keep the clinic moving with the next right action.</h2>
+                            <p>Appointments, collections, follow-ups, and prescriptions are organized around the work your team needs to finish today.</p>
+                            <!-- POLISH-3-ROLE-UX: Make the patient commerce path explicit without adding a new guarded route. -->
+                            <a href="/medicines" class="btn btn-success mt-2">Patient: Order Medicines</a>
+                        </div>
                 <div class="emr-status-panel">
                     <span>Open work</span>
                     <strong>{{ todays_appointments + pending_payments + followups_due }}</strong>

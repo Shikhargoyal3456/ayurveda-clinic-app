@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 
 from sqlalchemy import Date, DateTime, Enum as SAEnum, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship, synonym
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
@@ -47,9 +47,6 @@ class ClinicSubscription(Base):
     current_period_end: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
-    doctor_id = synonym("user_id")
-    plan = synonym("plan_id")
-    expires_at = synonym("current_period_end")
     doctor = relationship("Doctor")
 
 

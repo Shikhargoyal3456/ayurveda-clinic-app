@@ -22,6 +22,11 @@ from utils.subscription_utils import (
     summarize_subscription_status,
     update_subscription_from_checkout,
 )
+from services.subscription_service import (
+    create_subscription as create_medicine_subscription,
+    get_user_subscriptions,
+    trigger_refill,
+)
 
 
 router = APIRouter(tags=["subscriptions"])
@@ -50,6 +55,31 @@ def subscription_status(
 ):
     seed_free_trials_for_existing_users(db)
     return JSONResponse(summarize_subscription_status(db, doctor))
+
+
+@router.post("/subscriptions/create")
+async def create_patient_medicine_subscription(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    result = create_medicine_subscription(
+        str(body.get("user_id") or ""),
+        body.get("medicines") if isinstance(body.get("medicines"), list) else [],
+        str(body.get("frequency") or "monthly"),
+    )
+    status_code = 200 if result.get("success") else 400
+    return JSONResponse(result, status_code=status_code)
+
+
+@router.get("/subscriptions/{user_id}")
+def patient_medicine_subscriptions(user_id: str):
+    return JSONResponse({"subscriptions": get_user_subscriptions(user_id)})
+
+
+@router.post("/subscriptions/trigger-refill")
+def trigger_medicine_refill():
+    return JSONResponse(trigger_refill())
 
 
 @router.post("/subscribe/{plan_id}")

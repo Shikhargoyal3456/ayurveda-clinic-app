@@ -5,9 +5,10 @@ import re
 import tempfile
 from pathlib import Path
 
+import requests
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.orm import Session, joinedload
@@ -201,8 +202,71 @@ def _get_patient_or_404(db: Session, doctor_id: int, patient_id: int) -> Patient
     return patient
 
 
+def _extract_scanned_medicines(analysis: str) -> list[str]:
+    medicines: list[str] = []
+    capture = False
+    for line in analysis.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        upper = stripped.upper()
+        if "MEDICINES DETECTED" in upper:
+            capture = True
+            continue
+        if capture and ("MEDICINE DETAILS" in upper or stripped.startswith("---")):
+            if medicines:
+                break
+        if capture:
+            cleaned = re.sub(r"^[\-\*\d\.\s]+", "", stripped).strip()
+            cleaned = cleaned.replace("**", "").strip("* ")
+            if cleaned and "MEDICINES DETECTED" not in cleaned.upper():
+                medicines.append(cleaned)
+    return medicines[:12]
+
+
 def _set_case_ai_result(request: Request, key: str, payload: dict[str, object]) -> None:
     request.session[key] = payload
+
+
+@router.post("/scan-prescription/")
+async def scan_prescription(
+    prescription_image: UploadFile = File(...),
+    phone: str = Form(default=""),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _ = doctor
+    if not prescription_image.filename:
+        return JSONResponse({"success": False, "error": "Prescription image is required."}, status_code=400)
+
+    try:
+        image_bytes = await prescription_image.read()
+        files = {
+            "image": (
+                prescription_image.filename,
+                image_bytes,
+                prescription_image.content_type or "application/octet-stream",
+            )
+        }
+        data = {"phone": phone} if phone else {}
+
+        response = await run_in_threadpool(
+            requests.post,
+            "http://127.0.0.1:3000/prescriptions/scan",
+            files=files,
+            data=data,
+            timeout=60,
+        )
+        payload = response.json()
+        analysis = str(payload.get("analysis") or payload.get("fullAnalysis") or "")
+        payload.setdefault("success", response.ok)
+        payload.setdefault("fullAnalysis", analysis)
+        payload.setdefault("medicines", _extract_scanned_medicines(analysis))
+        return JSONResponse(payload, status_code=response.status_code)
+    except requests.exceptions.Timeout:
+        return JSONResponse({"success": False, "error": "Scanner timeout. Please try again."}, status_code=504)
+    except Exception as exc:
+        logger.exception("Prescription scanner proxy failed: %s", exc)
+        return JSONResponse({"success": False, "error": str(exc)}, status_code=500)
 
 
 @router.get("/pharmacy/order/{prescription_token}")

@@ -37,6 +37,7 @@ async def test_rate_limiting_returns_429(authenticated_client, monkeypatch):
         headers={"X-CSRF-Token": csrf_token},
     )
     assert limited.status_code == 429
+    assert limited.headers["retry-after"]
     _RATE_LIMIT_BUCKETS.clear()
 
 

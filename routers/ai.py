@@ -1,8 +1,6 @@
 import logging
-import time
-from threading import Lock
-from collections import defaultdict, deque
 from datetime import datetime, timezone
+from threading import Lock
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
@@ -11,7 +9,15 @@ from fastapi.templating import Jinja2Templates
 
 from app.analytics import track_event
 from app.audit import write_audit_event
-from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, rate_limit_dependency, verify_csrf
+from app.auth import (
+    _RATE_LIMIT_BUCKETS,
+    _apply_rate_limit,
+    ensure_csrf_token,
+    get_current_doctor,
+    pop_flash,
+    rate_limit_dependency,
+    verify_csrf,
+)
 from app.config import settings
 from app.models import Doctor
 try:
@@ -48,7 +54,7 @@ rebuild_status = {
     "progress_message": "idle",
 }
 _rebuild_status_lock = Lock()
-_AI_RATE_LIMIT_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
+_AI_RATE_LIMIT_BUCKETS = _RATE_LIMIT_BUCKETS
 _AI_EMERGENCY_KEYWORDS = ["chest pain", "bleeding", "unconscious"]
 
 
@@ -80,14 +86,14 @@ async def _extract_symptoms(request: Request) -> str:
 
 
 async def _ai_rate_limit(request: Request, doctor: Doctor = Depends(get_current_doctor)) -> None:
-    now = time.time()
     key = f"ai:{doctor.id}:{request.session.get('doctor_id', 'session')}"
-    entries = _AI_RATE_LIMIT_BUCKETS[key]
-    while entries and now - entries[0] > 60:
-        entries.popleft()
-    if len(entries) >= 10:
-        raise HTTPException(status_code=429, detail="Too many AI analysis requests. Please wait and try again.")
-    entries.append(now)
+    retry_after_seconds = _apply_rate_limit(key, limit=10, window_seconds=60)
+    if retry_after_seconds is not None:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many AI analysis requests. Please wait and try again.",
+            headers={"Retry-After": str(retry_after_seconds)},
+        )
 
 
 @router.get("/ai-analyzer")

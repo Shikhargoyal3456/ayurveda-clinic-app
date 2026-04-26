@@ -6,6 +6,7 @@ from urllib.parse import quote
 import requests
 
 from app.config import settings
+from services.feature_flags import is_whatsapp_enabled
 
 
 logger = logging.getLogger(__name__)
@@ -127,6 +128,10 @@ def send_whatsapp_message(phone: str, message: str) -> bool:
         return False
 
     config = _meta_whatsapp_config()
+    # POLISH-8-WHATSAPP-UPDATES: External WhatsApp delivery is optional and falls back to wa.me links.
+    if not is_whatsapp_enabled():
+        logger.info("WhatsApp API disabled by ENABLE_WHATSAPP_API; using wa.me link flow for to=%s", normalized_phone)
+        return False
     if config["access_token"] and config["phone_number_id"]:
         try:
             if config["template_name"]:

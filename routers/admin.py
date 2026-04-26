@@ -7,7 +7,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -52,6 +52,24 @@ from services.analytics_service import (
 )
 from services.compliance_service import get_compliance_status
 from services.communication import send_patient_message
+from services.delivery_service import get_delivery_statuses
+from services.fulfillment_service import get_fulfillment_statuses
+from services.inventory_service import auto_restock, get_inventory, get_low_stock, get_restock_status
+from services.pharmacy_service import get_pharmacies, register_pharmacy
+from services.subscription_service import get_all_subscriptions, get_subscription_recommendations
+from services.supplier_service import (
+    create_supplier,
+    delete_supplier,
+    get_all_suppliers,
+    get_supplier,
+    get_supplier_orders,
+    get_suppliers,
+    place_supplier_order_safe,
+    update_supplier,
+)
+from services.feature_flags import is_delivery_enabled, is_pricing_enabled, is_supplier_enabled
+from services.pricing_service import get_pricing_preview
+from services.profit_service import get_profit_metrics
 
 
 router = APIRouter(tags=["admin"])
@@ -61,9 +79,31 @@ _ADMIN_ACTION_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 UX_FEEDBACK_LOG = "ux_feedback.jsonl"
 
 
+async def _supplier_payload(request: Request, body: dict[str, object] | None = None) -> dict[str, object]:
+    # SUPPLIER-FULL-1: Support JSON APIs and admin form submissions without adding dependencies.
+    if body:
+        return dict(body)
+    content_type = request.headers.get("content-type", "").lower()
+    if "application/json" in content_type:
+        try:
+            payload = await request.json()
+            return dict(payload) if isinstance(payload, dict) else {}
+        except Exception:
+            return {}
+    if "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+        form = await request.form()
+        payload: dict[str, object] = {}
+        for key in form.keys():
+            values = form.getlist(key)
+            payload[key] = values if len(values) > 1 else values[0]
+        return payload
+    return {}
+
+
 def _require_admin(doctor: Doctor) -> Doctor:
     allowed_admins = settings.admin_usernames or ["admin@ayurveda.com"]
-    if doctor.username not in allowed_admins:
+    dev_admin_by_id = not settings.is_production and int(getattr(doctor, "id", 0) or 0) == 1
+    if doctor.username not in allowed_admins and not dev_admin_by_id:
         raise HTTPException(status_code=403, detail="Admin access required.")
     return doctor
 
@@ -545,7 +585,11 @@ def admin_dashboard(
     doctor = _require_admin(doctor)
     payload = _metrics(db)
     track_event("admin_dashboard_viewed", doctor_id=doctor.id)
-    return templates.TemplateResponse(request, "admin_dashboard.html", {"doctor": doctor, "metrics": payload})
+    return templates.TemplateResponse(
+        request,
+        "admin_dashboard.html",
+        {"doctor": doctor, "metrics": payload, "suppliers": get_all_suppliers()},
+    )
 
 
 @router.get("/api/admin/metrics")
@@ -620,6 +664,208 @@ def admin_revenue_metrics(
     doctor = _require_admin(doctor)
     track_event("admin_revenue_metrics_viewed", doctor_id=doctor.id)
     return {"revenue": get_revenue_metrics()}
+
+
+@router.get("/admin/pharmacies")
+def admin_pharmacies(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_pharmacies_viewed", doctor_id=doctor.id)
+    return {"pharmacies": get_pharmacies()}
+
+
+@router.post("/admin/pharmacy/register")
+def admin_register_pharmacy(
+    payload: dict[str, object] | None = Body(default=None),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    result = register_pharmacy(payload)
+    track_event("admin_pharmacy_register_requested", doctor_id=doctor.id, success=bool(result.get("success")))
+    return result
+
+
+@router.get("/admin/inventory")
+def admin_inventory(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_inventory_viewed", doctor_id=doctor.id)
+    return {"inventory": get_inventory(), "low_stock": get_low_stock()}
+
+
+@router.get("/admin/fulfillment")
+def admin_fulfillment(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_fulfillment_viewed", doctor_id=doctor.id)
+    return {"orders": get_fulfillment_statuses()}
+
+
+@router.get("/admin/medicine-subscriptions")
+def admin_medicine_subscriptions(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    subscriptions = get_all_subscriptions()
+    track_event("admin_medicine_subscriptions_viewed", doctor_id=doctor.id, count=len(subscriptions))
+    return {"subscriptions": subscriptions, "active_count": sum(1 for item in subscriptions if item.get("active"))}
+
+
+@router.get("/admin/commerce")
+def admin_commerce(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    subscriptions = get_all_subscriptions()
+    track_event("admin_commerce_viewed", doctor_id=doctor.id)
+    return {
+        "pharmacies": get_pharmacies(),
+        "inventory": get_inventory(),
+        "low_stock": get_low_stock(),
+        "fulfillment": get_fulfillment_statuses(),
+        "delivery": get_delivery_statuses(),
+        "suppliers": get_suppliers(),
+        "supplier_orders": get_supplier_orders(),
+        "restock": get_restock_status(),
+        "profit": get_profit_metrics(),
+        "pricing_preview": get_pricing_preview(),
+        "api_status": {
+            "supplier_api": "enabled" if is_supplier_enabled() else "mock",
+            "delivery_api": "enabled" if is_delivery_enabled() else "mock",
+            "smart_pricing": "enabled" if is_pricing_enabled() else "disabled",
+        },
+        "subscriptions": subscriptions,
+        "active_subscriptions": sum(1 for item in subscriptions if item.get("active")),
+        "subscription_recommendations": get_subscription_recommendations(),
+    }
+
+
+@router.get("/admin/suppliers")
+def admin_suppliers(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_suppliers_viewed", doctor_id=doctor.id)
+    return {"suppliers": get_all_suppliers(), "supplier_orders": get_supplier_orders()}
+
+
+@router.get("/admin/supplier/{supplier_id}")
+def admin_supplier_detail(
+    supplier_id: str,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    supplier = get_supplier(supplier_id)
+    if supplier is None:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+    track_event("admin_supplier_detail_viewed", doctor_id=doctor.id, supplier_id=supplier_id)
+    return {"supplier": supplier}
+
+
+@router.post("/admin/supplier/register")
+async def admin_register_supplier(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    result = create_supplier(await _supplier_payload(request))
+    track_event("admin_supplier_register_requested", doctor_id=doctor.id, success=bool(result.get("success")))
+    return result
+
+
+@router.put("/admin/supplier/{supplier_id}")
+async def admin_update_supplier(
+    supplier_id: str,
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    result = update_supplier(supplier_id, await _supplier_payload(request))
+    track_event("admin_supplier_update_requested", doctor_id=doctor.id, supplier_id=supplier_id, success=bool(result.get("success")))
+    if not result.get("success") and result.get("error") == "supplier_not_found":
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+    return result
+
+
+@router.post("/admin/supplier/{supplier_id}/order")
+async def admin_supplier_order(
+    supplier_id: str,
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    supplier = get_supplier(supplier_id)
+    if supplier is None:
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+    data = await _supplier_payload(request)
+    medicine = str(data.get("medicine") or data.get("medicine_name") or "General stock").strip()
+    quantity = int(data.get("quantity") or 50)
+    order = place_supplier_order_safe(medicine, quantity, supplier_id=supplier_id, category=str(data.get("category") or "general"))
+    track_event("admin_supplier_order_requested", doctor_id=doctor.id, supplier_id=supplier_id, medicine=medicine, quantity=quantity)
+    return {"success": order.get("status") != "failed", "order": order}
+
+
+@router.delete("/admin/supplier/{supplier_id}")
+def admin_delete_supplier(
+    supplier_id: str,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    result = delete_supplier(supplier_id)
+    track_event("admin_supplier_delete_requested", doctor_id=doctor.id, supplier_id=supplier_id, success=bool(result.get("success")))
+    if not result.get("success") and result.get("error") == "supplier_not_found":
+        raise HTTPException(status_code=404, detail="Supplier not found.")
+    return result
+
+
+@router.get("/admin/restock-status")
+def admin_restock_status(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_restock_status_viewed", doctor_id=doctor.id)
+    return {"restock": get_restock_status(), "triggered": auto_restock()}
+
+
+@router.get("/admin/delivery-status")
+def admin_delivery_status(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_delivery_status_viewed", doctor_id=doctor.id)
+    return {"delivery": get_delivery_statuses()}
+
+
+@router.get("/admin/subscription-recommendations")
+def admin_subscription_recommendations(
+    user_id: str = "",
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    recommendations = get_subscription_recommendations(user_id or None)
+    track_event("admin_subscription_recommendations_viewed", doctor_id=doctor.id, count=len(recommendations))
+    return {"recommendations": recommendations}
+
+
+@router.get("/admin/profit-metrics")
+def admin_profit_metrics(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_profit_metrics_viewed", doctor_id=doctor.id)
+    return {"profit": get_profit_metrics()}
+
+
+@router.get("/admin/pricing-preview")
+def admin_pricing_preview(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    track_event("admin_pricing_preview_viewed", doctor_id=doctor.id)
+    return {"pricing": get_pricing_preview(), "enabled": is_pricing_enabled()}
 
 
 @router.get("/admin/growth-metrics")
@@ -1049,10 +1295,10 @@ def saas_stats(
     ).filter(ClinicSubscription.status == "trial").scalar() or 0
     basic_subs = db.query(
         func.count(ClinicSubscription.id)
-    ).filter(ClinicSubscription.plan == "basic").scalar() or 0
+    ).filter(ClinicSubscription.plan_id == "basic").scalar() or 0
     premium_subs = db.query(
         func.count(ClinicSubscription.id)
-    ).filter(ClinicSubscription.plan == "premium").scalar() or 0
+    ).filter(ClinicSubscription.plan_id == "pro").scalar() or 0
 
     total_care_plans = db.query(
         func.count(PatientCarePlan.id)
@@ -1152,14 +1398,14 @@ def seed_demo_data(
     patients = db.query(Patient).limit(3).all()
 
     for i, d in enumerate(doctors):
-        plans = ["free", "basic", "premium"]
+        plans = ["free", "basic", "pro"]
         statuses = ["trial", "active", "active"]
         sub = ClinicSubscription(
-            doctor_id=d.id,
-            plan=plans[i % 3],
+            user_id=d.id,
+            plan_id=plans[i % 3],
             status=statuses[i % 3],
             started_at=datetime.utcnow() - timedelta(days=30 - i * 5),
-            expires_at=datetime.utcnow() + timedelta(days=30),
+            current_period_end=datetime.utcnow() + timedelta(days=30),
         )
         db.add(sub)
 

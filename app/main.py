@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import logging
 import re
 import uuid
@@ -20,17 +19,36 @@ from app.analytics import track_event
 from app.config import settings
 from app.database import SessionLocal, init_db
 try:
-    from app.health import build_health_report
+    from app.health import build_health_report, production_launch_metrics
+    from services.cache_service import redis_ping
 except Exception as exc:
     _health_import_error = str(exc)
 
     def build_health_report() -> dict[str, str]:
         return {"status": "degraded", "error": f"Health report unavailable: {_health_import_error}"}
+
+    def production_launch_metrics() -> dict[str, object]:
+        return {
+            "app": settings.app_name,
+            "version": settings.app_version,
+            "environment": settings.environment,
+            "sentry": False,
+            "cloud_run_detected": False,
+            "cloud_run_service": "",
+            "medicines_count": 0,
+            "suppliers_count": 0,
+            "patients_active": 0,
+            "timestamp": "",
+        }
+
+    async def redis_ping() -> bool:
+        return False
 from app.logging_config import clear_request_id, configure_logging, set_request_id
 from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
 from models.subscription import ClinicSubscription  # noqa: F401
 from app.pdf_loader import ensure_runtime_dirs
+from app.runtime import request_load_controller
 try:
     from app.rag_engine import get_rag_engine
 except Exception as exc:
@@ -47,6 +65,7 @@ from routers.cases import router as cases_router
 from routers.patients import router as patients_router
 from routers.order_medicines import router as order_medicines_router
 from routers.pharmacy import router as pharmacy_router
+from routers.public_clinic import router as public_clinic_router
 from routers.subscriptions import router as subscriptions_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
@@ -67,6 +86,26 @@ logging.basicConfig(
 
 configure_logging()
 logger = logging.getLogger(__name__)
+
+
+def _masked_setting(name: str, value: str) -> str:
+    if not value:
+        return f"{name}=missing"
+    return f"{name}={value[:6]}..."
+
+
+def _log_production_startup_warnings() -> None:
+    if not settings.is_production:
+        return
+    # PROD-FIX-5: Production secrets rotation notice without printing full secret values.
+    detected = [
+        _masked_setting("RAZORPAY_KEY_ID", settings.razorpay_key_id),
+        _masked_setting("DATABASE_URL", settings.database_url),
+    ]
+    logger.warning(
+        "PRODUCTION: Rotate all API keys immediately if .env was ever committed/shared. Current keys detected: %s",
+        ", ".join(detected),
+    )
 
 
 def _subscription_feature_for_request(request: Request) -> str | None:
@@ -108,7 +147,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=()"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(self)"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Content-Security-Policy"] = (
@@ -122,6 +161,28 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             "frame-ancestors 'none';"
         )
         clear_request_id()
+        return response
+
+
+class OverloadProtectionMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in {"/health", "/healthz"}:
+            return await call_next(request)
+        acquired = await request_load_controller.acquire()
+        if not acquired:
+            logger.warning("Overload protection rejected request path=%s", request.url.path)
+            return JSONResponse(
+                status_code=503,
+                content={"error": "Server is busy. Please retry shortly."},
+                headers={"Retry-After": "2"},
+            )
+        try:
+            response = await call_next(request)
+        finally:
+            await request_load_controller.release()
+        snapshot = request_load_controller.snapshot()
+        response.headers["X-In-Flight-Requests"] = str(snapshot.in_flight)
+        response.headers["X-Request-Capacity"] = str(snapshot.limit)
         return response
 
 
@@ -154,6 +215,7 @@ def _run_startup_warmups() -> None:
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     ensure_runtime_dirs()
+    _log_production_startup_warnings()
     init_db()
     track_event("application_started", environment=settings.environment)
     Thread(target=_run_startup_warmups, name="startup-warmups", daemon=True).start()
@@ -161,6 +223,20 @@ async def lifespan(_: FastAPI):
 
 
 def create_app() -> FastAPI:
+    if settings.sentry_dsn:
+        try:
+            import sentry_sdk  # type: ignore
+
+            # PROD-LAUNCH-1: Capture full traces for first production launch, no-op if SDK is unavailable.
+            sentry_sdk.init(
+                dsn=settings.sentry_dsn,
+                traces_sample_rate=1.0 if settings.is_production else 0.1,
+                environment=settings.environment,
+            )
+            logger.info("Sentry error tracking configured.")
+        except Exception as exc:
+            logger.warning("Sentry configuration skipped: %s", exc)
+
     application = FastAPI(
         title="Ayurvedic Clinic Management System",
         version=settings.app_version,
@@ -183,6 +259,7 @@ def create_app() -> FastAPI:
     application.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts or ["*"])
     application.add_middleware(GZipMiddleware, minimum_size=512)
     application.add_middleware(RequestContextMiddleware)
+    application.add_middleware(OverloadProtectionMiddleware)
 
     @application.middleware("http")
     async def https_redirect_middleware(request: Request, call_next):
@@ -220,6 +297,7 @@ def create_app() -> FastAPI:
             db.close()
 
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
+    application.include_router(public_clinic_router)
     application.include_router(auth_router)
     application.include_router(patients_router)
     application.include_router(cases_router)
@@ -235,8 +313,12 @@ def create_app() -> FastAPI:
     application.include_router(demo_router)
 
     @application.get("/healthz")
-    def healthcheck():
-        return JSONResponse(build_health_report())
+    async def healthcheck():
+        report = build_health_report()
+        report.update(production_launch_metrics())
+        report["redis_ping"] = await redis_ping()
+        report["launch_status"] = "healthy" if report.get("status") == "ok" else report.get("status", "degraded")
+        return JSONResponse(report)
 
     @application.get("/health")
     def simple_healthcheck():

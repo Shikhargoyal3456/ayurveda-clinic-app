@@ -26,6 +26,11 @@ from app.models import Patient
 from models.medicine import Medicine, MedicineOrder, Pharmacy, utc_now
 from services import whatsapp
 from services.communication import send_patient_message
+from services.delivery_service import assign_delivery_safe, update_delivery_status
+from services.fulfillment_service import track_order, update_status
+from services.geocoding import get_nearby_pharmacies
+from services.inventory_service import reduce_stock
+from services.medicine_catalog import get_default_medicines
 
 
 router = APIRouter(tags=["pharmacy"])
@@ -60,6 +65,38 @@ def can_transition(current: str, target: str) -> bool:
 
 def _is_ten_digit_phone(phone: str) -> bool:
     return bool(re.fullmatch(r"\d{10}", phone.strip()))
+
+
+def _fallback_razorpay_order_id(order: MedicineOrder) -> str:
+    return "order_" + str(order.id)
+
+
+def _create_razorpay_order_id(order: MedicineOrder, pharmacy: Pharmacy) -> str:
+    # PROD-FIX-4: Create a real Razorpay order id instead of only an internal placeholder.
+    logger.info("Creating Razorpay order in %s mode: %s", settings.razorpay_mode, order.id)
+    if settings.razorpay_mode == "live" and settings.razorpay_key_id.startswith("rzp_test"):
+        logger.warning("Razorpay is in live mode but the configured key looks like a test key.")
+    if client is None or not settings.razorpay_key_id or not settings.razorpay_key_secret:
+        logger.warning("Razorpay unavailable or not configured. Falling back to internal order id for order %s.", order.id)
+        return _fallback_razorpay_order_id(order)
+    try:
+        razorpay_order = client.order.create(
+            {
+                "amount": int(round(float(order.total_amount or 0) * 100)),
+                "currency": "INR",
+                "receipt": f"medicine_{order.id}",
+                "notes": {
+                    "order_id": str(order.id),
+                    "pharmacy_id": str(pharmacy.id),
+                    "mode": settings.razorpay_mode,
+                },
+            }
+        )
+        return str(razorpay_order["id"])
+    except Exception as exc:
+        logger.exception("Razorpay order creation failed for medicine order %s: %s", order.id, exc)
+        track_error_event("payment_order_creation_failure", "/patient/order/create", str(exc), order_id=order.id)
+        return _fallback_razorpay_order_id(order)
 
 
 def _is_order_delayed(order: MedicineOrder) -> bool:
@@ -136,6 +173,15 @@ def _patient_email_for_order(db: Session, order: MedicineOrder) -> str:
     except Exception as exc:
         logger.exception("Patient email lookup failed for order_id=%s: %s", order.id, exc)
         return ""
+
+
+def _reduce_order_inventory(order: MedicineOrder) -> None:
+    try:
+        for item in _load_order_items(order):
+            if isinstance(item, dict):
+                reduce_stock(str(item.get("name") or ""), int(item.get("qty") or 1))
+    except Exception as exc:
+        logger.exception("Inventory update failed for order_id=%s: %s", order.id, exc)
 
 
 def _order_followup_anchor(order: MedicineOrder):
@@ -272,6 +318,28 @@ def patient_medicines(db: Session = Depends(get_db)):
         .order_by(Medicine.name.asc())
         .all()
     )
+    if not medicines:
+        try:
+            return [
+                {
+                    "id": -index,
+                    "name": item["name"],
+                    "generic_name": item["name"],
+                    "category": item["system"],
+                    "price": 0,
+                    "unit": "catalog",
+                    "requires_prescription": not bool(item.get("otc")),
+                    "prescription_required": not bool(item.get("otc")),
+                    "pharmacy_id": "",
+                    "fallback_only": True,
+                    "system": item["system"],
+                    "otc": bool(item.get("otc")),
+                }
+                for index, item in enumerate(get_default_medicines(), start=1)
+            ]
+        except Exception as exc:
+            logger.exception("Default medicine catalog fallback failed: %s", exc)
+            return []
     return [
         {
             "id": medicine.id,
@@ -281,6 +349,7 @@ def patient_medicines(db: Session = Depends(get_db)):
             "price": medicine.price,
             "unit": medicine.unit,
             "requires_prescription": medicine.requires_prescription,
+            "prescription_required": medicine.requires_prescription,
             "pharmacy_id": medicine.pharmacy_id,
         }
         for medicine in medicines
@@ -292,52 +361,8 @@ def patient_medicines(db: Session = Depends(get_db)):
 async def nearby_pharmacies(lat: float | None = None, lng: float | None = None):
     if lat is None or lng is None:
         raise HTTPException(status_code=400, detail="lat and lng are required")
-
-    api_key = settings.google_maps_api_key
-    if not api_key:
-        logger.warning("Google Maps API key is not configured.")
-        return []
-
-    try:
-        import requests
-
-        response = await run_in_threadpool(
-            requests.get,
-            "https://maps.googleapis.com/maps/api/place/nearbysearch/json",
-            params={
-                "location": f"{lat},{lng}",
-                "radius": 3000,
-                "type": "pharmacy",
-                "key": api_key,
-            },
-            timeout=10,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        pharmacies = []
-        for result in payload.get("results", [])[:10]:
-            location = result.get("geometry", {}).get("location", {})
-            rating = result.get("rating")
-            if rating is not None and rating < 3.5:
-                continue
-
-            pharmacies.append(
-                {
-                    "name": result.get("name", ""),
-                    "vicinity": result.get("vicinity", ""),
-                    "rating": rating,
-                    "lat": location.get("lat"),
-                    "lng": location.get("lng"),
-                    "place_id": result.get("place_id"),
-                    "open_now": result.get("opening_hours", {}).get("open_now"),
-                }
-            )
-        pharmacies.sort(key=lambda item: (item.get("rating") or 0), reverse=True)
-        return pharmacies
-    except Exception as exc:
-        logger.exception("Google Places pharmacy lookup failed: %s", exc)
-        track_error_event("pharmacy_lookup_failure", "/patient/nearby-pharmacies", str(exc))
-        return []
+    # GRAND-UNIFIED-1: Use Places API (New) through a cached service with static fallback.
+    return await run_in_threadpool(get_nearby_pharmacies, lat, lng)
 
 
 @router.post("/patient/ai-suggest")
@@ -466,13 +491,15 @@ def create_patient_order(
     commit_with_retry(db)
     db.refresh(order)
 
-    order.razorpay_order_id = "order_" + str(order.id)
+    order.razorpay_order_id = _create_razorpay_order_id(order, pharmacy)
     commit_with_retry(db)
     db.refresh(order)
 
     write_audit_event("medicine_order_created", request, order_id=order.id, pharmacy_id=pharmacy.id)
     track_event("medicine_order_created", order_id=order.id, pharmacy_id=pharmacy.id, amount=total_amount)
     track_event("order_created", order_id=order.id, pharmacy_id=pharmacy.id, total=float(total_amount), item_count=len(normalized_items))
+    update_status(order.id, "placed")
+    assign_delivery_safe(order.id)
     return {
         "order_id": order.id,
         "amount": total_amount,
@@ -578,7 +605,8 @@ async def verify_patient_order(
         send_patient_message,
         order.patient_phone,
         patient_email,
-        "Payment successful. Pharmacy will confirm shortly.",
+        # POLISH-8-WHATSAPP-UPDATES: Patient update copy for payment + pharmacy assignment.
+        f"Payment received for Order #{order.id}. {order.pharmacy.name} will deliver after pharmacy confirmation.",
         "Kash AI payment successful",
     )
     if not pharmacy_notified or not patient_result.get("whatsapp") or (patient_email and not patient_result.get("email")):
@@ -587,6 +615,8 @@ async def verify_patient_order(
         db.refresh(order)
 
     write_audit_event("medicine_order_payment_verified", request, order_id=order.id, payment_id=payment_id_value)
+    _reduce_order_inventory(order)
+    update_status(order.id, "packed")
     track_event("medicine_order_payment_verified", order_id=order.id, payment_status=order.payment_status)
     track_event("payment_success", order_id=order.id, total=float(order.total_amount))
     return {
@@ -618,6 +648,21 @@ def patient_order_status(order_id: int, db: Session = Depends(get_db)):
         "source": _order_source(order),
         "is_repeat_order": _is_repeat_order(order),
     }
+
+
+@router.get("/order-status/{order_id}")
+def public_order_fulfillment_status(order_id: str, db: Session = Depends(get_db)):
+    # POLISH-1-ORDER-BUTTONS: Add reorder metadata while preserving the existing fulfillment payload.
+    payload = track_order(order_id)
+    try:
+        numeric_order_id = int(order_id)
+        order = db.get(MedicineOrder, numeric_order_id)
+        if order is not None:
+            payload["order_again_url"] = f"/pharmacy/order-again/{_order_again_token(order.id)}"
+            payload["reorder_label"] = "Reorder"
+    except Exception as exc:
+        logger.exception("Order status reorder metadata failed for order_id=%s: %s", order_id, exc)
+    return payload
 
 
 @router.get("/pharmacy/dashboard", response_class=HTMLResponse)
@@ -669,6 +714,7 @@ def confirm_pharmacy_order(
     order.status = "confirmed"
     commit_with_retry(db)
     db.refresh(order)
+    update_status(order.id, "packed")
     write_audit_event("medicine_order_confirmed", request, order_id=order.id, pharmacy_id=order.pharmacy_id)
     track_event("medicine_order_confirmed", order_id=order.id, pharmacy_id=order.pharmacy_id)
     if _wants_json(request):
@@ -692,6 +738,8 @@ def dispatch_pharmacy_order(
     order.status = "dispatched"
     commit_with_retry(db)
     db.refresh(order)
+    update_status(order.id, "shipped")
+    update_delivery_status(order.id, "out_for_delivery")
     write_audit_event("medicine_order_dispatched", request, order_id=order.id, pharmacy_id=order.pharmacy_id)
     track_event("medicine_order_dispatched", order_id=order.id, pharmacy_id=order.pharmacy_id)
     if _wants_json(request):
@@ -778,6 +826,8 @@ def deliver_pharmacy_order(
     order.status = "delivered"
     commit_with_retry(db)
     db.refresh(order)
+    update_status(order.id, "delivered")
+    update_delivery_status(order.id, "delivered")
     patient_email = _patient_email_for_order(db, order)
     patient_result = send_patient_message(
         order.patient_phone,

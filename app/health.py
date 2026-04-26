@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,9 @@ from app.ai_fallback import fallback_health_status
 from app.config import settings
 from app.database import engine
 from app.rag_engine import get_rag_engine
+from app.runtime import request_load_controller
 from services.ai_provider import GROQ_API_KEY
+from services.cache_service import redis_health_status
 from services.whatsapp import whatsapp_health_status
 
 
@@ -106,6 +109,8 @@ def build_health_report() -> dict[str, Any]:
     disk = disk_health()
     memory = memory_health()
     analytics = analytics_health()
+    redis = redis_health_status()
+    runtime_load = request_load_controller.snapshot()
     overall = "ok"
     if any(item.get("status") == "error" for item in (database, ai, rag, disk)):
         overall = "degraded"
@@ -120,11 +125,62 @@ def build_health_report() -> dict[str, Any]:
         "errors_logged": analytics["errors_logged"],
         "rag": rag["status"],
         "whatsapp": whatsapp["status"],
+        "redis": redis["status"],
+        "runtime": {
+            "status": "protected" if runtime_load.enabled else "unbounded",
+            "max_concurrent_requests": runtime_load.limit,
+            "in_flight_requests": runtime_load.in_flight,
+            "available_request_slots": runtime_load.available_slots,
+            "queue_timeout_seconds": runtime_load.queue_timeout_seconds,
+        },
+        "cloud_run": {
+            "memory": settings.cloud_run_memory,
+            "concurrency": settings.cloud_run_concurrency,
+        },
+        "sentry": {
+            "status": "configured" if settings.sentry_dsn else "not_configured",
+            "configured": bool(settings.sentry_dsn),
+        },
         "database_detail": database,
         "ai_detail": ai,
         "analytics_detail": analytics,
         "rag_detail": rag,
         "whatsapp_detail": whatsapp,
+        "redis_detail": redis,
         "disk": disk,
         "memory": memory,
+    }
+
+
+def production_launch_metrics() -> dict[str, Any]:
+    # PROD-LAUNCH-1: Extra launch metrics for Cloud Run/domain smoke checks, without exposing secrets.
+    try:
+        from app.database import SessionLocal
+        from app.models import Patient
+        from models.medicine import Medicine
+        from models.supplier import Supplier
+
+        db = SessionLocal()
+        try:
+            medicines_count = int(db.query(Medicine).count())
+            suppliers_count = int(db.query(Supplier).count())
+            patients_active = int(db.query(Patient).count())
+        finally:
+            db.close()
+    except Exception:
+        medicines_count = 0
+        suppliers_count = 0
+        patients_active = 0
+
+    return {
+        "app": settings.app_name,
+        "version": settings.app_version,
+        "environment": settings.environment,
+        "sentry": bool(settings.sentry_dsn),
+        "cloud_run_detected": bool(__import__("os").getenv("K_SERVICE")),
+        "cloud_run_service": __import__("os").getenv("K_SERVICE", ""),
+        "medicines_count": medicines_count,
+        "suppliers_count": suppliers_count,
+        "patients_active": patients_active,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }

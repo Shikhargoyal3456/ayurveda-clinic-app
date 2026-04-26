@@ -7,6 +7,7 @@ import time
 from base64 import b64decode
 from collections import defaultdict, deque
 from datetime import timedelta
+from threading import Lock
 
 from fastapi import Depends, HTTPException, Request, status
 from passlib.context import CryptContext
@@ -30,6 +31,31 @@ from app.security import (
 
 PASSWORD_CONTEXT = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 _RATE_LIMIT_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
+_RATE_LIMIT_LOCK = Lock()
+_RATE_LIMIT_LAST_SWEEP_AT = 0.0
+
+
+def _apply_rate_limit(key: str, limit: int, window_seconds: int) -> int | None:
+    global _RATE_LIMIT_LAST_SWEEP_AT
+    now = time.time()
+    with _RATE_LIMIT_LOCK:
+        if now - _RATE_LIMIT_LAST_SWEEP_AT > max(30, window_seconds):
+            stale_keys = [
+                bucket_key
+                for bucket_key, bucket_entries in _RATE_LIMIT_BUCKETS.items()
+                if not bucket_entries or now - bucket_entries[-1] > window_seconds
+            ]
+            for stale_key in stale_keys:
+                _RATE_LIMIT_BUCKETS.pop(stale_key, None)
+            _RATE_LIMIT_LAST_SWEEP_AT = now
+        entries = _RATE_LIMIT_BUCKETS[key]
+        while entries and now - entries[0] > window_seconds:
+            entries.popleft()
+        if len(entries) >= limit:
+            retry_after_seconds = max(1, int(window_seconds - (now - entries[0])))
+            return retry_after_seconds
+        entries.append(now)
+        return None
 
 
 def hash_password(password: str) -> str:
@@ -84,17 +110,14 @@ async def verify_csrf(request: Request) -> None:
 def rate_limit_dependency(bucket: str, limit: int, window_seconds: int):
     async def dependency(request: Request) -> None:
         client_ip = request.client.host if request.client else "unknown"
-        now = time.time()
         key = f"{bucket}:{client_ip}"
-        entries = _RATE_LIMIT_BUCKETS[key]
-        while entries and now - entries[0] > window_seconds:
-            entries.popleft()
-        if len(entries) >= limit:
+        retry_after_seconds = _apply_rate_limit(key, limit=limit, window_seconds=window_seconds)
+        if retry_after_seconds is not None:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Too many requests. Please wait and try again.",
+                headers={"Retry-After": str(retry_after_seconds)},
             )
-        entries.append(now)
 
     return dependency
 

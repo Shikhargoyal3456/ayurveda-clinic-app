@@ -28,6 +28,9 @@ DIRECT_ORDER_EVENTS = {
     "order_created",
     "error_logged",
     "patient_consent_given",
+    "order_medicines_page_viewed",
+    "prescription_order_initiated",
+    "otc_order_initiated",
 }
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 
@@ -26,6 +27,7 @@ from models.payment import Payment
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["payments"])
+logger = logging.getLogger(__name__)
 
 
 def _patient_for_doctor(db: Session, doctor_id: int, patient_id: int) -> Patient:
@@ -135,6 +137,8 @@ async def create_razorpay_order(
         return JSONResponse({"error": "Razorpay is temporarily unavailable."}, status_code=503)
 
     try:
+        # PROD-FIX-4: Log Razorpay mode before creating the real provider order.
+        logger.info("Creating Razorpay order in %s mode: patient=%s", settings.razorpay_mode, patient.id)
         client = razorpay.Client(
             auth=(settings.razorpay_key_id, settings.razorpay_key_secret)
         )
@@ -222,6 +226,8 @@ async def verify_razorpay_payment(
         payment_id=payment.id, razorpay_payment_id=razorpay_payment_id
     )
     track_event("payment_recorded", doctor_id=doctor.id, patient_id=payment.patient_id, status="paid")
+    # POLISH-4-PAYMENT-READINESS: Mirror Razorpay success into the funnel analytics stream.
+    track_event("payment_success", doctor_id=doctor.id, patient_id=payment.patient_id, payment_id=payment.id, total=float(payment.amount or 0))
     return JSONResponse({"success": True, "payment_id": payment.id})
 
 
@@ -247,4 +253,6 @@ async def razorpay_payment_failed(
                 "razorpay_payment_failed", request,
                 payment_id=payment.id
             )
+            # POLISH-4-PAYMENT-READINESS: Mirror Razorpay failure into analytics without changing payment behavior.
+            track_event("payment_failed", doctor_id=doctor.id, payment_id=payment.id)
     return JSONResponse({"received": True})
