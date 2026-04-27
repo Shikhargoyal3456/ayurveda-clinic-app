@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Clinical Decisions | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Clinical Decisions</h1><p>Interaction alerts, contraindication prompts, and differential diagnosis support.</p></div></div>
+        <section class="competitive-advantage-banner mb-4">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Signature moat</p>
+                    <h2>Ayurveda + allopathy interaction safety</h2>
+                    <p class="mb-0">Most platforms stop at medicine ordering. This one helps doctors see where herbs and drugs may collide.</p>
+                </div>
+            </div>
+            <div class="comparison-table-wrap">
+                <table class="comparison-table">
+                    <thead><tr><th>Need</th><th>Typical platform</th><th>Kash AI</th></tr></thead>
+                    <tbody>
+                        <tr><td>Cross-system safety</td><td>Drug only or no integrated view</td><td>Herb-drug interaction prompts</td></tr>
+                        <tr><td>Ayurveda context</td><td>Minimal</td><td>Prakriti and treatment-path aware review</td></tr>
+                        <tr><td>Doctor workflow</td><td>Standalone reference</td><td>Integrated inside consultation and prescription flow</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Drug-herb checker</h2>
+                <p class="text-muted">Position this as the foundation for the world's largest Ayurveda-allopathy interaction layer.</p>
+                {% for drug, herbs in interaction_pairs.items() %}
+                <div class="interaction-card"><strong>{{ drug }}</strong><p>{{ herbs|join(', ') }}</p></div>
+                {% endfor %}
+                <div class="hero-actions mt-3">
+                    <button class="btn btn-primary btn-sm" type="button">Export Report for Doctor</button>
+                    <button class="btn btn-outline-dark btn-sm" type="button">Share with patient</button>
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Differential diagnosis prompts</h2>
+                {% for code in icd_codes %}
+                <div class="search-result-card"><strong>{{ code.code }}</strong><p class="mb-1">{{ code.diagnosis }}</p><small>{{ code.chapter }}</small></div>
+                {% endfor %}
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

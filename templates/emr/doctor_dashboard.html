@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Doctor Dashboard | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Doctor Dashboard</h1><p>Integrated operations view for modern medicine and Ayurveda teams.</p></div></div>
+        <div class="stats-grid stats-grid-4">
+            <article class="metric-card"><span class="metric-label">Today's appointments</span><strong>{{ today_appointments|length }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Patients</span><strong>{{ clinical_stats.total_patients }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Pending labs</span><strong>{{ pending_labs|length }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Revenue today</span><strong>Rs {{ '%.2f'|format(revenue_today) }}</strong></article>
+        </div>
+        <div class="content-grid-2 mt-4">
+            <article class="card">
+                <h2 class="h4">Today's appointments</h2>
+                <div class="stack-sm">
+                    {% for item in today_appointments %}
+                    <div class="appointment-row"><strong>{{ item.patient.name if item.patient else 'Patient' }}</strong><span>{{ item.time }} • {{ item.reason }}</span></div>
+                    {% else %}
+                    <p>No appointments today.</p>
+                    {% endfor %}
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Follow-up reminders</h2>
+                <div class="stack-sm">
+                    {% for item in followups_due %}
+                    <div class="appointment-row"><strong>{{ item.title }}</strong><span>{{ item.followup_date }}</span></div>
+                    {% else %}
+                    <p>No follow-ups due.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

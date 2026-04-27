@@ -1,0 +1,23 @@
+<section class="side-panel sidebar-card emr-sidebar-card">
+    <div>
+        <p class="eyebrow">EMR Suite</p>
+        <h3 class="h4 mb-1">Clinical Workspace</h3>
+        <p class="text-muted mb-0">Modern, Ayurveda, and integrated records in one workflow.</p>
+    </div>
+    <nav class="sidebar-nav mt-4" aria-label="EMR navigation">
+        {% for key, href, label, icon in emr_section_links %}
+        <a href="{{ href }}" class="{% if emr_active == key %}is-active{% endif %}">
+            <span><i class="fa-solid {{ icon }}"></i></span>
+            <span>{{ label }}</span>
+        </a>
+        {% endfor %}
+    </nav>
+    <div class="card surface-tint mt-4">
+        <p class="eyebrow mb-1">Quick Links</p>
+        <div class="stack-xs">
+            <a href="/emr/patient-registration" class="btn btn-primary btn-pill"><i class="fa-solid fa-user-plus"></i> Register Patient</a>
+            <a href="/emr/prescription-viewer" class="btn btn-outline-success btn-pill"><i class="fa-solid fa-prescription-bottle-medical"></i> Prescriptions</a>
+            <a href="/emr/mobile-emr" class="btn btn-ghost btn-pill"><i class="fa-solid fa-mobile-screen-button"></i> Mobile View</a>
+        </div>
+    </div>
+</section>

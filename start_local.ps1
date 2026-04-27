@@ -31,6 +31,15 @@ if (Test-Path $EnvFile) {
     Write-Host "Warning: .env file not found. Using defaults." -ForegroundColor Yellow
 }
 
+# Local launcher uses plain HTTP. Keep production HTTPS/session-cookie guards for deployed runs,
+# but start this process as development unless LOCAL_HTTPS=true is explicitly set.
+$localHttpsValue = [Environment]::GetEnvironmentVariable("LOCAL_HTTPS", "Process")
+if ($localHttpsValue -ne "true") {
+    [Environment]::SetEnvironmentVariable("ENVIRONMENT", "development", "Process")
+    [Environment]::SetEnvironmentVariable("SESSION_HTTPS_ONLY", "false", "Process")
+    [Environment]::SetEnvironmentVariable("HTTPS_REDIRECT_ENABLED", "false", "Process")
+}
+
 # Get settings
 $hostValue = [Environment]::GetEnvironmentVariable("HOST", "Process")
 if (-not $hostValue) { $hostValue = "0.0.0.0" }

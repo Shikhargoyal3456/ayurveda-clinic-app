@@ -1,0 +1,33 @@
+{
+  "name": "kash-ai-whatsapp-notifications",
+  "version": "1.0.0",
+  "description": "WhatsApp prescription and health update notification service for Kash AI.",
+  "main": "src/app.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "worker": "node src/queues/reminderWorker.js",
+    "check": "node --check src/app.js && node --check src/queues/reminderWorker.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.15.2",
+    "better-sqlite3": "^11.9.1",
+    "bullmq": "^5.41.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "sharp": "^0.34.5",
+    "twilio": "^5.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

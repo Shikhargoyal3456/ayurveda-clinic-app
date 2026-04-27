@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Order Tracking | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+<section class="order-tracking-system"><div class="page-header"><div><p class="eyebrow">Order tracking</p><h1>Track your order in real time</h1><p class="mb-0">Follow the delivery timeline, ETA, partner details, and control actions from one page.</p></div></div><div class="content-grid-2"><article class="card"><div class="tracking-map" id="orderMap"><div class="demo-media-placeholder">Live map placeholder</div></div></article><article class="card"><div class="order-timeline stack-list">{% for step in order.timeline %}<div class="stack-item {% if step.completed %}surface-tint{% endif %}"><strong>{{ step.status }}</strong><p class="mb-0 text-muted">{{ step.timestamp or 'Pending' }}</p></div>{% endfor %}</div><div class="delivery-partner-info stack-item mt-3"><div><strong>{{ order.delivery_partner }}</strong><p class="mb-0 text-muted">Tracking ID: {{ order.tracking_id }}</p></div><span id="eta">{{ location.eta }}</span></div><div class="hero-actions mt-3"><button id="rescheduleOrderBtn" class="btn btn-outline-dark" data-order-id="{{ order.id }}" type="button">Reschedule Delivery</button><button id="cancelOrderBtn" class="btn btn-outline-danger" data-order-id="{{ order.id }}" type="button">Cancel Order</button></div></article></div></section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="{{ url_for('static', path='js/superapp/tracking.js') }}"></script>{% endblock %}

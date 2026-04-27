@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% set seo_title = 'Investor Demo | Kash AI' %}
+{% set user_name = 'Investor demo' %}
+{% set user_role = 'Pitch mode' %}
+{% set avatar_label = 'VC' %}
+{% block title %}Investor Demo | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Investor walkthrough</p>
+            <h1>90-second investor demo</h1>
+            <p class="mb-0">A focused narrative that shows why integrated Ayurveda + modern medicine is a defensible, monetizable category.</p>
+        </div>
+    </section>
+    <section class="feature-grid">
+        {% for step in steps %}
+        <article class="feature-card demo-step-card">
+            <div class="demo-media-placeholder">
+                <i class="fa-solid fa-clapperboard"></i>
+                <span>Demo reel slot</span>
+            </div>
+            <p class="eyebrow">Step {{ loop.index }}</p>
+            <h3>{{ step.title }}</h3>
+            <p>{{ step.description }}</p>
+            <div class="alert alert-info mb-0">{{ step.highlight }}</div>
+        </article>
+        {% endfor %}
+    </section>
+    <section class="stats-grid">
+        <article class="metric-card"><span>Avg order value</span><strong>Rs {{ metrics.avg_order_value }}</strong></article>
+        <article class="metric-card"><span>Patient retention (90 days)</span><strong>{{ metrics.patient_retention_90d }}%</strong></article>
+        <article class="metric-card"><span>Doctor rating</span><strong>{{ metrics.doctor_rating }}</strong></article>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Add Medicine | Kash AI{% endblock %}
+
+{% block page %}
+<section class="page-section">
+    <div class="site-container content-stack">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Admin pharmacy</p>
+                <h1>Add New Medicine</h1>
+                <p class="page-subtitle">Add individual medicines with pricing, stock, and prescription controls.</p>
+            </div>
+            <div class="header-actions-row">
+                <a href="/admin/bulk-upload" class="btn btn-secondary">Bulk Upload</a>
+                <a href="/admin/complete" class="btn btn-ghost">Full Admin Panel</a>
+            </div>
+        </div>
+
+        <div class="card admin-form-shell">
+            <form id="addMedicineForm" class="medicine-form content-stack" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="form-grid two-up">
+                    <label class="field">
+                        <span>Medicine Name *</span>
+                        <input type="text" id="medicineName" name="name" required>
+                    </label>
+                    <label class="field">
+                        <span>Category *</span>
+                        <select id="category" name="category">
+                            <option value="allopathy">Allopathy</option>
+                            <option value="ayurveda">Ayurveda</option>
+                            <option value="homeopathy">Homeopathy</option>
+                            <option value="wellness">Wellness</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Brand / Manufacturer</span>
+                        <input type="text" id="brand" name="brand">
+                    </label>
+                    <label class="field">
+                        <span>Generic Name</span>
+                        <input type="text" id="genericName" name="generic_name">
+                    </label>
+                    <label class="field">
+                        <span>MRP *</span>
+                        <input type="number" id="mrp" name="mrp" step="1" min="0" required>
+                    </label>
+                    <label class="field">
+                        <span>Selling Price *</span>
+                        <input type="number" id="price" name="price" step="1" min="0" required>
+                    </label>
+                    <label class="field">
+                        <span>Stock Quantity</span>
+                        <input type="number" id="stock" name="stock" min="0" value="100">
+                    </label>
+                    <label class="field">
+                        <span>Unit</span>
+                        <input type="text" id="unit" name="unit" value="strip">
+                    </label>
+                    <label class="field checkbox-field">
+                        <span>Prescription Required</span>
+                        <input type="checkbox" id="prescriptionRequired" name="prescription_required">
+                    </label>
+                    <label class="field">
+                        <span>Medicine Image</span>
+                        <input type="file" id="medicineImage" name="image" accept="image/*">
+                    </label>
+                </div>
+                <label class="field">
+                    <span>Description</span>
+                    <textarea id="description" name="description" rows="4"></textarea>
+                </label>
+                <div class="header-actions-row">
+                    <button type="submit" class="btn btn-primary">Add Medicine</button>
+                    <a href="/admin/activity-dashboard" class="btn btn-outline-success">View Activity</a>
+                </div>
+            </form>
+            <div id="uploadStatus" class="inline-feedback" aria-live="polite"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('addMedicineForm');
+    if (!form) return;
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const submitButton = form.querySelector('button[type="submit"]');
+        const feedback = document.getElementById('uploadStatus');
+        const formData = new FormData(form);
+        formData.set('prescription_required', document.getElementById('prescriptionRequired').checked ? 'true' : 'false');
+
+        submitButton.disabled = true;
+        submitButton.textContent = 'Adding...';
+        feedback.textContent = '';
+
+        try {
+            const response = await fetch('/api/admin/medicines/add', {
+                method: 'POST',
+                headers: {'X-CSRF-Token': '{{ csrf_token }}'},
+                body: formData
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Medicine could not be added.');
+            }
+            showToast('Medicine added successfully.', 'success');
+            feedback.textContent = 'Medicine saved and inventory updated.';
+            form.reset();
+        } catch (error) {
+            showToast(error.message || 'Something went wrong.', 'error');
+            feedback.textContent = error.message || 'Something went wrong.';
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Add Medicine';
+        }
+    });
+});
+</script>
+{% endblock %}

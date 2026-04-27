@@ -1,45 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash AI | Privacy Policy</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-<div class="container py-5" style="max-width:800px">
-    <a href="/" style="display:inline-flex;align-items:center;
-       text-decoration:none;gap:10px;">
-        <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}"
-             alt="Kash AI"
-             style="height:40px;width:auto;">
-    </a>
-    <h1 class="h2 mb-4">Privacy Policy</h1>
-    <p class="text-muted">Last updated: April 2026</p>
+{% extends 'base.html' %}
+{% set active_page = 'home' %}
+{% set user_name = 'Privacy' %}
+{% set user_role = 'Policy' %}
+{% set avatar_label = 'PP' %}
 
-    <h2 class="h5 mt-4">What we collect</h2>
-    <p>Kash AI collects patient health records, doctor account information, and consultation data entered by registered doctors. This data is used solely to provide clinic management services.</p>
+{% block title %}Kash AI | Privacy Policy{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up"><section class="privacy-panel" style="max-width:860px; margin:0 auto;"><p class="eyebrow">Privacy policy</p><h1>Privacy Policy</h1><p class="text-muted">Last updated: April 2026</p><div class="section-stack mt-4"><div><h3>What we collect</h3><p>Kash AI collects patient health records, doctor account information, and consultation data entered by registered doctors. This data is used solely to provide clinic management services.</p></div><div><h3>How we use your data</h3><p>Data is used only to power the clinic management features you use. We do not sell, share, or transfer patient data to any third party without explicit consent.</p></div><div><h3>Data storage</h3><p>All data is stored securely on encrypted servers. Patient data is accessible only to the treating doctor who created the record.</p></div><div><h3>AI features</h3><p>Symptom data may be sent to Google Gemini AI for generating clinical suggestions. This data is used only for generating the response and is not stored by Google for training purposes under our API agreement.</p></div><div><h3>Your rights</h3><p>Doctors and patients may request deletion of their data at any time by contacting us. We will process deletion requests within 30 days.</p></div><div><h3>Contact</h3><p>For privacy concerns contact: privacy@kashai.in</p></div></div><a href="/signup" class="btn btn-outline-dark mt-4">Back to Signup</a></section></div>
+{% endblock %}
 
-    <h2 class="h5 mt-4">How we use your data</h2>
-    <p>Data is used only to power the clinic management features you use. We do not sell, share, or transfer patient data to any third party without explicit consent.</p>
-
-    <h2 class="h5 mt-4">Data storage</h2>
-    <p>All data is stored securely on encrypted servers. Patient data is accessible only to the treating doctor who created the record.</p>
-
-    <h2 class="h5 mt-4">AI features</h2>
-    <p>Symptom data may be sent to Google Gemini AI for generating clinical suggestions. This data is used only for generating the response and is not stored by Google for training purposes under our API agreement.</p>
-
-    <h2 class="h5 mt-4">Your rights</h2>
-    <p>Doctors and patients may request deletion of their data at any time by contacting us. We will process deletion requests within 30 days.</p>
-
-    <h2 class="h5 mt-4">Contact</h2>
-    <p>For privacy concerns contact: privacy@kashai.in</p>
-
-    <a href="/signup" class="btn btn-outline-dark mt-4">Back to Signup</a>
-</div>
-</body>
-</html>

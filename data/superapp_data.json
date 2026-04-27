@@ -1,0 +1,450 @@
+{
+  "products": [
+    {
+      "id": 1,
+      "name": "Ashwagandha Tablets",
+      "system": "ayurveda",
+      "category": "stress",
+      "price": 349,
+      "mrp": 499,
+      "rating": 4.3,
+      "reviews": 104,
+      "prakriti": "vata",
+      "prescription_required": true,
+      "offer": 30,
+      "stock": 18,
+      "image": ""
+    },
+    {
+      "id": 2,
+      "name": "Guduchi Capsules",
+      "system": "ayurveda",
+      "category": "immunity",
+      "price": 299,
+      "mrp": 399,
+      "rating": 4.4,
+      "reviews": 118,
+      "prakriti": "pitta",
+      "prescription_required": true,
+      "offer": 25,
+      "stock": 21,
+      "image": ""
+    },
+    {
+      "id": 3,
+      "name": "Sitopaladi Churna",
+      "system": "ayurveda",
+      "category": "cold_cough",
+      "price": 189,
+      "mrp": 249,
+      "rating": 4.5,
+      "reviews": 132,
+      "prakriti": "kapha",
+      "prescription_required": true,
+      "offer": 24,
+      "stock": 24,
+      "image": ""
+    },
+    {
+      "id": 4,
+      "name": "Paracetamol 650",
+      "system": "allopathy",
+      "category": "pain_relief",
+      "price": 35,
+      "mrp": 45,
+      "rating": 4.6,
+      "reviews": 146,
+      "prakriti": "all",
+      "prescription_required": false,
+      "offer": 22,
+      "stock": 27,
+      "image": ""
+    },
+    {
+      "id": 5,
+      "name": "Vitamin D3",
+      "system": "wellness",
+      "category": "supplements",
+      "price": 499,
+      "mrp": 699,
+      "rating": 4.7,
+      "reviews": 160,
+      "prakriti": "all",
+      "prescription_required": false,
+      "offer": 29,
+      "stock": 30,
+      "image": ""
+    },
+    {
+      "id": 6,
+      "name": "Omega 3 Capsules",
+      "system": "wellness",
+      "category": "supplements",
+      "price": 599,
+      "mrp": 799,
+      "rating": 4.2,
+      "reviews": 174,
+      "prakriti": "all",
+      "prescription_required": false,
+      "offer": 25,
+      "stock": 33,
+      "image": ""
+    },
+    {
+      "id": 7,
+      "name": "Neem Face Wash",
+      "system": "wellness",
+      "category": "skin",
+      "price": 249,
+      "mrp": 349,
+      "rating": 4.3,
+      "reviews": 188,
+      "prakriti": "pitta",
+      "prescription_required": false,
+      "offer": 29,
+      "stock": 36,
+      "image": ""
+    },
+    {
+      "id": 8,
+      "name": "Amla Juice",
+      "system": "ayurveda",
+      "category": "immunity",
+      "price": 399,
+      "mrp": 525,
+      "rating": 4.4,
+      "reviews": 202,
+      "prakriti": "pitta",
+      "prescription_required": false,
+      "offer": 24,
+      "stock": 39,
+      "image": ""
+    },
+    {
+      "id": 9,
+      "name": "ORS Sachet",
+      "system": "allopathy",
+      "category": "digestion",
+      "price": 25,
+      "mrp": 35,
+      "rating": 4.5,
+      "reviews": 216,
+      "prakriti": "all",
+      "prescription_required": false,
+      "offer": 29,
+      "stock": 42,
+      "image": ""
+    },
+    {
+      "id": 10,
+      "name": "Brahmi Vati",
+      "system": "ayurveda",
+      "category": "mind_calm",
+      "price": 289,
+      "mrp": 355,
+      "rating": 4.6,
+      "reviews": 230,
+      "prakriti": "vata",
+      "prescription_required": true,
+      "offer": 19,
+      "stock": 45,
+      "image": ""
+    },
+    {
+      "id": 11,
+      "name": "Protein Nutrition Mix",
+      "system": "wellness",
+      "category": "fitness",
+      "price": 899,
+      "mrp": 1199,
+      "rating": 4.7,
+      "reviews": 244,
+      "prakriti": "all",
+      "prescription_required": false,
+      "offer": 25,
+      "stock": 48,
+      "image": ""
+    },
+    {
+      "id": 12,
+      "name": "Turmeric Extract",
+      "system": "ayurveda",
+      "category": "inflammation",
+      "price": 449,
+      "mrp": 599,
+      "rating": 4.2,
+      "reviews": 258,
+      "prakriti": "kapha",
+      "prescription_required": false,
+      "offer": 25,
+      "stock": 51,
+      "image": ""
+    }
+  ],
+  "lab_tests": [
+    {
+      "id": 1,
+      "name": "Complete Blood Count",
+      "category": "hematology",
+      "price": 399,
+      "report_time": "12 hrs",
+      "preparation": "No fasting required"
+    },
+    {
+      "id": 2,
+      "name": "Thyroid Profile",
+      "category": "endocrine",
+      "price": 699,
+      "report_time": "24 hrs",
+      "preparation": "No fasting required"
+    },
+    {
+      "id": 3,
+      "name": "HbA1c",
+      "category": "diabetes",
+      "price": 549,
+      "report_time": "10 hrs",
+      "preparation": "No fasting required"
+    },
+    {
+      "id": 4,
+      "name": "Lipid Profile",
+      "category": "cardiac",
+      "price": 799,
+      "report_time": "12 hrs",
+      "preparation": "10 hour fasting"
+    },
+    {
+      "id": 5,
+      "name": "Vitamin D",
+      "category": "wellness",
+      "price": 899,
+      "report_time": "24 hrs",
+      "preparation": "No fasting required"
+    }
+  ],
+  "lab_packages": [
+    {
+      "id": "pkg_full_body",
+      "name": "Full Body Starter",
+      "description": "Baseline metabolic, blood, and vitamin panel.",
+      "tests": [
+        "CBC",
+        "Lipid",
+        "HbA1c",
+        "Vitamin D"
+      ],
+      "original_price": 2699,
+      "discounted_price": 1699,
+      "ai_recommended": true
+    },
+    {
+      "id": "pkg_thyroid_women",
+      "name": "Women's Thyroid & Energy",
+      "description": "For fatigue, weight changes, and hormonal screening.",
+      "tests": [
+        "Thyroid",
+        "CBC",
+        "Vitamin D"
+      ],
+      "original_price": 2299,
+      "discounted_price": 1499,
+      "ai_recommended": false
+    }
+  ],
+  "articles": [
+    {
+      "id": 1,
+      "title": "Understanding acidity through Ayurveda and modern medicine",
+      "category": "digestion",
+      "summary": "A dual-system view of burning digestion patterns.",
+      "read_time": 5,
+      "views": 1240
+    },
+    {
+      "id": 2,
+      "title": "How to improve sleep hygiene with dinacharya",
+      "category": "wellness",
+      "summary": "Simple daily habits that stabilize Vata and improve sleep.",
+      "read_time": 4,
+      "views": 980
+    },
+    {
+      "id": 3,
+      "title": "When joint pain needs Panchakarma evaluation",
+      "category": "pain",
+      "summary": "Signals that conservative care may need a deeper detox pathway.",
+      "read_time": 6,
+      "views": 760
+    },
+    {
+      "id": 4,
+      "title": "Reading your lipid profile without panic",
+      "category": "labs",
+      "summary": "How to interpret common cholesterol markers.",
+      "read_time": 5,
+      "views": 1530
+    }
+  ],
+  "orders": [
+    {
+      "id": 1,
+      "user_id": "guest",
+      "items": [
+        {
+          "product_id": 1,
+          "name": "Ashwagandha Tablets",
+          "price": 349,
+          "mrp": 499,
+          "quantity": 1,
+          "category": "stress"
+        }
+      ],
+      "total_amount": 261.75,
+      "status": "packed",
+      "tracking_id": "TRK10001",
+      "delivery_partner": "QuickCare Fleet",
+      "estimated_delivery": "2026-04-27T20:05:24.238883+00:00",
+      "placed_time": "2026-04-27T19:20:24.238899+00:00",
+      "timeline": [
+        {
+          "status": "Order Placed",
+          "timestamp": "2026-04-27T19:20:24.238903+00:00",
+          "completed": true
+        },
+        {
+          "status": "Packed & Ready",
+          "timestamp": "2026-04-27T19:20:24.238906+00:00",
+          "completed": true
+        },
+        {
+          "status": "Out for Delivery",
+          "timestamp": "",
+          "completed": false
+        },
+        {
+          "status": "Delivered",
+          "timestamp": "",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "user_id": "guest",
+      "items": [
+        {
+          "product_id": 1,
+          "name": "Ashwagandha Tablets",
+          "price": 349.0,
+          "mrp": 349.0,
+          "quantity": 1,
+          "category": "stress"
+        }
+      ],
+      "total_amount": 349.0,
+      "status": "auto_refilled",
+      "tracking_id": "ARX10002",
+      "delivery_partner": "AutoCare Fleet",
+      "estimated_delivery": "2026-04-28T03:20:24.320604+00:00",
+      "placed_time": "2026-04-27T19:20:24.320620+00:00",
+      "timeline": [
+        {
+          "status": "Auto refill created",
+          "timestamp": "2026-04-27T19:20:24.320622+00:00",
+          "completed": true
+        }
+      ],
+      "prescription_name": "Ashwagandha"
+    }
+  ],
+  "lab_bookings": [
+    {
+      "id": 1,
+      "user_id": "guest",
+      "test_ids": [
+        1,
+        2
+      ],
+      "collection_address": "Demo address",
+      "collection_time": "2026-05-01T09:00:00",
+      "status": "scheduled",
+      "created_at": "2026-04-27T19:20:24.264072+00:00"
+    }
+  ],
+  "users": {
+    "guest": {
+      "points": 360,
+      "tier": "bronze",
+      "total_spent": 4461.75,
+      "orders": 4,
+      "abandoned_carts": 1,
+      "frequent_category": "ayurveda",
+      "subscription_eligible": true,
+      "prakriti": "vata"
+    }
+  },
+  "subscriptions": [
+    {
+      "id": "sub_1",
+      "user_id": "guest",
+      "medicine_name": "Ashwagandha Tablets",
+      "frequency": "monthly",
+      "next_delivery": "2026-05-10",
+      "days_left": 12
+    },
+    {
+      "id": "sub_2",
+      "user_id": "guest",
+      "medicine_name": "Vitamin D3",
+      "frequency": "quarterly",
+      "next_delivery": "2026-05-26",
+      "days_left": 28
+    }
+  ],
+  "cart": {
+    "guest": []
+  },
+  "rewards": [
+    {
+      "id": "reward_1",
+      "name": "50 Rs wallet credit",
+      "points_required": 500,
+      "description": "Instant reward wallet credit",
+      "type": "wallet"
+    },
+    {
+      "id": "reward_2",
+      "name": "Free delivery pass",
+      "points_required": 900,
+      "description": "Free delivery on one order",
+      "type": "shipping"
+    },
+    {
+      "id": "reward_3",
+      "name": "Lab discount voucher",
+      "points_required": 1200,
+      "description": "15% off on lab package",
+      "type": "voucher"
+    }
+  ],
+  "campaign_logs": [],
+  "lab_partners": [
+    {
+      "name": "Thyrocare Partner",
+      "rating": 4.8,
+      "accreditation": "NABL"
+    },
+    {
+      "name": "Dr Lal PathLabs Partner",
+      "rating": 4.7,
+      "accreditation": "NABL/CAP"
+    },
+    {
+      "name": "Metropolis Partner",
+      "rating": 4.6,
+      "accreditation": "ISO"
+    }
+  ],
+  "quick_support": []
+}

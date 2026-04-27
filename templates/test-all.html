@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% set active_page = 'home' %}
+{% set user_name = 'QA workspace' %}
+{% set user_role = 'Frontend tests' %}
+{% set avatar_label = 'QA' %}
+
+{% block title %}Kash AI | Frontend Test{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header"><div><div class="breadcrumbs mb-2"><span>Home</span><span>Frontend test</span></div><p class="eyebrow">QA page</p><h1>Test all frontend interactions</h1><p class="mb-0">Use this page to test toast notifications, validation, responsiveness, and component rendering in one place.</p></div></section>
+    <section class="hero-grid"><article class="table-panel"><p class="eyebrow mb-2">Responsive presets</p><div class="hero-actions"><button class="btn btn-outline-dark" data-test-width="375">Mobile</button><button class="btn btn-outline-dark" data-test-width="768">Tablet</button><button class="btn btn-outline-dark" data-test-width="1280">Desktop</button></div><p class="text-muted mt-3 mb-0">Buttons log intended viewport targets in the console for quick manual checks.</p></article><article class="table-panel"><p class="eyebrow mb-2">Toast tests</p><div class="hero-actions"><button class="btn btn-primary" id="toast-success">Success toast</button><button class="btn btn-outline-dark" id="toast-info">Info toast</button><button class="btn btn-outline-danger" id="toast-error">Error toast</button></div></article></section>
+    <section class="hero-grid"><article class="form-panel"><p class="eyebrow mb-2">Validation</p><form id="qa-form" class="section-stack"><div class="form-row"><label class="form-label">Required field</label><input class="form-control" required placeholder="Type something"><span class="error-message">This field is required.</span></div><div class="form-row"><label class="form-label">Email</label><input class="form-control" type="email" required placeholder="doctor@example.com"><span class="error-message">Enter a valid email.</span></div><button class="btn btn-primary" type="submit">Submit test form</button></form></article><article class="table-panel"><p class="eyebrow mb-2">Skeletons & console</p><div class="stack-list"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-line"></div><div class="stack-item"><strong>Console</strong><p class="mb-0 text-muted">Open DevTools to confirm viewport logs and form test output.</p></div></div></article></section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('[data-test-width]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const width = button.getAttribute('data-test-width');
+    console.log('[Frontend Test] Check layout at width:', width);
+    if (window.showToast) window.showToast(`Check layout at ${width}px`, 'info');
+  });
+});
+document.getElementById('toast-success')?.addEventListener('click', () => window.showToast && window.showToast('Success toast is working', 'success'));
+document.getElementById('toast-info')?.addEventListener('click', () => window.showToast && window.showToast('Info toast is working', 'info'));
+document.getElementById('toast-error')?.addEventListener('click', () => window.showToast && window.showToast('Error toast is working', 'error'));
+document.getElementById('qa-form')?.addEventListener('submit', (event) => {
+  event.preventDefault();
+  console.log('[Frontend Test] Validation form submitted');
+  if (window.showToast) window.showToast('Form validation test passed', 'success');
+});
+</script>
+{% endblock %}

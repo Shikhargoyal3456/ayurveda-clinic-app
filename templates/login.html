@@ -1,66 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash AI | Doctor Login</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="auth-shell">
-    <div class="auth-layout">
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = 'Doctor access' %}
+{% set user_role = 'Secure workspace' %}
+{% set avatar_label = 'DR' %}
+
+{% block title %}Kash AI | Doctor Login{% endblock %}
+
+{% block header_actions %}
+<a href="/signup" class="btn btn-primary btn-sm">Create account</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container">
+    <div class="auth-layout fade-in-up">
         <section class="auth-story">
-            <a href="/" style="display:inline-flex;align-items:center;
-               text-decoration:none;gap:10px;">
-                <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}"
-                     alt="Kash AI"
-                     style="height:40px;width:auto;">
-            </a>
-            <p class="eyebrow">Kash AI</p>
-            <h1>Run an Ayurvedic clinic like a modern health startup.</h1>
-            <p class="auth-lead">Appointments, patients, follow-ups, and Samhita-grounded AI support in one trusted workspace.</p>
+            <p class="eyebrow">Doctor workspace</p>
+            <h1>Modern Ayurveda operations, with a warmer first impression.</h1>
+            <p>Appointments, patients, AI support, prescriptions, and follow-ups live in one focused clinical experience.</p>
             <div class="auth-points">
-                <div>
+                <div class="auth-point">
                     <strong>Retention first</strong>
-                    <p>Bring follow-up patients back on time and grow repeat care.</p>
+                    <p class="mb-0">Bring patients back on time with an interface built around continuity.</p>
                 </div>
-                <div>
+                <div class="auth-point">
                     <strong>Doctor in control</strong>
-                    <p>AI drafts guidance, but the clinician remains the decision-maker.</p>
+                    <p class="mb-0">AI supports reasoning and drafting, while the clinician remains the final authority.</p>
                 </div>
-                <div>
-                    <strong>Built for Ayurveda</strong>
-                    <p>Designed around dosha reasoning, case sheets, and classical text grounding.</p>
+                <div class="auth-point">
+                    <strong>Built for Indian care journeys</strong>
+                    <p class="mb-0">Warm visuals, mobile responsiveness, and practical clinic workflows.</p>
                 </div>
             </div>
-            <a href="/" class="text-decoration-none">Back to product overview</a>
+            <div class="auth-meta">
+                <span class="auth-badge"><i class="fa-solid fa-user-doctor"></i> Doctor dashboard</span>
+                <span class="auth-badge"><i class="fa-solid fa-wave-square"></i> AI analyzer</span>
+                <span class="auth-badge"><i class="fa-solid fa-calendar-days"></i> Follow-up tracking</span>
+            </div>
         </section>
 
-        <section class="auth-card">
-            <p class="eyebrow mb-2">Doctor Workspace</p>
-            <h2 class="h3 mb-3">Log in to your clinic operating system</h2>
+        <section class="auth-card auth-panel">
+            <p class="eyebrow">Secure login</p>
+            <h2>Enter your clinic workspace</h2>
+            <p class="text-muted">Use your doctor credentials to continue into the command center.</p>
             {% if flash %}
-            <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+            <div class="alert alert-{{ flash.category }} mb-3">{{ flash.message }}</div>
             {% endif %}
-            <form method="post" action="/login" data-loading-form>
+            <form method="post" action="/login" data-loading-form class="section-stack">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div class="mb-3">
+                <div>
                     <label class="form-label">Username</label>
                     <input name="username" class="form-control" required>
                 </div>
-                <div class="mb-3">
+                <div>
                     <label class="form-label">Password</label>
                     <input type="password" name="password" class="form-control" required>
                 </div>
-                <button class="btn btn-primary w-100" data-loading-text="Logging in...">Login</button>
+                <button class="btn btn-primary w-100" data-loading-text="Logging in...">Login to dashboard</button>
             </form>
-            <p class="mt-3 mb-0 text-muted">Need an account? <a href="/signup">Create one</a></p>
+            <p class="mt-4 mb-0 text-muted">Need an account? <a href="/signup">Create one here</a></p>
         </section>
     </div>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+{% endblock %}
+

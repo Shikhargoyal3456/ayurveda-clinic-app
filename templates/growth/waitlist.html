@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Waitlist | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="waitlist-banner card">
+        <p class="eyebrow">Coming soon</p>
+        <h1>{{ feature_name }}</h1>
+        <p>Join the waitlist for early access, launch pricing, and founder-tier benefits.</p>
+        <div class="hero-actions"><input id="waitlistEmail" class="form-control" placeholder="Email"><button id="joinWaitlistBtn" class="btn btn-primary" type="button">Join Waitlist ({{ waitlist_count }} already joined)</button></div>
+        <div id="waitlistMessage" class="text-muted small mt-3"></div>
+        <div class="waitlist-gamification mt-4">
+            <div class="position-tracker">
+                <div class="progress-circle">
+                    <span>{{ user_position }}</span>
+                    <small>of {{ total_waitlist }} ahead</small>
+                </div>
+                <div class="unlock-benefits">
+                    <h4>Unlock at milestone signups</h4>
+                    <div class="milestone" data-count="100">10% off for first 100</div>
+                    <div class="milestone" data-count="500">Free consultation for first 500</div>
+                    <div class="milestone" data-count="1000">Lifetime 20% discount for first 1000</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.getElementById('joinWaitlistBtn')?.addEventListener('click', async function () {
+  const email = document.getElementById('waitlistEmail')?.value || '';
+  const message = document.getElementById('waitlistMessage');
+  try {
+    const res = await fetch('/api/waitlist/join', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email})
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Unable to join waitlist');
+    if (message) message.textContent = `Joined successfully. Current waitlist: ${data.waitlist.waitlist_count}.`;
+    window.showToast?.('Waitlist joined successfully.', 'success');
+  } catch (error) {
+    if (message) message.textContent = String(error.message || 'Unable to join waitlist.');
+    window.showToast?.('Waitlist join failed.', 'error');
+  }
+});
+</script>
+{% endblock %}

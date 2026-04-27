@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Clinical Reporting | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Clinical Reporting</h1><p>Clinical productivity, revenue flow, and dosha analytics across the clinic.</p></div></div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Revenue trend</h2>
+                <div class="trend-bars">
+                    {% for point in revenue_trend %}
+                    <div class="trend-bar"><span style="height: {{ point.amount + 12 }}px"></span><small>{{ point.date[-5:] }}</small></div>
+                    {% endfor %}
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Dosha distribution</h2>
+                <div class="dosha-stack">
+                    <div class="dosha-card vata"><span>Vata</span><strong>{{ dosha_distribution.vata }}</strong></div>
+                    <div class="dosha-card pitta"><span>Pitta</span><strong>{{ dosha_distribution.pitta }}</strong></div>
+                    <div class="dosha-card kapha"><span>Kapha</span><strong>{{ dosha_distribution.kapha }}</strong></div>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

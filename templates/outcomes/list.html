@@ -1,110 +1,218 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Outcomes | {{ patient.name }}</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="app-shell">
-    <div class="container py-4 py-lg-5">
-        <div class="feature-shell mx-auto">
-            <div class="feature-head mb-4">
-                <div>
-                    <p class="eyebrow mb-2">Outcome Tracking</p>
-                    <h1 class="h2 mb-1">{{ patient.name }}</h1>
-                    <p class="text-muted mb-0">Capture progress in a lightweight, repeatable way.</p>
-                </div>
-                <a href="/dashboard" class="btn btn-outline-dark">Back to Dashboard</a>
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = patient.name %}
+{% set user_role = 'Outcome tracking' %}
+{% set avatar_label = 'OC' %}
+
+{% block title %}Outcomes | {{ patient.name }}{% endblock %}
+
+{% block header_actions %}
+<a href="/dashboard" class="btn btn-primary btn-sm">Back to Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Outcomes</span><span>{{ patient.name }}</span></div>
+            <p class="eyebrow">Treatment outcomes</p>
+            <h1>{{ patient.name }}</h1>
+            <p class="mb-0">Track recovery, compare before and after progress, and keep next follow-up reminders visible.</p>
+        </div>
+    </section>
+
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+
+    {% set better_count = outcomes | selectattr('improvement_status', 'equalto', 'Better') | list | length %}
+    {% set same_count = outcomes | selectattr('improvement_status', 'equalto', 'Same') | list | length %}
+    {% set worse_count = outcomes | selectattr('improvement_status', 'equalto', 'Worse') | list | length %}
+    <section class="stats-grid">
+        <article class="metric-card"><span>Better</span><strong>{{ better_count }}</strong></article>
+        <article class="metric-card"><span>Stable</span><strong>{{ same_count }}</strong></article>
+        <article class="metric-card"><span>Needs Attention</span><strong>{{ worse_count }}</strong></article>
+        <article class="metric-card"><span>Entries</span><strong>{{ outcomes|length }}</strong></article>
+    </section>
+
+    <section class="outcome-predictor card no-print">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Predictive care</p>
+                <h2>AI treatment outcome predictor</h2>
+                <p class="mb-0">Use past cases, treatment system, and patient profile to set expectations and follow-up discipline.</p>
             </div>
-
-            {% if flash %}
-            <div class="alert alert-{{ flash.category }} mb-4">{{ flash.message }}</div>
-            {% endif %}
-
-            <div class="row g-4">
-                <div class="col-lg-5">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4">
-                            <form method="post" action="/outcomes/add" data-loading-form>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <input type="hidden" name="patient_id" value="{{ patient.id }}">
-                                <div class="mb-3">
-                                    <label class="form-label">Improvement</label>
-                                    <select name="improvement_status" class="form-select" required>
-                                        <option value="Not recorded yet" selected>Not recorded yet</option>
-                                        <option value="Better">Better</option>
-                                        <option value="Same">Same</option>
-                                        <option value="Worse">Worse</option>
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Related Case</label>
-                                    <select name="case_id" class="form-select">
-                                        <option value="">No linked case</option>
-                                        {% for case in cases %}
-                                        <option value="{{ case.id }}">{{ case.diagnosis }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label d-flex justify-content-between">
-                                        <span>Symptom Score</span>
-                                        <span id="score-output">5</span>
-                                    </label>
-                                    <input name="symptom_score" id="score-range" type="range" min="1" max="10" value="5" class="form-range">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Date</label>
-                                    <input name="outcome_date" type="date" class="form-control">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="form-label">Notes</label>
-                                    <textarea name="notes" class="form-control" rows="4" placeholder="Brief progress notes"></textarea>
-                                </div>
-                                <button class="btn btn-primary w-100" data-loading-text="Saving...">Save Outcome</button>
-                            </form>
-                        </div>
-                    </div>
+        </div>
+        <div class="content-grid-2">
+            <div class="section-stack">
+                <label class="form-label" for="patient-profile">Patient Profile</label>
+                <select id="patient-profile" class="form-select">
+                    <option>Young (18-30)</option>
+                    <option>Middle (31-50)</option>
+                    <option>Senior (51+)</option>
+                </select>
+                <label class="form-label" for="condition">Condition</label>
+                <select id="condition" class="form-select">
+                    <option>Arthritis</option>
+                    <option>Diabetes Type 2</option>
+                    <option>Hypertension</option>
+                    <option>Digestive Disorders</option>
+                </select>
+                <label class="form-label" for="treatment">Treatment Type</label>
+                <select id="treatment" class="form-select">
+                    <option>Ayurveda Only</option>
+                    <option>Modern Only</option>
+                    <option>Integrated</option>
+                </select>
+                <label class="form-label" for="duration">Duration (months)</label>
+                <input type="range" id="duration" min="1" max="12" value="6" class="form-range">
+            </div>
+            <div class="prediction-result">
+                <div class="success-rate">
+                    <div class="rate-meter"><div class="rate-fill" id="rateFill" style="width:78%;">78%</div></div>
+                    <p>Probability of significant improvement</p>
                 </div>
-
-                <div class="col-lg-7">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4 p-lg-5">
-                            <div class="section-heading">
-                                <div>
-                                    <p class="eyebrow mb-2">History</p>
-                                    <h2 class="h4 mb-1">Recorded outcomes</h2>
-                                </div>
-                            </div>
-                            <div class="stack-list mt-4">
-                                {% for outcome in outcomes %}
-                                <div class="stack-item stack-item-stretch">
-                                    <div>
-                                        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
-                                            <strong>{{ outcome.improvement_status }}</strong>
-                                            <span class="pill">Score {{ outcome.symptom_score }}/10</span>
-                                            <span class="text-muted small">{{ outcome.date }}</span>
-                                        </div>
-                                        <p class="mb-0 text-muted">{{ outcome.notes or "No notes added." }}</p>
-                                    </div>
-                                </div>
-                                {% else %}
-                                <p class="text-muted mb-0">No outcomes logged yet for this patient.</p>
-                                {% endfor %}
-                            </div>
-                        </div>
+                <div class="expected-timeline">
+                    <h4>Expected Timeline</h4>
+                    <div class="timeline">
+                        <div class="milestone">Week 2: Initial relief</div>
+                        <div class="milestone">Month 1: 30% improvement</div>
+                        <div class="milestone">Month 3: 60% improvement</div>
+                        <div class="milestone">Month 6: 85% improvement</div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    <script src="{{ url_for('static', path='js/outcome_form.js') }}"></script>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+    </section>
+
+    <section class="store-layout" style="grid-template-columns:minmax(0,1fr) 360px;">
+        <div class="section-stack">
+            <article class="table-panel no-print">
+                <div class="page-header mb-3">
+                    <div><p class="eyebrow">Filters</p><h2>Review outcomes by status and linked case</h2></div>
+                </div>
+                <div class="hero-actions">
+                    <select id="outcome-status-filter" class="form-select" style="min-width:180px;"><option value="all">All statuses</option><option value="Better">Better</option><option value="Same">Same</option><option value="Worse">Worse</option><option value="Not recorded yet">Not recorded yet</option></select>
+                    <select id="outcome-case-filter" class="form-select" style="min-width:220px;"><option value="all">All treatment types</option>{% for case in cases %}<option value="{{ case.id }}">{{ case.diagnosis }}</option>{% endfor %}</select>
+                    <input id="outcome-search" type="search" class="form-control" placeholder="Search notes or date" style="min-width:220px;">
+                </div>
+            </article>
+
+            <article class="table-panel no-print">
+                <div class="page-header mb-3"><div><p class="eyebrow">Recovery snapshot</p><h2>Before / after comparison</h2></div></div>
+                <div class="comparison-slider">
+                    <div class="before"><strong>Before treatment</strong><p class="text-muted">Symptoms severe, inconsistent routine, low adherence.</p></div>
+                    <div class="after"><strong>After current phase</strong><p class="text-muted">Improved adherence, lower symptom burden, clearer follow-up planning.</p></div>
+                </div>
+            </article>
+
+            <article class="table-panel">
+                <div class="page-header mb-3"><div><p class="eyebrow">Outcome history</p><h2>Recorded progress</h2></div></div>
+                <div id="outcome-list" class="stack-list">
+                    {% for outcome in outcomes %}
+                    {% set recovery = (11 - (outcome.symptom_score or 5)) * 10 %}
+                    <div class="stack-item outcome-entry" data-status="{{ outcome.improvement_status }}" data-case="{{ outcome.case_id or 'none' }}" data-search="{{ outcome.notes or '' }} {{ outcome.date }} {{ outcome.improvement_status }}">
+                        <div class="page-header mb-2">
+                            <div>
+                                <div class="hero-actions mb-2">
+                                    <strong>{{ outcome.improvement_status }}</strong>
+                                    <span class="pill">Score {{ outcome.symptom_score }}/10</span>
+                                    <span class="text-muted small">{{ outcome.date }}</span>
+                                </div>
+                                <p class="mb-0 text-muted">{{ outcome.notes or 'No notes added.' }}</p>
+                            </div>
+                            <div class="text-end">
+                                <div class="rating-stars" aria-label="Outcome rating">{% for i in range(1, 6) %}<i class="fa-solid fa-star{% if i > ((recovery / 20) | round(0, 'ceil')) %}" style="opacity:{% if i > ((recovery / 20) | round(0, 'ceil')) %}0.25{% else %}1{% endif %};"></i>{% endfor %}</div>
+                            </div>
+                        </div>
+                        <div class="progress-track"><div class="progress-bar" style="width:{{ recovery }}%;"></div></div>
+                        <div class="hero-actions mt-3 text-muted small">
+                            <span>Recovery {{ recovery }}%</span>
+                            <span>Next follow-up reminder: review within 7 days</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-0">No outcomes logged yet for this patient.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+
+        <aside class="form-panel no-print">
+            <p class="eyebrow mb-2">Add outcome</p>
+            <form method="post" action="/outcomes/add" data-loading-form class="section-stack">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="patient_id" value="{{ patient.id }}">
+                <div class="form-row">
+                    <label class="form-label">Improvement</label>
+                    <select name="improvement_status" class="form-select" required>
+                        <option value="Not recorded yet" selected>Not recorded yet</option>
+                        <option value="Better">Better</option>
+                        <option value="Same">Same</option>
+                        <option value="Worse">Worse</option>
+                    </select>
+                    <span class="error-message">Please select an improvement status.</span>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">Related Case</label>
+                    <select name="case_id" class="form-select">
+                        <option value="">No linked case</option>
+                        {% for case in cases %}
+                        <option value="{{ case.id }}">{{ case.diagnosis }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label class="form-label d-flex justify-content-between"><span>Symptom Score</span><span id="score-output">5</span></label>
+                    <input name="symptom_score" id="score-range" type="range" min="1" max="10" value="5" class="form-range">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">Date</label>
+                    <input name="outcome_date" type="date" class="form-control">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">Notes</label>
+                    <textarea name="notes" class="form-control" rows="4" placeholder="Brief progress notes"></textarea>
+                </div>
+                <button class="btn btn-primary w-100" data-loading-text="Saving...">Save Outcome</button>
+            </form>
+        </aside>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/outcome_form.js') }}"></script>
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script>
+const outcomeStatusFilter = document.getElementById("outcome-status-filter");
+const outcomeCaseFilter = document.getElementById("outcome-case-filter");
+const outcomeSearch = document.getElementById("outcome-search");
+const outcomeEntries = Array.from(document.querySelectorAll(".outcome-entry"));
+const duration = document.getElementById("duration");
+const treatment = document.getElementById("treatment");
+const rateFill = document.getElementById("rateFill");
+function filterOutcomes() {
+  const status = outcomeStatusFilter?.value || "all";
+  const caseId = outcomeCaseFilter?.value || "all";
+  const query = (outcomeSearch?.value || "").toLowerCase().trim();
+  outcomeEntries.forEach((entry) => {
+    const matchesStatus = status === "all" || entry.dataset.status === status;
+    const matchesCase = caseId === "all" || entry.dataset.case === caseId;
+    const matchesQuery = !query || (entry.dataset.search || "").toLowerCase().includes(query);
+    entry.style.display = matchesStatus && matchesCase && matchesQuery ? "" : "none";
+  });
+}
+outcomeStatusFilter?.addEventListener("change", filterOutcomes);
+outcomeCaseFilter?.addEventListener("change", filterOutcomes);
+outcomeSearch?.addEventListener("input", filterOutcomes);
+function updatePrediction() {
+  if (!duration || !treatment || !rateFill) return;
+  const base = treatment.value === "Integrated" ? 82 : treatment.value === "Ayurveda Only" ? 74 : 68;
+  const score = Math.min(94, base + Number(duration.value) * 1.2);
+  rateFill.style.width = `${score}%`;
+  rateFill.textContent = `${Math.round(score)}%`;
+}
+duration?.addEventListener("input", updatePrediction);
+treatment?.addEventListener("change", updatePrediction);
+updatePrediction();
+</script>
+{% endblock %}

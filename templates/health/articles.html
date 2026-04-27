@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Health Library | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+<section class="page-header"><div><p class="eyebrow">Health information</p><h1>AI-curated health library</h1><p class="mb-0">Search symptoms, diseases, tests, and treatment guidance with AI-assisted discovery.</p></div><div class="hero-actions"><a href="/support/ai-assistant" class="btn btn-primary">Ask AI Health Assistant</a></div></section>
+<section class="card"><div class="hero-actions"><input id="articleSearchInput" class="form-control" placeholder="Search symptoms, diseases, treatments"><button id="articleSearchBtn" class="btn btn-outline-dark" type="button">Search</button></div><div class="hero-actions mt-3">{% for topic in trending_topics %}<span class="pill">{{ topic }}</span>{% endfor %}</div></section>
+<section class="feature-grid">{% for article in articles %}<article class="feature-card"><h3 class="h4">{{ article.title }}</h3><p>{{ article.summary }}</p><div class="hero-actions text-muted small"><span>{{ article.read_time }} min read</span><span>{{ article.views }} views</span></div><button class="btn btn-outline-success btn-sm mt-3" type="button">Read More</button></article>{% endfor %}</section>
+<section class="cta-band"><div><h3>Not sure what's wrong?</h3><p class="mb-0">Use the dual AI symptom checker and connect it to your care journey.</p></div><a href="/ai-analyzer" class="btn btn-primary">Check Symptoms Now</a></section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="{{ url_for('static', path='js/superapp/articles.js') }}"></script>{% endblock %}

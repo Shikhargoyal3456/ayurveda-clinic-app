@@ -1,0 +1,31 @@
+{
+  "patients": [
+    {
+      "first_name": "Anaya",
+      "last_name": "Rao",
+      "age": 34,
+      "gender": "female",
+      "mobile": "9876543210",
+      "email": "anaya.rao@example.com",
+      "address": "Bengaluru",
+      "medical_history": {
+        "past_conditions": [
+          "Migraine",
+          "Acidity"
+        ]
+      },
+      "ayurveda_profile": {
+        "prakriti": "Pitta-Vata",
+        "vikriti": "Pitta aggravation",
+        "agni": "Tikshna"
+      }
+    }
+  ],
+  "consultations": [
+    {
+      "system_type": "integrated",
+      "title": "Digestive care review",
+      "chief_complaint": "Burning after meals and poor sleep"
+    }
+  ]
+}

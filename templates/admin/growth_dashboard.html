@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Growth Dashboard | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="growth-metrics">
+        <div class="page-header"><div><p class="eyebrow">Admin growth view</p><h1>Real-time startup dashboard</h1><p class="mb-0">Track the metrics that matter for fundraising, retention, and product-market fit.</p></div></div>
+        <div class="kpi-grid">
+            <article class="metric-card"><span>Daily Active Users</span><strong>{{ dau }}</strong><p class="trend up">+{{ dau_growth }}%</p></article>
+            <article class="metric-card"><span>Conversion Rate</span><strong>{{ conversion_rate }}%</strong><p class="trend up">+{{ conversion_growth }}%</p></article>
+            <article class="metric-card"><span>Customer LTV</span><strong>Rs {{ customer_ltv }}</strong><p class="trend up">+{{ ltv_growth }}%</p></article>
+            <article class="metric-card"><span>Churn Rate</span><strong>{{ churn_rate }}%</strong><p class="trend down">-{{ churn_reduction }}%</p></article>
+        </div>
+    </section>
+    <section class="card">
+        <div class="page-header mb-3"><div><p class="eyebrow">Traction metrics</p><h2>Pitch-deck ready signals</h2></div></div>
+        <div class="kpi-grid">
+            {% for label, value in traction_metrics.items() %}
+            <article class="metric-card">
+                <span>{{ label.replace('_', ' ') | title }}</span>
+                <strong>{{ value }}</strong>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    <section class="content-grid-2">
+        <article class="card">
+            <p class="eyebrow">Revenue streams</p>
+            <h2 class="h4">Monetization map</h2>
+            <div class="stack-list mt-3">
+                {% for item in revenue_streams %}
+                <div class="stack-item">{{ item }}</div>
+                {% endfor %}
+            </div>
+            <p class="mt-3 mb-0 text-muted">Tracked revenue from analytics: Rs {{ estimated_revenue }}</p>
+        </article>
+        <article class="card">
+            <p class="eyebrow">Demo inventory</p>
+            <h2 class="h4">What is ready for investor walkthroughs</h2>
+            <div class="stack-list mt-3">
+                <div class="stack-item">{{ inventory.verified_doctors }} verified doctors seeded</div>
+                <div class="stack-item">{{ inventory.panchakarma_centers }} Panchakarma centers available</div>
+                <div class="stack-item">{{ inventory.products }} personalized products with prakriti tags</div>
+                <div class="stack-item">{{ inventory.patient_journeys }} sample patient journeys</div>
+            </div>
+        </article>
+    </section>
+</div>
+{% endblock %}

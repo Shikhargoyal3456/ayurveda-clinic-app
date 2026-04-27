@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Data Quality | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Data Quality</h1><p>Flag missing demographics, duplicate records, and incomplete EMR profile coverage.</p></div></div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Missing contact data</h2>
+                <div class="stack-sm">
+                    {% for patient in missing_contact %}
+                    <div class="info-chip">{{ patient.name }} needs phone, email, or address completion.</div>
+                    {% else %}
+                    <p>No missing contact data.</p>
+                    {% endfor %}
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Duplicates & missing profiles</h2>
+                <div class="stack-sm">
+                    <div class="info-chip">Duplicate clusters: {{ duplicate_sets|length }}</div>
+                    <div class="info-chip">Missing EMR profiles: {{ missing_profiles|length }}</div>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

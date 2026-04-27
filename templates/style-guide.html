@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% set active_page = 'home' %}
+{% set user_name = 'Frontend system' %}
+{% set user_role = 'Style guide' %}
+{% set avatar_label = 'SG' %}
+
+{% block title %}Kash AI | Style Guide{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Style guide</span></div>
+            <p class="eyebrow">Component library</p>
+            <h1>Ayurveda design system</h1>
+            <p class="mb-0">Reference page for color, typography, components, states, and layout patterns used across the redesigned application.</p>
+        </div>
+    </section>
+
+    <section class="feature-grid">
+        <article class="feature-card"><p class="eyebrow">Primary</p><div class="stack-item surface-tint"><strong>#2D6A4F</strong><p class="mb-0">Primary deep green</p></div></article>
+        <article class="feature-card"><p class="eyebrow">Secondary</p><div class="stack-item"><strong>#40916C / #52B788</strong><p class="mb-0">Support green range</p></div></article>
+        <article class="feature-card"><p class="eyebrow">Accent</p><div class="stack-item"><strong>#FFB703 / #F4A261</strong><p class="mb-0">Saffron and amber highlights</p></div></article>
+    </section>
+
+    <section class="hero-grid">
+        <article class="table-panel"><p class="eyebrow mb-2">Typography</p><h1>Heading One</h1><h2>Heading Two</h2><h3>Heading Three</h3><p>Body copy uses Inter for clarity and rhythm across dashboards, forms, and marketing pages.</p></article>
+        <article class="table-panel"><p class="eyebrow mb-2">Buttons</p><div class="hero-actions"><button class="btn btn-primary">Primary</button><button class="btn btn-outline-success">Secondary</button><button class="btn btn-outline-dark">Ghost</button><button class="btn btn-warning">Accent</button></div></article>
+    </section>
+
+    <section class="content-grid">
+        <article class="table-panel"><p class="eyebrow mb-2">Forms</p><div class="section-stack"><div class="form-row"><label class="form-label">Input</label><input class="form-control" placeholder="Enter text"></div><div class="form-row is-invalid"><label class="form-label">Invalid</label><input class="form-control" value="Bad value"><span class="error-message">This field needs attention.</span></div><div class="form-row"><label class="form-label">Select</label><select class="form-select"><option>Ayurveda</option></select></div></div></article>
+        <article class="table-panel"><p class="eyebrow mb-2">Alerts & badges</p><div class="section-stack"><div class="alert alert-success">Success alert</div><div class="alert alert-warning">Warning alert</div><div class="alert alert-danger">Danger alert</div><div class="hero-actions"><span class="badge text-bg-success">Confirmed</span><span class="badge text-bg-warning">Pending</span><span class="badge text-bg-danger">Critical</span></div></div></article>
+        <article class="table-panel"><p class="eyebrow mb-2">Cards</p><div class="stack-list"><div class="stack-item">Standard card</div><div class="stack-item surface-tint">Tinted card</div><div class="skeleton skeleton-card"></div></div></article>
+    </section>
+
+    <section class="table-panel"><p class="eyebrow mb-2">Tables</p><div class="table-responsive"><table class="table"><thead><tr><th>Column</th><th>Status</th><th>Notes</th></tr></thead><tbody><tr><td>Medicine</td><td><span class="badge text-bg-success">Available</span></td><td>Responsive on mobile</td></tr><tr><td>Appointment</td><td><span class="badge text-bg-warning">Pending</span></td><td>Stacks gracefully</td></tr></tbody></table></div></section>
+</div>
+{% endblock %}

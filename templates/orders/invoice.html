@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ order.id }} | Kash AI{% endblock %}
+
+{% block page %}
+<section class="page-section">
+    <div class="site-container content-stack">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Invoice</p>
+                <h1>Order Invoice #{{ order.id }}</h1>
+                <p class="page-subtitle">Printable invoice for customer records, pharmacy support, and payment verification.</p>
+            </div>
+            <div class="header-actions-row">
+                <button class="btn btn-primary" onclick="window.print()">Print Invoice</button>
+                <button class="btn btn-secondary" onclick="window.print()">Download PDF</button>
+            </div>
+        </div>
+
+        <article class="card invoice-sheet">
+            <div class="invoice-head">
+                <div>
+                    <h2>Kash AI Healthcare</h2>
+                    <p class="text-muted">Integrated Ayurveda + Modern Medicine</p>
+                    <p class="text-muted">Invoice generated on {{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else 'now' }}</p>
+                </div>
+                <div class="invoice-qr" aria-label="Payment verification QR">
+                    {{ qr_svg | safe }}
+                </div>
+            </div>
+
+            <div class="content-grid-2">
+                <div class="card compact-card">
+                    <h3>Customer</h3>
+                    <p><strong>{{ order.patient_name }}</strong></p>
+                    <p>{{ order.patient_phone }}</p>
+                    <p>{{ order.patient_address }}</p>
+                </div>
+                <div class="card compact-card">
+                    <h3>Order Details</h3>
+                    <p><strong>Status:</strong> {{ order.status }}</p>
+                    <p><strong>Payment:</strong> {{ order.payment_status }}</p>
+                    <p><strong>Razorpay Order:</strong> {{ order.razorpay_order_id or 'Pending' }}</p>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Qty</th>
+                            <th>Unit Price</th>
+                            <th>Line Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in invoice["items"] %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.qty or 1 }}</td>
+                            <td>Rs {{ item.price }}</td>
+                            <td>Rs {{ item.line_total or item.price }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="invoice-totals">
+                <div class="summary-row"><span>Subtotal</span><strong>Rs {{ invoice.subtotal }}</strong></div>
+                <div class="summary-row"><span>Delivery</span><strong>Rs {{ invoice.delivery_charge }}</strong></div>
+                <div class="summary-row"><span>Discount</span><strong>-Rs {{ invoice.discount }}</strong></div>
+                <div class="summary-row"><span>Tax</span><strong>Included</strong></div>
+                <div class="summary-row total"><span>Grand Total</span><strong>Rs {{ invoice.grand_total }}</strong></div>
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

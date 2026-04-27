@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Patient Detail | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">{{ profile.ur_number }}</p>
+                <h1 class="h2">{{ patient.name }}</h1>
+                <p>{{ patient.gender }} • {{ patient.age }} years • {{ patient.phone or 'No phone on file' }}</p>
+            </div>
+            <div class="page-header-actions">
+                <a class="btn btn-primary btn-pill" href="/emr/modern-consultation/{{ patient.id }}">New consultation</a>
+                <a class="btn btn-outline-success btn-pill" href="/patients/{{ patient.id }}/appointments/new">Book appointment</a>
+                <a class="btn btn-ghost btn-pill" href="/emr/patient-portal/{{ patient.id }}">Patient portal</a>
+            </div>
+        </div>
+
+        <div class="tab-strip mb-4">
+            <span class="tab-pill is-active">Demographics</span>
+            <span class="tab-pill">Medical history</span>
+            <span class="tab-pill">Ayurveda history</span>
+            <span class="tab-pill">Timeline</span>
+        </div>
+
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Demographics & contact</h2>
+                <div class="detail-list">
+                    <div><span>Name</span><strong>{{ patient.name }}</strong></div>
+                    <div><span>Mobile</span><strong>{{ patient.phone or 'Pending' }}</strong></div>
+                    <div><span>Email</span><strong>{{ patient.email or 'Pending' }}</strong></div>
+                    <div><span>Address</span><strong>{{ patient.address or 'Pending' }}</strong></div>
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Ayurveda snapshot</h2>
+                <div class="dosha-stack">
+                    <div class="dosha-card vata"><span>Prakriti</span><strong>{{ assessments.get('prakriti', {}).get('label', profile.ayurveda_profile.get('prakriti', 'Pending')) }}</strong></div>
+                    <div class="dosha-card pitta"><span>Vikriti</span><strong>{{ assessments.get('vikriti', {}).get('label', profile.ayurveda_profile.get('vikriti', 'Pending')) }}</strong></div>
+                    <div class="dosha-card kapha"><span>Agni</span><strong>{{ assessments.get('agni', {}).get('type', profile.ayurveda_profile.get('agni', 'Pending')) }}</strong></div>
+                </div>
+            </article>
+        </div>
+
+        <div class="content-grid-2 mt-4">
+            <article class="card">
+                <h2 class="h4">Allergies & family history</h2>
+                <div class="stack-sm">
+                    <div class="info-chip"><i class="fa-solid fa-triangle-exclamation"></i> {{ patient_record.allergies|length }} allergy entries</div>
+                    <div class="info-chip"><i class="fa-solid fa-people-group"></i> {{ patient_record.family_history|length }} family history entries</div>
+                    <div class="info-chip"><i class="fa-solid fa-heart-pulse"></i> {{ patient_record.medical_history.past_conditions|join(', ') if patient_record.medical_history.past_conditions else 'No chronic issues tagged yet' }}</div>
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Recent vitals</h2>
+                <div class="stack-sm">
+                    {% for vital in vitals %}
+                    <div class="metric-inline"><span>{{ vital.recorded_at.strftime('%d %b %Y') if vital.recorded_at else 'Recent' }}</span><strong>{{ vital.payload.get('bp_systolic', '--') }}/{{ vital.payload.get('bp_diastolic', '--') }} mmHg • {{ vital.payload.get('heart_rate', '--') }} bpm</strong></div>
+                    {% else %}
+                    <p>No vitals recorded yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+
+        <div class="content-grid-2 mt-4">
+            <article class="card">
+                <h2 class="h4">Consultation timeline</h2>
+                <div class="timeline-list">
+                    {% for item in timeline %}
+                    <div class="timeline-entry"><span class="timeline-dot"></span><div><strong>{{ item.title }}</strong><p class="mb-1">{{ item.type|replace('-', ' ')|title }}</p><small class="text-muted">{{ item.date or 'Pending date' }} • {{ item.meta or 'No metadata' }}</small></div></div>
+                    {% else %}
+                    <p>No timeline entries yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Prescriptions</h2>
+                <div class="stack-sm">
+                    {% for prescription in prescriptions %}
+                    <div class="prescription-row"><div><strong>{{ prescription.system_type|title }} prescription</strong><p class="mb-0 text-muted">{{ prescription.created_at.strftime('%d %b %Y') if prescription.created_at else 'Today' }}</p></div><a class="btn btn-ghost btn-pill" href="/emr/prescription-viewer?patient_id={{ patient.id }}">View</a></div>
+                    {% else %}
+                    <p>No EMR prescriptions yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

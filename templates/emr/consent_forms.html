@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Consent Forms | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Consent Forms</h1><p>Digital consent library with version history and e-signature visibility.</p></div></div>
+        <div class="card responsive-table-card">
+            <table class="data-table">
+                <thead><tr><th>Title</th><th>Version</th><th>Status</th><th>Signature</th></tr></thead>
+                <tbody>
+                    {% for form in forms %}
+                    <tr><td>{{ form.title }}</td><td>{{ form.version }}</td><td>{{ form.status }}</td><td>{{ form.signature_name or 'Pending' }}</td></tr>
+                    {% else %}
+                    <tr><td colspan="4">No consent forms recorded.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

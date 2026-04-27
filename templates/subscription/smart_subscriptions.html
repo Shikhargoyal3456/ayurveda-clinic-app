@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}Smart Subscriptions | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+<section class="page-header"><div><p class="eyebrow">Subscriptions</p><h1>Smart medicine subscriptions</h1><p class="mb-0">Recurring medicine delivery with AI optimization, refill reminders, and flexible schedules.</p></div></section>
+<section class="subscription-manager card"><h2>Save 25% with smart subscriptions</h2><div class="content-grid-2 mt-4"><div class="section-stack"><input class="form-control" placeholder="Search medicines to subscribe"><div class="hero-actions"><button class="btn btn-outline-success btn-sm">Weekly</button><button class="btn btn-outline-success btn-sm">Monthly</button><button class="btn btn-outline-success btn-sm">Quarterly</button></div><div><label class="form-label">Quantity per delivery</label><input type="number" min="1" class="form-control" value="1"></div></div><div><div class="subscription-benefits stack-list">{% for item in ['Flat 20% off on MRP','Free delivery always','Refill reminders on WhatsApp','Skip/pause anytime','Auto-price optimization'] %}<div class="stack-item">{{ item }}</div>{% endfor %}</div></div></div><div class="card mt-4"><h4>AI Subscription Optimizer</h4><p>Based on your purchase history, we recommend:</p><div class="stack-list">{% for offer in offers %}<div class="stack-item"><strong>{{ offer.title }}</strong><p class="mb-0 text-muted">{{ offer.discount }}% off{% if offer.code %} · Code {{ offer.code }}{% endif %}</p></div>{% endfor %}</div></div></section>
+</div>
+{% endblock %}

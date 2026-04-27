@@ -1,263 +1,249 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Payments | Daily Tracker</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="app-shell">
-    <div class="container py-4 py-lg-5">
-        <div class="feature-shell mx-auto">
-            <div class="feature-head mb-4">
-                <div>
-                    <p class="eyebrow mb-2">Payments</p>
-                    <h1 class="h2 mb-1">Daily collections</h1>
-                    <p class="text-muted mb-0">A compact view of today's earnings and pending dues.</p>
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = 'Daily collections' %}
+{% set user_role = 'Payments' %}
+{% set avatar_label = 'PY' %}
+
+{% block title %}Payments | Daily Tracker{% endblock %}
+
+{% block header_actions %}
+<a href="/dashboard" class="btn btn-primary btn-sm">Back to Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Payments</span><span>Daily</span></div>
+            <p class="eyebrow">Payment dashboard</p>
+            <h1>Daily collections</h1>
+            <p class="mb-0">Monitor today’s collections, pending amounts, and patient payment activity with export-ready visibility.</p>
+        </div>
+        <div class="hero-actions no-print">
+            <button type="button" id="export-payments" class="btn btn-outline-dark btn-sm">Export CSV</button>
+        </div>
+    </section>
+
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+
+    {% set pending_total = payments | selectattr('status', 'equalto', 'pending') | map(attribute='amount') | sum %}
+    {% set settled_count = payments | selectattr('status', 'equalto', 'paid') | list | length %}
+    <section class="stats-grid">
+        <article class="metric-card"><span>Today's Collection</span><strong>Rs {{ '%.2f'|format(todays_total) }}</strong><p class="mb-0 text-muted">{{ today }}</p></article>
+        <article class="metric-card"><span>Pending Amount</span><strong>Rs {{ '%.2f'|format(pending_total or 0) }}</strong><p class="mb-0 text-muted">Awaiting settlement</p></article>
+        <article class="metric-card"><span>Settled Payments</span><strong>{{ settled_count }}</strong><p class="mb-0 text-muted">Paid entries</p></article>
+        <article class="metric-card"><span>Transactions</span><strong>{{ payments|length }}</strong><p class="mb-0 text-muted">Visible today</p></article>
+    </section>
+
+    <section class="hero-grid">
+        <article class="form-panel no-print">
+            <p class="eyebrow mb-2">Add payment</p>
+            <form method="post" action="/payments/add" data-loading-form class="section-stack" aria-label="Add payment form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="form-row">
+                    <label class="form-label">Patient</label>
+                    <select name="patient_id" class="form-select" required>
+                        <option value="">Select patient</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient.id }}">{{ patient.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="error-message">Patient is required.</span>
                 </div>
-                <a href="/dashboard" class="btn btn-outline-dark">Back to Dashboard</a>
+                <div class="split-grid">
+                    <div class="form-row"><label class="form-label">Amount</label><input name="amount" type="number" min="0" step="0.01" class="form-control" required><span class="error-message">Enter a valid amount.</span></div>
+                    <div class="form-row"><label class="form-label">Date</label><input name="payment_date" type="date" class="form-control" value="{{ today }}"></div>
+                </div>
+                <label class="form-switch"><input class="form-check-input" type="checkbox" id="payment_status" name="payment_status" value="paid" checked><span>Mark as paid</span></label>
+                <button class="btn btn-primary w-100" data-loading-text="Saving...">Save Payment</button>
+            </form>
+        </article>
+
+        <article class="table-panel no-print">
+            <div class="page-header mb-3"><div><p class="eyebrow">Revenue trend</p><h2>Compact daily trend view</h2></div></div>
+            <div id="revenue-trend" class="stack-list"></div>
+            <div class="stack-item mt-3">
+                <strong>Online payment</strong>
+                <p class="text-muted">Test mode: use card 4111 1111 1111 1111, any future expiry, any CVV, and OTP 123456.</p>
+                <div class="section-stack">
+                    <div class="form-row"><label class="form-label">Patient</label><select id="rz-patient" class="form-select"><option value="">Select patient</option>{% for patient in patients %}<option value="{{ patient.id }}" data-name="{{ patient.name }}">{{ patient.name }}</option>{% endfor %}</select></div>
+                    <div class="split-grid"><div class="form-row"><label class="form-label">Amount (Rs)</label><input id="rz-amount" type="number" min="1" step="0.01" class="form-control" placeholder="Enter amount"></div><div class="form-row"><label class="form-label">Date</label><input id="rz-date" type="date" class="form-control" value="{{ today }}"></div></div>
+                    <button id="rz-pay-btn" class="btn btn-outline-success w-100" type="button" onclick="startRazorpay()">Pay Online</button>
+                    <div id="rz-status" class="text-muted small"></div>
+                </div>
             </div>
+        </article>
+    </section>
 
-            {% if flash %}
-            <div class="alert alert-{{ flash.category }} mb-4">{{ flash.message }}</div>
-            {% endif %}
-
-            <div class="row g-4">
-                <div class="col-lg-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="earnings-card mb-4">
-                                <span>Today's Total</span>
-                                <strong>Rs {{ '%.2f'|format(todays_total) }}</strong>
-                                <p class="mb-0 text-muted small">{{ today }}</p>
-                            </div>
-
-                            <form method="post" action="/payments/add" data-loading-form>
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                <div class="mb-3">
-                                    <label class="form-label">Patient</label>
-                                    <select name="patient_id" class="form-select" required>
-                                        <option value="">Select patient</option>
-                                        {% for patient in patients %}
-                                        <option value="{{ patient.id }}">{{ patient.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Amount</label>
-                                    <input name="amount" type="number" min="0" step="0.01" class="form-control" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Date</label>
-                                    <input name="payment_date" type="date" class="form-control" value="{{ today }}">
-                                </div>
-                                <div class="form-check form-switch mb-4">
-                                    <input class="form-check-input" type="checkbox" role="switch" id="payment_status" name="payment_status" value="paid" checked>
-                                    <label class="form-check-label" for="payment_status">Mark as paid</label>
-                                </div>
-                                <button class="btn btn-primary w-100" data-loading-text="Saving...">Save Payment</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="card border-0 shadow-sm mt-4">
-                      <div class="card-body p-4">
-                        <p class="eyebrow mb-1">Online Payment</p>
-                        <h2 class="h6 mb-3">Collect via Razorpay</h2>
-                        <!-- POLISH-4-PAYMENT-READINESS: Keep Razorpay in test mode and show safe test-card instructions. -->
-                        <div class="alert alert-info small">
-                          Test mode: use card <strong>4111 1111 1111 1111</strong>, any future expiry, any CVV, and OTP <strong>123456</strong>.
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Patient</label>
-                          <select id="rz-patient" class="form-select">
-                            <option value="">Select patient</option>
-                            {% for patient in patients %}
-                            <option value="{{ patient.id }}" data-name="{{ patient.name }}">
-                              {{ patient.name }}
-                            </option>
-                            {% endfor %}
-                          </select>
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Amount (Rs)</label>
-                          <input id="rz-amount" type="number" min="1" step="0.01"
-                                 class="form-control" placeholder="Enter amount">
-                        </div>
-                        <div class="mb-4">
-                          <label class="form-label">Date</label>
-                          <input id="rz-date" type="date" class="form-control"
-                                 value="{{ today }}">
-                        </div>
-                        <button id="rz-pay-btn" class="btn btn-success w-100"
-                                onclick="startRazorpay()">
-                          Pay Online
-                        </button>
-                        <div id="rz-status" class="mt-3 small text-muted"></div>
-                      </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-8">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body p-4 p-lg-5">
-                            <div class="section-heading">
-                                <div>
-                                    <p class="eyebrow mb-2">Ledger</p>
-                                    <h2 class="h4 mb-1">Today's payment log</h2>
-                                </div>
-                            </div>
-                            <div class="table-responsive mt-4">
-                                <table class="table align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Patient</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for payment in payments %}
-                                        <tr>
-                                            <td><strong>{{ payment.patient.name }}</strong></td>
-                                            <td>Rs {{ payment.amount }}</td>
-                                            <td>
-                                                <span class="pill {% if payment.status == 'paid' %}pill-success{% elif payment.status == 'pending' %}pill-warning{% else %}pill-muted{% endif %}">
-                                                    {{ payment.status }}
-                                                </span>
-                                                {% if payment.payment_method == 'razorpay' %}
-                                                <span class="pill pill-info ms-1" style="font-size:0.7rem">online</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ payment.date }}</td>
-                                        </tr>
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="4" class="text-center text-muted py-5">No payments logged for today.</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <section class="table-panel">
+        <div class="page-header mb-3 no-print">
+            <div>
+                <p class="eyebrow">Ledger</p>
+                <h2>Transactions</h2>
+            </div>
+            <div class="hero-actions">
+                <input id="payment-search" type="search" class="form-control" placeholder="Search by invoice or patient name" style="min-width:260px;">
+                <select id="payment-status-filter" class="form-select" style="min-width:170px;"><option value="all">All statuses</option><option value="paid">Paid</option><option value="pending">Pending</option></select>
+                <select id="payment-method-filter" class="form-select" style="min-width:170px;"><option value="all">All methods</option><option value="manual">Manual</option><option value="razorpay">Online</option></select>
             </div>
         </div>
-    </div>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-    <script>
-    const CSRF_TOKEN = "{{ csrf_token }}";
+        <div class="table-responsive">
+            <table class="table" id="payments-table">
+                <thead><tr><th>Invoice</th><th>Patient</th><th>Amount</th><th>Status</th><th>Method</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for payment in payments %}
+                    <tr data-status="{{ payment.status }}" data-method="{{ payment.payment_method or 'manual' }}" data-search="#{{ payment.id if payment.id is defined else loop.index }} {{ payment.patient.name }} {{ payment.date }}">
+                        <td><strong>#{{ payment.id if payment.id is defined else loop.index }}</strong></td>
+                        <td>{{ payment.patient.name }}</td>
+                        <td>Rs {{ payment.amount }}</td>
+                        <td><span class="pill {% if payment.status == 'paid' %}pill-success{% else %}pill-muted{% endif %}">{{ payment.status }}</span></td>
+                        <td>{{ payment.payment_method or 'manual' }}</td>
+                        <td>{{ payment.date }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6">No payments logged for today.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
 
-    async function startRazorpay() {
-      const patientSelect = document.getElementById("rz-patient");
-      const patientId = patientSelect.value;
-      const patientName = patientSelect.options[patientSelect.selectedIndex]?.dataset?.name || "";
-      const amount = document.getElementById("rz-amount").value;
-      const paymentDate = document.getElementById("rz-date").value;
-      const statusEl = document.getElementById("rz-status");
-
-      if (!patientId || !amount || parseFloat(amount) <= 0) {
-        statusEl.textContent = "Please select a patient and enter a valid amount.";
-        statusEl.className = "mt-3 small text-danger";
-        return;
-      }
-
-      statusEl.textContent = "Creating order...";
-      statusEl.className = "mt-3 small text-muted";
-      document.getElementById("rz-pay-btn").disabled = true;
-
-      const formData = new FormData();
-      formData.append("patient_id", patientId);
-      formData.append("amount", amount);
-      formData.append("payment_date", paymentDate);
-      formData.append("csrf_token", CSRF_TOKEN);
-
-      let orderData;
-      try {
-        const res = await fetch("/payments/razorpay/create-order", {
-          method: "POST", body: formData
-        });
-        orderData = await res.json();
-        if (orderData.error) {
-          statusEl.textContent = "Error: " + orderData.error;
-          statusEl.className = "mt-3 small text-danger";
-          document.getElementById("rz-pay-btn").disabled = false;
-          return;
-        }
-      } catch (err) {
-        statusEl.textContent = "Failed to create order. Try again.";
-        statusEl.className = "mt-3 small text-danger";
-        document.getElementById("rz-pay-btn").disabled = false;
-        return;
-      }
-
-      const options = {
-        key: orderData.key_id,
-        amount: orderData.amount,
-        currency: orderData.currency,
-        name: "Ayurveda Clinic",
-        description: `Payment for ${patientName}`,
-        order_id: orderData.order_id,
-        handler: async function(response) {
-          statusEl.textContent = "Verifying payment...";
-          try {
-            const verifyRes = await fetch("/payments/razorpay/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                payment_db_id: orderData.payment_db_id,
-              })
-            });
-            const verifyData = await verifyRes.json();
-            if (verifyData.success) {
-              statusEl.textContent = "Payment successful!";
-              statusEl.className = "mt-3 small text-success";
-              setTimeout(() => window.location.reload(), 1500);
-            } else {
-              statusEl.textContent = "Verification failed: " + (verifyData.error || "Unknown error");
-              statusEl.className = "mt-3 small text-danger";
-            }
-          } catch(e) {
-            statusEl.textContent = "Verification error. Contact support.";
-            statusEl.className = "mt-3 small text-danger";
-          }
-          document.getElementById("rz-pay-btn").disabled = false;
-        },
-        modal: {
-          ondismiss: async function() {
-            statusEl.textContent = "Payment cancelled.";
-            statusEl.className = "mt-3 small text-muted";
-            document.getElementById("rz-pay-btn").disabled = false;
-            try {
-              await fetch("/payments/razorpay/failed", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
-                body: JSON.stringify({ payment_db_id: orderData.payment_db_id })
-              });
-            } catch (e) {
-              statusEl.textContent = "Payment cancelled. We could not update the failure status automatically.";
-              statusEl.className = "mt-3 small text-warning";
-            }
-          }
-        },
-        prefill: { name: patientName },
-        theme: { color: "#198754" }
-      };
-
-      const rzp = new Razorpay(options);
-      rzp.open();
+{% block extra_scripts %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+const paymentRows = Array.from(document.querySelectorAll("#payments-table tbody tr[data-status]"));
+const statusFilter = document.getElementById("payment-status-filter");
+const methodFilter = document.getElementById("payment-method-filter");
+const paymentSearch = document.getElementById("payment-search");
+const exportButton = document.getElementById("export-payments");
+const trendContainer = document.getElementById("revenue-trend");
+(function buildTrend() {
+  if (!trendContainer) return;
+  const amounts = paymentRows.map(row => Number((row.children[2]?.textContent || "0").replace(/[^0-9.]/g, "")) || 0);
+  const peak = Math.max(...amounts, 1);
+  trendContainer.innerHTML = paymentRows.slice(0, 6).map((row, index) => {
+    const amount = amounts[index] || 0;
+    const label = row.children[1]?.textContent || `Payment ${index + 1}`;
+    return `<div class="stack-item"><div class="d-flex justify-content-between mb-2"><strong>${label}</strong><span>Rs ${amount.toFixed(2)}</span></div><div class="progress-track"><div class="progress-bar" style="width:${Math.max(12, (amount / peak) * 100)}%;"></div></div></div>`;
+  }).join("") || '<div class="stack-item">No revenue trend to show yet.</div>';
+})();
+function filterPayments() {
+  const status = statusFilter?.value || "all";
+  const method = methodFilter?.value || "all";
+  const query = (paymentSearch?.value || "").toLowerCase().trim();
+  paymentRows.forEach((row) => {
+    const matchesStatus = status === "all" || row.dataset.status === status;
+    const matchesMethod = method === "all" || row.dataset.method === method;
+    const matchesQuery = !query || (row.dataset.search || "").toLowerCase().includes(query);
+    row.style.display = matchesStatus && matchesMethod && matchesQuery ? "" : "none";
+  });
+}
+statusFilter?.addEventListener("change", filterPayments);
+methodFilter?.addEventListener("change", filterPayments);
+paymentSearch?.addEventListener("input", filterPayments);
+exportButton?.addEventListener("click", function () {
+  const visibleRows = paymentRows.filter(row => row.style.display !== "none");
+  const csv = ["Invoice,Patient,Amount,Status,Method,Date"].concat(visibleRows.map(row => Array.from(row.children).map(cell => `"${cell.textContent.trim().replace(/"/g, '""')}"`).join(","))).join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "payments-daily.csv";
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+async function startRazorpay() {
+  const patientSelect = document.getElementById("rz-patient");
+  const patientId = patientSelect.value;
+  const patientName = patientSelect.options[patientSelect.selectedIndex]?.dataset?.name || "";
+  const amount = document.getElementById("rz-amount").value;
+  const paymentDate = document.getElementById("rz-date").value;
+  const statusEl = document.getElementById("rz-status");
+  if (!patientId || !amount || parseFloat(amount) <= 0) {
+    statusEl.textContent = "Please select a patient and enter a valid amount.";
+    statusEl.className = "text-danger small";
+    return;
+  }
+  statusEl.textContent = "Creating order...";
+  statusEl.className = "text-muted small";
+  document.getElementById("rz-pay-btn").disabled = true;
+  const formData = new FormData();
+  formData.append("patient_id", patientId);
+  formData.append("amount", amount);
+  formData.append("payment_date", paymentDate);
+  formData.append("csrf_token", CSRF_TOKEN);
+  let orderData;
+  try {
+    const res = await fetch("/payments/razorpay/create-order", { method: "POST", body: formData });
+    orderData = await res.json();
+    if (orderData.error) {
+      statusEl.textContent = "Error: " + orderData.error;
+      statusEl.className = "text-danger small";
+      document.getElementById("rz-pay-btn").disabled = false;
+      return;
     }
-    </script>
-</body>
-</html>
+  } catch (err) {
+    statusEl.textContent = "Failed to create order. Try again.";
+    statusEl.className = "text-danger small";
+    document.getElementById("rz-pay-btn").disabled = false;
+    return;
+  }
+  const options = {
+    key: orderData.key_id,
+    amount: orderData.amount,
+    currency: orderData.currency,
+    name: "Ayurveda Clinic",
+    description: `Payment for ${patientName}`,
+    order_id: orderData.order_id,
+    handler: async function(response) {
+      statusEl.textContent = "Verifying payment...";
+      try {
+        const verifyRes = await fetch("/payments/razorpay/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
+          body: JSON.stringify({ razorpay_order_id: response.razorpay_order_id, razorpay_payment_id: response.razorpay_payment_id, razorpay_signature: response.razorpay_signature, payment_db_id: orderData.payment_db_id })
+        });
+        const verifyData = await verifyRes.json();
+        if (verifyData.success) {
+          statusEl.textContent = "Payment successful!";
+          statusEl.className = "text-success small";
+          if (window.showToast) window.showToast("Payment successful", "success");
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          statusEl.textContent = "Verification failed: " + (verifyData.error || "Unknown error");
+          statusEl.className = "text-danger small";
+        }
+      } catch(e) {
+        statusEl.textContent = "Verification error. Contact support.";
+        statusEl.className = "text-danger small";
+      }
+      document.getElementById("rz-pay-btn").disabled = false;
+    },
+    modal: {
+      ondismiss: async function() {
+        statusEl.textContent = "Payment cancelled.";
+        statusEl.className = "text-muted small";
+        document.getElementById("rz-pay-btn").disabled = false;
+        try {
+          await fetch("/payments/razorpay/failed", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
+            body: JSON.stringify({ payment_db_id: orderData.payment_db_id })
+          });
+        } catch (e) {
+          statusEl.textContent = "Payment cancelled. We could not update the failure status automatically.";
+          statusEl.className = "text-warning small";
+        }
+      }
+    },
+    prefill: { name: patientName },
+    theme: { color: "#2d6a4f" }
+  };
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
+</script>
+{% endblock %}

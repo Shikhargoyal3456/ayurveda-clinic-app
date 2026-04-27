@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Order Confirmation | Kash AI{% endblock %}
+
+{% block page %}
+<section class="page-section">
+    <div class="site-container content-stack order-confirmation">
+        <div class="card confirmation-header">
+            <div class="success-mark"><i class="fa-solid fa-circle-check"></i></div>
+            <h1>Order Placed Successfully</h1>
+            <p>Order #{{ order.id }} confirmed on {{ order.created_at.strftime('%d %b %Y, %I:%M %p') if order.created_at else 'now' }}.</p>
+        </div>
+
+        <div class="card order-details">
+            <div class="section-headline">
+                <h2>Order Summary</h2>
+            </div>
+            <div class="content-stack">
+                {% for item in order_items %}
+                <div class="summary-row">
+                    <span>{{ item.qty or 1 }}x {{ item.name }}</span>
+                    <span>Rs {{ item.line_total or item.price }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="order-total">
+                <div class="summary-row"><span>Subtotal</span><span>Rs {{ subtotal }}</span></div>
+                <div class="summary-row"><span>Delivery</span><span>Rs {{ delivery_charge }}</span></div>
+                <div class="summary-row"><span>Discount</span><span>-Rs {{ discount }}</span></div>
+                <div class="summary-row total"><strong>Total</strong><strong>Rs {{ order.total_amount }}</strong></div>
+            </div>
+            <div class="delivery-info">
+                <h3>Delivery Address</h3>
+                <p>{{ order.patient_address }}</p>
+                <p>Expected delivery: {{ expected_delivery }}</p>
+            </div>
+            <div class="header-actions-row">
+                <a href="/orders/tracking/{{ order.id }}" class="btn btn-primary">Track Order</a>
+                <a href="/orders/invoice/{{ order.id }}" class="btn btn-outline-success">View Invoice</a>
+                <a href="/order-medicines" class="btn btn-secondary">Continue Shopping</a>
+            </div>
+        </div>
+
+        <div class="card whatsapp-notification">
+            <p>Get updates on WhatsApp for this order.</p>
+            <button class="btn btn-outline-success" onclick="sendWhatsAppConfirmation()">
+                <i class="fa-brands fa-whatsapp"></i> Send to WhatsApp
+            </button>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+function sendWhatsAppConfirmation() {
+    const message = `Order #{{ order.id }} confirmed.%0ATotal: Rs {{ order.total_amount }}%0ATrack: ${window.location.origin}/orders/tracking/{{ order.id }}`;
+    window.open(`https://wa.me/91{{ customer_mobile }}?text=${message}`, '_blank');
+}
+</script>
+{% endblock %}

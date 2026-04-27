@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Panchakarma Scheduler | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Panchakarma Scheduler</h1><p>Plan procedures, assign staff, and document progress in one treatment calendar.</p></div></div>
+        <section class="card surface-tint mb-4">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Marketplace expansion</p>
+                    <h2>From scheduler to India's Panchakarma network</h2>
+                    <p class="mb-0">Operational planning is already here. The next moat is turning treatment capacity into a discoverable, bookable marketplace.</p>
+                </div>
+                <a href="/marketplace/panchakarma-booking" class="btn btn-primary btn-sm">Open marketplace view</a>
+            </div>
+            <div class="hero-actions">
+                <span class="pill pill-success">Transparent pricing</span>
+                <span class="pill pill-muted">Center discovery</span>
+                <span class="pill pill-warning">Waitlist & premium packages</span>
+            </div>
+        </section>
+        <div class="grid-auto">
+            {% for plan in plans %}
+            <article class="card">
+                <p class="eyebrow">{{ plan.date }}</p>
+                <h3 class="h4">{{ plan.name }}</h3>
+                <p>{{ plan.patient }} • {{ plan.staff }}</p>
+                <span class="status-pill status-confirmed">{{ plan.status }}</span>
+            </article>
+            {% else %}
+            <article class="card"><p>No procedures scheduled.</p></article>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

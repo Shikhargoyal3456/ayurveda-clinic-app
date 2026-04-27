@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Audit Trail | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Audit Trail</h1><p>Access logs viewer for compliance review, patient-level traceability, and export readiness.</p></div></div>
+        <div class="card responsive-table-card">
+            <table class="data-table">
+                <thead><tr><th>Action</th><th>Record</th><th>Patient</th><th>When</th></tr></thead>
+                <tbody>
+                    {% for log in audit_logs %}
+                    <tr><td>{{ log.action }}</td><td>{{ log.record_type }} #{{ log.record_id or '-' }}</td><td>{{ log.patient_id or '-' }}</td><td>{{ log.created_at.strftime('%d %b %Y %H:%M') if log.created_at else 'Now' }}</td></tr>
+                    {% else %}
+                    <tr><td colspan="4">No audit activity yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

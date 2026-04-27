@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Referral System | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="referral-program card">
+        <p class="eyebrow">Growth engine</p>
+        <h1>Refer & earn Rs 500</h1>
+        <div class="referral-code"><span id="referralCodeText">YOUR CODE: {{ referral_code }}</span><button class="btn btn-primary btn-sm" type="button" id="copyReferralCode">Copy</button></div>
+        <div class="hero-actions mt-3">
+            <input id="referralEmail" class="form-control" type="email" placeholder="Friend's email for demo claim">
+            <button class="btn btn-outline-success" type="button" id="claimReferralBtn">Claim Demo Bonus</button>
+        </div>
+        <div id="referralMessage" class="text-muted small mt-3"></div>
+        <div class="stats-grid mt-4"><article class="metric-card"><span>Referred</span><strong>{{ referral_count }}</strong></article><article class="metric-card"><span>Earned</span><strong>Rs {{ referral_earnings }}</strong></article><article class="metric-card"><span>Next reward</span><strong>Rs {{ next_milestone }}</strong></article></div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.getElementById('copyReferralCode')?.addEventListener('click', async function () {
+  const text = document.getElementById('referralCodeText')?.textContent || '';
+  try {
+    await navigator.clipboard.writeText(text.replace('YOUR CODE: ','').trim());
+    window.showToast?.('Referral code copied.', 'success');
+  } catch (_) {
+    window.showToast?.('Copy failed. Please copy manually.', 'info');
+  }
+});
+document.getElementById('claimReferralBtn')?.addEventListener('click', async function () {
+  const email = document.getElementById('referralEmail')?.value || '';
+  const message = document.getElementById('referralMessage');
+  try {
+    const res = await fetch('/api/referral/claim', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({referral_code: '{{ referral_code }}', email})
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.error || 'Claim failed');
+    if (message) message.textContent = 'Bonus claimed for demo mode: Rs 500 to referrer, Rs 250 to new user.';
+    window.showToast?.('Referral bonus claimed.', 'success');
+  } catch (error) {
+    if (message) message.textContent = String(error.message || 'Unable to claim bonus.');
+    window.showToast?.('Referral claim failed.', 'error');
+  }
+});
+</script>
+{% endblock %}

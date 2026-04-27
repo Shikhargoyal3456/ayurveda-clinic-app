@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Integrated Consultation | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Integrated medicine</p>
+                <h1 class="h2">Integrated Consultation</h1>
+                <p>{{ patient.name }} • Cross-reference evidence-based medicine with Ayurveda constitutional care.</p>
+            </div>
+        </div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Modern lane</h2>
+                <ul class="feature-list">
+                    <li>SOAP note drafting</li>
+                    <li>ICD-11 coding</li>
+                    <li>Lab and vital integration</li>
+                    <li>Evidence prompts</li>
+                </ul>
+            </article>
+            <article class="card">
+                <h2 class="h4">Ayurveda lane</h2>
+                <ul class="feature-list">
+                    <li>Prakriti-Vikriti contrast</li>
+                    <li>Agni / Ama summary</li>
+                    <li>Srotas mapping</li>
+                    <li>Panchakarma planning</li>
+                </ul>
+            </article>
+        </div>
+        <div class="card mt-4">
+            <h2 class="h4">Drug-herb interaction checker</h2>
+            <div class="interaction-grid">
+                {% for drug, herbs in interaction_pairs.items() %}
+                <div class="interaction-card">
+                    <strong>{{ drug }}</strong>
+                    <p class="mb-0">Watch with {{ herbs|join(', ') }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="alert alert-warning mt-4"><i class="fa-solid fa-bell"></i> Always confirm spacing, dose, and contraindications when combining herbomineral preparations with chronic allopathic medicines.</div>
+        </div>
+    </section>
+</div>
+{% endblock %}

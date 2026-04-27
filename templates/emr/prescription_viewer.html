@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Prescription Viewer | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Unified prescriptions</p>
+                <h1 class="h2">Prescription Viewer</h1>
+                <p>Modern and Ayurveda prescriptions with refill visibility, print readiness, and patient-sharing support.</p>
+            </div>
+        </div>
+        <div class="card responsive-table-card">
+            <table class="data-table">
+                <thead><tr><th>ID</th><th>System</th><th>Status</th><th>Items</th><th>Refills</th><th>Date</th></tr></thead>
+                <tbody>
+                    {% for prescription in prescriptions %}
+                    <tr>
+                        <td>#{{ prescription.id }}</td>
+                        <td>{{ prescription.system_type|title }}</td>
+                        <td><span class="status-pill status-confirmed">{{ prescription.status }}</span></td>
+                        <td>{{ prescription.items_json|length }}</td>
+                        <td>{{ prescription.refill_count }}</td>
+                        <td>{{ prescription.created_at.strftime('%d %b %Y') if prescription.created_at else 'Today' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6">No prescriptions available.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

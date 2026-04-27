@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% set seo_title = 'Wellness Community | Kash AI' %}
+{% block title %}Wellness Community | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header"><div><p class="eyebrow">Community</p><h1>Ayurveda wellness feed</h1><p class="mb-0">Turn solitary treatment into a motivating community with shareable journeys and weekly challenges.</p></div></section>
+    <section class="community-feed">
+        <div class="feed-posts">
+            {% for post in feed %}
+            <article class="post card">
+                <div class="post-header"><div class="avatar-badge">{{ post.user_name[:1] }}</div><div><strong>{{ post.user_name }}</strong><span>Treated for {{ post.condition }}</span></div></div>
+                <div class="post-content">{{ post.content }}</div>
+                <div class="post-stats"><span>{{ post.likes }} likes</span><span>{{ post.comments }} comments</span><span>{{ post.shares }} shares</span></div>
+                <div class="post-actions hero-actions"><button class="btn btn-outline-dark btn-sm">Like</button><button class="btn btn-outline-dark btn-sm">Comment</button><button class="btn btn-primary btn-sm">Share journey</button></div>
+            </article>
+            {% endfor %}
+        </div>
+        <aside class="card wellness-challenges"><h3>Weekly Wellness Challenge</h3><p>{{ challenge.name }}</p><div class="progress-track"><div class="progress-bar" style="width:{{ challenge.progress }}%;">{{ challenge.participants }} participants</div></div><button class="btn btn-outline-success mt-3" type="button">Join Challenge</button></aside>
+    </section>
+</div>
+{% endblock %}

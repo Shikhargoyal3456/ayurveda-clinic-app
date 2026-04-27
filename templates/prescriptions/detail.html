@@ -1,121 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prescription #{{ prescription.id }}</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="app-shell">
-    <div class="container py-4 py-lg-5">
-        {% if flash %}
-        <div class="alert alert-{{ flash.category }} mb-4">{{ flash.message }}</div>
-        {% endif %}
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = doctor.full_name or doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = ((doctor.full_name or doctor.username or 'DR')[:2]) | upper %}
 
-        {% if created %}
-        <div class="success-banner mb-4">
-            <div>
-                <strong>Prescription created</strong>
-                <p class="mb-0">Patient progress will be tracked on the next visit.</p>
-                {% if prescription.follow_up_days %}
-                <p class="mb-0 text-muted mt-1">Next visit recommended in {{ prescription.follow_up_days }} days{% if recommended_followup_date %}, around {{ recommended_followup_date.strftime('%d %b %Y') }}{% endif %}.</p>
-                {% endif %}
-            </div>
-            <form method="post" action="/prescriptions/{{ prescription.id }}/share" data-loading-form>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button class="btn btn-primary rounded-pill px-4" data-loading-text="Sharing...">Share Prescription</button>
-            </form>
+{% block title %}Prescription #{{ prescription.id }}{% endblock %}
+
+{% block header_actions %}
+<a href="/patients/{{ patient.id }}/prescriptions/new" class="btn btn-outline-dark btn-sm">New prescription</a>
+<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+    {% if created %}
+    <div class="alert alert-success no-print">
+        <strong>Prescription created.</strong>
+        Patient progress will be tracked on the next visit.
+        {% if prescription.follow_up_days %} Next visit recommended in {{ prescription.follow_up_days }} days{% if recommended_followup_date %}, around {{ recommended_followup_date.strftime('%d %b %Y') }}{% endif %}.{% endif %}
+    </div>
+    {% endif %}
+
+    <section class="page-header no-print">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Prescriptions</span><span>Detail</span></div>
+            <p class="eyebrow">Prescription viewer</p>
+            <h1>Prescription #{{ prescription.id }}</h1>
+            <p class="mb-0">Clean prescription layout for patient communication, pharmacy sharing, and printing.</p>
         </div>
-        {% endif %}
+    </section>
 
-        <div class="prescription-sheet mx-auto">
-            <div class="d-flex justify-content-between align-items-start gap-3 mb-5">
+    <section class="store-layout" style="grid-template-columns:minmax(0,1fr) 330px; align-items:start;">
+        <article class="table-panel">
+            <div class="page-header mb-4">
                 <div>
-                    <p class="eyebrow mb-2">Prescription</p>
-                    <h1 class="h2 mb-1">{{ clinic_name }}</h1>
-                    <p class="text-muted mb-0">{{ doctor.full_name or doctor.username }}</p>
+                    <p class="eyebrow mb-2">{{ clinic_name }}</p>
+                    <h2>{{ doctor.full_name or doctor.username }}</h2>
+                    <p class="mb-0 text-muted">Prescription ID #{{ prescription.id }} · {{ current_datetime.strftime('%d %b %Y, %I:%M %p') }}</p>
                 </div>
-                <div class="text-end">
-                    <div class="text-muted small">Prescription ID</div>
-                    <strong>#{{ prescription.id }}</strong>
-                    <div class="text-muted small mt-2">{{ current_datetime.strftime('%d %b %Y, %I:%M %p') }}</div>
+                <div class="print-only">
+                    <strong>Prescription</strong>
                 </div>
             </div>
 
-            <div class="print-grid mb-5">
-                <div>
-                    <div class="text-muted small">Patient</div>
-                    <strong>{{ patient.name }}</strong>
-                </div>
-                <div>
-                    <div class="text-muted small">Phone</div>
-                    <strong>{{ patient.phone or "Not available" }}</strong>
-                </div>
-                <div>
-                    <div class="text-muted small">Diagnosis</div>
-                    <strong>{{ prescription.diagnosis }}</strong>
-                </div>
-                <div>
-                    <div class="text-muted small">Follow-up</div>
-                    <strong>{% if prescription.follow_up_days %}{{ prescription.follow_up_days }} days{% else %}Not specified{% endif %}</strong>
-                </div>
+            <div class="content-grid mb-4" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                <div class="stack-item"><strong>Patient</strong><p class="mb-0 text-muted">{{ patient.name }}</p></div>
+                <div class="stack-item"><strong>Doctor</strong><p class="mb-0 text-muted">{{ doctor.full_name or doctor.username }}</p></div>
+                <div class="stack-item"><strong>Phone</strong><p class="mb-0 text-muted">{{ patient.phone or 'Not available' }}</p></div>
+                <div class="stack-item"><strong>Diagnosis</strong><p class="mb-0 text-muted">{{ prescription.diagnosis }}</p></div>
             </div>
 
-            <section class="mb-5">
-                <h2 class="h5 mb-3">Medicines</h2>
+            <section class="table-panel" style="padding:0; background:transparent; border:0; box-shadow:none;">
+                <div class="page-header mb-3"><div><p class="eyebrow mb-1">Medicine plan</p><h3 class="h4 mb-0">Dosage instructions</h3></div></div>
                 <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Dosage</th>
-                                <th>Frequency</th>
-                            </tr>
-                        </thead>
+                    <table class="table">
+                        <thead><tr><th>Name</th><th>Dosage</th><th>Frequency</th></tr></thead>
                         <tbody>
                             {% for medicine in prescription.medicines %}
-                            <tr>
-                                <td><strong>{{ medicine.name }}</strong></td>
-                                <td>{{ medicine.dosage or "-" }}</td>
-                                <td>{{ medicine.frequency or "-" }}</td>
-                            </tr>
+                            <tr><td><strong>{{ medicine.name }}</strong></td><td>{{ medicine.dosage or '-' }}</td><td>{{ medicine.frequency or '-' }}</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </section>
 
-            <section class="mb-5">
-                <h2 class="h5 mb-3">Advice</h2>
-                <p class="mb-0 prescription-copy">{{ prescription.advice or "No additional advice recorded." }}</p>
+            <section class="mt-4">
+                <p class="eyebrow mb-2">Advice</p>
+                <div class="stack-item"><p class="mb-0 prescription-copy">{{ prescription.advice or 'No additional advice recorded.' }}</p></div>
             </section>
+        </article>
 
-            <div class="d-flex flex-wrap gap-3">
-                <button type="button" id="print-prescription-btn" class="btn btn-primary">Print Prescription</button>
-                <a href="/prescriptions/{{ prescription.id }}/download" class="btn btn-outline-primary">Download PDF</a>
-                <!-- POLISH-1-ORDER-BUTTONS: Prescription-aware medicine ordering entry point. -->
-                <a href="/order-medicines?source=prescription&prescription_id={{ prescription.id }}" class="btn btn-success rounded-pill">Order these medicines</a>
-                <a href="/pharmacy/order/{{ prescription_token }}" class="btn btn-outline-success rounded-pill">Classic Order Link</a>
+        <aside class="table-panel no-print">
+            <p class="eyebrow mb-2">Actions</p>
+            <div class="stack-list">
+                <div class="stack-item">
+                    <strong>Refill status</strong>
+                    <p class="text-muted mb-2">Follow-up in {{ prescription.follow_up_days or 0 }} days.</p>
+                    <div class="progress-track"><div class="progress-bar" style="width:{% if prescription.follow_up_days %}72{% else %}22{% endif %}%;"></div></div>
+                </div>
+                <button type="button" id="print-prescription-btn" class="btn btn-primary w-100">Print Prescription</button>
+                <a href="/prescriptions/{{ prescription.id }}/download" class="btn btn-outline-primary w-100">Download PDF</a>
+                <a href="/order-medicines?source=prescription&prescription_id={{ prescription.id }}" class="btn btn-outline-success w-100">Reorder Medicines</a>
+                <a href="/pharmacy/order/{{ prescription_token }}" class="btn btn-outline-dark w-100">Share with Pharmacy</a>
                 <form method="post" action="/prescriptions/{{ prescription.id }}/share" data-loading-form>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button class="btn btn-outline-success" data-loading-text="Sharing...">Send via WhatsApp</button>
+                    <button class="btn btn-outline-success w-100" data-loading-text="Sharing...">Send via WhatsApp</button>
                 </form>
-                <a href="/patients/{{ patient.id }}/prescriptions/new" class="btn btn-outline-dark">Create Another</a>
-                <a href="/dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
             </div>
+        </aside>
+    </section>
+</div>
+{% endblock %}
 
-            <footer class="prescription-footer mt-5">
-                <span>{{ doctor.full_name or doctor.username }}</span>
-                <span>{{ clinic_name }}</span>
-            </footer>
-        </div>
-    </div>
-    <script src="{{ url_for('static', path='js/prescription_detail.js') }}"></script>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/prescription_detail.js') }}"></script>
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+{% endblock %}

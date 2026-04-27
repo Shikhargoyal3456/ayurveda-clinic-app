@@ -166,9 +166,20 @@ def _activate_sqlite_fallback(exc: Exception) -> None:
 
 def init_db() -> None:
     from app.models import Appointment, CaseSheet, Doctor, Patient  # noqa: F401
+    from models.emr import (  # noqa: F401
+        EMRAssessment,
+        EMRAuditLog,
+        EMRConsentForm,
+        EMRConsultation,
+        EMRLabOrder,
+        EMROutcome,
+        EMRPatientProfile,
+        EMRPrescription,
+        EMRVital,
+    )
     from models.outcome import Outcome  # noqa: F401
     from models.payment import Payment  # noqa: F401
-    from models.medicine import Medicine, MedicineOrder, Pharmacy  # noqa: F401
+    from models.medicine import Medicine, MedicineOrder, Pharmacy, StockAdjustment  # noqa: F401
     from models.prescription import Prescription  # noqa: F401
     from models.subscription import ClinicSubscription, SubscriptionUsage  # noqa: F401
     from models.supplier import Supplier  # noqa: F401
@@ -235,6 +246,31 @@ def _ensure_feature_schema() -> None:
             if "notification_failed" not in columns:
                 with engine.begin() as connection:
                     connection.execute(text("ALTER TABLE medicine_orders ADD COLUMN notification_failed BOOLEAN DEFAULT 0"))
+        if "medicines" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("medicines")}
+            with engine.begin() as connection:
+                if "mrp" not in columns:
+                    connection.execute(text("ALTER TABLE medicines ADD COLUMN mrp INTEGER"))
+                    connection.execute(text("UPDATE medicines SET mrp = price WHERE mrp IS NULL"))
+                if "brand" not in columns:
+                    connection.execute(text("ALTER TABLE medicines ADD COLUMN brand VARCHAR(160)"))
+                if "description" not in columns:
+                    connection.execute(text("ALTER TABLE medicines ADD COLUMN description TEXT"))
+                if "image_url" not in columns:
+                    connection.execute(text("ALTER TABLE medicines ADD COLUMN image_url VARCHAR(255)"))
+                if "stock" not in columns:
+                    connection.execute(text("ALTER TABLE medicines ADD COLUMN stock INTEGER DEFAULT 0"))
+                    connection.execute(text("UPDATE medicines SET stock = 100 WHERE stock IS NULL OR stock = 0"))
+                if "created_at" not in columns:
+                    connection.execute(text("ALTER TABLE medicines ADD COLUMN created_at DATETIME"))
+                    connection.execute(text("UPDATE medicines SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+        if "stock_adjustments" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("stock_adjustments")}
+            with engine.begin() as connection:
+                if "adjusted_by" not in columns:
+                    connection.execute(text("ALTER TABLE stock_adjustments ADD COLUMN adjusted_by INTEGER"))
+                if "reason" not in columns:
+                    connection.execute(text("ALTER TABLE stock_adjustments ADD COLUMN reason VARCHAR(255)"))
         if "clinic_subscriptions" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("clinic_subscriptions")}
             with engine.begin() as connection:

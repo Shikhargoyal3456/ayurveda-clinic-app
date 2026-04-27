@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Test EMR | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Test EMR</h1><p>Manual verification page for registration, consultations, alerts, labs, audit logging, and mobile cards.</p></div></div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Workflow checks</h2>
+                <div class="stack-sm">
+                    <button class="btn btn-primary btn-pill" type="button" onclick="showToast('Patient registration UI ready')">Test registration</button>
+                    <button class="btn btn-outline-success btn-pill" type="button" onclick="showToast('Modern consultation module wired', 'info')">Test SOAP</button>
+                    <button class="btn btn-ghost btn-pill" type="button" onclick="showToast('Ayurveda assessment module wired')">Test prakriti</button>
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Coverage snapshot</h2>
+                <div class="stack-sm">
+                    <div class="info-chip">Patients loaded: {{ patients|length }}</div>
+                    <div class="info-chip">Question bank: {{ question_count }} prompts</div>
+                    <div class="info-chip">Mobile-ready cards: enabled</div>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

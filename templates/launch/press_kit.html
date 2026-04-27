@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Press Kit | Kash AI{% endblock %}
+
+{% block page %}
+<section class="page-section">
+    <div class="site-container content-stack">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Launch assets</p>
+                <h1>Press Kit</h1>
+                <p class="page-subtitle">Media-ready brand assets, product positioning, founder messaging, and demo references.</p>
+            </div>
+        </div>
+
+        <div class="content-grid-2">
+            <div class="card compact-card">
+                <h2>Brand Assets</h2>
+                <p>Logo: Kash AI</p>
+                <p>Tagline: Integrated Ayurveda + Modern Medicine for better outcomes.</p>
+                <p>Primary colors: Ayurveda greens and saffron accents.</p>
+            </div>
+            <div class="card compact-card">
+                <h2>Founder Quote</h2>
+                <p>"We are building the most trusted bridge between Ayurveda wisdom and modern clinical workflows."</p>
+            </div>
+        </div>
+
+        <div class="card compact-card">
+            <h2>Why We Win</h2>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Feature</th><th>Practo</th><th>PharmEasy</th><th>Tata 1mg</th><th>Kash AI</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for row in comparison_rows %}
+                        <tr>
+                            <td>{{ row.feature }}</td>
+                            <td>{{ row.practo }}</td>
+                            <td>{{ row.pharmeasy }}</td>
+                            <td>{{ row.netmeds }}</td>
+                            <td>{{ row.us }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card compact-card">
+            <h2>Media Contact</h2>
+            <p>Email: media@kashai.health</p>
+            <p>Product demo: /investor-demo</p>
+            <p>Trust center: /trust/verified-practitioners</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

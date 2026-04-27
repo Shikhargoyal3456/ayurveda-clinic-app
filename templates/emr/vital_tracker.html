@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Vital Tracker | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Vital Tracker</h1><p>Track blood pressure, pulse, weight, glucose, and trend changes over time.</p></div></div>
+        <div class="card">
+            <form class="filter-bar" method="get">
+                <div class="form-row">
+                    <label for="patient_id">Patient</label>
+                    <select id="patient_id" name="patient_id">
+                        <option value="">All patients</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient.id }}" {% if selected_patient_id == patient.id %}selected{% endif %}>{{ patient.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button class="btn btn-primary btn-pill" type="submit">Load vitals</button>
+            </form>
+            <canvas id="weightTrendChart" class="mini-chart mt-4" height="140"></canvas>
+            <div class="stack-sm mt-4">
+                {% for vital in vitals %}
+                <div class="metric-inline"><span>{{ vital.recorded_at.strftime('%d %b %Y') if vital.recorded_at else 'Recent' }}</span><strong>{{ vital.payload.get('weight_kg', '--') }} kg • {{ vital.payload.get('heart_rate', '--') }} bpm</strong></div>
+                {% else %}
+                <p>No vitals to display.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="{{ url_for('static', path='js/emr/vital_charts.js') }}"></script>{% endblock %}

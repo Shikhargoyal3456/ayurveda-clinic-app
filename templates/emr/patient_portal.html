@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Patient Portal | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Patient Portal</h1><p>Preview the patient-facing record experience including appointments, labs, and prescriptions.</p></div></div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Appointments history</h2>
+                <div class="stack-sm">
+                    {% for item in appointments %}
+                    <div class="metric-inline"><span>{{ item.date }}</span><strong>{{ item.reason }}</strong></div>
+                    {% else %}
+                    <p>No appointments yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Reports & prescriptions</h2>
+                <div class="stack-sm">
+                    <div class="info-chip">{{ prescriptions|length }} prescriptions</div>
+                    <div class="info-chip">{{ labs|length }} lab orders</div>
+                    <a class="btn btn-primary btn-pill" href="/emr/prescription-viewer?patient_id={{ patient.id }}">Open prescription history</a>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

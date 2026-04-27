@@ -1,131 +1,107 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prescription | {{ patient.name }}</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="app-shell">
-    <div class="container py-4 py-lg-5">
-        <div
-            class="feature-shell mx-auto"
-            id="prescription-form-shell"
-            data-templates='{{ prescription_templates | tojson }}'
-            data-last-prescription='{{ {
-                "diagnosis": last_prescription.diagnosis if last_prescription else "",
-                "medicines": last_prescription.medicines if last_prescription else [],
-                "advice": last_prescription.advice if last_prescription else ""
-            } | tojson }}'
-        >
-            <div class="feature-head mb-4">
-                <div>
-                    <p class="eyebrow mb-2">Prescription</p>
-                    <h1 class="h2 mb-1">Create prescription for {{ patient.name }}</h1>
-                    <p class="text-muted mb-0">Keep the treatment plan crisp, printable, and patient-friendly.</p>
-                </div>
-                <div class="text-end">
-                    <div class="text-muted small">{{ clinic_name }}</div>
-                    <div class="text-muted small">{{ current_datetime.strftime('%d %b %Y, %I:%M %p') }}</div>
-                    <div class="text-muted small">Doctor: {{ patient.doctor.full_name or patient.doctor.username }}</div>
-                </div>
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = patient.doctor.full_name or patient.doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = ((patient.doctor.full_name or patient.doctor.username or 'DR')[:2]) | upper %}
+
+{% block title %}Prescription | {{ patient.name }}{% endblock %}
+
+{% block header_actions %}
+<a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-dark btn-sm">Patient history</a>
+<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section id="prescription-form-shell" class="section-stack" data-templates='{{ prescription_templates | tojson }}' data-last-prescription='{{ {"diagnosis": last_prescription.diagnosis if last_prescription else "", "medicines": last_prescription.medicines if last_prescription else [], "advice": last_prescription.advice if last_prescription else "" } | tojson }}'>
+        <div class="page-header">
+            <div>
+                <div class="breadcrumbs mb-2"><span>Home</span><span>Prescriptions</span><span>Create</span></div>
+                <p class="eyebrow">Prescription builder</p>
+                <h1>Create prescription for {{ patient.name }}</h1>
+                <p class="mb-0">Build a structured prescription, preview it live, and prepare it for print, PDF export, and pharmacy sharing.</p>
             </div>
+            <div class="stack-list" style="justify-items:end;">
+                <span class="badge text-bg-light">{{ clinic_name }}</span>
+                <span class="text-muted small">{{ current_datetime.strftime('%d %b %Y, %I:%M %p') }}</span>
+                <span class="text-muted small">Doctor: {{ patient.doctor.full_name or patient.doctor.username }}</span>
+            </div>
+        </div>
 
-            {% if flash %}
-            <div class="alert alert-{{ flash.category }} mb-4">{{ flash.message }}</div>
-            {% endif %}
+        {% if flash %}
+        <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+        {% endif %}
 
-            <div class="card border-0 shadow-sm">
-                <div class="card-body p-4 p-lg-5">
-                    <div class="row g-4 mb-4">
-                        <div class="col-lg-4">
-                            <div class="quick-fill-card h-100">
-                                <p class="eyebrow mb-2">Patient</p>
-                                <h2 class="h5 mb-3">{{ patient.name }}</h2>
-                                <div class="text-muted small mb-2">Age {{ patient.age }} | {{ patient.gender }}</div>
-                                <div class="text-muted small mb-2">{{ patient.phone or "Phone not available" }}</div>
-                                <div class="text-muted small">{{ patient.email or "Email not available" }}</div>
-                            </div>
+        <section class="store-layout" style="grid-template-columns:minmax(0,1fr) 380px;">
+            <div class="section-stack">
+                <article class="table-panel">
+                    <div class="page-header mb-3">
+                        <div>
+                            <p class="eyebrow">Patient context</p>
+                            <h2>Consult snapshot</h2>
                         </div>
-                        <div class="col-lg-8">
-                            <div class="quick-fill-card h-100">
-                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                                    <div>
-                                        <p class="eyebrow mb-2">Previous Prescriptions</p>
-                                        <h2 class="h5 mb-1">Recent history</h2>
-                                    </div>
-                                    <a href="/patients/{{ patient.id }}/cases" class="small text-decoration-none">Open full history</a>
-                                </div>
-                                <div class="stack-list mt-3">
-                                    {% for item in recent_prescriptions %}
-                                    <div class="stack-item">
-                                        <div>
-                                            <strong>{{ item.diagnosis }}</strong>
-                                            <div class="text-muted small">{{ item.created_at.strftime('%d %b %Y') if item.created_at else 'Previous visit' }}</div>
-                                        </div>
-                                        {% if item.follow_up_days %}
-                                        <span class="pill">{{ item.follow_up_days }} day follow-up</span>
-                                        {% endif %}
-                                    </div>
-                                    {% else %}
-                                    <p class="text-muted mb-0">No previous prescriptions recorded for this patient yet.</p>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                        <span class="badge text-bg-success">{{ patient.age }} yrs · {{ patient.gender }}</span>
+                    </div>
+                    <div class="content-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+                        <div class="stack-item"><strong>{{ patient.name }}</strong><p class="mb-0 text-muted">{{ patient.phone or 'Phone not available' }}</p></div>
+                        <div class="stack-item"><strong>{{ patient.email or 'Email not available' }}</strong><p class="mb-0 text-muted">Patient contact</p></div>
+                        <div class="stack-item"><strong>{{ recent_prescriptions|length }}</strong><p class="mb-0 text-muted">Recent prescriptions in history</p></div>
+                        <div class="stack-item"><strong>{% if last_prescription %}Ready{% else %}None yet{% endif %}</strong><p class="mb-0 text-muted">Last prescription reuse</p></div>
+                    </div>
+                </article>
+
+                <article class="table-panel">
+                    <div class="page-header mb-3">
+                        <div>
+                            <p class="eyebrow">Quick actions</p>
+                            <h2>Use a template or repeat the last plan</h2>
                         </div>
                     </div>
-
-                    <div class="row g-3 mb-4">
-                        <div class="col-lg-6">
-                            <div class="quick-fill-card">
-                                <label class="form-label">Use Template</label>
-                                <select id="template-picker" class="form-select">
-                                    <option value="">Select a quick template</option>
-                                    {% for template in prescription_templates %}
-                                    <option value="{{ template.key }}">{{ template.label }}</option>
-                                    {% endfor %}
-                                </select>
-                                <p class="text-muted small mb-0 mt-2">Useful for common complaints like fever, cough, and acidity.</p>
-                            </div>
+                    <div class="split-grid">
+                        <div class="form-row">
+                            <label class="form-label" for="template-picker">Use Template</label>
+                            <select id="template-picker" class="form-select" aria-label="Select prescription template">
+                                <option value="">Select a quick template</option>
+                                {% for template in prescription_templates %}
+                                <option value="{{ template.key }}">{{ template.label }}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="error-message">Choose a valid template.</span>
                         </div>
-                        <div class="col-lg-6">
-                            <div class="quick-fill-card">
-                                <label class="form-label">Repeat Last Prescription</label>
-                                {% if last_prescription %}
-                                <button type="button" class="btn btn-outline-dark w-100" id="repeat-last-btn">Reuse last prescription</button>
-                                <p class="text-muted small mb-0 mt-2">{{ last_prescription.diagnosis }} from {{ last_prescription.created_at.strftime('%d %b %Y') if last_prescription.created_at else 'previous visit' }}</p>
-                                {% else %}
-                                <button type="button" class="btn btn-outline-secondary w-100" disabled>No previous prescription</button>
-                                <p class="text-muted small mb-0 mt-2">Once a prescription exists for this patient, one-click reuse will appear here.</p>
-                                {% endif %}
-                            </div>
+                        <div class="stack-item">
+                            <strong>Repeat Last Prescription</strong>
+                            <p class="text-muted">{% if last_prescription %}{{ last_prescription.diagnosis }} from {{ last_prescription.created_at.strftime('%d %b %Y') if last_prescription.created_at else 'previous visit' }}{% else %}Once a prescription exists, one-click reuse appears here.{% endif %}</p>
+                            {% if last_prescription %}
+                            <button type="button" class="btn btn-outline-dark w-100" id="repeat-last-btn">Reuse last prescription</button>
+                            {% else %}
+                            <button type="button" class="btn btn-outline-dark w-100" id="repeat-last-btn" disabled>No previous prescription</button>
+                            {% endif %}
                         </div>
                     </div>
+                </article>
 
-                    <form method="post" action="/prescriptions/create" data-loading-form>
+                <article class="form-panel">
+                    <form method="post" action="/prescriptions/create" data-loading-form class="section-stack" aria-label="Prescription creation form">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="patient_id" value="{{ patient.id }}">
-                        <div class="mb-4">
-                            <label class="form-label">Diagnosis</label>
+                        <div class="form-row">
+                            <label class="form-label" for="diagnosis-input">Diagnosis</label>
                             <input id="diagnosis-input" name="diagnosis" class="form-control form-control-lg" placeholder="Enter diagnosis" required>
+                            <span class="error-message">Diagnosis is required.</span>
                         </div>
 
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="section-stack">
+                            <div class="page-header mb-0">
                                 <label class="form-label mb-0">Medicines</label>
                                 <button type="button" class="btn btn-sm btn-outline-primary" data-add-medicine>Add medicine</button>
                             </div>
-                            <div id="medicine-list" class="medicine-list">
-                                <div class="medicine-row">
+                            <div id="medicine-list" class="medicine-list" aria-live="polite">
+                                <div class="medicine-row stack-item" style="display:grid; grid-template-columns:1.3fr 1fr 1fr 0.9fr auto;">
                                     <input name="medicine_name" class="form-control medicine-name-input" list="medicine-options" placeholder="Medicine name" required>
                                     <input name="medicine_dosage" class="form-control" placeholder="Dosage">
                                     <input name="medicine_frequency" class="form-control" placeholder="Frequency">
-                                    <button type="button" class="btn btn-outline-danger" data-remove-medicine>Remove</button>
+                                    <input name="medicine_days" class="form-control" placeholder="Days supply">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" data-remove-medicine>Remove</button>
                                 </div>
                             </div>
                             <datalist id="medicine-options">
@@ -135,30 +111,137 @@
                             </datalist>
                         </div>
 
-                        <div class="mb-4">
-                            <label class="form-label">Advice</label>
-                            <textarea id="advice-input" name="advice" class="form-control" rows="5" placeholder="Diet, routine, and follow-up advice"></textarea>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label">Next visit recommended in</label>
-                            <div class="input-group followup-group">
-                                <input name="follow_up_days" type="number" min="1" max="365" class="form-control" placeholder="e.g. 7">
-                                <span class="input-group-text">days</span>
+                        <div class="split-grid">
+                            <div class="form-row">
+                                <label class="form-label" for="advice-input">Advice</label>
+                                <textarea id="advice-input" name="advice" class="form-control" rows="6" placeholder="Diet, routine, and follow-up advice"></textarea>
                             </div>
-                            <p class="text-muted small mb-0 mt-2">Optional. Use this to keep follow-up reminders visible on the dashboard.</p>
+                            <div class="section-stack">
+                                <div class="form-row">
+                                    <label class="form-label">Next visit recommended in</label>
+                                    <div class="input-group followup-group">
+                                        <input name="follow_up_days" type="number" min="1" max="365" class="form-control" placeholder="e.g. 7">
+                                        <span class="input-group-text">days</span>
+                                    </div>
+                                </div>
+                                <div class="stack-item">
+                                    <strong>Digital signature</strong>
+                                    <p class="text-muted mb-2">Capture the doctor sign-off for print and pharmacy sharing.</p>
+                                    <div class="signature-pad">
+                                        <canvas id="signature-canvas" aria-label="Doctor signature pad"></canvas>
+                                    </div>
+                                    <input type="hidden" name="doctor_signature" id="doctor-signature-input">
+                                    <div class="hero-actions mt-3">
+                                        <button type="button" class="btn btn-outline-dark btn-sm" id="clear-signature">Clear signature</button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" id="preview-export">Preview for print</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="d-flex flex-wrap gap-3">
-                            <button class="btn btn-primary btn-lg rounded-pill px-4" data-loading-text="Generating...">Generate Prescription</button>
-                            <a href="/dashboard" class="btn btn-outline-dark btn-lg rounded-pill px-4">Cancel</a>
+                        <div class="hero-actions">
+                            <button class="btn btn-primary btn-lg" data-loading-text="Generating...">Generate Prescription</button>
+                            <a href="/dashboard" class="btn btn-outline-dark btn-lg">Cancel</a>
                         </div>
                     </form>
-                </div>
+                </article>
             </div>
-        </div>
-    </div>
-    <script src="{{ url_for('static', path='js/prescription_form.js') }}"></script>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+
+            <aside class="table-panel cart-panel no-print">
+                <p class="eyebrow mb-2">Live preview</p>
+                <div class="stack-list">
+                    <div class="stack-item">
+                        <strong id="preview-patient-name">{{ patient.name }}</strong>
+                        <p class="mb-0 text-muted">{{ clinic_name }}</p>
+                    </div>
+                    <div class="stack-item">
+                        <strong>Diagnosis</strong>
+                        <p id="preview-diagnosis" class="mb-0 text-muted">Start typing to preview the diagnosis.</p>
+                    </div>
+                    <div class="stack-item">
+                        <strong>Medicines</strong>
+                        <div id="preview-medicines" class="stack-list mt-3"><div class="text-muted small">No medicines added yet.</div></div>
+                    </div>
+                    <div class="stack-item">
+                        <strong>Advice</strong>
+                        <p id="preview-advice" class="mb-0 text-muted">Advice will appear here.</p>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/prescription_form.js') }}"></script>
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script>
+(function () {
+    const canvas = document.getElementById("signature-canvas");
+    const clearButton = document.getElementById("clear-signature");
+    const previewButton = document.getElementById("preview-export");
+    const signatureInput = document.getElementById("doctor-signature-input");
+    const diagnosisInput = document.getElementById("diagnosis-input");
+    const adviceInput = document.getElementById("advice-input");
+    const previewDiagnosis = document.getElementById("preview-diagnosis");
+    const previewAdvice = document.getElementById("preview-advice");
+    const previewMedicines = document.getElementById("preview-medicines");
+    const medicineList = document.getElementById("medicine-list");
+    if (!canvas || !signatureInput) { return; }
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+    function resizeCanvas() {
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = 180 * ratio;
+        ctx.scale(ratio, ratio);
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#2d6a4f";
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    function point(event) {
+        const rect = canvas.getBoundingClientRect();
+        const source = event.touches ? event.touches[0] : event;
+        return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+    }
+    function start(event) { drawing = true; const p = point(event); ctx.beginPath(); ctx.moveTo(p.x, p.y); }
+    function move(event) { if (!drawing) return; event.preventDefault(); const p = point(event); ctx.lineTo(p.x, p.y); ctx.stroke(); signatureInput.value = canvas.toDataURL("image/png"); }
+    function stop() { drawing = false; }
+    canvas.addEventListener("mousedown", start); canvas.addEventListener("mousemove", move); canvas.addEventListener("mouseup", stop); canvas.addEventListener("mouseleave", stop);
+    canvas.addEventListener("touchstart", start, { passive: true }); canvas.addEventListener("touchmove", move, { passive: false }); canvas.addEventListener("touchend", stop);
+    if (clearButton) { clearButton.addEventListener("click", function () { ctx.clearRect(0, 0, canvas.width, canvas.height); signatureInput.value = ""; }); }
+    if (previewButton) { previewButton.addEventListener("click", function () { window.print(); }); }
+    function updatePreview() {
+        if (previewDiagnosis) previewDiagnosis.textContent = diagnosisInput.value.trim() || "Start typing to preview the diagnosis.";
+        if (previewAdvice) previewAdvice.textContent = adviceInput.value.trim() || "Advice will appear here.";
+        if (!previewMedicines || !medicineList) return;
+        const rows = medicineList.querySelectorAll(".medicine-row");
+        previewMedicines.innerHTML = "";
+        let hasRow = false;
+        rows.forEach(function (row) {
+            const inputs = row.querySelectorAll("input");
+            const name = inputs[0]?.value?.trim();
+            const dosage = inputs[1]?.value?.trim();
+            const frequency = inputs[2]?.value?.trim();
+            const days = inputs[3]?.value?.trim();
+            if (!name) return;
+            hasRow = true;
+            const item = document.createElement("div");
+            item.className = "stack-item";
+            item.innerHTML = `<strong>${name}</strong><p class="mb-0 text-muted">${dosage || "Dosage pending"} · ${frequency || "Frequency pending"}${days ? ` · ${days} days` : ""}</p>`;
+            previewMedicines.appendChild(item);
+        });
+        if (!hasRow) {
+            previewMedicines.innerHTML = '<div class="text-muted small">No medicines added yet.</div>';
+        }
+    }
+    document.addEventListener("input", function (event) { if (event.target.closest("#prescription-form-shell")) updatePreview(); });
+    document.addEventListener("click", function (event) { if (event.target.closest("[data-add-medicine]") || event.target.closest("[data-remove-medicine]") || event.target.closest("#repeat-last-btn")) { window.setTimeout(updatePreview, 0); } });
+    document.addEventListener("prescription:updated", updatePreview);
+    updatePreview();
+})();
+</script>
+{% endblock %}

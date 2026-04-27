@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Billing Integration | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Billing Integration</h1><p>Consultation fees, panchakarma packages, and payment tracking in one financial layer.</p></div></div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Consultation fees</h2>
+                <div class="stack-sm"><div class="info-chip">General consultation</div><div class="info-chip">Integrated consultation</div><div class="info-chip">Panchakarma package</div></div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Revenue curve</h2>
+                <div class="trend-bars">
+                    {% for point in revenue_trend %}
+                    <div class="trend-bar"><span style="height: {{ point.amount + 10 }}px"></span><small>{{ point.date[-5:] }}</small></div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

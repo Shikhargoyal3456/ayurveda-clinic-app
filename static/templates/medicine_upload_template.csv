@@ -1,0 +1,4 @@
+name,category,brand,generic_name,mrp,price,stock,unit,prescription_required,description,image_url
+Dabur Chyawanprash,ayurveda,Dabur,,450,399,500,jar,false,Ayurvedic immunity booster,
+Paracetamol 500mg,allopathy,Cipla,Paracetamol,50,35,1000,strip,true,Fever and pain relief,
+Ashwagandha Capsules,ayurveda,Himalaya,Ashwagandha,350,299,300,bottle,false,Stress relief supplement,

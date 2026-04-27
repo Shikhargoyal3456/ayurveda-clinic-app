@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Ayurveda Consultation | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Ayurveda</p>
+                <h1 class="h2">Ayurveda Consultation</h1>
+                <p>{{ patient.name }} • Ashtavidha, Agni, Ama, Srotas, and formulation planning with contextual Sanskrit help.</p>
+            </div>
+            <div class="page-header-actions"><span class="badge badge-soft">Classical workflow</span></div>
+        </div>
+
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Prakriti-Vikriti comparison</h2>
+                <div class="dosha-stack">
+                    <div class="dosha-card vata"><span>Prakriti</span><strong>{{ assessments.get('prakriti', {}).get('label', profile.ayurveda_profile.get('prakriti', 'Pending')) }}</strong></div>
+                    <div class="dosha-card pitta"><span>Vikriti</span><strong>{{ assessments.get('vikriti', {}).get('label', profile.ayurveda_profile.get('vikriti', 'Pending')) }}</strong></div>
+                    <div class="dosha-card kapha"><span>Agni</span><strong>{{ assessments.get('agni', {}).get('type', profile.ayurveda_profile.get('agni', 'Pending')) }}</strong></div>
+                </div>
+                <div class="help-box mt-3"><i class="fa-solid fa-circle-question"></i> <strong>Prakriti</strong>: {{ help_terms.prakriti }}</div>
+            </article>
+            <article class="card ashtavidha-pariksha">
+                <h2 class="h4">Ashtavidha Pariksha</h2>
+                <div class="exam-grid">
+                    {% for exam in ['Nadi', 'Mutra', 'Mala', 'Jihva', 'Shabda', 'Sparsha', 'Drik', 'Akriti'] %}
+                    <button class="exam-card" type="button"><i class="fa-solid fa-leaf"></i><h4>{{ exam }}</h4><p>{{ exam }} examination</p></button>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+
+        <div class="content-grid-2 mt-4">
+            <article class="card prakriti-tool" data-patient-id="{{ patient.id }}">
+                <div class="cluster-between">
+                    <h2 class="h4">Prakriti questionnaire</h2>
+                    <button class="btn btn-primary btn-pill" type="button" data-calculate-prakriti>Calculate prakriti</button>
+                </div>
+                <div class="questionnaire mt-3">
+                    {% for q in prakriti_questions %}
+                    <div class="question-card">
+                        <p>{{ q.id }}. {{ q.text }}</p>
+                        <div class="dosha-options">
+                            <label><input type="radio" name="q{{ q.id }}" value="vata"> {{ q.vata }}</label>
+                            <label><input type="radio" name="q{{ q.id }}" value="pitta"> {{ q.pitta }}</label>
+                            <label><input type="radio" name="q{{ q.id }}" value="kapha"> {{ q.kapha }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="prakriti-result mt-3" data-prakriti-result></div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Srotas, Ama, and Panchakarma</h2>
+                <div class="form-grid">
+                    <label class="checkbox-card"><input type="checkbox" checked> Annavaha Srotas disturbance</label>
+                    <label class="checkbox-card"><input type="checkbox"> Pranavaha involvement</label>
+                    <label class="checkbox-card"><input type="checkbox" checked> Ama present</label>
+                    <label class="checkbox-card"><input type="checkbox"> Panchakarma recommended</label>
+                </div>
+                <div class="stack-sm mt-4">
+                    <h3 class="h5">Formulation suggestions</h3>
+                    {% for item in formulations %}
+                    <div class="prescription-builder-row"><div><strong>{{ item.name }}</strong><small class="text-muted d-block">{{ item.use }} • Anupana: {{ item.anupana }}</small></div><button class="btn btn-ghost btn-pill" type="button">Select</button></div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/emr/core.js') }}"></script>
+<script src="{{ url_for('static', path='js/emr/ayurveda_assessment.js') }}"></script>
+{% endblock %}

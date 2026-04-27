@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Lab Dashboard | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Lab Dashboard</h1><p>Order tracking, result entry, and abnormal result visibility for integrated diagnostics.</p></div></div>
+        <div class="card responsive-table-card">
+            <table class="data-table">
+                <thead><tr><th>Lab</th><th>Priority</th><th>Status</th><th>Tests</th><th>Ordered</th></tr></thead>
+                <tbody>
+                    {% for order in lab_orders %}
+                    <tr><td>{{ order.lab_name }}</td><td>{{ order.priority }}</td><td><span class="status-pill status-pending">{{ order.status }}</span></td><td>{{ order.tests_json|length }}</td><td>{{ order.ordered_at.strftime('%d %b %Y') if order.ordered_at else 'Today' }}</td></tr>
+                    {% else %}
+                    <tr><td colspan="5">No lab orders yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

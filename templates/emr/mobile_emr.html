@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Mobile EMR | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Mobile EMR</h1><p>Quick check-ins, voice note shortcuts, and report capture for on-the-go rounds.</p></div></div>
+        <div class="mobile-emr-shell">
+            <div class="stack-sm">
+                {% for patient in recent_patients %}
+                <article class="card">
+                    <p class="eyebrow">Quick check-in</p>
+                    <h3 class="h4">{{ patient.name }}</h3>
+                    <div class="action-row"><a class="btn btn-primary btn-pill" href="/emr/patient/{{ patient.id }}">Open</a><a class="btn btn-ghost btn-pill" href="/emr/modern-consultation/{{ patient.id }}">Voice note</a></div>
+                </article>
+                {% else %}
+                <article class="card"><p>No recent patients.</p></article>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

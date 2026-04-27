@@ -12,12 +12,15 @@ const lastPrescription = prescriptionShell?.dataset.lastPrescription
 
 function buildMedicineRow() {
     const row = document.createElement("div");
-    row.className = "medicine-row";
+    row.className = "medicine-row stack-item";
+    row.style.display = "grid";
+    row.style.gridTemplateColumns = "1.3fr 1fr 1fr 0.9fr auto";
     row.innerHTML = `
         <input name="medicine_name" class="form-control medicine-name-input" list="medicine-options" placeholder="Medicine name" required>
         <input name="medicine_dosage" class="form-control" placeholder="Dosage">
         <input name="medicine_frequency" class="form-control" placeholder="Frequency">
-        <button type="button" class="btn btn-outline-danger" data-remove-medicine>Remove</button>
+        <input name="medicine_days" class="form-control" placeholder="Days supply">
+        <button type="button" class="btn btn-outline-danger btn-sm" data-remove-medicine>Remove</button>
     `;
     return row;
 }
@@ -52,6 +55,7 @@ function applyPrescriptionPayload(payload) {
         adviceInput.value = payload.advice || "";
     }
     populateMedicines(payload.medicines || []);
+    document.dispatchEvent(new CustomEvent("prescription:updated"));
 }
 
 if (medicineList) {

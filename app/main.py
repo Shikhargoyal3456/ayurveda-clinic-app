@@ -10,6 +10,9 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -44,6 +47,7 @@ except Exception as exc:
     async def redis_ping() -> bool:
         return False
 from app.logging_config import clear_request_id, configure_logging, set_request_id
+from app.rate_limit import limiter
 from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
 from models.subscription import ClinicSubscription  # noqa: F401
@@ -62,10 +66,14 @@ from routers.ai import router as ai_router
 from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.cases import router as cases_router
+from routers.emr import router as emr_router
+from routers.ecommerce import router as ecommerce_router
+from routers.health import router as health_router
 from routers.patients import router as patients_router
 from routers.order_medicines import router as order_medicines_router
 from routers.pharmacy import router as pharmacy_router
 from routers.public_clinic import router as public_clinic_router
+from routers.startup import router as startup_router
 from routers.subscriptions import router as subscriptions_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
@@ -75,12 +83,6 @@ from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
     increment_subscription_usage as increment_usage,
-)
-
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
 )
 
 
@@ -151,11 +153,11 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Cache-Control"] = "no-store"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self' https://cdn.jsdelivr.net; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+            "default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
             "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net; "
             "img-src 'self' data: https://checkout.razorpay.com; "
-            "font-src 'self' https://cdn.jsdelivr.net; "
+            "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
             "connect-src 'self' https://checkout.razorpay.com https://lumberjack.razorpay.com; "
             "frame-src https://api.razorpay.com https://checkout.razorpay.com; "
             "frame-ancestors 'none';"
@@ -240,8 +242,14 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="Ayurvedic Clinic Management System",
         version=settings.app_version,
+        description=(
+            "Production-ready Ayurveda healthcare superapp covering consultations, EMR, "
+            "pharmacy commerce, telemedicine, diagnostics, growth systems, and admin operations."
+        ),
         lifespan=lifespan,
     )
+    application.state.limiter = limiter
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     application.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret_key,
@@ -256,8 +264,10 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["*"],
     )
-    application.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.trusted_hosts or ["*"])
+    allowed_hosts = list(dict.fromkeys((settings.trusted_hosts or []) + ["127.0.0.1", "localhost", "testserver"]))
+    application.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts or ["*"])
     application.add_middleware(GZipMiddleware, minimum_size=512)
+    application.add_middleware(SlowAPIMiddleware)
     application.add_middleware(RequestContextMiddleware)
     application.add_middleware(OverloadProtectionMiddleware)
 
@@ -268,6 +278,21 @@ def create_app() -> FastAPI:
             if forwarded_proto != "https":
                 secure_url = str(request.url.replace(scheme="https"))
                 return RedirectResponse(url=secure_url, status_code=307)
+        return await call_next(request)
+
+    @application.middleware("http")
+    async def attach_session_user(request: Request, call_next):
+        request.state.user = None
+        try:
+            doctor_id = request.session.get("doctor_id")
+        except AssertionError:
+            doctor_id = None
+        if doctor_id:
+            db = SessionLocal()
+            try:
+                request.state.user = db.get(Doctor, doctor_id)
+            finally:
+                db.close()
         return await call_next(request)
 
     @application.middleware("http")
@@ -298,31 +323,23 @@ def create_app() -> FastAPI:
 
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
     application.include_router(public_clinic_router)
+    application.include_router(startup_router)
+    application.include_router(health_router)
     application.include_router(auth_router)
     application.include_router(patients_router)
     application.include_router(cases_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
     application.include_router(pharmacy_router)
+    application.include_router(ecommerce_router)
     application.include_router(order_medicines_router)
     application.include_router(subscriptions_router)
     application.include_router(admin_router)
+    application.include_router(emr_router)
     application.include_router(prescription_router)
     application.include_router(payment_router)
     application.include_router(outcome_router)
     application.include_router(demo_router)
-
-    @application.get("/healthz")
-    async def healthcheck():
-        report = build_health_report()
-        report.update(production_launch_metrics())
-        report["redis_ping"] = await redis_ping()
-        report["launch_status"] = "healthy" if report.get("status") == "ok" else report.get("status", "degraded")
-        return JSONResponse(report)
-
-    @application.get("/health")
-    def simple_healthcheck():
-        return JSONResponse(build_health_report())
 
     @application.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):

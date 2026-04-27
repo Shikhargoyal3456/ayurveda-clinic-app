@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% set seo_title = seo_title | default('Kash AI | Integrated Ayurveda + Modern Medicine Platform') %}
+    {% set seo_description = seo_description | default("India's integrated healthcare platform for Ayurveda, modern medicine, teleconsultation, outcomes, and medicine fulfillment.") %}
+    {% set seo_keywords = seo_keywords | default('ayurveda, telemedicine, integrated healthcare, online doctor, ayurvedic treatment, panchakarma, EMR') %}
+    {% set seo_image = seo_image | default('/static/images/kash_ai_logo.svg') %}
+    {% block meta %}{% endblock %}
+    <title>{% block title %}{{ seo_title }}{% endblock %}</title>
+    <meta name="description" content="{{ seo_description }}" />
+    <meta name="keywords" content="{{ seo_keywords }}" />
+    <meta property="og:title" content="{{ seo_title }}" />
+    <meta property="og:description" content="{{ seo_description }}" />
+    <meta property="og:site_name" content="Kash AI" />
+    <meta property="og:image" content="{{ seo_image }}" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8cgY0f4L1pG8A0YyY1wYx04dBf7N7hA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+      body { margin: 0; font-family: 'Inter', sans-serif; }
+      .site-header { position: sticky; top: 0; background: rgba(255,253,247,0.95); z-index: 50; }
+      .skip-link { position: absolute; left: 16px; top: -48px; background: #2d6a4f; color: #fff; padding: 10px 14px; border-radius: 12px; z-index: 1200; text-decoration: none; }
+      .skip-link:focus { top: 16px; }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.min.css') }}">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "MedicalWebPage",
+      "name": "Kash AI",
+      "description": {{ seo_description | tojson }},
+      "provider": {
+        "@type": "Organization",
+        "name": "Kash AI",
+        "url": "https://kashai.health"
+      }
+    }
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+{% set active_page = active_page | default('') %}
+{% set show_sidebar = show_sidebar | default(false) %}
+{% set hide_footer = hide_footer | default(false) %}
+{% set hide_header = hide_header | default(false) %}
+{% set avatar_label = avatar_label | default('KA') %}
+{% set user_name = user_name | default('Guest user') %}
+{% set user_role = user_role | default('Ayurveda care') %}
+{% set nav_consult_href = nav_consult_href | default('/ai-analyzer') %}
+{% set nav_appointments_href = nav_appointments_href | default('/appointments') %}
+{% set nav_profile_href = nav_profile_href | default('/dashboard') %}
+<body class="{% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="site-body">
+        {% if not hide_header %}
+        <header class="site-header">
+            <div class="site-container site-header-inner">
+                <a href="/" class="brand-link" aria-label="Kash AI home">
+                    <span class="brand-logo">
+                        <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}" alt="Kash AI" loading="lazy">
+                    </span>
+                    <span class="brand-copy">
+                        <strong>Kash AI</strong>
+                        <span>Ayurveda health platform</span>
+                    </span>
+                </a>
+
+                <nav class="site-nav" aria-label="Primary navigation">
+                    <a href="/" class="{% if active_page == 'home' %}is-active{% endif %}">Home</a>
+                    <a href="{{ nav_consult_href }}" class="{% if active_page == 'consult' %}is-active{% endif %}">Consult</a>
+                    <a href="/medicines" class="{% if active_page == 'medicines' %}is-active{% endif %}">Medicines</a>
+                    <a href="{{ nav_appointments_href }}" class="{% if active_page == 'appointments' %}is-active{% endif %}">Appointments</a>
+                    <a href="{{ nav_profile_href }}" class="{% if active_page == 'profile' %}is-active{% endif %}">Profile</a>
+                </nav>
+
+                <div class="header-actions">
+                    {% block header_actions %}
+                    <a href="/signup" class="btn btn-outline-success btn-sm">Start Pilot</a>
+                    {% endblock %}
+                    <div class="profile-dropdown">
+                    <button class="profile-chip profile-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false" data-profile-toggle>
+                        <span class="avatar-badge">{{ avatar_label }}</span>
+                        <span class="profile-copy">
+                            <small>{{ user_role }}</small>
+                            <strong>{{ user_name }}</strong>
+                        </span>
+                    </button>
+                    <div class="profile-dropdown-menu" data-profile-menu>
+                        <a href="{{ nav_profile_href }}">Profile</a>
+                        <a href="{{ nav_appointments_href }}">Appointments</a>
+                        <a href="/medicines">Medicines</a>
+                        <a href="/logout">Logout</a>
+                    </div>
+                    </div>
+                    <button class="mobile-nav-toggle mobile-menu-btn" type="button" aria-label="Open navigation" data-mobile-nav-toggle>
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="mobile-drawer" data-mobile-nav-panel aria-hidden="true">
+                <div class="mobile-drawer-card">
+                    <div class="page-header mb-3">
+                        <div>
+                            <p class="eyebrow mb-1">Navigation</p>
+                            <h2 class="h4 mb-0">Kash AI</h2>
+                        </div>
+                        <button class="mobile-nav-toggle close-drawer" type="button" aria-label="Close navigation" data-mobile-nav-close>
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                    <nav class="site-nav mobile-nav-links" aria-label="Mobile navigation">
+                        <a href="/" class="{% if active_page == 'home' %}is-active{% endif %}">Home</a>
+                        <a href="{{ nav_consult_href }}" class="{% if active_page == 'consult' %}is-active{% endif %}">Consult</a>
+                        <a href="/medicines" class="{% if active_page == 'medicines' %}is-active{% endif %}">Medicines</a>
+                        <a href="{{ nav_appointments_href }}" class="{% if active_page == 'appointments' %}is-active{% endif %}">Appointments</a>
+                        <a href="{{ nav_profile_href }}" class="{% if active_page == 'profile' %}is-active{% endif %}">Profile</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+        {% endif %}
+
+        <main class="page-main" id="main-content" tabindex="-1">
+            {% block page %}{% endblock %}
+        </main>
+
+        {% if not hide_footer %}
+        <footer class="site-footer">
+            <div class="site-container footer-panel">
+                <div>
+                    <strong>Kash AI</strong>
+                    <p class="mb-0 text-muted">Warm digital infrastructure for modern Ayurveda healthcare.</p>
+                </div>
+                <div class="footer-links">
+                    <a href="/privacy">Privacy</a>
+                    <a href="/pricing">Pricing</a>
+                    <a href="/superapp/dashboard">Superapp</a>
+                    <a href="/diagnostics/lab-booking">Diagnostics</a>
+                    <a href="/store/wellness-store">Store</a>
+                    <a href="/trust/verified-practitioners">Trust Center</a>
+                    <a href="/community/wellness-feed">Community</a>
+                    <a href="/marketplace/panchakarma-booking">Panchakarma</a>
+                    <a href="/investors">Investors</a>
+                    <a href="/demo">Demo</a>
+                </div>
+                <div class="social-links">
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                </div>
+            </div>
+        </footer>
+        {% endif %}
+    </div>
+    <div class="referral-banner" id="referralBanner">
+        <span>Invite friends, get Rs 500 each.</span>
+        <a href="/growth/referral-system" class="btn btn-primary btn-sm">Claim Now</a>
+    </div>
+    <div id="socialProof" class="social-proof-toast" aria-live="polite" aria-atomic="true"></div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
+        const mobileDrawer = document.querySelector(".mobile-drawer");
+        const closeDrawer = document.querySelector(".close-drawer");
+        const profileToggle = document.querySelector("[data-profile-toggle]");
+        const profileMenu = document.querySelector("[data-profile-menu]");
+
+        const closeMobileDrawer = function () {
+            if (!mobileDrawer) return;
+            mobileDrawer.classList.remove("active");
+            mobileDrawer.setAttribute("aria-hidden", "true");
+        };
+
+        if (mobileMenuBtn && mobileDrawer) {
+            mobileMenuBtn.addEventListener("click", () => {
+                mobileDrawer.classList.add("active");
+                mobileDrawer.setAttribute("aria-hidden", "false");
+            });
+        }
+
+        if (closeDrawer) {
+            closeDrawer.addEventListener("click", closeMobileDrawer);
+        }
+
+        if (mobileDrawer) {
+            mobileDrawer.addEventListener("click", function (event) {
+                if (event.target === mobileDrawer) {
+                    closeMobileDrawer();
+                }
+            });
+        }
+
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = profileMenu.classList.toggle("is-open");
+                profileToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+        }
+
+        document.addEventListener("click", function (event) {
+            if (profileMenu && profileToggle && !profileMenu.contains(event.target) && !profileToggle.contains(event.target)) {
+                profileMenu.classList.remove("is-open");
+                profileToggle.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                closeMobileDrawer();
+                if (profileMenu && profileToggle) {
+                    profileMenu.classList.remove("is-open");
+                    profileToggle.setAttribute("aria-expanded", "false");
+                }
+            }
+        });
+
+        window.showToast = function(message, type = "success") {
+            const toast = document.createElement("div");
+            const icon = type === "success" ? "fa-check-circle" : type === "error" ? "fa-exclamation-circle" : "fa-info-circle";
+            toast.className = `toast-notification toast-${type}`;
+            toast.innerHTML = `<div class="toast-inner"><i class="fa-solid ${icon}"></i><span>${message}</span></div>`;
+            document.body.appendChild(toast);
+            window.setTimeout(() => {
+                toast.classList.add("is-closing");
+                window.setTimeout(() => toast.remove(), 280);
+            }, 3000);
+        };
+
+        document.querySelectorAll("form").forEach(function(form) {
+            form.addEventListener("input", function(event) {
+                const target = event.target;
+                if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) {
+                    return;
+                }
+                const wrapper = target.closest(".form-row");
+                if (wrapper) {
+                    wrapper.classList.toggle("is-invalid", !target.checkValidity() && target.value.trim() !== "");
+                }
+            });
+        });
+
+        const socialProof = document.getElementById("socialProof");
+        const referralBanner = document.getElementById("referralBanner");
+        if (referralBanner) {
+            window.setTimeout(() => referralBanner.classList.add("is-visible"), 1200);
+        }
+        if (socialProof) {
+            const refreshSocialProof = function () {
+                fetch("/api/social-proof/activity")
+                    .then((res) => res.ok ? res.json() : Promise.reject(new Error("social-proof-failed")))
+                    .then((data) => {
+                        if (!data || !data.activity) return;
+                        socialProof.textContent = data.activity;
+                        socialProof.classList.add("is-visible");
+                        window.setTimeout(() => socialProof.classList.remove("is-visible"), 4200);
+                    })
+                    .catch(() => {});
+            };
+            window.setTimeout(refreshSocialProof, 1800);
+            window.setInterval(refreshSocialProof, 30000);
+        }
+    });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

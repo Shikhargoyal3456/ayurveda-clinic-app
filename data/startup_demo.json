@@ -1,0 +1,5828 @@
+{
+  "metrics": {
+    "daily_active_users": 701,
+    "consultations_completed": 891,
+    "panchakarma_bookings": 153,
+    "personalized_kits_sold": 192,
+    "interaction_checks_performed": 783,
+    "community_posts": 167,
+    "referral_signups": 236,
+    "avg_order_value": 500,
+    "patient_retention_90d": 67,
+    "doctor_rating": 4.9
+  },
+  "growth_metrics": {
+    "dau": 1842,
+    "dau_growth": 14,
+    "conversion_rate": 8.6,
+    "conversion_growth": 1.8,
+    "customer_ltv": 6840,
+    "ltv_growth": 11,
+    "churn_rate": 3.2,
+    "churn_reduction": 0.9
+  },
+  "referral": {
+    "referral_code": "KASH-HEAL-500",
+    "referral_count": 13,
+    "referral_earnings": 6500,
+    "next_milestone": 2000,
+    "claims": [
+      {
+        "email": "demo@example.com",
+        "claimed_at": "2026-04-27T19:11:23.643116+00:00"
+      }
+    ]
+  },
+  "waitlist": {
+    "feature_name": "Integrated chronic care programs",
+    "waitlist_count": 483,
+    "total_waitlist": 1201,
+    "user_position": 1200,
+    "entries": [
+      {
+        "email": "waitlist-demo@example.com",
+        "joined_at": "2026-04-27T19:11:23.672968+00:00"
+      }
+    ]
+  },
+  "verified_doctors": [
+    {
+      "name": "Dr. Ayurveda Demo 1",
+      "registration": "BAMS-DEMO-1001",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 5
+    },
+    {
+      "name": "Dr. Ayurveda Demo 2",
+      "registration": "BAMS-DEMO-1002",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 6
+    },
+    {
+      "name": "Dr. Ayurveda Demo 3",
+      "registration": "BAMS-DEMO-1003",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 7
+    },
+    {
+      "name": "Dr. Ayurveda Demo 4",
+      "registration": "BAMS-DEMO-1004",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 8
+    },
+    {
+      "name": "Dr. Ayurveda Demo 5",
+      "registration": "BAMS-DEMO-1005",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 9
+    },
+    {
+      "name": "Dr. Ayurveda Demo 6",
+      "registration": "BAMS-DEMO-1006",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 10
+    },
+    {
+      "name": "Dr. Ayurveda Demo 7",
+      "registration": "BAMS-DEMO-1007",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 11
+    },
+    {
+      "name": "Dr. Ayurveda Demo 8",
+      "registration": "BAMS-DEMO-1008",
+      "qualification": "BAMS",
+      "specialization": "Women's health",
+      "experience": 12
+    },
+    {
+      "name": "Dr. Ayurveda Demo 9",
+      "registration": "BAMS-DEMO-1009",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Pain management",
+      "experience": 13
+    },
+    {
+      "name": "Dr. Ayurveda Demo 10",
+      "registration": "BAMS-DEMO-1010",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 14
+    },
+    {
+      "name": "Dr. Ayurveda Demo 11",
+      "registration": "BAMS-DEMO-1011",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 15
+    },
+    {
+      "name": "Dr. Ayurveda Demo 12",
+      "registration": "BAMS-DEMO-1012",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 16
+    },
+    {
+      "name": "Dr. Ayurveda Demo 13",
+      "registration": "BAMS-DEMO-1013",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 17
+    },
+    {
+      "name": "Dr. Ayurveda Demo 14",
+      "registration": "BAMS-DEMO-1014",
+      "qualification": "BAMS",
+      "specialization": "Panchakarma",
+      "experience": 18
+    },
+    {
+      "name": "Dr. Ayurveda Demo 15",
+      "registration": "BAMS-DEMO-1015",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Women's health",
+      "experience": 19
+    },
+    {
+      "name": "Dr. Ayurveda Demo 16",
+      "registration": "BAMS-DEMO-1016",
+      "qualification": "BAMS",
+      "specialization": "Women's health",
+      "experience": 20
+    },
+    {
+      "name": "Dr. Ayurveda Demo 17",
+      "registration": "BAMS-DEMO-1017",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 21
+    },
+    {
+      "name": "Dr. Ayurveda Demo 18",
+      "registration": "BAMS-DEMO-1018",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Women's health",
+      "experience": 4
+    },
+    {
+      "name": "Dr. Ayurveda Demo 19",
+      "registration": "BAMS-DEMO-1019",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 5
+    },
+    {
+      "name": "Dr. Ayurveda Demo 20",
+      "registration": "BAMS-DEMO-1020",
+      "qualification": "BAMS",
+      "specialization": "Panchakarma",
+      "experience": 6
+    },
+    {
+      "name": "Dr. Ayurveda Demo 21",
+      "registration": "BAMS-DEMO-1021",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 7
+    },
+    {
+      "name": "Dr. Ayurveda Demo 22",
+      "registration": "BAMS-DEMO-1022",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 8
+    },
+    {
+      "name": "Dr. Ayurveda Demo 23",
+      "registration": "BAMS-DEMO-1023",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 9
+    },
+    {
+      "name": "Dr. Ayurveda Demo 24",
+      "registration": "BAMS-DEMO-1024",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Panchakarma",
+      "experience": 10
+    },
+    {
+      "name": "Dr. Ayurveda Demo 25",
+      "registration": "BAMS-DEMO-1025",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 11
+    },
+    {
+      "name": "Dr. Ayurveda Demo 26",
+      "registration": "BAMS-DEMO-1026",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 12
+    },
+    {
+      "name": "Dr. Ayurveda Demo 27",
+      "registration": "BAMS-DEMO-1027",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Pain management",
+      "experience": 13
+    },
+    {
+      "name": "Dr. Ayurveda Demo 28",
+      "registration": "BAMS-DEMO-1028",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 14
+    },
+    {
+      "name": "Dr. Ayurveda Demo 29",
+      "registration": "BAMS-DEMO-1029",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 15
+    },
+    {
+      "name": "Dr. Ayurveda Demo 30",
+      "registration": "BAMS-DEMO-1030",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 16
+    },
+    {
+      "name": "Dr. Ayurveda Demo 31",
+      "registration": "BAMS-DEMO-1031",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 17
+    },
+    {
+      "name": "Dr. Ayurveda Demo 32",
+      "registration": "BAMS-DEMO-1032",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 18
+    },
+    {
+      "name": "Dr. Ayurveda Demo 33",
+      "registration": "BAMS-DEMO-1033",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Lifestyle disorders",
+      "experience": 19
+    },
+    {
+      "name": "Dr. Ayurveda Demo 34",
+      "registration": "BAMS-DEMO-1034",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 20
+    },
+    {
+      "name": "Dr. Ayurveda Demo 35",
+      "registration": "BAMS-DEMO-1035",
+      "qualification": "BAMS",
+      "specialization": "Panchakarma",
+      "experience": 21
+    },
+    {
+      "name": "Dr. Ayurveda Demo 36",
+      "registration": "BAMS-DEMO-1036",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Panchakarma",
+      "experience": 4
+    },
+    {
+      "name": "Dr. Ayurveda Demo 37",
+      "registration": "BAMS-DEMO-1037",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 5
+    },
+    {
+      "name": "Dr. Ayurveda Demo 38",
+      "registration": "BAMS-DEMO-1038",
+      "qualification": "BAMS",
+      "specialization": "Lifestyle disorders",
+      "experience": 6
+    },
+    {
+      "name": "Dr. Ayurveda Demo 39",
+      "registration": "BAMS-DEMO-1039",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 7
+    },
+    {
+      "name": "Dr. Ayurveda Demo 40",
+      "registration": "BAMS-DEMO-1040",
+      "qualification": "BAMS",
+      "specialization": "Panchakarma",
+      "experience": 8
+    },
+    {
+      "name": "Dr. Ayurveda Demo 41",
+      "registration": "BAMS-DEMO-1041",
+      "qualification": "BAMS",
+      "specialization": "Women's health",
+      "experience": 9
+    },
+    {
+      "name": "Dr. Ayurveda Demo 42",
+      "registration": "BAMS-DEMO-1042",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Lifestyle disorders",
+      "experience": 10
+    },
+    {
+      "name": "Dr. Ayurveda Demo 43",
+      "registration": "BAMS-DEMO-1043",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 11
+    },
+    {
+      "name": "Dr. Ayurveda Demo 44",
+      "registration": "BAMS-DEMO-1044",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 12
+    },
+    {
+      "name": "Dr. Ayurveda Demo 45",
+      "registration": "BAMS-DEMO-1045",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Lifestyle disorders",
+      "experience": 13
+    },
+    {
+      "name": "Dr. Ayurveda Demo 46",
+      "registration": "BAMS-DEMO-1046",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 14
+    },
+    {
+      "name": "Dr. Ayurveda Demo 47",
+      "registration": "BAMS-DEMO-1047",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 15
+    },
+    {
+      "name": "Dr. Ayurveda Demo 48",
+      "registration": "BAMS-DEMO-1048",
+      "qualification": "BAMS, MD Ayurveda",
+      "specialization": "Digestive care",
+      "experience": 16
+    },
+    {
+      "name": "Dr. Ayurveda Demo 49",
+      "registration": "BAMS-DEMO-1049",
+      "qualification": "BAMS",
+      "specialization": "Digestive care",
+      "experience": 17
+    },
+    {
+      "name": "Dr. Ayurveda Demo 50",
+      "registration": "BAMS-DEMO-1050",
+      "qualification": "BAMS",
+      "specialization": "Pain management",
+      "experience": 18
+    }
+  ],
+  "panchakarma_centers": [
+    {
+      "id": 1,
+      "name": "Demo Panchakarma Center 1",
+      "city": "Pune",
+      "rating": 4.6,
+      "reviews": 43,
+      "price": 1845,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Demo Panchakarma Center 2",
+      "city": "Pune",
+      "rating": 4.7,
+      "reviews": 46,
+      "price": 1890,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Demo Panchakarma Center 3",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 49,
+      "price": 1935,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Demo Panchakarma Center 4",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 52,
+      "price": 1980,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "Demo Panchakarma Center 5",
+      "city": "Mumbai",
+      "rating": 4.5,
+      "reviews": 55,
+      "price": 2025,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "Demo Panchakarma Center 6",
+      "city": "Bengaluru",
+      "rating": 4.6,
+      "reviews": 58,
+      "price": 2070,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "Demo Panchakarma Center 7",
+      "city": "Delhi NCR",
+      "rating": 4.7,
+      "reviews": 61,
+      "price": 2115,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 8,
+      "name": "Demo Panchakarma Center 8",
+      "city": "Bengaluru",
+      "rating": 4.8,
+      "reviews": 64,
+      "price": 2160,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 9,
+      "name": "Demo Panchakarma Center 9",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 67,
+      "price": 2205,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "Demo Panchakarma Center 10",
+      "city": "Jaipur",
+      "rating": 4.5,
+      "reviews": 70,
+      "price": 2250,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 11,
+      "name": "Demo Panchakarma Center 11",
+      "city": "Mumbai",
+      "rating": 4.6,
+      "reviews": 73,
+      "price": 2295,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "Demo Panchakarma Center 12",
+      "city": "Delhi NCR",
+      "rating": 4.7,
+      "reviews": 76,
+      "price": 2340,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "Demo Panchakarma Center 13",
+      "city": "Jaipur",
+      "rating": 4.8,
+      "reviews": 79,
+      "price": 2385,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 14,
+      "name": "Demo Panchakarma Center 14",
+      "city": "Pune",
+      "rating": 4.9,
+      "reviews": 82,
+      "price": 2430,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 15,
+      "name": "Demo Panchakarma Center 15",
+      "city": "Bengaluru",
+      "rating": 4.5,
+      "reviews": 85,
+      "price": 2475,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 16,
+      "name": "Demo Panchakarma Center 16",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 88,
+      "price": 2520,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Demo Panchakarma Center 17",
+      "city": "Mumbai",
+      "rating": 4.7,
+      "reviews": 91,
+      "price": 2565,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Demo Panchakarma Center 18",
+      "city": "Delhi NCR",
+      "rating": 4.8,
+      "reviews": 94,
+      "price": 2610,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Demo Panchakarma Center 19",
+      "city": "Bengaluru",
+      "rating": 4.9,
+      "reviews": 97,
+      "price": 2655,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 20,
+      "name": "Demo Panchakarma Center 20",
+      "city": "Jaipur",
+      "rating": 4.5,
+      "reviews": 100,
+      "price": 2700,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 21,
+      "name": "Demo Panchakarma Center 21",
+      "city": "Mumbai",
+      "rating": 4.6,
+      "reviews": 103,
+      "price": 2745,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 22,
+      "name": "Demo Panchakarma Center 22",
+      "city": "Mumbai",
+      "rating": 4.7,
+      "reviews": 106,
+      "price": 2790,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 23,
+      "name": "Demo Panchakarma Center 23",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 109,
+      "price": 2835,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Demo Panchakarma Center 24",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 112,
+      "price": 2880,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 25,
+      "name": "Demo Panchakarma Center 25",
+      "city": "Mumbai",
+      "rating": 4.5,
+      "reviews": 115,
+      "price": 2925,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Demo Panchakarma Center 26",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 118,
+      "price": 2970,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 27,
+      "name": "Demo Panchakarma Center 27",
+      "city": "Pune",
+      "rating": 4.7,
+      "reviews": 121,
+      "price": 3015,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 28,
+      "name": "Demo Panchakarma Center 28",
+      "city": "Bengaluru",
+      "rating": 4.8,
+      "reviews": 124,
+      "price": 3060,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 29,
+      "name": "Demo Panchakarma Center 29",
+      "city": "Bengaluru",
+      "rating": 4.9,
+      "reviews": 127,
+      "price": 3105,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Demo Panchakarma Center 30",
+      "city": "Pune",
+      "rating": 4.5,
+      "reviews": 130,
+      "price": 3150,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 31,
+      "name": "Demo Panchakarma Center 31",
+      "city": "Mumbai",
+      "rating": 4.6,
+      "reviews": 133,
+      "price": 3195,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 32,
+      "name": "Demo Panchakarma Center 32",
+      "city": "Delhi NCR",
+      "rating": 4.7,
+      "reviews": 136,
+      "price": 3240,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 33,
+      "name": "Demo Panchakarma Center 33",
+      "city": "Delhi NCR",
+      "rating": 4.8,
+      "reviews": 139,
+      "price": 3285,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 34,
+      "name": "Demo Panchakarma Center 34",
+      "city": "Bengaluru",
+      "rating": 4.9,
+      "reviews": 142,
+      "price": 3330,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 35,
+      "name": "Demo Panchakarma Center 35",
+      "city": "Delhi NCR",
+      "rating": 4.5,
+      "reviews": 145,
+      "price": 3375,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 36,
+      "name": "Demo Panchakarma Center 36",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 148,
+      "price": 3420,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 37,
+      "name": "Demo Panchakarma Center 37",
+      "city": "Delhi NCR",
+      "rating": 4.7,
+      "reviews": 151,
+      "price": 3465,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 38,
+      "name": "Demo Panchakarma Center 38",
+      "city": "Jaipur",
+      "rating": 4.8,
+      "reviews": 154,
+      "price": 3510,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 39,
+      "name": "Demo Panchakarma Center 39",
+      "city": "Pune",
+      "rating": 4.9,
+      "reviews": 157,
+      "price": 3555,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 40,
+      "name": "Demo Panchakarma Center 40",
+      "city": "Bengaluru",
+      "rating": 4.5,
+      "reviews": 160,
+      "price": 3600,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 41,
+      "name": "Demo Panchakarma Center 41",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 163,
+      "price": 3645,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 42,
+      "name": "Demo Panchakarma Center 42",
+      "city": "Jaipur",
+      "rating": 4.7,
+      "reviews": 166,
+      "price": 3690,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 43,
+      "name": "Demo Panchakarma Center 43",
+      "city": "Delhi NCR",
+      "rating": 4.8,
+      "reviews": 169,
+      "price": 3735,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 44,
+      "name": "Demo Panchakarma Center 44",
+      "city": "Jaipur",
+      "rating": 4.9,
+      "reviews": 172,
+      "price": 3780,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 45,
+      "name": "Demo Panchakarma Center 45",
+      "city": "Jaipur",
+      "rating": 4.5,
+      "reviews": 175,
+      "price": 3825,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Demo Panchakarma Center 46",
+      "city": "Pune",
+      "rating": 4.6,
+      "reviews": 178,
+      "price": 3870,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 47,
+      "name": "Demo Panchakarma Center 47",
+      "city": "Mumbai",
+      "rating": 4.7,
+      "reviews": 181,
+      "price": 3915,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 48,
+      "name": "Demo Panchakarma Center 48",
+      "city": "Jaipur",
+      "rating": 4.8,
+      "reviews": 184,
+      "price": 3960,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 49,
+      "name": "Demo Panchakarma Center 49",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 187,
+      "price": 4005,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 50,
+      "name": "Demo Panchakarma Center 50",
+      "city": "Pune",
+      "rating": 4.5,
+      "reviews": 190,
+      "price": 4050,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 51,
+      "name": "Demo Panchakarma Center 51",
+      "city": "Bengaluru",
+      "rating": 4.6,
+      "reviews": 193,
+      "price": 4095,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 52,
+      "name": "Demo Panchakarma Center 52",
+      "city": "Mumbai",
+      "rating": 4.7,
+      "reviews": 196,
+      "price": 4140,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 53,
+      "name": "Demo Panchakarma Center 53",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 199,
+      "price": 4185,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 54,
+      "name": "Demo Panchakarma Center 54",
+      "city": "Bengaluru",
+      "rating": 4.9,
+      "reviews": 202,
+      "price": 4230,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 55,
+      "name": "Demo Panchakarma Center 55",
+      "city": "Jaipur",
+      "rating": 4.5,
+      "reviews": 205,
+      "price": 4275,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 56,
+      "name": "Demo Panchakarma Center 56",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 208,
+      "price": 4320,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 57,
+      "name": "Demo Panchakarma Center 57",
+      "city": "Bengaluru",
+      "rating": 4.7,
+      "reviews": 211,
+      "price": 4365,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 58,
+      "name": "Demo Panchakarma Center 58",
+      "city": "Jaipur",
+      "rating": 4.8,
+      "reviews": 214,
+      "price": 4410,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 59,
+      "name": "Demo Panchakarma Center 59",
+      "city": "Mumbai",
+      "rating": 4.9,
+      "reviews": 217,
+      "price": 4455,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 60,
+      "name": "Demo Panchakarma Center 60",
+      "city": "Mumbai",
+      "rating": 4.5,
+      "reviews": 220,
+      "price": 4500,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 61,
+      "name": "Demo Panchakarma Center 61",
+      "city": "Mumbai",
+      "rating": 4.6,
+      "reviews": 223,
+      "price": 4545,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 62,
+      "name": "Demo Panchakarma Center 62",
+      "city": "Pune",
+      "rating": 4.7,
+      "reviews": 226,
+      "price": 4590,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 63,
+      "name": "Demo Panchakarma Center 63",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 229,
+      "price": 4635,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 64,
+      "name": "Demo Panchakarma Center 64",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 232,
+      "price": 4680,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 65,
+      "name": "Demo Panchakarma Center 65",
+      "city": "Jaipur",
+      "rating": 4.5,
+      "reviews": 235,
+      "price": 4725,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 66,
+      "name": "Demo Panchakarma Center 66",
+      "city": "Pune",
+      "rating": 4.6,
+      "reviews": 238,
+      "price": 4770,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 67,
+      "name": "Demo Panchakarma Center 67",
+      "city": "Pune",
+      "rating": 4.7,
+      "reviews": 241,
+      "price": 4815,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 68,
+      "name": "Demo Panchakarma Center 68",
+      "city": "Pune",
+      "rating": 4.8,
+      "reviews": 244,
+      "price": 4860,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 69,
+      "name": "Demo Panchakarma Center 69",
+      "city": "Mumbai",
+      "rating": 4.9,
+      "reviews": 247,
+      "price": 4905,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 70,
+      "name": "Demo Panchakarma Center 70",
+      "city": "Mumbai",
+      "rating": 4.5,
+      "reviews": 250,
+      "price": 4950,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 71,
+      "name": "Demo Panchakarma Center 71",
+      "city": "Jaipur",
+      "rating": 4.6,
+      "reviews": 253,
+      "price": 4995,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 72,
+      "name": "Demo Panchakarma Center 72",
+      "city": "Pune",
+      "rating": 4.7,
+      "reviews": 256,
+      "price": 5040,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 73,
+      "name": "Demo Panchakarma Center 73",
+      "city": "Bengaluru",
+      "rating": 4.8,
+      "reviews": 259,
+      "price": 5085,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 74,
+      "name": "Demo Panchakarma Center 74",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 262,
+      "price": 5130,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 75,
+      "name": "Demo Panchakarma Center 75",
+      "city": "Delhi NCR",
+      "rating": 4.5,
+      "reviews": 265,
+      "price": 5175,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 76,
+      "name": "Demo Panchakarma Center 76",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 268,
+      "price": 5220,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 77,
+      "name": "Demo Panchakarma Center 77",
+      "city": "Mumbai",
+      "rating": 4.7,
+      "reviews": 271,
+      "price": 5265,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 78,
+      "name": "Demo Panchakarma Center 78",
+      "city": "Delhi NCR",
+      "rating": 4.8,
+      "reviews": 274,
+      "price": 5310,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 79,
+      "name": "Demo Panchakarma Center 79",
+      "city": "Pune",
+      "rating": 4.9,
+      "reviews": 277,
+      "price": 5355,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 80,
+      "name": "Demo Panchakarma Center 80",
+      "city": "Delhi NCR",
+      "rating": 4.5,
+      "reviews": 280,
+      "price": 5400,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 81,
+      "name": "Demo Panchakarma Center 81",
+      "city": "Pune",
+      "rating": 4.6,
+      "reviews": 283,
+      "price": 5445,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 82,
+      "name": "Demo Panchakarma Center 82",
+      "city": "Jaipur",
+      "rating": 4.7,
+      "reviews": 286,
+      "price": 5490,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 83,
+      "name": "Demo Panchakarma Center 83",
+      "city": "Pune",
+      "rating": 4.8,
+      "reviews": 289,
+      "price": 5535,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 84,
+      "name": "Demo Panchakarma Center 84",
+      "city": "Bengaluru",
+      "rating": 4.9,
+      "reviews": 292,
+      "price": 5580,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 85,
+      "name": "Demo Panchakarma Center 85",
+      "city": "Delhi NCR",
+      "rating": 4.5,
+      "reviews": 295,
+      "price": 5625,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 86,
+      "name": "Demo Panchakarma Center 86",
+      "city": "Mumbai",
+      "rating": 4.6,
+      "reviews": 298,
+      "price": 5670,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 87,
+      "name": "Demo Panchakarma Center 87",
+      "city": "Jaipur",
+      "rating": 4.7,
+      "reviews": 301,
+      "price": 5715,
+      "treatment": "Nasya",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 88,
+      "name": "Demo Panchakarma Center 88",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 304,
+      "price": 5760,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 89,
+      "name": "Demo Panchakarma Center 89",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 307,
+      "price": 5805,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 90,
+      "name": "Demo Panchakarma Center 90",
+      "city": "Delhi NCR",
+      "rating": 4.5,
+      "reviews": 310,
+      "price": 5850,
+      "treatment": "Nasya",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 91,
+      "name": "Demo Panchakarma Center 91",
+      "city": "Jaipur",
+      "rating": 4.6,
+      "reviews": 313,
+      "price": 5895,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 92,
+      "name": "Demo Panchakarma Center 92",
+      "city": "Mumbai",
+      "rating": 4.7,
+      "reviews": 316,
+      "price": 5940,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 93,
+      "name": "Demo Panchakarma Center 93",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 319,
+      "price": 5985,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 94,
+      "name": "Demo Panchakarma Center 94",
+      "city": "Delhi NCR",
+      "rating": 4.9,
+      "reviews": 322,
+      "price": 6030,
+      "treatment": "Vamana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 95,
+      "name": "Demo Panchakarma Center 95",
+      "city": "Delhi NCR",
+      "rating": 4.5,
+      "reviews": 325,
+      "price": 6075,
+      "treatment": "Vamana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 96,
+      "name": "Demo Panchakarma Center 96",
+      "city": "Delhi NCR",
+      "rating": 4.6,
+      "reviews": 328,
+      "price": 6120,
+      "treatment": "Basti",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 97,
+      "name": "Demo Panchakarma Center 97",
+      "city": "Pune",
+      "rating": 4.7,
+      "reviews": 331,
+      "price": 6165,
+      "treatment": "Virechana",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 98,
+      "name": "Demo Panchakarma Center 98",
+      "city": "Mumbai",
+      "rating": 4.8,
+      "reviews": 334,
+      "price": 6210,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    },
+    {
+      "id": 99,
+      "name": "Demo Panchakarma Center 99",
+      "city": "Bengaluru",
+      "rating": 4.9,
+      "reviews": 337,
+      "price": 6255,
+      "treatment": "Basti",
+      "amenities": [
+        "Doctor review",
+        "Diet kitchen",
+        "Private suite"
+      ]
+    },
+    {
+      "id": 100,
+      "name": "Demo Panchakarma Center 100",
+      "city": "Mumbai",
+      "rating": 4.5,
+      "reviews": 340,
+      "price": 6300,
+      "treatment": "Virechana",
+      "amenities": [
+        "Pickup support",
+        "Weekend slots",
+        "Women therapists"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "prod_1",
+      "name": "Demo Product 1",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_2",
+      "name": "Demo Product 2",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 269
+    },
+    {
+      "id": "prod_3",
+      "name": "Demo Product 3",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 304
+    },
+    {
+      "id": "prod_4",
+      "name": "Demo Product 4",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 339
+    },
+    {
+      "id": "prod_5",
+      "name": "Demo Product 5",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 374
+    },
+    {
+      "id": "prod_6",
+      "name": "Demo Product 6",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 409
+    },
+    {
+      "id": "prod_7",
+      "name": "Demo Product 7",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 444
+    },
+    {
+      "id": "prod_8",
+      "name": "Demo Product 8",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 479
+    },
+    {
+      "id": "prod_9",
+      "name": "Demo Product 9",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 514
+    },
+    {
+      "id": "prod_10",
+      "name": "Demo Product 10",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 549
+    },
+    {
+      "id": "prod_11",
+      "name": "Demo Product 11",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 584
+    },
+    {
+      "id": "prod_12",
+      "name": "Demo Product 12",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 619
+    },
+    {
+      "id": "prod_13",
+      "name": "Demo Product 13",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 654
+    },
+    {
+      "id": "prod_14",
+      "name": "Demo Product 14",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 689
+    },
+    {
+      "id": "prod_15",
+      "name": "Demo Product 15",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 724
+    },
+    {
+      "id": "prod_16",
+      "name": "Demo Product 16",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 759
+    },
+    {
+      "id": "prod_17",
+      "name": "Demo Product 17",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 794
+    },
+    {
+      "id": "prod_18",
+      "name": "Demo Product 18",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 829
+    },
+    {
+      "id": "prod_19",
+      "name": "Demo Product 19",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 864
+    },
+    {
+      "id": "prod_20",
+      "name": "Demo Product 20",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 199
+    },
+    {
+      "id": "prod_21",
+      "name": "Demo Product 21",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_22",
+      "name": "Demo Product 22",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_23",
+      "name": "Demo Product 23",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 304
+    },
+    {
+      "id": "prod_24",
+      "name": "Demo Product 24",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_25",
+      "name": "Demo Product 25",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 374
+    },
+    {
+      "id": "prod_26",
+      "name": "Demo Product 26",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_27",
+      "name": "Demo Product 27",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 444
+    },
+    {
+      "id": "prod_28",
+      "name": "Demo Product 28",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 479
+    },
+    {
+      "id": "prod_29",
+      "name": "Demo Product 29",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 514
+    },
+    {
+      "id": "prod_30",
+      "name": "Demo Product 30",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_31",
+      "name": "Demo Product 31",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_32",
+      "name": "Demo Product 32",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_33",
+      "name": "Demo Product 33",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 654
+    },
+    {
+      "id": "prod_34",
+      "name": "Demo Product 34",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 689
+    },
+    {
+      "id": "prod_35",
+      "name": "Demo Product 35",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 724
+    },
+    {
+      "id": "prod_36",
+      "name": "Demo Product 36",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_37",
+      "name": "Demo Product 37",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 794
+    },
+    {
+      "id": "prod_38",
+      "name": "Demo Product 38",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 829
+    },
+    {
+      "id": "prod_39",
+      "name": "Demo Product 39",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_40",
+      "name": "Demo Product 40",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_41",
+      "name": "Demo Product 41",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_42",
+      "name": "Demo Product 42",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 269
+    },
+    {
+      "id": "prod_43",
+      "name": "Demo Product 43",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 304
+    },
+    {
+      "id": "prod_44",
+      "name": "Demo Product 44",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 339
+    },
+    {
+      "id": "prod_45",
+      "name": "Demo Product 45",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 374
+    },
+    {
+      "id": "prod_46",
+      "name": "Demo Product 46",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_47",
+      "name": "Demo Product 47",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_48",
+      "name": "Demo Product 48",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_49",
+      "name": "Demo Product 49",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_50",
+      "name": "Demo Product 50",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 549
+    },
+    {
+      "id": "prod_51",
+      "name": "Demo Product 51",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_52",
+      "name": "Demo Product 52",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_53",
+      "name": "Demo Product 53",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_54",
+      "name": "Demo Product 54",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 689
+    },
+    {
+      "id": "prod_55",
+      "name": "Demo Product 55",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 724
+    },
+    {
+      "id": "prod_56",
+      "name": "Demo Product 56",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 759
+    },
+    {
+      "id": "prod_57",
+      "name": "Demo Product 57",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 794
+    },
+    {
+      "id": "prod_58",
+      "name": "Demo Product 58",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 829
+    },
+    {
+      "id": "prod_59",
+      "name": "Demo Product 59",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_60",
+      "name": "Demo Product 60",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_61",
+      "name": "Demo Product 61",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_62",
+      "name": "Demo Product 62",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 269
+    },
+    {
+      "id": "prod_63",
+      "name": "Demo Product 63",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 304
+    },
+    {
+      "id": "prod_64",
+      "name": "Demo Product 64",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_65",
+      "name": "Demo Product 65",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 374
+    },
+    {
+      "id": "prod_66",
+      "name": "Demo Product 66",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_67",
+      "name": "Demo Product 67",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_68",
+      "name": "Demo Product 68",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_69",
+      "name": "Demo Product 69",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_70",
+      "name": "Demo Product 70",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_71",
+      "name": "Demo Product 71",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 584
+    },
+    {
+      "id": "prod_72",
+      "name": "Demo Product 72",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_73",
+      "name": "Demo Product 73",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_74",
+      "name": "Demo Product 74",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 689
+    },
+    {
+      "id": "prod_75",
+      "name": "Demo Product 75",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 724
+    },
+    {
+      "id": "prod_76",
+      "name": "Demo Product 76",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 759
+    },
+    {
+      "id": "prod_77",
+      "name": "Demo Product 77",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 794
+    },
+    {
+      "id": "prod_78",
+      "name": "Demo Product 78",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 829
+    },
+    {
+      "id": "prod_79",
+      "name": "Demo Product 79",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_80",
+      "name": "Demo Product 80",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 199
+    },
+    {
+      "id": "prod_81",
+      "name": "Demo Product 81",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_82",
+      "name": "Demo Product 82",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_83",
+      "name": "Demo Product 83",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 304
+    },
+    {
+      "id": "prod_84",
+      "name": "Demo Product 84",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 339
+    },
+    {
+      "id": "prod_85",
+      "name": "Demo Product 85",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 374
+    },
+    {
+      "id": "prod_86",
+      "name": "Demo Product 86",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 409
+    },
+    {
+      "id": "prod_87",
+      "name": "Demo Product 87",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 444
+    },
+    {
+      "id": "prod_88",
+      "name": "Demo Product 88",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_89",
+      "name": "Demo Product 89",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 514
+    },
+    {
+      "id": "prod_90",
+      "name": "Demo Product 90",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 549
+    },
+    {
+      "id": "prod_91",
+      "name": "Demo Product 91",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 584
+    },
+    {
+      "id": "prod_92",
+      "name": "Demo Product 92",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_93",
+      "name": "Demo Product 93",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 654
+    },
+    {
+      "id": "prod_94",
+      "name": "Demo Product 94",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_95",
+      "name": "Demo Product 95",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 724
+    },
+    {
+      "id": "prod_96",
+      "name": "Demo Product 96",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 759
+    },
+    {
+      "id": "prod_97",
+      "name": "Demo Product 97",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 794
+    },
+    {
+      "id": "prod_98",
+      "name": "Demo Product 98",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 829
+    },
+    {
+      "id": "prod_99",
+      "name": "Demo Product 99",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 864
+    },
+    {
+      "id": "prod_100",
+      "name": "Demo Product 100",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_101",
+      "name": "Demo Product 101",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_102",
+      "name": "Demo Product 102",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 269
+    },
+    {
+      "id": "prod_103",
+      "name": "Demo Product 103",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 304
+    },
+    {
+      "id": "prod_104",
+      "name": "Demo Product 104",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_105",
+      "name": "Demo Product 105",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 374
+    },
+    {
+      "id": "prod_106",
+      "name": "Demo Product 106",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_107",
+      "name": "Demo Product 107",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 444
+    },
+    {
+      "id": "prod_108",
+      "name": "Demo Product 108",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_109",
+      "name": "Demo Product 109",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 514
+    },
+    {
+      "id": "prod_110",
+      "name": "Demo Product 110",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 549
+    },
+    {
+      "id": "prod_111",
+      "name": "Demo Product 111",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 584
+    },
+    {
+      "id": "prod_112",
+      "name": "Demo Product 112",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 619
+    },
+    {
+      "id": "prod_113",
+      "name": "Demo Product 113",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 654
+    },
+    {
+      "id": "prod_114",
+      "name": "Demo Product 114",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 689
+    },
+    {
+      "id": "prod_115",
+      "name": "Demo Product 115",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 724
+    },
+    {
+      "id": "prod_116",
+      "name": "Demo Product 116",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 759
+    },
+    {
+      "id": "prod_117",
+      "name": "Demo Product 117",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 794
+    },
+    {
+      "id": "prod_118",
+      "name": "Demo Product 118",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 829
+    },
+    {
+      "id": "prod_119",
+      "name": "Demo Product 119",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 864
+    },
+    {
+      "id": "prod_120",
+      "name": "Demo Product 120",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 199
+    },
+    {
+      "id": "prod_121",
+      "name": "Demo Product 121",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 234
+    },
+    {
+      "id": "prod_122",
+      "name": "Demo Product 122",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 269
+    },
+    {
+      "id": "prod_123",
+      "name": "Demo Product 123",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 304
+    },
+    {
+      "id": "prod_124",
+      "name": "Demo Product 124",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 339
+    },
+    {
+      "id": "prod_125",
+      "name": "Demo Product 125",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 374
+    },
+    {
+      "id": "prod_126",
+      "name": "Demo Product 126",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_127",
+      "name": "Demo Product 127",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 444
+    },
+    {
+      "id": "prod_128",
+      "name": "Demo Product 128",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_129",
+      "name": "Demo Product 129",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 514
+    },
+    {
+      "id": "prod_130",
+      "name": "Demo Product 130",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 549
+    },
+    {
+      "id": "prod_131",
+      "name": "Demo Product 131",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 584
+    },
+    {
+      "id": "prod_132",
+      "name": "Demo Product 132",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_133",
+      "name": "Demo Product 133",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_134",
+      "name": "Demo Product 134",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 689
+    },
+    {
+      "id": "prod_135",
+      "name": "Demo Product 135",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 724
+    },
+    {
+      "id": "prod_136",
+      "name": "Demo Product 136",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 759
+    },
+    {
+      "id": "prod_137",
+      "name": "Demo Product 137",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 794
+    },
+    {
+      "id": "prod_138",
+      "name": "Demo Product 138",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 829
+    },
+    {
+      "id": "prod_139",
+      "name": "Demo Product 139",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_140",
+      "name": "Demo Product 140",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 199
+    },
+    {
+      "id": "prod_141",
+      "name": "Demo Product 141",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_142",
+      "name": "Demo Product 142",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 269
+    },
+    {
+      "id": "prod_143",
+      "name": "Demo Product 143",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 304
+    },
+    {
+      "id": "prod_144",
+      "name": "Demo Product 144",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_145",
+      "name": "Demo Product 145",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 374
+    },
+    {
+      "id": "prod_146",
+      "name": "Demo Product 146",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_147",
+      "name": "Demo Product 147",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 444
+    },
+    {
+      "id": "prod_148",
+      "name": "Demo Product 148",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 479
+    },
+    {
+      "id": "prod_149",
+      "name": "Demo Product 149",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 514
+    },
+    {
+      "id": "prod_150",
+      "name": "Demo Product 150",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_151",
+      "name": "Demo Product 151",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 584
+    },
+    {
+      "id": "prod_152",
+      "name": "Demo Product 152",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_153",
+      "name": "Demo Product 153",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_154",
+      "name": "Demo Product 154",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_155",
+      "name": "Demo Product 155",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 724
+    },
+    {
+      "id": "prod_156",
+      "name": "Demo Product 156",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_157",
+      "name": "Demo Product 157",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 794
+    },
+    {
+      "id": "prod_158",
+      "name": "Demo Product 158",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_159",
+      "name": "Demo Product 159",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_160",
+      "name": "Demo Product 160",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 199
+    },
+    {
+      "id": "prod_161",
+      "name": "Demo Product 161",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_162",
+      "name": "Demo Product 162",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 269
+    },
+    {
+      "id": "prod_163",
+      "name": "Demo Product 163",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 304
+    },
+    {
+      "id": "prod_164",
+      "name": "Demo Product 164",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 339
+    },
+    {
+      "id": "prod_165",
+      "name": "Demo Product 165",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 374
+    },
+    {
+      "id": "prod_166",
+      "name": "Demo Product 166",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 409
+    },
+    {
+      "id": "prod_167",
+      "name": "Demo Product 167",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_168",
+      "name": "Demo Product 168",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_169",
+      "name": "Demo Product 169",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 514
+    },
+    {
+      "id": "prod_170",
+      "name": "Demo Product 170",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 549
+    },
+    {
+      "id": "prod_171",
+      "name": "Demo Product 171",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_172",
+      "name": "Demo Product 172",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 619
+    },
+    {
+      "id": "prod_173",
+      "name": "Demo Product 173",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_174",
+      "name": "Demo Product 174",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_175",
+      "name": "Demo Product 175",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 724
+    },
+    {
+      "id": "prod_176",
+      "name": "Demo Product 176",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 759
+    },
+    {
+      "id": "prod_177",
+      "name": "Demo Product 177",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 794
+    },
+    {
+      "id": "prod_178",
+      "name": "Demo Product 178",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_179",
+      "name": "Demo Product 179",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 864
+    },
+    {
+      "id": "prod_180",
+      "name": "Demo Product 180",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 199
+    },
+    {
+      "id": "prod_181",
+      "name": "Demo Product 181",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 234
+    },
+    {
+      "id": "prod_182",
+      "name": "Demo Product 182",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 269
+    },
+    {
+      "id": "prod_183",
+      "name": "Demo Product 183",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 304
+    },
+    {
+      "id": "prod_184",
+      "name": "Demo Product 184",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 339
+    },
+    {
+      "id": "prod_185",
+      "name": "Demo Product 185",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 374
+    },
+    {
+      "id": "prod_186",
+      "name": "Demo Product 186",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_187",
+      "name": "Demo Product 187",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 444
+    },
+    {
+      "id": "prod_188",
+      "name": "Demo Product 188",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_189",
+      "name": "Demo Product 189",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 514
+    },
+    {
+      "id": "prod_190",
+      "name": "Demo Product 190",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_191",
+      "name": "Demo Product 191",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_192",
+      "name": "Demo Product 192",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_193",
+      "name": "Demo Product 193",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 654
+    },
+    {
+      "id": "prod_194",
+      "name": "Demo Product 194",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 689
+    },
+    {
+      "id": "prod_195",
+      "name": "Demo Product 195",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 724
+    },
+    {
+      "id": "prod_196",
+      "name": "Demo Product 196",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 759
+    },
+    {
+      "id": "prod_197",
+      "name": "Demo Product 197",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 794
+    },
+    {
+      "id": "prod_198",
+      "name": "Demo Product 198",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 829
+    },
+    {
+      "id": "prod_199",
+      "name": "Demo Product 199",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_200",
+      "name": "Demo Product 200",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 199
+    },
+    {
+      "id": "prod_201",
+      "name": "Demo Product 201",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_202",
+      "name": "Demo Product 202",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 269
+    },
+    {
+      "id": "prod_203",
+      "name": "Demo Product 203",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 304
+    },
+    {
+      "id": "prod_204",
+      "name": "Demo Product 204",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 339
+    },
+    {
+      "id": "prod_205",
+      "name": "Demo Product 205",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 374
+    },
+    {
+      "id": "prod_206",
+      "name": "Demo Product 206",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 409
+    },
+    {
+      "id": "prod_207",
+      "name": "Demo Product 207",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 444
+    },
+    {
+      "id": "prod_208",
+      "name": "Demo Product 208",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 479
+    },
+    {
+      "id": "prod_209",
+      "name": "Demo Product 209",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_210",
+      "name": "Demo Product 210",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 549
+    },
+    {
+      "id": "prod_211",
+      "name": "Demo Product 211",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 584
+    },
+    {
+      "id": "prod_212",
+      "name": "Demo Product 212",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 619
+    },
+    {
+      "id": "prod_213",
+      "name": "Demo Product 213",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 654
+    },
+    {
+      "id": "prod_214",
+      "name": "Demo Product 214",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 689
+    },
+    {
+      "id": "prod_215",
+      "name": "Demo Product 215",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 724
+    },
+    {
+      "id": "prod_216",
+      "name": "Demo Product 216",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 759
+    },
+    {
+      "id": "prod_217",
+      "name": "Demo Product 217",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 794
+    },
+    {
+      "id": "prod_218",
+      "name": "Demo Product 218",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 829
+    },
+    {
+      "id": "prod_219",
+      "name": "Demo Product 219",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 864
+    },
+    {
+      "id": "prod_220",
+      "name": "Demo Product 220",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 199
+    },
+    {
+      "id": "prod_221",
+      "name": "Demo Product 221",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_222",
+      "name": "Demo Product 222",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_223",
+      "name": "Demo Product 223",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 304
+    },
+    {
+      "id": "prod_224",
+      "name": "Demo Product 224",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 339
+    },
+    {
+      "id": "prod_225",
+      "name": "Demo Product 225",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 374
+    },
+    {
+      "id": "prod_226",
+      "name": "Demo Product 226",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_227",
+      "name": "Demo Product 227",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 444
+    },
+    {
+      "id": "prod_228",
+      "name": "Demo Product 228",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 479
+    },
+    {
+      "id": "prod_229",
+      "name": "Demo Product 229",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 514
+    },
+    {
+      "id": "prod_230",
+      "name": "Demo Product 230",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_231",
+      "name": "Demo Product 231",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 584
+    },
+    {
+      "id": "prod_232",
+      "name": "Demo Product 232",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 619
+    },
+    {
+      "id": "prod_233",
+      "name": "Demo Product 233",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 654
+    },
+    {
+      "id": "prod_234",
+      "name": "Demo Product 234",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 689
+    },
+    {
+      "id": "prod_235",
+      "name": "Demo Product 235",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 724
+    },
+    {
+      "id": "prod_236",
+      "name": "Demo Product 236",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 759
+    },
+    {
+      "id": "prod_237",
+      "name": "Demo Product 237",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 794
+    },
+    {
+      "id": "prod_238",
+      "name": "Demo Product 238",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 829
+    },
+    {
+      "id": "prod_239",
+      "name": "Demo Product 239",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_240",
+      "name": "Demo Product 240",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 199
+    },
+    {
+      "id": "prod_241",
+      "name": "Demo Product 241",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_242",
+      "name": "Demo Product 242",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 269
+    },
+    {
+      "id": "prod_243",
+      "name": "Demo Product 243",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 304
+    },
+    {
+      "id": "prod_244",
+      "name": "Demo Product 244",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 339
+    },
+    {
+      "id": "prod_245",
+      "name": "Demo Product 245",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 374
+    },
+    {
+      "id": "prod_246",
+      "name": "Demo Product 246",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_247",
+      "name": "Demo Product 247",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_248",
+      "name": "Demo Product 248",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_249",
+      "name": "Demo Product 249",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_250",
+      "name": "Demo Product 250",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 549
+    },
+    {
+      "id": "prod_251",
+      "name": "Demo Product 251",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_252",
+      "name": "Demo Product 252",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_253",
+      "name": "Demo Product 253",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 654
+    },
+    {
+      "id": "prod_254",
+      "name": "Demo Product 254",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 689
+    },
+    {
+      "id": "prod_255",
+      "name": "Demo Product 255",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 724
+    },
+    {
+      "id": "prod_256",
+      "name": "Demo Product 256",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_257",
+      "name": "Demo Product 257",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 794
+    },
+    {
+      "id": "prod_258",
+      "name": "Demo Product 258",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 829
+    },
+    {
+      "id": "prod_259",
+      "name": "Demo Product 259",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_260",
+      "name": "Demo Product 260",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_261",
+      "name": "Demo Product 261",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 234
+    },
+    {
+      "id": "prod_262",
+      "name": "Demo Product 262",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_263",
+      "name": "Demo Product 263",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 304
+    },
+    {
+      "id": "prod_264",
+      "name": "Demo Product 264",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 339
+    },
+    {
+      "id": "prod_265",
+      "name": "Demo Product 265",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 374
+    },
+    {
+      "id": "prod_266",
+      "name": "Demo Product 266",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 409
+    },
+    {
+      "id": "prod_267",
+      "name": "Demo Product 267",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 444
+    },
+    {
+      "id": "prod_268",
+      "name": "Demo Product 268",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 479
+    },
+    {
+      "id": "prod_269",
+      "name": "Demo Product 269",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 514
+    },
+    {
+      "id": "prod_270",
+      "name": "Demo Product 270",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 549
+    },
+    {
+      "id": "prod_271",
+      "name": "Demo Product 271",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 584
+    },
+    {
+      "id": "prod_272",
+      "name": "Demo Product 272",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 619
+    },
+    {
+      "id": "prod_273",
+      "name": "Demo Product 273",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 654
+    },
+    {
+      "id": "prod_274",
+      "name": "Demo Product 274",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_275",
+      "name": "Demo Product 275",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 724
+    },
+    {
+      "id": "prod_276",
+      "name": "Demo Product 276",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_277",
+      "name": "Demo Product 277",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 794
+    },
+    {
+      "id": "prod_278",
+      "name": "Demo Product 278",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_279",
+      "name": "Demo Product 279",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_280",
+      "name": "Demo Product 280",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 199
+    },
+    {
+      "id": "prod_281",
+      "name": "Demo Product 281",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 234
+    },
+    {
+      "id": "prod_282",
+      "name": "Demo Product 282",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_283",
+      "name": "Demo Product 283",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 304
+    },
+    {
+      "id": "prod_284",
+      "name": "Demo Product 284",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 339
+    },
+    {
+      "id": "prod_285",
+      "name": "Demo Product 285",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 374
+    },
+    {
+      "id": "prod_286",
+      "name": "Demo Product 286",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 409
+    },
+    {
+      "id": "prod_287",
+      "name": "Demo Product 287",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 444
+    },
+    {
+      "id": "prod_288",
+      "name": "Demo Product 288",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 479
+    },
+    {
+      "id": "prod_289",
+      "name": "Demo Product 289",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 514
+    },
+    {
+      "id": "prod_290",
+      "name": "Demo Product 290",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 549
+    },
+    {
+      "id": "prod_291",
+      "name": "Demo Product 291",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 584
+    },
+    {
+      "id": "prod_292",
+      "name": "Demo Product 292",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 619
+    },
+    {
+      "id": "prod_293",
+      "name": "Demo Product 293",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 654
+    },
+    {
+      "id": "prod_294",
+      "name": "Demo Product 294",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 689
+    },
+    {
+      "id": "prod_295",
+      "name": "Demo Product 295",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 724
+    },
+    {
+      "id": "prod_296",
+      "name": "Demo Product 296",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_297",
+      "name": "Demo Product 297",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 794
+    },
+    {
+      "id": "prod_298",
+      "name": "Demo Product 298",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_299",
+      "name": "Demo Product 299",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_300",
+      "name": "Demo Product 300",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_301",
+      "name": "Demo Product 301",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 234
+    },
+    {
+      "id": "prod_302",
+      "name": "Demo Product 302",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 269
+    },
+    {
+      "id": "prod_303",
+      "name": "Demo Product 303",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 304
+    },
+    {
+      "id": "prod_304",
+      "name": "Demo Product 304",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 339
+    },
+    {
+      "id": "prod_305",
+      "name": "Demo Product 305",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 374
+    },
+    {
+      "id": "prod_306",
+      "name": "Demo Product 306",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_307",
+      "name": "Demo Product 307",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 444
+    },
+    {
+      "id": "prod_308",
+      "name": "Demo Product 308",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_309",
+      "name": "Demo Product 309",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 514
+    },
+    {
+      "id": "prod_310",
+      "name": "Demo Product 310",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 549
+    },
+    {
+      "id": "prod_311",
+      "name": "Demo Product 311",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_312",
+      "name": "Demo Product 312",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_313",
+      "name": "Demo Product 313",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_314",
+      "name": "Demo Product 314",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 689
+    },
+    {
+      "id": "prod_315",
+      "name": "Demo Product 315",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 724
+    },
+    {
+      "id": "prod_316",
+      "name": "Demo Product 316",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 759
+    },
+    {
+      "id": "prod_317",
+      "name": "Demo Product 317",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 794
+    },
+    {
+      "id": "prod_318",
+      "name": "Demo Product 318",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 829
+    },
+    {
+      "id": "prod_319",
+      "name": "Demo Product 319",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_320",
+      "name": "Demo Product 320",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_321",
+      "name": "Demo Product 321",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 234
+    },
+    {
+      "id": "prod_322",
+      "name": "Demo Product 322",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 269
+    },
+    {
+      "id": "prod_323",
+      "name": "Demo Product 323",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 304
+    },
+    {
+      "id": "prod_324",
+      "name": "Demo Product 324",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 339
+    },
+    {
+      "id": "prod_325",
+      "name": "Demo Product 325",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 374
+    },
+    {
+      "id": "prod_326",
+      "name": "Demo Product 326",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_327",
+      "name": "Demo Product 327",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 444
+    },
+    {
+      "id": "prod_328",
+      "name": "Demo Product 328",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 479
+    },
+    {
+      "id": "prod_329",
+      "name": "Demo Product 329",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_330",
+      "name": "Demo Product 330",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_331",
+      "name": "Demo Product 331",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 584
+    },
+    {
+      "id": "prod_332",
+      "name": "Demo Product 332",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 619
+    },
+    {
+      "id": "prod_333",
+      "name": "Demo Product 333",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 654
+    },
+    {
+      "id": "prod_334",
+      "name": "Demo Product 334",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_335",
+      "name": "Demo Product 335",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 724
+    },
+    {
+      "id": "prod_336",
+      "name": "Demo Product 336",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_337",
+      "name": "Demo Product 337",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 794
+    },
+    {
+      "id": "prod_338",
+      "name": "Demo Product 338",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_339",
+      "name": "Demo Product 339",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 864
+    },
+    {
+      "id": "prod_340",
+      "name": "Demo Product 340",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 199
+    },
+    {
+      "id": "prod_341",
+      "name": "Demo Product 341",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_342",
+      "name": "Demo Product 342",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_343",
+      "name": "Demo Product 343",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 304
+    },
+    {
+      "id": "prod_344",
+      "name": "Demo Product 344",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 339
+    },
+    {
+      "id": "prod_345",
+      "name": "Demo Product 345",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 374
+    },
+    {
+      "id": "prod_346",
+      "name": "Demo Product 346",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 409
+    },
+    {
+      "id": "prod_347",
+      "name": "Demo Product 347",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 444
+    },
+    {
+      "id": "prod_348",
+      "name": "Demo Product 348",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 479
+    },
+    {
+      "id": "prod_349",
+      "name": "Demo Product 349",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 514
+    },
+    {
+      "id": "prod_350",
+      "name": "Demo Product 350",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_351",
+      "name": "Demo Product 351",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 584
+    },
+    {
+      "id": "prod_352",
+      "name": "Demo Product 352",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_353",
+      "name": "Demo Product 353",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 654
+    },
+    {
+      "id": "prod_354",
+      "name": "Demo Product 354",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_355",
+      "name": "Demo Product 355",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 724
+    },
+    {
+      "id": "prod_356",
+      "name": "Demo Product 356",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 759
+    },
+    {
+      "id": "prod_357",
+      "name": "Demo Product 357",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 794
+    },
+    {
+      "id": "prod_358",
+      "name": "Demo Product 358",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_359",
+      "name": "Demo Product 359",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 864
+    },
+    {
+      "id": "prod_360",
+      "name": "Demo Product 360",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 199
+    },
+    {
+      "id": "prod_361",
+      "name": "Demo Product 361",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 234
+    },
+    {
+      "id": "prod_362",
+      "name": "Demo Product 362",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 269
+    },
+    {
+      "id": "prod_363",
+      "name": "Demo Product 363",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 304
+    },
+    {
+      "id": "prod_364",
+      "name": "Demo Product 364",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 339
+    },
+    {
+      "id": "prod_365",
+      "name": "Demo Product 365",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 374
+    },
+    {
+      "id": "prod_366",
+      "name": "Demo Product 366",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_367",
+      "name": "Demo Product 367",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_368",
+      "name": "Demo Product 368",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_369",
+      "name": "Demo Product 369",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 514
+    },
+    {
+      "id": "prod_370",
+      "name": "Demo Product 370",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 549
+    },
+    {
+      "id": "prod_371",
+      "name": "Demo Product 371",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_372",
+      "name": "Demo Product 372",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_373",
+      "name": "Demo Product 373",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 654
+    },
+    {
+      "id": "prod_374",
+      "name": "Demo Product 374",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 689
+    },
+    {
+      "id": "prod_375",
+      "name": "Demo Product 375",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 724
+    },
+    {
+      "id": "prod_376",
+      "name": "Demo Product 376",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 759
+    },
+    {
+      "id": "prod_377",
+      "name": "Demo Product 377",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 794
+    },
+    {
+      "id": "prod_378",
+      "name": "Demo Product 378",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 829
+    },
+    {
+      "id": "prod_379",
+      "name": "Demo Product 379",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_380",
+      "name": "Demo Product 380",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 199
+    },
+    {
+      "id": "prod_381",
+      "name": "Demo Product 381",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_382",
+      "name": "Demo Product 382",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 269
+    },
+    {
+      "id": "prod_383",
+      "name": "Demo Product 383",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 304
+    },
+    {
+      "id": "prod_384",
+      "name": "Demo Product 384",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_385",
+      "name": "Demo Product 385",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 374
+    },
+    {
+      "id": "prod_386",
+      "name": "Demo Product 386",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_387",
+      "name": "Demo Product 387",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_388",
+      "name": "Demo Product 388",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_389",
+      "name": "Demo Product 389",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 514
+    },
+    {
+      "id": "prod_390",
+      "name": "Demo Product 390",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 549
+    },
+    {
+      "id": "prod_391",
+      "name": "Demo Product 391",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_392",
+      "name": "Demo Product 392",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 619
+    },
+    {
+      "id": "prod_393",
+      "name": "Demo Product 393",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 654
+    },
+    {
+      "id": "prod_394",
+      "name": "Demo Product 394",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_395",
+      "name": "Demo Product 395",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 724
+    },
+    {
+      "id": "prod_396",
+      "name": "Demo Product 396",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 759
+    },
+    {
+      "id": "prod_397",
+      "name": "Demo Product 397",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 794
+    },
+    {
+      "id": "prod_398",
+      "name": "Demo Product 398",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 829
+    },
+    {
+      "id": "prod_399",
+      "name": "Demo Product 399",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 864
+    },
+    {
+      "id": "prod_400",
+      "name": "Demo Product 400",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 199
+    },
+    {
+      "id": "prod_401",
+      "name": "Demo Product 401",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 234
+    },
+    {
+      "id": "prod_402",
+      "name": "Demo Product 402",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 269
+    },
+    {
+      "id": "prod_403",
+      "name": "Demo Product 403",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 304
+    },
+    {
+      "id": "prod_404",
+      "name": "Demo Product 404",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 339
+    },
+    {
+      "id": "prod_405",
+      "name": "Demo Product 405",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 374
+    },
+    {
+      "id": "prod_406",
+      "name": "Demo Product 406",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 409
+    },
+    {
+      "id": "prod_407",
+      "name": "Demo Product 407",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_408",
+      "name": "Demo Product 408",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_409",
+      "name": "Demo Product 409",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_410",
+      "name": "Demo Product 410",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 549
+    },
+    {
+      "id": "prod_411",
+      "name": "Demo Product 411",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 584
+    },
+    {
+      "id": "prod_412",
+      "name": "Demo Product 412",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_413",
+      "name": "Demo Product 413",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 654
+    },
+    {
+      "id": "prod_414",
+      "name": "Demo Product 414",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 689
+    },
+    {
+      "id": "prod_415",
+      "name": "Demo Product 415",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 724
+    },
+    {
+      "id": "prod_416",
+      "name": "Demo Product 416",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 759
+    },
+    {
+      "id": "prod_417",
+      "name": "Demo Product 417",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 794
+    },
+    {
+      "id": "prod_418",
+      "name": "Demo Product 418",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 829
+    },
+    {
+      "id": "prod_419",
+      "name": "Demo Product 419",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 864
+    },
+    {
+      "id": "prod_420",
+      "name": "Demo Product 420",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 199
+    },
+    {
+      "id": "prod_421",
+      "name": "Demo Product 421",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_422",
+      "name": "Demo Product 422",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 269
+    },
+    {
+      "id": "prod_423",
+      "name": "Demo Product 423",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 304
+    },
+    {
+      "id": "prod_424",
+      "name": "Demo Product 424",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 339
+    },
+    {
+      "id": "prod_425",
+      "name": "Demo Product 425",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 374
+    },
+    {
+      "id": "prod_426",
+      "name": "Demo Product 426",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 409
+    },
+    {
+      "id": "prod_427",
+      "name": "Demo Product 427",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 444
+    },
+    {
+      "id": "prod_428",
+      "name": "Demo Product 428",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 479
+    },
+    {
+      "id": "prod_429",
+      "name": "Demo Product 429",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 514
+    },
+    {
+      "id": "prod_430",
+      "name": "Demo Product 430",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 549
+    },
+    {
+      "id": "prod_431",
+      "name": "Demo Product 431",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_432",
+      "name": "Demo Product 432",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 619
+    },
+    {
+      "id": "prod_433",
+      "name": "Demo Product 433",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 654
+    },
+    {
+      "id": "prod_434",
+      "name": "Demo Product 434",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 689
+    },
+    {
+      "id": "prod_435",
+      "name": "Demo Product 435",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 724
+    },
+    {
+      "id": "prod_436",
+      "name": "Demo Product 436",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 759
+    },
+    {
+      "id": "prod_437",
+      "name": "Demo Product 437",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 794
+    },
+    {
+      "id": "prod_438",
+      "name": "Demo Product 438",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 829
+    },
+    {
+      "id": "prod_439",
+      "name": "Demo Product 439",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 864
+    },
+    {
+      "id": "prod_440",
+      "name": "Demo Product 440",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 199
+    },
+    {
+      "id": "prod_441",
+      "name": "Demo Product 441",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 234
+    },
+    {
+      "id": "prod_442",
+      "name": "Demo Product 442",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 269
+    },
+    {
+      "id": "prod_443",
+      "name": "Demo Product 443",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 304
+    },
+    {
+      "id": "prod_444",
+      "name": "Demo Product 444",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_445",
+      "name": "Demo Product 445",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 374
+    },
+    {
+      "id": "prod_446",
+      "name": "Demo Product 446",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_447",
+      "name": "Demo Product 447",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 444
+    },
+    {
+      "id": "prod_448",
+      "name": "Demo Product 448",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 479
+    },
+    {
+      "id": "prod_449",
+      "name": "Demo Product 449",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 514
+    },
+    {
+      "id": "prod_450",
+      "name": "Demo Product 450",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 549
+    },
+    {
+      "id": "prod_451",
+      "name": "Demo Product 451",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 584
+    },
+    {
+      "id": "prod_452",
+      "name": "Demo Product 452",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_453",
+      "name": "Demo Product 453",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 654
+    },
+    {
+      "id": "prod_454",
+      "name": "Demo Product 454",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 689
+    },
+    {
+      "id": "prod_455",
+      "name": "Demo Product 455",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 724
+    },
+    {
+      "id": "prod_456",
+      "name": "Demo Product 456",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 759
+    },
+    {
+      "id": "prod_457",
+      "name": "Demo Product 457",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 794
+    },
+    {
+      "id": "prod_458",
+      "name": "Demo Product 458",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 829
+    },
+    {
+      "id": "prod_459",
+      "name": "Demo Product 459",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 864
+    },
+    {
+      "id": "prod_460",
+      "name": "Demo Product 460",
+      "prakriti": "pitta",
+      "category": "daily_routine",
+      "price": 199
+    },
+    {
+      "id": "prod_461",
+      "name": "Demo Product 461",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_462",
+      "name": "Demo Product 462",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 269
+    },
+    {
+      "id": "prod_463",
+      "name": "Demo Product 463",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 304
+    },
+    {
+      "id": "prod_464",
+      "name": "Demo Product 464",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 339
+    },
+    {
+      "id": "prod_465",
+      "name": "Demo Product 465",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 374
+    },
+    {
+      "id": "prod_466",
+      "name": "Demo Product 466",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 409
+    },
+    {
+      "id": "prod_467",
+      "name": "Demo Product 467",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 444
+    },
+    {
+      "id": "prod_468",
+      "name": "Demo Product 468",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 479
+    },
+    {
+      "id": "prod_469",
+      "name": "Demo Product 469",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 514
+    },
+    {
+      "id": "prod_470",
+      "name": "Demo Product 470",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 549
+    },
+    {
+      "id": "prod_471",
+      "name": "Demo Product 471",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 584
+    },
+    {
+      "id": "prod_472",
+      "name": "Demo Product 472",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 619
+    },
+    {
+      "id": "prod_473",
+      "name": "Demo Product 473",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 654
+    },
+    {
+      "id": "prod_474",
+      "name": "Demo Product 474",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 689
+    },
+    {
+      "id": "prod_475",
+      "name": "Demo Product 475",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 724
+    },
+    {
+      "id": "prod_476",
+      "name": "Demo Product 476",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 759
+    },
+    {
+      "id": "prod_477",
+      "name": "Demo Product 477",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 794
+    },
+    {
+      "id": "prod_478",
+      "name": "Demo Product 478",
+      "prakriti": "pitta",
+      "category": "immunity",
+      "price": 829
+    },
+    {
+      "id": "prod_479",
+      "name": "Demo Product 479",
+      "prakriti": "kapha",
+      "category": "digestion",
+      "price": 864
+    },
+    {
+      "id": "prod_480",
+      "name": "Demo Product 480",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 199
+    },
+    {
+      "id": "prod_481",
+      "name": "Demo Product 481",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 234
+    },
+    {
+      "id": "prod_482",
+      "name": "Demo Product 482",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 269
+    },
+    {
+      "id": "prod_483",
+      "name": "Demo Product 483",
+      "prakriti": "vata",
+      "category": "stress",
+      "price": 304
+    },
+    {
+      "id": "prod_484",
+      "name": "Demo Product 484",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 339
+    },
+    {
+      "id": "prod_485",
+      "name": "Demo Product 485",
+      "prakriti": "kapha",
+      "category": "immunity",
+      "price": 374
+    },
+    {
+      "id": "prod_486",
+      "name": "Demo Product 486",
+      "prakriti": "vata",
+      "category": "daily_routine",
+      "price": 409
+    },
+    {
+      "id": "prod_487",
+      "name": "Demo Product 487",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 444
+    },
+    {
+      "id": "prod_488",
+      "name": "Demo Product 488",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 479
+    },
+    {
+      "id": "prod_489",
+      "name": "Demo Product 489",
+      "prakriti": "vata",
+      "category": "pain_relief",
+      "price": 514
+    },
+    {
+      "id": "prod_490",
+      "name": "Demo Product 490",
+      "prakriti": "pitta",
+      "category": "pain_relief",
+      "price": 549
+    },
+    {
+      "id": "prod_491",
+      "name": "Demo Product 491",
+      "prakriti": "kapha",
+      "category": "daily_routine",
+      "price": 584
+    },
+    {
+      "id": "prod_492",
+      "name": "Demo Product 492",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 619
+    },
+    {
+      "id": "prod_493",
+      "name": "Demo Product 493",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 654
+    },
+    {
+      "id": "prod_494",
+      "name": "Demo Product 494",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 689
+    },
+    {
+      "id": "prod_495",
+      "name": "Demo Product 495",
+      "prakriti": "vata",
+      "category": "immunity",
+      "price": 724
+    },
+    {
+      "id": "prod_496",
+      "name": "Demo Product 496",
+      "prakriti": "pitta",
+      "category": "digestion",
+      "price": 759
+    },
+    {
+      "id": "prod_497",
+      "name": "Demo Product 497",
+      "prakriti": "kapha",
+      "category": "stress",
+      "price": 794
+    },
+    {
+      "id": "prod_498",
+      "name": "Demo Product 498",
+      "prakriti": "vata",
+      "category": "digestion",
+      "price": 829
+    },
+    {
+      "id": "prod_499",
+      "name": "Demo Product 499",
+      "prakriti": "pitta",
+      "category": "stress",
+      "price": 864
+    },
+    {
+      "id": "prod_500",
+      "name": "Demo Product 500",
+      "prakriti": "kapha",
+      "category": "pain_relief",
+      "price": 199
+    }
+  ],
+  "patient_journeys": [
+    {
+      "name": "Patient Journey 1",
+      "condition": "Acidity",
+      "improvement": "61% better",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 2",
+      "condition": "Anxiety",
+      "improvement": "70% relief",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 3",
+      "condition": "Anxiety",
+      "improvement": "70% relief",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 4",
+      "condition": "PCOS",
+      "improvement": "Regular cycle in 3 months",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 5",
+      "condition": "PCOS",
+      "improvement": "61% better",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 6",
+      "condition": "Anxiety",
+      "improvement": "61% better",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 7",
+      "condition": "Anxiety",
+      "improvement": "61% better",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 8",
+      "condition": "Diabetes Type 2",
+      "improvement": "61% better",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 9",
+      "condition": "Anxiety",
+      "improvement": "Regular cycle in 3 months",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 10",
+      "condition": "Anxiety",
+      "improvement": "Regular cycle in 3 months",
+      "system": "Ayurveda"
+    },
+    {
+      "name": "Patient Journey 11",
+      "condition": "Anxiety",
+      "improvement": "61% better",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 12",
+      "condition": "Arthritis",
+      "improvement": "Regular cycle in 3 months",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 13",
+      "condition": "Acidity",
+      "improvement": "61% better",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 14",
+      "condition": "Diabetes Type 2",
+      "improvement": "61% better",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 15",
+      "condition": "Diabetes Type 2",
+      "improvement": "70% relief",
+      "system": "Ayurveda"
+    },
+    {
+      "name": "Patient Journey 16",
+      "condition": "Anxiety",
+      "improvement": "Regular cycle in 3 months",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 17",
+      "condition": "Arthritis",
+      "improvement": "48% better",
+      "system": "Modern + Ayurveda"
+    },
+    {
+      "name": "Patient Journey 18",
+      "condition": "Arthritis",
+      "improvement": "48% better",
+      "system": "Ayurveda"
+    },
+    {
+      "name": "Patient Journey 19",
+      "condition": "Acidity",
+      "improvement": "48% better",
+      "system": "Integrated"
+    },
+    {
+      "name": "Patient Journey 20",
+      "condition": "Anxiety",
+      "improvement": "Regular cycle in 3 months",
+      "system": "Integrated"
+    }
+  ],
+  "testimonials": [
+    {
+      "name": "Rajesh K.",
+      "condition": "Arthritis",
+      "improvement": "70% relief"
+    },
+    {
+      "name": "Priya S.",
+      "condition": "PCOS",
+      "improvement": "Regular cycle in 3 months"
+    },
+    {
+      "name": "Ankit M.",
+      "condition": "Acidity",
+      "improvement": "Much better digestion in 6 weeks"
+    },
+    {
+      "name": "Minal P.",
+      "condition": "Stress and insomnia",
+      "improvement": "Sleep improved in 21 days"
+    }
+  ],
+  "community_feed": [
+    {
+      "user_name": "Ananya",
+      "condition": "PCOS support",
+      "content": "Completed week 3 of my dinacharya challenge and my energy curve is finally stable.",
+      "likes": 186,
+      "comments": 24,
+      "shares": 11
+    },
+    {
+      "user_name": "Rahul",
+      "condition": "Cervical pain recovery",
+      "content": "My vaidya shared a Panchakarma progression plan and I posted the improvement timeline for my family doctor too.",
+      "likes": 149,
+      "comments": 17,
+      "shares": 8
+    }
+  ],
+  "metrics_series": [
+    {
+      "date": "2026-03-29",
+      "consultations": 10,
+      "panchakarma_bookings": 9,
+      "product_orders": 89,
+      "new_patients": 14,
+      "daily_active_users": 268,
+      "kits_sold": 11,
+      "interaction_checks": 28,
+      "community_posts": 7,
+      "referral_signups": 2
+    },
+    {
+      "date": "2026-03-30",
+      "consultations": 10,
+      "panchakarma_bookings": 3,
+      "product_orders": 27,
+      "new_patients": 13,
+      "daily_active_users": 204,
+      "kits_sold": 3,
+      "interaction_checks": 34,
+      "community_posts": 3,
+      "referral_signups": 10
+    },
+    {
+      "date": "2026-03-31",
+      "consultations": 9,
+      "panchakarma_bookings": 2,
+      "product_orders": 90,
+      "new_patients": 12,
+      "daily_active_users": 198,
+      "kits_sold": 11,
+      "interaction_checks": 18,
+      "community_posts": 3,
+      "referral_signups": 6
+    },
+    {
+      "date": "2026-04-01",
+      "consultations": 38,
+      "panchakarma_bookings": 10,
+      "product_orders": 26,
+      "new_patients": 14,
+      "daily_active_users": 211,
+      "kits_sold": 3,
+      "interaction_checks": 45,
+      "community_posts": 3,
+      "referral_signups": 11
+    },
+    {
+      "date": "2026-04-02",
+      "consultations": 8,
+      "panchakarma_bookings": 10,
+      "product_orders": 56,
+      "new_patients": 6,
+      "daily_active_users": 173,
+      "kits_sold": 7,
+      "interaction_checks": 45,
+      "community_posts": 3,
+      "referral_signups": 2
+    },
+    {
+      "date": "2026-04-03",
+      "consultations": 45,
+      "panchakarma_bookings": 1,
+      "product_orders": 83,
+      "new_patients": 20,
+      "daily_active_users": 363,
+      "kits_sold": 10,
+      "interaction_checks": 13,
+      "community_posts": 6,
+      "referral_signups": 10
+    },
+    {
+      "date": "2026-04-04",
+      "consultations": 30,
+      "panchakarma_bookings": 2,
+      "product_orders": 17,
+      "new_patients": 14,
+      "daily_active_users": 340,
+      "kits_sold": 2,
+      "interaction_checks": 12,
+      "community_posts": 4,
+      "referral_signups": 13
+    },
+    {
+      "date": "2026-04-05",
+      "consultations": 16,
+      "panchakarma_bookings": 7,
+      "product_orders": 96,
+      "new_patients": 19,
+      "daily_active_users": 275,
+      "kits_sold": 12,
+      "interaction_checks": 40,
+      "community_posts": 10,
+      "referral_signups": 1
+    },
+    {
+      "date": "2026-04-06",
+      "consultations": 32,
+      "panchakarma_bookings": 10,
+      "product_orders": 92,
+      "new_patients": 13,
+      "daily_active_users": 356,
+      "kits_sold": 11,
+      "interaction_checks": 12,
+      "community_posts": 1,
+      "referral_signups": 2
+    },
+    {
+      "date": "2026-04-07",
+      "consultations": 32,
+      "panchakarma_bookings": 10,
+      "product_orders": 84,
+      "new_patients": 7,
+      "daily_active_users": 356,
+      "kits_sold": 10,
+      "interaction_checks": 44,
+      "community_posts": 1,
+      "referral_signups": 10
+    },
+    {
+      "date": "2026-04-08",
+      "consultations": 36,
+      "panchakarma_bookings": 2,
+      "product_orders": 77,
+      "new_patients": 19,
+      "daily_active_users": 330,
+      "kits_sold": 9,
+      "interaction_checks": 32,
+      "community_posts": 9,
+      "referral_signups": 10
+    },
+    {
+      "date": "2026-04-09",
+      "consultations": 44,
+      "panchakarma_bookings": 6,
+      "product_orders": 25,
+      "new_patients": 12,
+      "daily_active_users": 490,
+      "kits_sold": 3,
+      "interaction_checks": 8,
+      "community_posts": 10,
+      "referral_signups": 9
+    },
+    {
+      "date": "2026-04-10",
+      "consultations": 46,
+      "panchakarma_bookings": 9,
+      "product_orders": 83,
+      "new_patients": 13,
+      "daily_active_users": 455,
+      "kits_sold": 10,
+      "interaction_checks": 22,
+      "community_posts": 1,
+      "referral_signups": 7
+    },
+    {
+      "date": "2026-04-11",
+      "consultations": 49,
+      "panchakarma_bookings": 2,
+      "product_orders": 23,
+      "new_patients": 8,
+      "daily_active_users": 438,
+      "kits_sold": 2,
+      "interaction_checks": 17,
+      "community_posts": 6,
+      "referral_signups": 10
+    },
+    {
+      "date": "2026-04-12",
+      "consultations": 42,
+      "panchakarma_bookings": 3,
+      "product_orders": 51,
+      "new_patients": 21,
+      "daily_active_users": 383,
+      "kits_sold": 6,
+      "interaction_checks": 26,
+      "community_posts": 5,
+      "referral_signups": 8
+    },
+    {
+      "date": "2026-04-13",
+      "consultations": 20,
+      "panchakarma_bookings": 6,
+      "product_orders": 11,
+      "new_patients": 7,
+      "daily_active_users": 543,
+      "kits_sold": 1,
+      "interaction_checks": 26,
+      "community_posts": 5,
+      "referral_signups": 11
+    },
+    {
+      "date": "2026-04-14",
+      "consultations": 43,
+      "panchakarma_bookings": 10,
+      "product_orders": 86,
+      "new_patients": 4,
+      "daily_active_users": 405,
+      "kits_sold": 10,
+      "interaction_checks": 32,
+      "community_posts": 9,
+      "referral_signups": 1
+    },
+    {
+      "date": "2026-04-15",
+      "consultations": 50,
+      "panchakarma_bookings": 1,
+      "product_orders": 40,
+      "new_patients": 18,
+      "daily_active_users": 516,
+      "kits_sold": 5,
+      "interaction_checks": 12,
+      "community_posts": 7,
+      "referral_signups": 10
+    },
+    {
+      "date": "2026-04-16",
+      "consultations": 10,
+      "panchakarma_bookings": 6,
+      "product_orders": 35,
+      "new_patients": 15,
+      "daily_active_users": 457,
+      "kits_sold": 4,
+      "interaction_checks": 11,
+      "community_posts": 5,
+      "referral_signups": 11
+    },
+    {
+      "date": "2026-04-17",
+      "consultations": 38,
+      "panchakarma_bookings": 2,
+      "product_orders": 20,
+      "new_patients": 6,
+      "daily_active_users": 630,
+      "kits_sold": 2,
+      "interaction_checks": 36,
+      "community_posts": 8,
+      "referral_signups": 2
+    },
+    {
+      "date": "2026-04-18",
+      "consultations": 26,
+      "panchakarma_bookings": 2,
+      "product_orders": 49,
+      "new_patients": 10,
+      "daily_active_users": 455,
+      "kits_sold": 6,
+      "interaction_checks": 27,
+      "community_posts": 4,
+      "referral_signups": 1
+    },
+    {
+      "date": "2026-04-19",
+      "consultations": 47,
+      "panchakarma_bookings": 1,
+      "product_orders": 23,
+      "new_patients": 4,
+      "daily_active_users": 599,
+      "kits_sold": 2,
+      "interaction_checks": 23,
+      "community_posts": 8,
+      "referral_signups": 7
+    },
+    {
+      "date": "2026-04-20",
+      "consultations": 14,
+      "panchakarma_bookings": 9,
+      "product_orders": 81,
+      "new_patients": 16,
+      "daily_active_users": 534,
+      "kits_sold": 10,
+      "interaction_checks": 13,
+      "community_posts": 2,
+      "referral_signups": 9
+    },
+    {
+      "date": "2026-04-21",
+      "consultations": 7,
+      "panchakarma_bookings": 3,
+      "product_orders": 59,
+      "new_patients": 23,
+      "daily_active_users": 676,
+      "kits_sold": 7,
+      "interaction_checks": 10,
+      "community_posts": 4,
+      "referral_signups": 6
+    },
+    {
+      "date": "2026-04-22",
+      "consultations": 45,
+      "panchakarma_bookings": 4,
+      "product_orders": 75,
+      "new_patients": 24,
+      "daily_active_users": 533,
+      "kits_sold": 9,
+      "interaction_checks": 23,
+      "community_posts": 2,
+      "referral_signups": 14
+    },
+    {
+      "date": "2026-04-23",
+      "consultations": 29,
+      "panchakarma_bookings": 1,
+      "product_orders": 21,
+      "new_patients": 3,
+      "daily_active_users": 609,
+      "kits_sold": 2,
+      "interaction_checks": 37,
+      "community_posts": 10,
+      "referral_signups": 14
+    },
+    {
+      "date": "2026-04-24",
+      "consultations": 37,
+      "panchakarma_bookings": 6,
+      "product_orders": 86,
+      "new_patients": 22,
+      "daily_active_users": 746,
+      "kits_sold": 10,
+      "interaction_checks": 45,
+      "community_posts": 8,
+      "referral_signups": 11
+    },
+    {
+      "date": "2026-04-25",
+      "consultations": 32,
+      "panchakarma_bookings": 5,
+      "product_orders": 17,
+      "new_patients": 12,
+      "daily_active_users": 744,
+      "kits_sold": 2,
+      "interaction_checks": 38,
+      "community_posts": 10,
+      "referral_signups": 13
+    },
+    {
+      "date": "2026-04-26",
+      "consultations": 23,
+      "panchakarma_bookings": 8,
+      "product_orders": 89,
+      "new_patients": 21,
+      "daily_active_users": 594,
+      "kits_sold": 11,
+      "interaction_checks": 40,
+      "community_posts": 10,
+      "referral_signups": 11
+    },
+    {
+      "date": "2026-04-27",
+      "consultations": 23,
+      "panchakarma_bookings": 3,
+      "product_orders": 10,
+      "new_patients": 17,
+      "daily_active_users": 701,
+      "kits_sold": 1,
+      "interaction_checks": 14,
+      "community_posts": 3,
+      "referral_signups": 3
+    }
+  ]
+}

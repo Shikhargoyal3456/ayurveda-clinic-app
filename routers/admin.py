@@ -1,21 +1,28 @@
 from __future__ import annotations
 
+import csv
 import json
 import logging
+import os
 import time
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
+from io import StringIO
 from pathlib import Path
+from typing import Any
+from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, Security, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel, Field
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.analytics import aggregate_daily_statistics, track_event
-from app.auth import get_current_doctor, verify_csrf
+from app.auth import ensure_csrf_token, get_current_doctor, verify_csrf
 from app.config import settings
 try:
     from app.health import build_health_report
@@ -28,11 +35,12 @@ from app.models import Appointment, CaseSheet, Doctor, Patient
 from app.security import active_session_count, active_sessions_snapshot
 from app.database import commit_with_retry, get_db
 from models.care_plan import PatientCarePlan
-from models.medicine import MedicineOrder, utc_now
+from models.medicine import Medicine, MedicineOrder, Pharmacy, StockAdjustment, utc_now
 from models.payment import Payment
 from models.prescription import Prescription
 from models.subscription import ClinicSubscription
 from routers.pharmacy import (
+    can_transition,
     _followups_sent_for_order,
     _is_repeat_order,
     _load_order_items,
@@ -53,6 +61,7 @@ from services.analytics_service import (
 from services.compliance_service import get_compliance_status
 from services.communication import send_patient_message
 from services.delivery_service import get_delivery_statuses
+from services.email_service import EmailService
 from services.fulfillment_service import get_fulfillment_statuses
 from services.inventory_service import auto_restock, get_inventory, get_low_stock, get_restock_status
 from services.pharmacy_service import get_pharmacies, register_pharmacy
@@ -77,6 +86,55 @@ templates = Jinja2Templates(directory=str(settings.templates_dir))
 logger = logging.getLogger(__name__)
 _ADMIN_ACTION_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 UX_FEEDBACK_LOG = "ux_feedback.jsonl"
+security = HTTPBearer(auto_error=False)
+ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN", "your-secret-token-here").strip()
+email_service = EmailService()
+
+
+class ActivityConnectionManager:
+    def __init__(self) -> None:
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket) -> None:
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket) -> None:
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict[str, Any]) -> None:
+        stale_connections: list[WebSocket] = []
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                stale_connections.append(connection)
+        for connection in stale_connections:
+            self.disconnect(connection)
+
+
+activity_manager = ActivityConnectionManager()
+
+
+class MedicineUpdateRequest(BaseModel):
+    name: str | None = None
+    generic_name: str | None = None
+    category: str | None = None
+    brand: str | None = None
+    mrp: int | None = Field(default=None, ge=0)
+    price: int | None = Field(default=None, ge=0)
+    stock: int | None = Field(default=None, ge=0)
+    unit: str | None = None
+    prescription_required: bool | None = None
+    description: str | None = None
+    image_url: str | None = None
+    is_available: bool | None = None
+
+
+class StockAdjustmentRequest(BaseModel):
+    new_stock: int = Field(ge=0)
+    reason: str = Field(default="Manual adjustment", max_length=255)
 
 
 async def _supplier_payload(request: Request, body: dict[str, object] | None = None) -> dict[str, object]:
@@ -106,6 +164,19 @@ def _require_admin(doctor: Doctor) -> Doctor:
     if doctor.username not in allowed_admins and not dev_admin_by_id:
         raise HTTPException(status_code=403, detail="Admin access required.")
     return doctor
+
+
+async def verify_admin_access(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Security(security),
+) -> str:
+    if credentials and credentials.credentials == ADMIN_API_TOKEN and ADMIN_API_TOKEN and ADMIN_API_TOKEN != "your-secret-token-here":
+        return "token"
+    doctor = getattr(request.state, "user", None)
+    if doctor is not None:
+        _require_admin(doctor)
+        return "session"
+    raise HTTPException(status_code=403, detail="Invalid admin token")
 
 
 def _database_size() -> int:
@@ -180,6 +251,122 @@ def _admin_rate_limit(request: Request, action: str, limit: int = 3, window_seco
 def _feedback_log_path() -> Path:
     settings.logs_dir.mkdir(parents=True, exist_ok=True)
     return settings.logs_dir / UX_FEEDBACK_LOG
+
+
+def _admin_template_context(request: Request, active_page: str = "profile") -> dict[str, object]:
+    doctor = getattr(request.state, "user", None)
+    return {
+        "request": request,
+        "active_page": active_page,
+        "user_name": getattr(doctor, "full_name", None) or getattr(doctor, "username", "Admin"),
+        "user_role": "Operations Console",
+        "avatar_label": "AD",
+        "nav_profile_href": "/admin",
+        "csrf_token": ensure_csrf_token(request),
+    }
+
+
+def _ensure_default_pharmacy(db: Session) -> Pharmacy:
+    pharmacy = db.query(Pharmacy).filter(Pharmacy.is_active.is_(True)).order_by(Pharmacy.id.asc()).first()
+    if pharmacy is not None:
+        return pharmacy
+    pharmacy = Pharmacy(
+        name="Kash AI Central Pharmacy",
+        address="Operations Hub",
+        city="New Delhi",
+        pincode="110001",
+        phone="9999999999",
+        whatsapp_number="9999999999",
+        drug_licence_number="TEMP-LICENSE-001",
+        is_active=True,
+    )
+    db.add(pharmacy)
+    commit_with_retry(db)
+    db.refresh(pharmacy)
+    return pharmacy
+
+
+def _safe_price(value: object, default: int = 0) -> int:
+    try:
+        return max(0, int(round(float(value or default))))
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "y"}
+
+
+def _medicine_payload(medicine: Medicine) -> dict[str, object]:
+    return {
+        "id": medicine.id,
+        "name": medicine.name,
+        "generic_name": medicine.generic_name,
+        "category": medicine.category,
+        "brand": medicine.brand,
+        "mrp": int(medicine.mrp or medicine.price or 0),
+        "price": int(medicine.price or 0),
+        "stock": int(medicine.stock or 0),
+        "unit": medicine.unit,
+        "prescription_required": bool(medicine.requires_prescription),
+        "description": medicine.description or "",
+        "image_url": medicine.image_url or "",
+        "pharmacy_id": medicine.pharmacy_id,
+        "is_available": bool(medicine.is_available),
+    }
+
+
+def _stock_adjustment_payload(adjustment: StockAdjustment) -> dict[str, object]:
+    return {
+        "id": adjustment.id,
+        "medicine_id": adjustment.medicine_id,
+        "previous_stock": adjustment.previous_stock,
+        "new_stock": adjustment.new_stock,
+        "adjusted_by": adjustment.adjusted_by,
+        "reason": adjustment.reason or "",
+        "created_at": adjustment.created_at.isoformat() if adjustment.created_at else None,
+    }
+
+
+def _recent_order_payload(order: MedicineOrder) -> dict[str, object]:
+    items = _load_order_items(order)
+    return {
+        "id": order.id,
+        "customer_name": order.patient_name,
+        "items_count": len(items),
+        "items": items,
+        "total": int(order.total_amount or 0),
+        "status": order.status,
+        "payment_status": order.payment_status,
+        "created_at": order.created_at.isoformat() if order.created_at else None,
+        "tracking_url": f"/orders/tracking/{order.id}",
+    }
+
+
+async def _save_uploaded_medicine_image(image: UploadFile | None) -> str | None:
+    if image is None or not getattr(image, "filename", ""):
+        return None
+    uploads_dir = settings.static_dir / "uploads" / "medicines"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    suffix = Path(image.filename).suffix.lower() or ".jpg"
+    filename = f"{uuid4().hex}{suffix}"
+    target = uploads_dir / filename
+    content = await image.read()
+    target.write_bytes(content)
+    return f"/static/uploads/medicines/{filename}"
+
+
+async def _broadcast_admin_activity(activity_type: str, message: str, extra: dict[str, object] | None = None) -> None:
+    payload = {
+        "type": activity_type,
+        "message": message,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    if extra:
+        payload.update(extra)
+    await activity_manager.broadcast(payload)
 
 
 def _append_ux_feedback(payload: dict[str, object]) -> None:
@@ -884,6 +1071,607 @@ def admin_growth_metrics(
         )
     track_event("admin_growth_metrics_viewed", doctor_id=doctor.id)
     return JSONResponse({"success": True, "message": "Growth metrics loaded.", "data": payload})
+
+
+@router.websocket("/ws/activity")
+async def activity_websocket(websocket: WebSocket):
+    await activity_manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        activity_manager.disconnect(websocket)
+    except Exception:
+        activity_manager.disconnect(websocket)
+
+
+@router.get("/admin/add-medicine")
+def add_medicine_page(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    return templates.TemplateResponse("admin/add_medicine.html", _admin_template_context(request))
+
+
+@router.get("/admin/bulk-upload")
+def bulk_upload_page(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    return templates.TemplateResponse("admin/bulk_upload.html", _admin_template_context(request))
+
+
+@router.get("/admin/activity-dashboard")
+def activity_dashboard_page(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    return templates.TemplateResponse("admin/activity_dashboard.html", _admin_template_context(request))
+
+
+@router.get("/admin/complete")
+def complete_admin_page(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    return templates.TemplateResponse("admin/complete_admin.html", _admin_template_context(request))
+
+
+@router.get("/api/admin/medicines")
+def get_admin_medicines(
+    q: str = "",
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    query = db.query(Medicine).order_by(Medicine.name.asc())
+    if q.strip():
+        like = f"%{q.strip()}%"
+        query = query.filter(
+            (Medicine.name.ilike(like))
+            | (Medicine.brand.ilike(like))
+            | (Medicine.category.ilike(like))
+        )
+    medicines = query.limit(200).all()
+    return JSONResponse([_medicine_payload(medicine) for medicine in medicines])
+
+
+@router.get("/api/admin/medicines/low-stock")
+def get_low_stock_medicines(
+    threshold: int = 10,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    medicines = (
+        db.query(Medicine)
+        .filter(Medicine.stock < max(0, threshold), Medicine.is_available.is_(True))
+        .order_by(Medicine.stock.asc(), Medicine.name.asc())
+        .limit(200)
+        .all()
+    )
+    return JSONResponse({"threshold": threshold, "medicines": [_medicine_payload(medicine) for medicine in medicines]})
+
+
+@router.post("/api/admin/medicines/add")
+async def add_admin_medicine(
+    request: Request,
+    name: str = Form(""),
+    category: str = Form(""),
+    brand: str = Form(""),
+    mrp: str = Form(""),
+    price: str = Form(""),
+    stock: str = Form("100"),
+    prescription_required: str = Form("false"),
+    description: str = Form(""),
+    generic_name: str = Form(""),
+    unit: str = Form("unit"),
+    image: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+    __: str = Depends(verify_admin_access),
+):
+    _require_admin(doctor)
+    if "application/json" in request.headers.get("content-type", "").lower():
+        payload = await request.json()
+        name = str(payload.get("name", "")).strip()
+        category = str(payload.get("category", "wellness")).strip().lower()
+        brand = str(payload.get("brand", "")).strip()
+        mrp = str(payload.get("mrp", payload.get("price", 0)))
+        price = str(payload.get("price", 0))
+        stock = str(payload.get("stock", 100))
+        prescription_required = str(payload.get("prescription_required", False))
+        description = str(payload.get("description", "")).strip()
+        generic_name = str(payload.get("generic_name", "")).strip()
+        unit = str(payload.get("unit", "unit")).strip() or "unit"
+        image = None
+
+    name = name.strip()
+    if not name:
+        return JSONResponse(status_code=400, content={"success": False, "error": "Medicine name is required."})
+
+    normalized_stock = max(0, _safe_price(stock, 100))
+    pharmacy = _ensure_default_pharmacy(db)
+    image_url = await _save_uploaded_medicine_image(image)
+    medicine = Medicine(
+        name=name,
+        generic_name=generic_name.strip() or None,
+        category=(category.strip().lower() or "wellness"),
+        brand=brand.strip() or None,
+        mrp=_safe_price(mrp, _safe_price(price, 0)),
+        price=_safe_price(price, 0),
+        stock=normalized_stock,
+        unit=unit.strip() or "unit",
+        requires_prescription=_normalize_bool(prescription_required),
+        is_available=normalized_stock > 0,
+        description=description.strip() or None,
+        image_url=image_url,
+        pharmacy_id=pharmacy.id,
+    )
+    db.add(medicine)
+    commit_with_retry(db)
+    db.refresh(medicine)
+    await _broadcast_admin_activity(
+        "medicine_added",
+        f"New medicine added: {medicine.name}",
+        {"medicine_id": medicine.id},
+    )
+    return JSONResponse({"success": True, "medicine_id": medicine.id, "medicine": _medicine_payload(medicine)})
+
+
+@router.post("/api/admin/medicines/bulk-upload")
+async def bulk_upload_medicines(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+    __: str = Depends(verify_admin_access),
+):
+    _require_admin(doctor)
+    if not file.filename.lower().endswith(".csv"):
+        return JSONResponse(status_code=400, content={"success": False, "error": "Please upload a CSV file."})
+
+    pharmacy = _ensure_default_pharmacy(db)
+    raw_text = (await file.read()).decode("utf-8-sig", errors="ignore")
+    reader = csv.DictReader(StringIO(raw_text))
+    added = 0
+    failed = 0
+    failures: list[dict[str, object]] = []
+
+    for index, row in enumerate(reader, start=2):
+        try:
+            name = str(row.get("name", "")).strip()
+            if not name:
+                raise ValueError("Missing medicine name")
+            normalized_stock = max(0, _safe_price(row.get("stock"), 100))
+            medicine = Medicine(
+                name=name,
+                generic_name=str(row.get("generic_name", "")).strip() or None,
+                category=str(row.get("category", "wellness")).strip().lower() or "wellness",
+                brand=str(row.get("brand", "")).strip() or None,
+                mrp=_safe_price(row.get("mrp"), _safe_price(row.get("price"), 0)),
+                price=_safe_price(row.get("price"), 0),
+                stock=normalized_stock,
+                unit=str(row.get("unit", "unit")).strip() or "unit",
+                requires_prescription=_normalize_bool(row.get("prescription_required")),
+                is_available=normalized_stock > 0,
+                description=str(row.get("description", "")).strip() or None,
+                image_url=str(row.get("image_url", "")).strip() or None,
+                pharmacy_id=pharmacy.id,
+            )
+            db.add(medicine)
+            added += 1
+        except Exception as exc:
+            failed += 1
+            failures.append({"row": index, "error": str(exc)})
+
+    commit_with_retry(db)
+    await _broadcast_admin_activity(
+        "bulk_upload",
+        f"Bulk medicine upload completed: {added} added, {failed} failed",
+        {"added": added, "failed": failed},
+    )
+    return JSONResponse({"success": True, "added": added, "failed": failed, "failures": failures[:20]})
+
+
+@router.post("/api/admin/medicines/bulk")
+async def bulk_add_medicines_json(
+    request: Request,
+    payload: dict[str, object] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    __: str = Depends(verify_admin_access),
+):
+    _require_admin(doctor)
+    medicines = payload.get("medicines", [])
+    if not isinstance(medicines, list):
+        raise HTTPException(status_code=400, detail="medicines must be a list")
+
+    pharmacy = _ensure_default_pharmacy(db)
+    added = 0
+    failed = 0
+    failures: list[dict[str, object]] = []
+
+    for index, row in enumerate(medicines):
+        try:
+            if not isinstance(row, dict):
+                raise ValueError("Each medicine must be an object")
+            name = str(row.get("name", "")).strip()
+            if not name:
+                raise ValueError("Missing medicine name")
+            normalized_stock = max(0, _safe_price(row.get("stock"), 100))
+            medicine = Medicine(
+                name=name,
+                generic_name=str(row.get("generic_name", "")).strip() or None,
+                category=str(row.get("category", "wellness")).strip().lower() or "wellness",
+                brand=str(row.get("brand", "")).strip() or None,
+                mrp=_safe_price(row.get("mrp"), _safe_price(row.get("price"), 0)),
+                price=_safe_price(row.get("price"), 0),
+                stock=normalized_stock,
+                unit=str(row.get("unit", "unit")).strip() or "unit",
+                requires_prescription=_normalize_bool(row.get("prescription_required")),
+                is_available=normalized_stock > 0,
+                description=str(row.get("description", "")).strip() or None,
+                image_url=str(row.get("image_url", "")).strip() or None,
+                pharmacy_id=pharmacy.id,
+            )
+            db.add(medicine)
+            added += 1
+        except Exception as exc:
+            failed += 1
+            failures.append({"index": index, "error": str(exc)})
+
+    commit_with_retry(db)
+    await _broadcast_admin_activity(
+        "bulk_upload",
+        f"Bulk JSON medicine sync completed: {added} added, {failed} failed",
+        {"added": added, "failed": failed},
+    )
+    write_audit_event("admin_bulk_medicine_import", request, added=added, failed=failed)
+    return JSONResponse({"success": True, "added": added, "failed": failed, "failures": failures[:20]})
+
+
+@router.put("/api/admin/medicines/{medicine_id}")
+async def update_medicine(
+    medicine_id: int,
+    updates: MedicineUpdateRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: str = Depends(verify_admin_access),
+):
+    doctor = _require_admin(doctor)
+    medicine = db.get(Medicine, medicine_id)
+    if medicine is None:
+        raise HTTPException(status_code=404, detail="Medicine not found")
+
+    data = updates.model_dump(exclude_unset=True)
+    previous_stock = int(medicine.stock or 0)
+    for field, value in data.items():
+        if field == "prescription_required":
+            setattr(medicine, "requires_prescription", bool(value))
+        else:
+            setattr(medicine, field, value)
+    if "stock" in data:
+        medicine.is_available = int(medicine.stock or 0) > 0
+        adjustment = StockAdjustment(
+            medicine_id=medicine.id,
+            previous_stock=previous_stock,
+            new_stock=int(medicine.stock or 0),
+            adjusted_by=int(getattr(doctor, "id", 0) or 0),
+            reason="Inventory update",
+        )
+        db.add(adjustment)
+
+    commit_with_retry(db)
+    db.refresh(medicine)
+    await _broadcast_admin_activity("medicine_updated", f"Medicine updated: {medicine.name}", {"medicine_id": medicine.id})
+    write_audit_event("admin_medicine_updated", request, medicine_id=medicine.id)
+    logger.info("Medicine %s updated by admin %s", medicine.id, doctor.id)
+    return JSONResponse({"success": True, "medicine": _medicine_payload(medicine)})
+
+
+@router.delete("/api/admin/medicines/{medicine_id}")
+async def delete_medicine(
+    medicine_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: str = Depends(verify_admin_access),
+):
+    doctor = _require_admin(doctor)
+    medicine = db.get(Medicine, medicine_id)
+    if medicine is None:
+        raise HTTPException(status_code=404, detail="Medicine not found")
+    medicine.is_available = False
+    commit_with_retry(db)
+    db.refresh(medicine)
+    await _broadcast_admin_activity("medicine_archived", f"Medicine archived: {medicine.name}", {"medicine_id": medicine.id})
+    write_audit_event("admin_medicine_archived", request, medicine_id=medicine.id)
+    logger.info("Medicine %s archived by admin %s", medicine.id, doctor.id)
+    return JSONResponse({"success": True, "medicine": _medicine_payload(medicine)})
+
+
+@router.post("/api/admin/medicines/{medicine_id}/adjust-stock")
+async def adjust_stock(
+    medicine_id: int,
+    adjustment: StockAdjustmentRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: str = Depends(verify_admin_access),
+):
+    doctor = _require_admin(doctor)
+    medicine = db.get(Medicine, medicine_id)
+    if medicine is None:
+        raise HTTPException(status_code=404, detail="Medicine not found")
+
+    previous_stock = int(medicine.stock or 0)
+    medicine.stock = int(adjustment.new_stock)
+    medicine.is_available = medicine.stock > 0
+    record = StockAdjustment(
+        medicine_id=medicine.id,
+        previous_stock=previous_stock,
+        new_stock=medicine.stock,
+        adjusted_by=int(getattr(doctor, "id", 0) or 0),
+        reason=adjustment.reason,
+    )
+    db.add(record)
+    commit_with_retry(db)
+    db.refresh(record)
+    db.refresh(medicine)
+    await _broadcast_admin_activity(
+        "stock_adjusted",
+        f"Stock updated for {medicine.name}: {previous_stock} -> {medicine.stock}",
+        {"medicine_id": medicine.id},
+    )
+    write_audit_event("admin_stock_adjusted", request, medicine_id=medicine.id, new_stock=medicine.stock)
+    logger.info("Stock adjusted for medicine %s by admin %s", medicine.id, doctor.id)
+    return JSONResponse({"success": True, "medicine": _medicine_payload(medicine), "adjustment": _stock_adjustment_payload(record)})
+
+
+@router.get("/api/admin/medicines/{medicine_id}/adjustments")
+def stock_adjustment_history(
+    medicine_id: int,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    adjustments = (
+        db.query(StockAdjustment)
+        .filter(StockAdjustment.medicine_id == medicine_id)
+        .order_by(StockAdjustment.created_at.desc(), StockAdjustment.id.desc())
+        .limit(100)
+        .all()
+    )
+    return JSONResponse({"adjustments": [_stock_adjustment_payload(item) for item in adjustments]})
+
+
+@router.get("/api/admin/stats")
+def admin_activity_stats(
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    today = datetime.now(timezone.utc).date()
+    orders_today = (
+        db.query(func.count(MedicineOrder.id))
+        .filter(func.date(MedicineOrder.created_at) == today.isoformat())
+        .scalar()
+        or 0
+    )
+    revenue_today = int(
+        db.query(func.coalesce(func.sum(MedicineOrder.total_amount), 0))
+        .filter(func.date(MedicineOrder.created_at) == today.isoformat())
+        .scalar()
+        or 0
+    )
+    medicines_sold = 0
+    recent_orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(100).all()
+    for order in recent_orders:
+        medicines_sold += sum(int(item.get("qty", 1) or 1) for item in _load_order_items(order))
+    order_counts = {
+        status: db.query(func.count(MedicineOrder.id)).filter(MedicineOrder.status == status).scalar() or 0
+        for status in ["pending", "confirmed", "packed", "dispatched", "delivered", "cancelled"]
+    }
+    return JSONResponse(
+        {
+            "active_users": active_session_count(),
+            "orders_today": orders_today,
+            "revenue_today": revenue_today,
+            "medicines_sold": medicines_sold,
+            "orders": order_counts,
+            "computed_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+
+
+@router.get("/api/admin/orders/recent")
+def admin_recent_orders(
+    limit: int = 20,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(max(1, min(limit, 100))).all()
+    return JSONResponse([_recent_order_payload(order) for order in orders])
+
+
+@router.put("/api/orders/{order_id}/status")
+async def admin_update_order_status(
+    order_id: int,
+    request: Request,
+    payload: dict[str, object] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    __: str = Depends(verify_admin_access),
+):
+    _require_admin(doctor)
+    order = db.get(MedicineOrder, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    requested_status = str(payload.get("status", "")).strip().lower()
+    normalized_status = {"processing": "confirmed", "shipped": "dispatched"}.get(requested_status, requested_status)
+    if normalized_status not in {"pending", "confirmed", "dispatched", "delivered", "cancelled"}:
+        raise HTTPException(status_code=400, detail="Unsupported order status.")
+
+    if normalized_status in {"confirmed", "dispatched", "delivered"} and not can_transition(order.status, normalized_status):
+        raise HTTPException(status_code=400, detail=f"Order cannot move from {order.status} to {normalized_status}.")
+
+    if normalized_status == "confirmed" and order.payment_status != "paid":
+        order.payment_status = "paid"
+        if order.paid_at is None:
+            order.paid_at = utc_now()
+
+    order.status = normalized_status
+    if normalized_status == "cancelled":
+        order.notification_failed = False
+
+    commit_with_retry(db)
+    db.refresh(order)
+    await _broadcast_admin_activity(
+        "order_status_updated",
+        f"Order #{order.id} updated to {order.status}",
+        {"order_id": order.id, "status": order.status},
+    )
+    patient = db.query(Patient).filter(Patient.phone == order.patient_phone).first()
+    if patient and patient.email:
+        await email_service.send_order_status_update(order.id, order.status, patient.email)
+    write_audit_event("admin_order_status_updated", request, order_id=order.id, status=order.status)
+    logger.info("Admin %s updated order %s to %s", doctor.id, order.id, order.status)
+    return JSONResponse({"success": True, "order": _recent_order_payload(order)})
+
+
+@router.post("/api/orders/{order_id}/notify")
+async def admin_notify_order_customer(
+    order_id: int,
+    request: Request,
+    payload: dict[str, object] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    __: str = Depends(verify_admin_access),
+):
+    _require_admin(doctor)
+    order = db.get(MedicineOrder, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    status = str(payload.get("status", order.status)).strip().lower() or order.status
+    message = f"Order #{order.id} update: your medicine order is now {status}."
+    result = await run_in_threadpool(
+        send_patient_message,
+        order.patient_phone,
+        "",
+        message,
+        "Kash AI order update",
+    )
+    await _broadcast_admin_activity(
+        "order_notified",
+        f"Customer notified for order #{order.id}",
+        {"order_id": order.id, "status": status},
+    )
+    write_audit_event("admin_order_customer_notified", request, order_id=order.id, status=status)
+    return JSONResponse({"success": True, "result": result})
+
+
+@router.get("/api/admin/orders/export")
+def export_orders(
+    format: str = "csv",
+    start_date: str | None = None,
+    end_date: str | None = None,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    query = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc())
+    if start_date:
+        query = query.filter(func.date(MedicineOrder.created_at) >= start_date)
+    if end_date:
+        query = query.filter(func.date(MedicineOrder.created_at) <= end_date)
+    orders = query.limit(5000).all()
+
+    if format == "excel":
+        try:
+            from openpyxl import Workbook
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"Excel export unavailable: {exc}") from exc
+        workbook = Workbook()
+        sheet = workbook.active
+        sheet.title = "Orders"
+        sheet.append(["Order ID", "Customer", "Phone", "Status", "Payment", "Total", "Created At"])
+        for order in orders:
+            sheet.append([
+                order.id,
+                order.patient_name,
+                order.patient_phone,
+                order.status,
+                order.payment_status,
+                order.total_amount,
+                order.created_at.isoformat() if order.created_at else "",
+            ])
+        from io import BytesIO
+        buffer = BytesIO()
+        workbook.save(buffer)
+        buffer.seek(0)
+        return StreamingResponse(
+            buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=orders_export.xlsx"},
+        )
+
+    csv_stream = StringIO()
+    writer = csv.writer(csv_stream)
+    writer.writerow(["order_id", "customer", "phone", "status", "payment_status", "total_amount", "created_at"])
+    for order in orders:
+        writer.writerow([
+            order.id,
+            order.patient_name,
+            order.patient_phone,
+            order.status,
+            order.payment_status,
+            order.total_amount,
+            order.created_at.isoformat() if order.created_at else "",
+        ])
+    return StreamingResponse(
+        iter([csv_stream.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=orders_export.csv"},
+    )
+
+
+@router.get("/api/admin/medicines/export")
+def export_medicines(
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    medicines = db.query(Medicine).order_by(Medicine.name.asc()).limit(5000).all()
+    csv_stream = StringIO()
+    writer = csv.writer(csv_stream)
+    writer.writerow(["id", "name", "category", "brand", "mrp", "price", "stock", "unit", "prescription_required", "is_available"])
+    for medicine in medicines:
+        writer.writerow([
+            medicine.id,
+            medicine.name,
+            medicine.category,
+            medicine.brand or "",
+            medicine.mrp or medicine.price or 0,
+            medicine.price or 0,
+            medicine.stock or 0,
+            medicine.unit,
+            bool(medicine.requires_prescription),
+            bool(medicine.is_available),
+        ])
+    return StreamingResponse(
+        iter([csv_stream.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=medicines_export.csv"},
+    )
 
 
 @router.get("/health/system")

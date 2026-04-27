@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Lab Booking | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+<section class="page-header"><div><p class="eyebrow">Diagnostics</p><h1>Book lab tests with home sample collection</h1><p class="mb-0">Browse tests, packages, partners, and AI-assisted report interpretation.</p></div></section>
+<section class="lab-testing-platform section-stack">
+<article class="card"><h2>Book lab tests</h2><div class="hero-actions mt-3"><input id="labSearchInput" class="form-control" placeholder="Search tests"><button id="labSearchBtn" class="btn btn-primary" type="button">Search</button></div><div class="hero-actions mt-3"><span class="pill">Complete Blood Count</span><span class="pill">Thyroid Profile</span><span class="pill">Lipid Profile</span><span class="pill">HbA1c</span></div></article>
+<article class="card"><h3>AI-recommended health packages</h3><div class="catalog-grid mt-3">{% for pkg in packages %}<div class="catalog-card"><div><h4>{{ pkg.name }}</h4><p>{{ pkg.description }}</p><div class="hero-actions">{% for test in pkg.tests %}<span class="pill pill-muted">{{ test }}</span>{% endfor %}</div></div><div><div class="product-price">₹{{ pkg.discounted_price }}</div><p class="text-muted"><s>₹{{ pkg.original_price }}</s></p><button class="btn btn-primary w-100" type="button">Book Now</button>{% if pkg.ai_recommended %}<div class="small text-success mt-2">AI recommended</div>{% endif %}</div></div>{% endfor %}</div></article>
+<article class="card"><h3>Home sample collection</h3><div class="hero-actions mt-3"><input class="form-control" placeholder="Enter pincode"><button class="btn btn-outline-success" type="button">Check Availability</button></div><div class="stack-list mt-3"><div class="stack-item">7:00 AM - 9:00 AM</div><div class="stack-item">9:00 AM - 11:00 AM</div><div class="stack-item">5:00 PM - 7:00 PM</div></div></article>
+<article class="card"><h3>Our lab partners</h3><div class="feature-grid mt-3">{% for lab in labs %}<div class="feature-card"><h4 class="h4">{{ lab.name }}</h4><p class="mb-1">⭐ {{ lab.rating }}</p><p class="mb-0 text-muted">{{ lab.accreditation }}</p></div>{% endfor %}</div></article>
+<article class="card"><h3>AI report interpretation</h3><p>Paste report text or upload externally, then use AI summary for rapid understanding.</p><textarea id="reportText" class="form-control" rows="5" placeholder="Paste lab report summary here"></textarea><button id="interpretReportBtn" class="btn btn-primary mt-3" type="button">Interpret Report</button><div id="reportAnalysis" class="stack-list mt-3"></div></article>
+</section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="{{ url_for('static', path='js/superapp/labs.js') }}"></script>{% endblock %}

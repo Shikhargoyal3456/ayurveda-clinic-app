@@ -1,9 +1,11 @@
 import json
 import logging
+import os
 import re
 import time
 from collections import defaultdict, deque
 from datetime import timedelta, timezone
+from io import BytesIO
 
 try:
     import razorpay
@@ -22,15 +24,18 @@ from app.audit import write_audit_event
 from app.auth import ensure_csrf_token, verify_csrf
 from app.config import settings
 from app.database import commit_with_retry, get_db
+from app.rate_limit import limiter
 from app.models import Patient
 from models.medicine import Medicine, MedicineOrder, Pharmacy, utc_now
 from services import whatsapp
 from services.communication import send_patient_message
 from services.delivery_service import assign_delivery_safe, update_delivery_status
+from services.email_service import EmailService
 from services.fulfillment_service import track_order, update_status
 from services.geocoding import get_nearby_pharmacies
 from services.inventory_service import reduce_stock
 from services.medicine_catalog import get_default_medicines
+from services.telegram_bot import TelegramOrderNotifier
 
 
 router = APIRouter(tags=["pharmacy"])
@@ -46,6 +51,7 @@ _VALID_ORDER_TRANSITIONS = {
     "dispatched": {"delivered"},
     "delivered": set(),
 }
+email_service = EmailService()
 
 
 def _order_again_token(order_id: int) -> str:
@@ -130,6 +136,42 @@ def _order_status_payload(order: MedicineOrder) -> dict[str, object]:
         "source": _order_source(order),
         "is_repeat_order": _is_repeat_order(order),
     }
+
+
+def _order_invoice_breakdown(order: MedicineOrder) -> dict[str, object]:
+    items = _load_order_items(order)
+    subtotal = int(sum(int(item.get("line_total", item.get("price", 0) * item.get("qty", 1)) or 0) for item in items))
+    delivery_charge = 0
+    discount = max(0, subtotal - int(order.total_amount or 0))
+    return {
+        "items": items,
+        "subtotal": subtotal,
+        "delivery_charge": delivery_charge,
+        "discount": discount,
+        "grand_total": int(order.total_amount or 0),
+    }
+
+
+def _invoice_qr_svg(order: MedicineOrder) -> str:
+    verification_payload = f"ORDER:{order.id}|AMOUNT:{order.total_amount}|STATUS:{order.payment_status}"
+    try:
+        import qrcode
+        import qrcode.image.svg
+
+        factory = qrcode.image.svg.SvgImage
+        img = qrcode.make(verification_payload, image_factory=factory)
+        stream = BytesIO()
+        img.save(stream)
+        return stream.getvalue().decode("utf-8")
+    except Exception:
+        return (
+            "<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'>"
+            "<rect width='180' height='180' fill='#fff7ea' stroke='#2D6A4F' stroke-width='4' rx='20'/>"
+            "<text x='90' y='72' font-size='14' text-anchor='middle' fill='#2D6A4F'>Verification Code</text>"
+            f"<text x='90' y='98' font-size='16' text-anchor='middle' fill='#1f3d2f'>#{order.id}</text>"
+            f"<text x='90' y='126' font-size='12' text-anchor='middle' fill='#5a6a62'>{order.payment_status.upper()}</text>"
+            "</svg>"
+        )
 
 
 def _wants_json(request: Request) -> bool:
@@ -389,6 +431,7 @@ async def patient_ai_suggest(
 
 @router.post("/patient/order/create")
 @log_route_errors("order_creation_failure", "/patient/order/create")
+@limiter.limit("10/minute")
 def create_patient_order(
     request: Request,
     patient_name: str = Form(...),
@@ -500,6 +543,37 @@ def create_patient_order(
     track_event("order_created", order_id=order.id, pharmacy_id=pharmacy.id, total=float(total_amount), item_count=len(normalized_items))
     update_status(order.id, "placed")
     assign_delivery_safe(order.id)
+    notifier = TelegramOrderNotifier(
+        bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
+        chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),
+    )
+    notifier.send_order_notification(
+        {
+            "id": order.id,
+            "customer_name": order.patient_name,
+            "total": order.total_amount,
+            "items_count": len(normalized_items),
+            "status": order.status,
+        }
+    )
+    patient_email = _patient_email_for_order(db, order)
+    if patient_email:
+        try:
+            import asyncio
+
+            asyncio.create_task(
+                email_service.send_order_confirmation(
+                    {
+                        "id": order.id,
+                        "items": normalized_items,
+                        "total_amount": order.total_amount,
+                    },
+                    patient_email,
+                )
+            )
+        except Exception as exc:
+            logger.warning("Order confirmation email scheduling failed for order %s: %s", order.id, exc)
+    logger.info("Order %s placed for patient phone %s", order.id, order.patient_phone)
     return {
         "order_id": order.id,
         "amount": total_amount,
@@ -518,6 +592,7 @@ def create_patient_order(
 @router.post("/pharmacy/verify-payment")
 @router.post("/patient/order/verify")
 @log_route_errors("payment_verification_failure", "/patient/order/verify")
+@limiter.limit("10/minute")
 async def verify_patient_order(
     request: Request,
     order_id: int = Form(...),
@@ -613,12 +688,15 @@ async def verify_patient_order(
         order.notification_failed = True
         commit_with_retry(db)
         db.refresh(order)
+    if patient_email:
+        await email_service.send_order_status_update(order.id, "paid", patient_email)
 
     write_audit_event("medicine_order_payment_verified", request, order_id=order.id, payment_id=payment_id_value)
     _reduce_order_inventory(order)
     update_status(order.id, "packed")
     track_event("medicine_order_payment_verified", order_id=order.id, payment_status=order.payment_status)
     track_event("payment_success", order_id=order.id, total=float(order.total_amount))
+    logger.info("Payment verified for order %s", order.id)
     return {
         "message": "Payment successful. Pharmacy will confirm shortly.",
         **_order_status_payload(order),
@@ -663,6 +741,76 @@ def public_order_fulfillment_status(order_id: str, db: Session = Depends(get_db)
     except Exception as exc:
         logger.exception("Order status reorder metadata failed for order_id=%s: %s", order_id, exc)
     return payload
+
+
+@router.get("/api/orders/check/{order_id}")
+def quick_order_check(order_id: int, db: Session = Depends(get_db)):
+    order = db.get(MedicineOrder, order_id)
+    if order is None:
+        return {"exists": False, "message": "Order not found"}
+
+    created_at = order.created_at.isoformat() if order.created_at else None
+    expected_delivery = "Within 24 hours" if order.status in {"pending", "confirmed"} else "On the way"
+    if order.status == "delivered":
+        expected_delivery = "Delivered"
+    elif order.status == "cancelled":
+        expected_delivery = "Cancelled"
+
+    return {
+        "exists": True,
+        "order_id": order.id,
+        "status": order.status,
+        "total": order.total_amount,
+        "placed_at": created_at,
+        "expected_delivery": expected_delivery,
+        "tracking_url": f"/orders/tracking/{order.id}",
+    }
+
+
+@router.get("/orders/confirmation/{order_id}", response_class=HTMLResponse)
+def order_confirmation_page(order_id: int, request: Request, db: Session = Depends(get_db)):
+    order = db.get(MedicineOrder, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    items = _load_order_items(order)
+    subtotal = int(sum(int(item.get("line_total", item.get("price", 0) * item.get("qty", 1)) or 0) for item in items))
+    delivery_charge = 0
+    discount = max(0, subtotal - int(order.total_amount or 0))
+    expected_delivery = "Within 24 hours" if order.status != "delivered" else "Delivered"
+    context = {
+        "request": request,
+        "order": order,
+        "order_items": items,
+        "subtotal": subtotal,
+        "delivery_charge": delivery_charge,
+        "discount": discount,
+        "expected_delivery": expected_delivery,
+        "customer_mobile": order.patient_phone,
+        "active_page": "medicines",
+        "user_name": order.patient_name,
+        "user_role": "Medicine order",
+        "avatar_label": "OR",
+    }
+    return templates.TemplateResponse("orders/confirmation.html", context)
+
+
+@router.get("/orders/invoice/{order_id}", response_class=HTMLResponse)
+def order_invoice_page(order_id: int, request: Request, db: Session = Depends(get_db)):
+    order = db.get(MedicineOrder, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    breakdown = _order_invoice_breakdown(order)
+    context = {
+        "request": request,
+        "order": order,
+        "invoice": breakdown,
+        "qr_svg": _invoice_qr_svg(order),
+        "active_page": "medicines",
+        "user_name": order.patient_name,
+        "user_role": "Invoice",
+        "avatar_label": "IV",
+    }
+    return templates.TemplateResponse("orders/invoice.html", context)
 
 
 @router.get("/pharmacy/dashboard", response_class=HTMLResponse)
@@ -715,8 +863,17 @@ def confirm_pharmacy_order(
     commit_with_retry(db)
     db.refresh(order)
     update_status(order.id, "packed")
+    patient_email = _patient_email_for_order(db, order)
+    if patient_email:
+        try:
+            import asyncio
+
+            asyncio.create_task(email_service.send_order_status_update(order.id, "confirmed", patient_email))
+        except Exception as exc:
+            logger.warning("Confirm email scheduling failed for order %s: %s", order.id, exc)
     write_audit_event("medicine_order_confirmed", request, order_id=order.id, pharmacy_id=order.pharmacy_id)
     track_event("medicine_order_confirmed", order_id=order.id, pharmacy_id=order.pharmacy_id)
+    logger.info("Order %s confirmed by pharmacy %s", order.id, order.pharmacy_id)
     if _wants_json(request):
         return JSONResponse({"success": True, "message": "Order confirmed", "data": _order_status_payload(order)})
     return RedirectResponse(url="/pharmacy/dashboard", status_code=303)
@@ -740,8 +897,17 @@ def dispatch_pharmacy_order(
     db.refresh(order)
     update_status(order.id, "shipped")
     update_delivery_status(order.id, "out_for_delivery")
+    patient_email = _patient_email_for_order(db, order)
+    if patient_email:
+        try:
+            import asyncio
+
+            asyncio.create_task(email_service.send_order_status_update(order.id, "dispatched", patient_email))
+        except Exception as exc:
+            logger.warning("Dispatch email scheduling failed for order %s: %s", order.id, exc)
     write_audit_event("medicine_order_dispatched", request, order_id=order.id, pharmacy_id=order.pharmacy_id)
     track_event("medicine_order_dispatched", order_id=order.id, pharmacy_id=order.pharmacy_id)
+    logger.info("Order %s dispatched by pharmacy %s", order.id, order.pharmacy_id)
     if _wants_json(request):
         return JSONResponse(
             {
@@ -839,8 +1005,16 @@ def deliver_pharmacy_order(
         order.notification_failed = True
         commit_with_retry(db)
         db.refresh(order)
+    if patient_email:
+        try:
+            import asyncio
+
+            asyncio.create_task(email_service.send_order_status_update(order.id, "delivered", patient_email))
+        except Exception as exc:
+            logger.warning("Delivered email scheduling failed for order %s: %s", order.id, exc)
     write_audit_event("medicine_order_delivered", request, order_id=order.id, pharmacy_id=order.pharmacy_id)
     track_event("medicine_order_delivered", order_id=order.id, pharmacy_id=order.pharmacy_id)
+    logger.info("Order %s delivered by pharmacy %s", order.id, order.pharmacy_id)
     if _wants_json(request):
         return JSONResponse(
             {

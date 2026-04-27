@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Wellness Store | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+<section class="page-header"><div><p class="eyebrow">Health store</p><h1>Complete wellness marketplace</h1><p class="mb-0">AI recommendations, personalized products, best sellers, and category-led browsing in one store.</p></div></section>
+<section class="wellness-marketplace section-stack">
+<article class="card"><h2>Store categories</h2><div class="feature-grid mt-3">{% for cat in store_categories %}<div class="feature-card"><i class="fas {{ cat.icon }}"></i><h3 class="h4 mt-2">{{ cat.name }}</h3><div class="hero-actions">{% for sub in cat.subcategories %}<span class="pill pill-muted">{{ sub }}</span>{% endfor %}</div></div>{% endfor %}</div></article>
+<article class="card"><h3>Recommended for you</h3><div class="catalog-grid mt-3">{% for product in ai_recommendations %}<div class="catalog-card"><div><h4>{{ product.name }}</h4><p class="text-muted mb-1">{{ product.category|replace('_',' ')|title }}</p><p>⭐ {{ product.rating }} ({{ product.reviews }})</p></div><div><div class="product-price">₹{{ product.price }}</div><p class="text-muted"><s>₹{{ product.mrp }}</s> · {{ product.offer }}% off</p><button class="btn btn-primary w-100 add-superapp-cart" data-product-id="{{ product.id }}" type="button">Add to Cart</button></div></div>{% endfor %}</div></article>
+<article class="card"><h3>Best sellers</h3><div class="catalog-grid mt-3">{% for product in products[:8] %}<div class="catalog-card"><div><h4>{{ product.name }}</h4><p class="text-muted">{{ product.system|title }}</p></div><div><div class="product-price">₹{{ product.price }}</div><button class="btn btn-outline-success w-100 add-superapp-cart" data-product-id="{{ product.id }}" type="button">Add to Cart</button></div></div>{% endfor %}</div></article>
+<article class="card"><h3>Flash sale</h3><div class="hero-actions"><span>Ends in:</span><strong id="flashSaleTimer">02:59:59</strong></div></article>
+</section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script src="{{ url_for('static', path='js/superapp/cart.js') }}"></script>{% endblock %}

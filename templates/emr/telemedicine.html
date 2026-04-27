@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Telemedicine | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Telemedicine</h1><p>Video consult staging, consent capture, and prescription sharing for remote care.</p></div></div>
+        <div class="content-grid-2">
+            <article class="card">
+                <h2 class="h4">Video consultation interface</h2>
+                <div class="telemedicine-stage"><div class="video-stage">Doctor video</div><div class="video-stage alt">Patient video</div></div>
+            </article>
+            <article class="card">
+                <h2 class="h4">Consult controls</h2>
+                <div class="stack-sm">
+                    <button class="btn btn-primary btn-pill" type="button">Start session</button>
+                    <button class="btn btn-outline-success btn-pill" type="button">Share prescription in chat</button>
+                    <label class="checkbox-card"><input type="checkbox"> Recording consent captured</label>
+                </div>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

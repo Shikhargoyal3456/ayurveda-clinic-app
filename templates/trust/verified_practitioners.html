@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% set seo_title = 'Verified Practitioners | Kash AI' %}
+{% block title %}Verified Practitioners | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header"><div><p class="eyebrow">Trust center</p><h1>India's most trusted integrated practitioner network</h1><p class="mb-0">Verified Ayurveda and modern medicine specialists with visible credentials, experience, and social proof.</p></div></section>
+    <section class="trust-center card">
+        <div class="verification-badges">
+            <div class="badge-tile"><i class="fas fa-check-circle"></i><span>CCIM / NCISM ready</span></div>
+            <div class="badge-tile"><i class="fas fa-shield-alt"></i><span>Government certification workflow</span></div>
+            <div class="badge-tile"><i class="fas fa-award"></i><span>Clinical trust signaling</span></div>
+        </div>
+        <div class="verification-tool mt-4"><input class="form-control" placeholder="Enter doctor registration number"><button class="btn btn-primary" type="button">Verify Live</button></div>
+    </section>
+    <section class="catalog-grid">
+        {% for doctor in practitioners %}
+        <article class="catalog-card">
+            <div>
+                <h3 class="h4">{{ doctor.name }}</h3>
+                <p class="text-muted">{{ doctor.qualification }}</p>
+                <p class="mb-2">{{ doctor.specialization }}</p>
+                <div class="hero-actions"><span class="pill pill-success">{{ doctor.experience }} years</span><span class="pill pill-muted">{{ doctor.registration }}</span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+    <section class="testimonial-grid">
+        {% for t in testimonials %}
+        <article class="quote-panel"><strong>Verified patient</strong><p>{{ t.content }}</p><small>{{ t.name }} · {{ t.condition }}</small><div class="mt-2"><a href="{{ t.proof_url }}" class="text-link">View treatment proof</a></div></article>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

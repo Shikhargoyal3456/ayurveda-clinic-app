@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Patient Registry | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">EMR</p>
+                <h1 class="h2">Patient Registry</h1>
+                <p>Search across your active EMR roster, launch consultations, and export master patient lists.</p>
+            </div>
+            <div class="page-header-actions">
+                <a class="btn btn-primary btn-pill" href="/emr/patient-registration"><i class="fa-solid fa-user-plus"></i> Quick add patient</a>
+                <a class="btn btn-outline-success btn-pill" href="/emr/export/patients"><i class="fa-solid fa-file-export"></i> Export CSV</a>
+            </div>
+        </div>
+
+        <form class="card filter-bar" method="get" action="/emr/patient-registry">
+            <div class="form-row">
+                <label for="registry-search">Name, UR number, mobile</label>
+                <input id="registry-search" name="q" value="{{ query }}" placeholder="Search patients">
+            </div>
+            <div class="form-row">
+                <label for="system-filter">System</label>
+                <select id="system-filter" name="system">
+                    <option value="all" {% if system == 'all' %}selected{% endif %}>All</option>
+                    <option value="ayurveda" {% if system == 'ayurveda' %}selected{% endif %}>Ayurveda</option>
+                    <option value="modern" {% if system == 'modern' %}selected{% endif %}>Modern</option>
+                    <option value="integrated" {% if system == 'integrated' %}selected{% endif %}>Integrated</option>
+                </select>
+            </div>
+            <button class="btn btn-primary btn-pill" type="submit">Filter</button>
+        </form>
+
+        <div class="stats-grid stats-grid-4 mt-4">
+            <article class="metric-card"><span class="metric-label">Registered</span><strong>{{ patient_cards|length }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Ayurveda-ready</span><strong>{{ patient_cards|selectattr('prakriti')|list|length }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Import queue</span><strong>Bulk CSV</strong></article>
+            <article class="metric-card"><span class="metric-label">Bulk actions</span><strong>Export / Audit</strong></article>
+        </div>
+
+        <div class="grid-auto mt-4">
+            {% for card in patient_cards %}
+            <article class="card patient-registry-card view-patient" data-patient-id="{{ card.patient.id }}">
+                <div class="cluster-between">
+                    <div>
+                        <p class="eyebrow mb-1">{{ card.profile.ur_number }}</p>
+                        <h3 class="h4 mb-1">{{ card.patient.name }}</h3>
+                        <p class="mb-0">{{ card.patient.gender }} • {{ card.patient.age }} yrs</p>
+                    </div>
+                    <span class="status-pill status-confirmed">{{ card.prakriti }}</span>
+                </div>
+                <div class="info-grid compact mt-3">
+                    <span><i class="fa-solid fa-phone"></i> {{ card.patient.phone or 'No phone' }}</span>
+                    <span><i class="fa-solid fa-envelope"></i> {{ card.patient.email or 'No email' }}</span>
+                    <span><i class="fa-solid fa-location-dot"></i> {{ card.patient.address or 'Address pending' }}</span>
+                    <span><i class="fa-solid fa-notes-medical"></i> {{ card.medical_flags|join(', ') if card.medical_flags else 'No chronic flags' }}</span>
+                </div>
+                <div class="action-row mt-3">
+                    <a class="btn btn-primary btn-pill" href="/emr/patient/{{ card.patient.id }}">Open profile</a>
+                    <a class="btn btn-outline-success btn-pill" href="/emr/modern-consultation/{{ card.patient.id }}">Modern consult</a>
+                    <a class="btn btn-ghost btn-pill" href="/emr/ayurveda-consultation/{{ card.patient.id }}">Ayurveda consult</a>
+                </div>
+            </article>
+            {% else %}
+            <article class="card empty-state">
+                <h3 class="h4">No patients found</h3>
+                <p>Try a broader search or register a new patient.</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

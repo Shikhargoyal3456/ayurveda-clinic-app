@@ -44,12 +44,22 @@ class Medicine(Base):
     generic_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
     category: Mapped[str] = mapped_column(String(120), index=True)
     price: Mapped[int] = mapped_column(Integer)
-    unit: Mapped[str] = mapped_column(String(40))
+    mrp: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    brand: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    stock: Mapped[int] = mapped_column(Integer, default=0)
+    unit: Mapped[str] = mapped_column(String(40), default="unit")
     requires_prescription: Mapped[bool] = mapped_column(Boolean, default=False)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     pharmacy_id: Mapped[int] = mapped_column(ForeignKey("pharmacies.id"), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     pharmacy: Mapped["Pharmacy"] = relationship(back_populates="medicines")
+    stock_adjustments: Mapped[list["StockAdjustment"]] = relationship(
+        back_populates="medicine",
+        cascade="all, delete-orphan",
+    )
 
 
 class MedicineOrder(Base):
@@ -72,3 +82,17 @@ class MedicineOrder(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
 
     pharmacy: Mapped["Pharmacy"] = relationship(back_populates="orders")
+
+
+class StockAdjustment(Base):
+    __tablename__ = "stock_adjustments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    medicine_id: Mapped[int] = mapped_column(ForeignKey("medicines.id"), index=True)
+    previous_stock: Mapped[int] = mapped_column(Integer, default=0)
+    new_stock: Mapped[int] = mapped_column(Integer, default=0)
+    adjusted_by: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+
+    medicine: Mapped["Medicine"] = relationship(back_populates="stock_adjustments")

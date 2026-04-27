@@ -1,85 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash AI | Schedule Appointment</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="app-shell">
-    <div class="container py-5">
-        <div class="hero-panel mb-4">
-            <a href="/" style="display:inline-flex;align-items:center;
-               text-decoration:none;gap:10px;">
-                <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}"
-                     alt="Kash AI"
-                     style="height:40px;width:auto;">
-            </a>
-            <div>
-                <p class="eyebrow mb-1">Appointment Scheduler</p>
-                <h1 class="h3 mb-2">Schedule for {{ patient.name }}</h1>
-                <p class="text-muted mb-0">Use booking to show a complete care journey from case creation to repeat visit planning.</p>
-            </div>
-            <div class="d-flex gap-2">
-                <a href="/patients/{{ patient.id }}/cases" class="btn btn-success">Open Case History</a>
-                <a href="/dashboard" class="btn btn-outline-dark">Back to Dashboard</a>
-            </div>
+{% extends 'base.html' %}
+{% set active_page = 'appointments' %}
+{% set user_name = patient.name %}
+{% set user_role = 'Schedule booking' %}
+{% set avatar_label = 'SC' %}
+
+{% block title %}Kash AI | Schedule Appointment{% endblock %}
+
+{% block header_actions %}
+<a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-success btn-sm">Case history</a>
+<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Appointments</span><span>Schedule</span></div>
+            <p class="eyebrow">Appointment scheduler</p>
+            <h1>Schedule for {{ patient.name }}</h1>
+            <p class="mb-0">Plan the next consultation, follow-up, or review visit with a clean, premium booking surface.</p>
         </div>
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                {% if flash %}
-                <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
-                {% endif %}
-                <div class="case-summary-strip mb-4">
-                    <div class="metric-card">
-                        <span>Patient</span>
-                        <strong>{{ patient.name }}</strong>
+    </section>
+
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+
+    <section class="stats-grid">
+        <article class="metric-card"><span>Patient</span><strong>{{ patient.name }}</strong></article>
+        <article class="metric-card"><span>Visit type</span><strong>Consult or follow-up</strong></article>
+        <article class="metric-card"><span>Workflow value</span><strong>Retention ready</strong></article>
+        <article class="metric-card"><span>Demo goal</span><strong>Premium experience</strong></article>
+    </section>
+
+    <section class="hero-grid">
+        <article class="form-panel">
+            <p class="eyebrow mb-2">Suggested slots</p>
+            <div class="inline-actions mb-4" id="schedule-demo-chips">
+                <button type="button" class="btn btn-outline-success btn-sm" data-demo-date-offset="0" data-demo-time="11:30" data-demo-reason="Digestive care follow-up">Today follow-up</button>
+                <button type="button" class="btn btn-outline-success btn-sm" data-demo-date-offset="3" data-demo-time="10:00" data-demo-reason="Chronic care review">3-day review</button>
+                <button type="button" class="btn btn-outline-success btn-sm" data-demo-date-offset="7" data-demo-time="17:30" data-demo-reason="Lifestyle adherence check">1-week review</button>
+            </div>
+            <form method="post" action="/patients/{{ patient.id }}/appointments" data-loading-form class="section-stack">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="split-grid">
+                    <div>
+                        <label class="form-label">Date</label>
+                        <input type="date" id="appointment-date" name="date" class="form-control" required>
                     </div>
-                    <div class="metric-card">
-                        <span>Visit Type</span>
-                        <strong>Consult or follow-up</strong>
-                    </div>
-                    <div class="metric-card">
-                        <span>Workflow Value</span>
-                        <strong>Retention ready</strong>
-                    </div>
-                    <div class="metric-card">
-                        <span>Demo Goal</span>
-                        <strong>Premium experience</strong>
+                    <div>
+                        <label class="form-label">Time</label>
+                        <input type="time" id="appointment-time" name="time" class="form-control" required>
                     </div>
                 </div>
-                <div class="demo-scenarios mb-4" id="schedule-demo-chips">
-                    <button type="button" class="demo-chip" data-demo-date-offset="0" data-demo-time="11:30" data-demo-reason="Digestive care follow-up">Today follow-up</button>
-                    <button type="button" class="demo-chip" data-demo-date-offset="3" data-demo-time="10:00" data-demo-reason="Chronic care review">3-day review</button>
-                    <button type="button" class="demo-chip" data-demo-date-offset="7" data-demo-time="17:30" data-demo-reason="Lifestyle adherence check">1-week review</button>
+                <div>
+                    <label class="form-label">Reason</label>
+                    <input id="appointment-reason" name="reason" class="form-control" placeholder="Consultation / Follow-up">
                 </div>
-                <form method="post" action="/patients/{{ patient.id }}/appointments" data-loading-form>
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Date</label>
-                            <input type="date" id="appointment-date" name="date" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Time</label>
-                            <input type="time" id="appointment-time" name="time" class="form-control" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Reason</label>
-                            <input id="appointment-reason" name="reason" class="form-control" placeholder="Consultation / Follow-up">
-                        </div>
-                    </div>
-                    <button class="btn btn-primary mt-4" data-loading-text="Saving...">Save Appointment</button>
-                </form>
+                <button class="btn btn-primary" data-loading-text="Saving...">Save appointment</button>
+            </form>
+        </article>
+        <article class="hero-visual">
+            <p class="eyebrow">Scheduling notes</p>
+            <h3>Use the visit to strengthen continuity of care.</h3>
+            <div class="timeline-list mt-4">
+                <div class="timeline-item"><strong>Confirm reason</strong><p class="mb-0">Frame the visit as new consult, chronic review, or post-treatment follow-up.</p></div>
+                <div class="timeline-item"><strong>Set expectations</strong><p class="mb-0">Use date and time clarity to reduce missed visits.</p></div>
+                <div class="timeline-item"><strong>Connect next steps</strong><p class="mb-0">Move seamlessly into case history, AI notes, and prescriptions.</p></div>
             </div>
-        </div>
-        <script src="{{ url_for('static', path='js/script.js') }}"></script>
-        <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-    </div>
-</body>
-</html>
+        </article>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/script.js') }}"></script>
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+{% endblock %}
+

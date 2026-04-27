@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Upload Medicines | Kash AI{% endblock %}
+
+{% block page %}
+<section class="page-section">
+    <div class="site-container content-stack">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Inventory operations</p>
+                <h1>Bulk Upload Medicines</h1>
+                <p class="page-subtitle">Use the CSV template to import a large medicine catalog quickly and safely.</p>
+            </div>
+            <div class="header-actions-row">
+                <a href="/static/templates/medicine_upload_template.csv" class="btn btn-secondary" download>Download CSV Template</a>
+                <a href="/admin/add-medicine" class="btn btn-ghost">Add One Medicine</a>
+            </div>
+        </div>
+
+        <div class="card content-stack">
+            <input type="hidden" id="bulkCsrfToken" value="{{ csrf_token }}">
+            <label class="field">
+                <span>CSV File</span>
+                <input type="file" id="csvFile" accept=".csv">
+            </label>
+            <div class="header-actions-row">
+                <button class="btn btn-primary" onclick="uploadBulkMedicines()">Upload CSV</button>
+                <a href="/admin/activity-dashboard" class="btn btn-outline-success">Watch Activity</a>
+            </div>
+            <div class="upload-preview" id="preview" aria-live="polite"></div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+async function uploadBulkMedicines() {
+    const fileInput = document.getElementById('csvFile');
+    const preview = document.getElementById('preview');
+    const file = fileInput.files[0];
+    if (!file) {
+        showToast('Choose a CSV file first.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    preview.textContent = 'Uploading and validating rows...';
+
+    try {
+        const response = await fetch('/api/admin/medicines/bulk-upload', {
+            method: 'POST',
+            headers: {'X-CSRF-Token': document.getElementById('bulkCsrfToken').value},
+            body: formData
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || 'Bulk upload failed.');
+        }
+        preview.innerHTML = `
+            <div class="alert-success">
+                Added ${result.added} medicines. Failed ${result.failed}.
+            </div>
+        `;
+        if (result.failures && result.failures.length) {
+            preview.innerHTML += `
+                <div class="card compact-card">
+                    <h3>Rows needing attention</h3>
+                    <ul class="simple-list">
+                        ${result.failures.map(item => `<li>Row ${item.row}: ${item.error}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        showToast(`${result.added} medicines added.`, 'success');
+    } catch (error) {
+        preview.innerHTML = `<div class="alert-error">${error.message}</div>`;
+        showToast(error.message || 'Bulk upload failed.', 'error');
+    }
+}
+</script>
+{% endblock %}

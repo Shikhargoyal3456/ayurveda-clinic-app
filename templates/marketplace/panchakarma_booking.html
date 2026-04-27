@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% set seo_title = 'Panchakarma Marketplace | Kash AI' %}
+{% block title %}Panchakarma Marketplace | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Marketplace</p>
+            <h1>India's Panchakarma booking network</h1>
+            <p class="mb-0">Compare centers, pricing, amenities, and treatment types in one Ayurveda-first marketplace.</p>
+        </div>
+        <div class="hero-actions"><a href="/growth/waitlist" class="btn btn-primary">Join premium waitlist</a></div>
+    </section>
+    <section class="card filters-card">
+        <div class="hero-actions">
+            <select class="form-select"><option>Vamana</option><option>Virechana</option><option>Basti</option><option>Nasya</option></select>
+            <select class="form-select"><option>Delhi NCR</option><option>Bengaluru</option><option>Pune</option></select>
+            <select class="form-select"><option>Budget friendly</option><option>Mid premium</option><option>Luxury retreat</option></select>
+        </div>
+    </section>
+    <section class="catalog-grid">
+        {% for center in centers %}
+        <article class="center-card catalog-card">
+            <div class="center-image center-placeholder" aria-label="{{ center.name }}">{{ center.treatment }}</div>
+            <div>
+                <h3 class="h4">{{ center.name }}</h3>
+                <p class="text-muted mb-2">{{ center.city }} · {{ center.treatment }}</p>
+                <div class="hero-actions mb-3"><span class="pill pill-success">{{ center.rating }} stars</span><span class="pill pill-muted">{{ center.reviews }} reviews</span></div>
+                <div class="hero-actions mb-3">{% for amenity in center.amenities %}<span class="pill pill-warning">{{ amenity }}</span>{% endfor %}</div>
+            </div>
+            <div>
+                <div class="product-price mb-3">Rs {{ center.price }} / session</div>
+                <button class="btn btn-primary w-100" type="button">Book Now</button>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+    <section class="competitive-advantage-banner">
+        <div class="page-header mb-3"><div><p class="eyebrow">Why this matters</p><h2>Offline fragmentation becomes an online moat</h2></div></div>
+        <div class="comparison-table-wrap"><table class="comparison-table"><thead><tr><th>Feature</th><th>Others</th><th>Kash AI</th></tr></thead><tbody>{% for row in comparison_rows %}<tr><td>{{ row.feature }}</td><td>{{ row.competitors }}</td><td>{{ row.us }}</td></tr>{% endfor %}</tbody></table></div>
+        <div class="price-comparison mt-4"><h4>Best Price Visibility</h4><p>We compare pricing across {{ center_count }} centers to create booking confidence and premium conversion.</p></div>
+    </section>
+</div>
+{% endblock %}

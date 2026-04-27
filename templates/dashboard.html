@@ -1,309 +1,360 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash AI | EMR Dashboard</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="emr-shell">
-    <div class="emr-layout">
-        <aside class="emr-sidebar">
-            <a href="/" class="emr-brand" aria-label="Kash AI home">
-                <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}" alt="Kash AI">
-            </a>
-            <nav class="emr-nav" aria-label="Primary">
-                <a class="active" href="/dashboard">Overview</a>
-                <a href="#add-patient">Add patient</a>
-                <a href="/appointments">Appointments</a>
-                <a href="/payments/daily">Payments</a>
-                <a href="/followups">Follow-ups</a>
-                <a href="/ai-analyzer">AI analyzer</a>
-                <!-- POLISH-1-ORDER-BUTTONS: Sidebar entry for direct patient ordering. -->
-                <a href="/medicines">Order Medicines</a>
-                <a href="/pharmacy/dashboard">Pharmacy</a>
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set show_sidebar = true %}
+{% set user_name = doctor.full_name or doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = (doctor.full_name or doctor.username or 'KA')[:2] | upper %}
+
+{% block title %}Kash AI | Patient Dashboard{% endblock %}
+
+{% block header_actions %}
+<a href="/medicines" class="btn btn-outline-success btn-sm">Patient ordering</a>
+<a href="#add-patient" class="btn btn-primary btn-sm">Add patient</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container page-shell">
+    <aside class="page-sidebar">
+        <section class="side-panel sidebar-card">
+            <p class="eyebrow mb-3">Navigation</p>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="is-active"><i class="fa-solid fa-house-chimney-medical"></i>Overview</a>
+                <a href="#add-patient"><i class="fa-solid fa-user-plus"></i>Add patient</a>
+                <a href="/appointments"><i class="fa-solid fa-calendar-days"></i>Appointments</a>
+                <a href="/followups"><i class="fa-solid fa-clock-rotate-left"></i>Follow-ups</a>
+                <a href="/ai-analyzer"><i class="fa-solid fa-stethoscope"></i>AI analyzer</a>
+                <a href="/emr/doctor-dashboard"><i class="fa-solid fa-notes-medical"></i>EMR suite</a>
+                <a href="/medicines"><i class="fa-solid fa-capsules"></i>Medicines</a>
+                <a href="/pharmacy/dashboard"><i class="fa-solid fa-store"></i>Pharmacy</a>
+                <a href="/payments/daily"><i class="fa-solid fa-wallet"></i>Payments</a>
             </nav>
-            <div class="emr-sidebar-footer">
-                <span>{{ clinic_name }}</span>
-                <a href="/logout">Logout</a>
+        </section>
+        <section class="side-panel sidebar-card surface-tint">
+            <p class="eyebrow mb-2">Today</p>
+            <h3>{{ current_datetime.strftime('%d %b %Y') }}</h3>
+            <p class="mb-0">{{ todays_appointments }} appointments, {{ pending_payments }} pending payments, {{ followups_due }} follow-ups.</p>
+        </section>
+    </aside>
+
+    <div class="page-content">
+        <section class="page-header">
+            <div>
+                <div class="breadcrumbs mb-2">
+                    <span>Home</span>
+                    <span>Dashboard</span>
+                </div>
+                <p class="eyebrow">Clinic command center</p>
+                <h1>Good day, {{ doctor.full_name or doctor.username }}</h1>
+                <p class="mb-0">Monitor health metrics, upcoming consultations, prescriptions, and new registrations from one modern workspace.</p>
             </div>
-        </aside>
+            <div class="inline-actions">
+                <span class="badge text-bg-light">{{ clinic_name }}</span>
+                <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+            </div>
+        </section>
 
-        <main class="emr-main">
-            <header class="emr-topbar">
-                <div>
-                    <p class="emr-kicker mb-1">Clinic command center</p>
-                    <h1>Good day, {{ doctor.full_name or doctor.username }}</h1>
-                    <p class="mb-0">Today: {{ current_datetime.strftime('%d %b %Y, %I:%M %p') }}</p>
+        {% if demo_mode_active %}
+        <section class="alert alert-info">
+            <strong>Demo Mode is active.</strong> Sample patients and visits are loaded for this account.
+            <form method="post" action="/demo/reset" data-confirm-submit="Reset demo data for this account?" data-loading-form class="ms-auto">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="btn btn-outline-danger btn-sm" data-loading-text="Resetting...">Reset Demo Data</button>
+            </form>
+        </section>
+        {% endif %}
+
+        {% if flash %}
+        <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+        {% endif %}
+
+        <section class="dashboard-grid">
+            <article class="hero-card">
+                <p class="eyebrow">Health score</p>
+                <div class="dashboard-grid" style="grid-template-columns: 200px minmax(0, 1fr); align-items:center;">
+                    <div class="health-ring">
+                        <div class="health-ring-inner">
+                            <strong class="stat-number">78</strong>
+                            <small>care score</small>
+                        </div>
+                    </div>
+                    <div>
+                        <h2>Balanced patient flow for the day</h2>
+                        <p>Your clinic is set up for steady consultations, clear payment follow-through, and timely follow-up reminders.</p>
+                        <div class="hero-actions">
+                            <a href="#add-patient" class="btn btn-primary">Register patient</a>
+                            <a href="/appointments" class="btn btn-outline-dark">View calendar</a>
+                            <a href="/emr/doctor-dashboard" class="btn btn-outline-success">Open EMR</a>
+                            {% if patients %}
+                            <a href="/patients/{{ patients[0].id }}/prescriptions/new" class="btn btn-outline-success">New prescription</a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
-                <div class="emr-topbar-actions">
-                    <!-- POLISH-3-ROLE-UX: Separate doctor work from patient ordering in the main action strip. -->
-                    <span class="badge text-bg-light align-self-center">Doctor Flow</span>
-                    <a href="#add-patient" class="btn btn-primary">Add Patient</a>
-                    <a href="/medicines" class="btn btn-success">Order Medicines</a>
-                    {% if patients %}
-                    <a href="/patients/{{ patients[0].id }}/prescriptions/new" class="btn btn-dark">New Prescription</a>
+            </article>
+            <article class="hero-visual">
+                <p class="eyebrow">Open work</p>
+                <h3>{{ todays_appointments + pending_payments + followups_due }} active care tasks</h3>
+                <div class="timeline-list mt-4">
+                    <div class="timeline-item">
+                        <strong>{{ todays_appointments }}</strong>
+                        <p class="mb-0">Appointments to close today</p>
+                    </div>
+                    <div class="timeline-item">
+                        <strong>{{ pending_payments }}</strong>
+                        <p class="mb-0">Collections awaiting follow-up</p>
+                    </div>
+                    <div class="timeline-item">
+                        <strong>{{ followups_due }}</strong>
+                        <p class="mb-0">Patients due for their next touchpoint</p>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="content-grid mt-4">
+            <article class="card emr-quick-access">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">EMR quick actions</p>
+                        <h2 class="h4 mb-0">Move straight into clinical work</h2>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <a href="/emr/patient-registry" class="btn btn-primary">
+                        <i class="fa-solid fa-users"></i> Patient Registry
+                    </a>
+                    <a href="/emr/doctor-dashboard" class="btn btn-primary">
+                        <i class="fa-solid fa-chart-line"></i> Clinical Dashboard
+                    </a>
+                    <a href="/emr/modern-consultation/new" class="btn btn-outline-success">
+                        <i class="fa-solid fa-stethoscope"></i> New Consultation
+                    </a>
+                </div>
+            </article>
+            <article class="card surface-tint">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">Startup advantage</p>
+                        <h2 class="h4 mb-0">Your strongest product moats</h2>
+                    </div>
+                </div>
+                <div class="stack-list">
+                    <div class="stack-item">Dual AI diagnosis with source-grounded Ayurveda reasoning</div>
+                    <div class="stack-item">Panchakarma scheduling plus marketplace expansion path</div>
+                    <div class="stack-item">Personalized kits, refills, and outcomes-led retention</div>
+                </div>
+                <div class="hero-actions mt-3">
+                    <a href="/trust/verified-practitioners" class="btn btn-outline-dark btn-sm">Trust center</a>
+                    <a href="/admin/growth-dashboard" class="btn btn-outline-success btn-sm">Growth metrics</a>
+                    <a href="/superapp/dashboard" class="btn btn-primary btn-sm">Superapp view</a>
+                </div>
+            </article>
+        </section>
+
+        <section id="dashboard-skeleton" class="stats-grid no-print">
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+            <div class="skeleton skeleton-card"></div>
+        </section>
+
+        <section class="stats-grid reveal-stagger" id="dashboard-live-content" style="display:none;">
+            <article class="metric-card"><span>Today's earnings</span><strong>Rs {{ '%.2f'|format(todays_earnings) }}</strong><p class="mb-0">Paid visits only</p></article>
+            <article class="metric-card"><span>Patients today</span><strong>{{ todays_patients }}</strong><p class="mb-0">{{ total_patients }} total patients</p></article>
+            <article class="metric-card"><span>Appointments</span><strong>{{ todays_appointments }}</strong><p class="mb-0">Scheduled for today</p></article>
+            <article class="metric-card"><span>Pending payments</span><strong>{{ pending_payments }}</strong><p class="mb-0">Needs collection</p></article>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="table-panel">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">Upcoming appointments</p>
+                        <h2>Next consultations</h2>
+                    </div>
+                    <a href="/appointments" class="btn btn-outline-dark btn-sm">Open schedule</a>
+                </div>
+                <div class="stack-list">
+                    {% for appointment in upcoming_appointments %}
+                    <div class="stack-item appointment-card">
+                        <div>
+                            <strong>{{ appointment.patient.name }}</strong>
+                            <p class="mb-0">{{ appointment.reason or "Consultation" }}</p>
+                        </div>
+                        <span class="status-badge text-bg-success">{{ appointment.time }}</span>
+                    </div>
                     {% else %}
-                    <a href="#add-patient" class="btn btn-dark">New Prescription</a>
-                    {% endif %}
+                    <div class="stack-item"><p class="mb-0">No appointments scheduled for today.</p></div>
+                    {% endfor %}
                 </div>
-            </header>
+            </article>
 
-            {% if demo_mode_active %}
-            <section class="emr-banner">
-                <div>
-                    <strong>Demo Mode is active</strong>
-                    <p class="mb-0">Sample patients and visits are loaded for this account.</p>
+            <article class="table-panel">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">Recent activity</p>
+                        <h2>Payments and follow-ups</h2>
+                    </div>
                 </div>
-                <form method="post" action="/demo/reset" data-confirm-submit="Reset demo data for this account?" data-loading-form>
+                <div class="stack-list">
+                    {% for payment in outstanding_payments %}
+                    <div class="stack-item">
+                        <div>
+                            <strong>{{ payment.patient.name }}</strong>
+                            <p class="mb-0">Payment pending from {{ payment.date }}</p>
+                        </div>
+                        <span class="status-badge text-bg-warning">Rs {{ payment.amount }}</span>
+                    </div>
+                    {% else %}
+                    <div class="stack-item"><p class="mb-0">No unpaid payments right now.</p></div>
+                    {% endfor %}
+                    {% for item in next_visit_recommendations %}
+                    <div class="stack-item">
+                        <div>
+                            <strong>{{ item.patient_name }}</strong>
+                            <p class="mb-0">{{ item.diagnosis }}</p>
+                        </div>
+                        <span class="status-badge text-bg-light">{{ item.recommended_date }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="table-panel">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">Clinic registry</p>
+                        <h2>Patients and next actions</h2>
+                        <p class="mb-0">{{ patients | default([], true) | length }} visible records, {{ returning_patients }} returning patients, {{ total_cases }} total cases.</p>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Contact</th>
+                                <th>Next step</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for patient in patients %}
+                            <tr>
+                                <td>
+                                    <strong>{{ patient.name }}</strong>
+                                    <div>{{ patient.age }} yrs, {{ patient.gender }}</div>
+                                </td>
+                                <td>
+                                    <strong>{{ patient.phone or 'No phone' }}</strong>
+                                    <div>{{ patient.email or 'No email' }}</div>
+                                </td>
+                                <td>
+                                    <div class="inline-actions">
+                                        <a href="/patients/{{ patient.id }}/cases/new" class="btn btn-primary btn-sm">Add Case</a>
+                                        <a href="/patients/{{ patient.id }}/prescriptions/new" class="btn btn-outline-primary btn-sm">Prescribe</a>
+                                        <a href="/patients/{{ patient.id }}/outcomes" class="btn btn-outline-dark btn-sm">Outcomes</a>
+                                        <a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-secondary btn-sm">History</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3">No patients yet. Add one to start the clinic workflow.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
+            <aside id="add-patient" class="form-panel">
+                <p class="eyebrow">New patient</p>
+                <h2>Quick registration</h2>
+                <p class="text-muted">Add a patient and move them into case creation, prescriptions, or scheduling in one step.</p>
+                <form method="post" action="/patients" class="section-stack" data-loading-form>
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button class="btn btn-outline-danger" data-loading-text="Resetting...">Reset Demo Data</button>
+                    <div>
+                        <label class="form-label">Name</label>
+                        <input name="name" class="form-control" required>
+                    </div>
+                    <div class="split-grid">
+                        <div>
+                            <label class="form-label">Age</label>
+                            <input name="age" type="number" min="0" class="form-control" required>
+                        </div>
+                        <div>
+                            <label class="form-label">Gender</label>
+                            <select name="gender" class="form-select" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Phone</label>
+                        <input name="phone" class="form-control">
+                    </div>
+                    <div>
+                        <label class="form-label">Email</label>
+                        <input name="email" type="email" class="form-control">
+                    </div>
+                    <div>
+                        <label class="form-label">Address</label>
+                        <textarea name="address" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button class="btn btn-primary w-100" data-loading-text="Adding...">Add patient</button>
                 </form>
-            </section>
-            {% endif %}
+            </aside>
+        </section>
 
-            {% if flash %}
-            <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
-            {% endif %}
-
-            <section class="emr-hero">
+        <section class="table-panel">
+            <div class="page-header mb-3">
                 <div>
-                            <p class="emr-kicker">Today</p>
-                            <h2>Keep the clinic moving with the next right action.</h2>
-                            <p>Appointments, collections, follow-ups, and prescriptions are organized around the work your team needs to finish today.</p>
-                            <!-- POLISH-3-ROLE-UX: Make the patient commerce path explicit without adding a new guarded route. -->
-                            <a href="/medicines" class="btn btn-success mt-2">Patient: Order Medicines</a>
-                        </div>
-                <div class="emr-status-panel">
-                    <span>Open work</span>
-                    <strong>{{ todays_appointments + pending_payments + followups_due }}</strong>
-                    <p>{{ todays_appointments }} appointments, {{ pending_payments }} payments, {{ followups_due }} follow-ups</p>
+                    <p class="eyebrow">Recent prescriptions</p>
+                    <h2>Latest generated care plans</h2>
                 </div>
-            </section>
-
-            <section class="emr-metric-grid" aria-label="Clinic metrics">
-                <article class="emr-metric">
-                    <span>Today's earnings</span>
-                    <strong>Rs {{ '%.2f'|format(todays_earnings) }}</strong>
-                    <small>Paid visits only</small>
-                </article>
-                <article class="emr-metric">
-                    <span>Patients today</span>
-                    <strong>{{ todays_patients }}</strong>
-                    <small>{{ total_patients }} total patients</small>
-                </article>
-                <article class="emr-metric">
-                    <span>Appointments</span>
-                    <strong>{{ todays_appointments }}</strong>
-                    <small>Scheduled today</small>
-                </article>
-                <article class="emr-metric">
-                    <span>Pending payments</span>
-                    <strong>{{ pending_payments }}</strong>
-                    <small>Needs collection</small>
-                </article>
-            </section>
-
-            <section class="emr-workspace">
-                <div class="emr-board">
-                    <div class="emr-section-head">
-                        <div>
-                            <p class="emr-kicker">Queue</p>
-                            <h2>Today&apos;s work</h2>
-                        </div>
-                        <a href="/appointments">View schedule</a>
+            </div>
+            <div class="stack-list">
+                {% for prescription in latest_prescriptions %}
+                <div class="stack-item">
+                    <div>
+                        <strong>{{ prescription.patient.name }}</strong>
+                        <p class="mb-0">{{ prescription.diagnosis }}</p>
                     </div>
-                    <div class="emr-lane-grid">
-                        <section class="emr-lane">
-                            <div class="emr-lane-head">
-                                <h3>Appointments</h3>
-                                <span>{{ upcoming_appointments | length }}</span>
-                            </div>
-                            <div class="emr-list">
-                                {% for appointment in upcoming_appointments %}
-                                <div class="emr-list-row">
-                                    <div>
-                                        <strong>{{ appointment.patient.name }}</strong>
-                                        <p>{{ appointment.reason or "Consultation" }}</p>
-                                    </div>
-                                    <span>{{ appointment.time }}</span>
-                                </div>
-                                {% else %}
-                                <p class="emr-empty">No appointments scheduled for today.</p>
-                                {% endfor %}
-                            </div>
-                        </section>
-
-                        <section class="emr-lane">
-                            <div class="emr-lane-head">
-                                <h3>Payments</h3>
-                                <span>{{ pending_payments }}</span>
-                            </div>
-                            <div class="emr-list">
-                                {% for payment in outstanding_payments %}
-                                <div class="emr-list-row">
-                                    <div>
-                                        <strong>{{ payment.patient.name }}</strong>
-                                        <p>{{ payment.date }}</p>
-                                    </div>
-                                    <span>Rs {{ payment.amount }}</span>
-                                </div>
-                                {% else %}
-                                <p class="emr-empty">No unpaid payments right now.</p>
-                                {% endfor %}
-                            </div>
-                        </section>
-
-                        <section class="emr-lane">
-                            <div class="emr-lane-head">
-                                <h3>Follow-ups</h3>
-                                <span>{{ followups_due }}</span>
-                            </div>
-                            <div class="emr-list">
-                                {% for item in next_visit_recommendations %}
-                                <div class="emr-list-row">
-                                    <div>
-                                        <strong>{{ item.patient_name }}</strong>
-                                        <p>{{ item.diagnosis }}</p>
-                                    </div>
-                                    <span>{{ item.recommended_date }}</span>
-                                </div>
-                                {% else %}
-                                <p class="emr-empty">No prescription follow-up reminders yet.</p>
-                                {% endfor %}
-                            </div>
-                        </section>
-                    </div>
+                    <a href="/prescriptions/{{ prescription.id }}" class="btn btn-outline-success btn-sm">Open</a>
                 </div>
-
-                <aside id="add-patient" class="emr-panel">
-                    <div class="emr-section-head">
-                        <div>
-                            <p class="emr-kicker">New patient</p>
-                            <h2>Register quickly</h2>
-                        </div>
-                    </div>
-                    <form method="post" action="/patients" class="emr-form" data-loading-form>
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <label>
-                            Name
-                            <input name="name" class="form-control" required>
-                        </label>
-                        <div class="emr-form-grid">
-                            <label>
-                                Age
-                                <input name="age" type="number" min="0" class="form-control" required>
-                            </label>
-                            <label>
-                                Gender
-                                <select name="gender" class="form-select" required>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </label>
-                        </div>
-                        <label>
-                            Phone
-                            <input name="phone" class="form-control">
-                        </label>
-                        <label>
-                            Email
-                            <input name="email" type="email" class="form-control">
-                        </label>
-                        <label>
-                            Address
-                            <textarea name="address" class="form-control" rows="3"></textarea>
-                        </label>
-                        <button class="btn btn-primary w-100" data-loading-text="Adding...">Add Patient</button>
-                    </form>
-                </aside>
-            </section>
-
-            <section class="emr-data-grid">
-                <div class="emr-table-panel">
-                    <div class="emr-section-head">
-                        <div>
-                            <p class="emr-kicker">Patients</p>
-                            <h2>Clinic registry</h2>
-                            <p>{{ patients | default([], true) | length }} visible records, {{ returning_patients }} returning patients</p>
-                        </div>
-                        <span>{{ total_cases }} total cases</span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table emr-table align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Patient</th>
-                                    <th>Contact</th>
-                                    <th>Next step</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for patient in patients %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ patient.name }}</strong>
-                                        <div>{{ patient.age }} yrs, {{ patient.gender }}</div>
-                                    </td>
-                                    <td>
-                                        <strong>{{ patient.phone or "No phone" }}</strong>
-                                        <div>{{ patient.email or "No email" }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="emr-row-actions">
-                                            <a href="/patients/{{ patient.id }}/cases/new" class="btn btn-sm btn-primary">Add Case</a>
-                                            <a href="/patients/{{ patient.id }}/prescriptions/new" class="btn btn-sm btn-outline-primary">Prescribe</a>
-                                            <a href="/patients/{{ patient.id }}/outcomes" class="btn btn-sm btn-outline-dark">Outcomes</a>
-                                            <a href="/patients/{{ patient.id }}/cases" class="btn btn-sm btn-outline-secondary">History</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="3" class="text-center py-5">No patients yet. Add one to start the clinic workflow.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <aside class="emr-panel">
-                    <div class="emr-section-head">
-                        <div>
-                            <p class="emr-kicker">Prescriptions</p>
-                            <h2>Recently generated</h2>
-                        </div>
-                    </div>
-                    <div class="emr-list">
-                        {% for prescription in latest_prescriptions %}
-                        <div class="emr-list-row">
-                            <div>
-                                <strong>{{ prescription.patient.name }}</strong>
-                                <p>{{ prescription.diagnosis }}</p>
-                            </div>
-                            <a href="/prescriptions/{{ prescription.id }}">Open</a>
-                        </div>
-                        {% else %}
-                        <p class="emr-empty">No prescriptions created yet.</p>
-                        {% endfor %}
-                    </div>
-
-                    <div class="emr-insight">
-                        <span>Care continuity</span>
-                        <strong>{{ returning_patients }}</strong>
-                        <p>Patients with more than one case in this clinic.</p>
-                    </div>
-                </aside>
-            </section>
-        </main>
+                {% else %}
+                <div class="stack-item"><p class="mb-0">No prescriptions created yet.</p></div>
+                {% endfor %}
+            </div>
+        </section>
     </div>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+</div>
+
+<nav class="mobile-bottom-nav" aria-label="Mobile dashboard navigation">
+    <a href="/dashboard" class="is-active"><i class="fa-solid fa-house"></i><span>Home</span></a>
+    <a href="/appointments"><i class="fa-solid fa-calendar-days"></i><span>Visits</span></a>
+    <a href="/medicines"><i class="fa-solid fa-capsules"></i><span>Meds</span></a>
+    <a href="/ai-analyzer"><i class="fa-solid fa-stethoscope"></i><span>AI</span></a>
+</nav>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+    const skeleton = document.getElementById("dashboard-skeleton");
+    const live = document.getElementById("dashboard-live-content");
+    if (skeleton && live) {
+        window.setTimeout(function () {
+            skeleton.style.display = "none";
+            live.style.display = "grid";
+        }, 180);
+    }
+});
+</script>
+{% endblock %}
+

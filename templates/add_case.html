@@ -1,386 +1,84 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash AI | Add Case</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="app-shell">
-    <div class="container py-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <a href="/" style="display:inline-flex;align-items:center;
-                           text-decoration:none;gap:10px;">
-                            <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}"
-                                 alt="Kash AI"
-                                 style="height:40px;width:auto;">
-                        </a>
-                        <div>
-                            <p class="eyebrow mb-1">Case Sheet</p>
-                            <h1 class="h3 mb-0">Add Case for {{ patient.name }}</h1>
-                        </div>
-                    </div>
-                    <a href="/dashboard" class="btn btn-outline-dark">Back to Dashboard</a>
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = 'Case creation' %}
+{% set user_role = 'Doctor workflow' %}
+{% set avatar_label = 'AC' %}
+
+{% block title %}Kash AI | Add Case{% endblock %}
+
+{% block header_actions %}
+<a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-success btn-sm">View cases</a>
+<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Patients</span><span>Add case</span></div>
+            <p class="eyebrow">Case sheet</p>
+            <h1>Add Case for {{ patient.name }}</h1>
+            <p class="mb-0">Capture a new consultation using structured specialty-aware fields and optional voice transcription.</p>
+        </div>
+    </section>
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+    <section class="hero-grid">
+        <article class="table-panel">
+            <div class="page-header mb-3">
+                <div><p class="eyebrow">Voice to text</p><h2>Record or upload consultation audio</h2><p class="mb-0">Transcribe and prefill the case sheet before saving.</p></div>
+                <div>
+                    <label class="form-label mb-1">Language</label>
+                    <select id="language-select" class="form-select"><option value="auto" selected>Auto (Hindi + English)</option><option value="hi-IN">Hindi</option><option value="en-IN">English</option></select>
                 </div>
-                {% if flash %}
-                <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
-                {% endif %}
-                <div class="card border-0 bg-light mb-4">
-                  <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                      <div>
-                        <p class="eyebrow mb-1">Voice To Text</p>
-                        <h2 class="h5 mb-1">Record or upload consultation audio</h2>
-                        <p class="text-muted mb-0">Transcribe and prefill the case sheet before saving.</p>
-                      </div>
-                      <div class="d-flex align-items-center gap-2">
-                        <span class="text-muted small">Language:</span>
-                        <select id="language-select" class="form-select form-select-sm" style="width:auto">
-                          <option value="auto" selected>Auto (Hindi + English)</option>
-                          <option value="hi-IN">Hindi</option>
-                          <option value="en-IN">English</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <!-- Tabs -->
-                    <ul class="nav nav-tabs mb-3" id="voiceTabs">
-                      <li class="nav-item">
-                        <button class="nav-link active" id="tab-record" onclick="switchTab('record')">
-                          🎙 Record Live
-                        </button>
-                      </li>
-                      <li class="nav-item">
-                        <button class="nav-link" id="tab-upload" onclick="switchTab('upload')">
-                          📁 Upload File
-                        </button>
-                      </li>
-                    </ul>
-
-                    <!-- Record Tab -->
-                    <div id="panel-record">
-                      <div class="d-flex align-items-center gap-3 mb-3">
-                        <button id="btn-record" class="btn btn-danger" onclick="startRecording()">
-                          ⏺ Start Recording
-                        </button>
-                        <button id="btn-stop" class="btn btn-secondary d-none" onclick="stopRecording()">
-                          ⏹ Stop & Transcribe
-                        </button>
-                        <span id="recording-indicator" class="text-danger d-none">
-                          ● Recording...
-                        </span>
-                      </div>
-                      <div id="record-status" class="text-muted small mb-2"></div>
-                    </div>
-
-                    <!-- Upload Tab -->
-                    <div id="panel-upload" class="d-none">
-                      <form method="post"
-                            action="/patients/{{ patient.id }}/cases/transcribe-audio"
-                            enctype="multipart/form-data"
-                            data-loading-form>
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        <input type="hidden" name="language" id="upload-language-input" value="auto">
-                        <div class="row g-3 align-items-end">
-                          <div class="col-md-8">
-                            <label class="form-label">Audio File</label>
-                            <input type="file" name="audio_file" class="form-control"
-                                   accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" required>
-                          </div>
-                          <div class="col-md-4">
-                            <button class="btn btn-outline-primary w-100" data-loading-text="Transcribing...">Transcribe Audio</button>
-                          </div>
-                        </div>
-                      </form>
-                    </div>
-
-                    <!-- Transcript display (shown after either method) -->
-                    <div id="transcript-box" class="mt-4 {% if not voice_transcript %}d-none{% endif %}">
-                      <label class="form-label">Transcript</label>
-                      <textarea id="transcript-text" class="form-control" rows="5"
-                                readonly>{{ voice_transcript }}</textarea>
-                    </div>
-                  </div>
-                </div>
-                <form method="post" action="/patients/{{ patient.id }}/cases" data-loading-form>
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="specialty" value="{{ specialty }}">
-
-                    {% if specialty == "modern_medicine" %}
-                    <!-- Modern Medicine fields -->
-                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
-                    <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
-                    <textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">Chief Complaint</label>
-                            <textarea name="chief_complaint" class="form-control"
-                                      rows="3" required
-                                      placeholder="Primary reason for visit">{{ prefill_case.get('symptoms', '') }}</textarea>
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Diagnosis</label>
-                            <input name="diagnosis" class="form-control" required
-                                   value="{{ prefill_case.get('diagnosis', '') }}"
-                                   placeholder="e.g. Upper respiratory infection">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">ICD-10 Code</label>
-                            <input name="icd_code" class="form-control"
-                                   placeholder="e.g. J06.9">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Vitals</label>
-                            <input name="vitals" class="form-control"
-                                   placeholder="BP, Pulse, Temp, SpO2, Weight">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Lab / Investigation Notes</label>
-                            <textarea name="lab_notes" class="form-control"
-                                      rows="3"
-                                      placeholder="CBC, X-ray findings, etc.">{{ prefill_case.get('notes', '') }}</textarea>
-                        </div>
-                    </div>
-
-                    {% elif specialty == "homeopathy" %}
-                    <!-- Homeopathy fields -->
-                    <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
-                    <input type="hidden" name="diagnosis" value="{{ prefill_case.get('diagnosis', '') }}">
-                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
-                    <textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">Chief Complaint</label>
-                            <textarea name="chief_complaint" class="form-control"
-                                      rows="3" required
-                                      placeholder="Main presenting symptoms">{{ prefill_case.get('symptoms', '') }}</textarea>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Remedy</label>
-                            <input name="remedy" class="form-control" required
-                                   value="{{ prefill_case.get('diagnosis', '') }}"
-                                   placeholder="e.g. Arsenicum Album 30C">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Constitution</label>
-                            <input name="constitution" class="form-control"
-                                   value="{{ prefill_case.get('prakriti', '') }}"
-                                   placeholder="e.g. Phosphoric, Calcic">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Miasm / Case Notes</label>
-                            <textarea name="miasm_notes" class="form-control"
-                                      rows="3"
-                                      placeholder="Miasm analysis, modalities, concomitants">{{ prefill_case.get('notes', '') }}</textarea>
-                        </div>
-                    </div>
-
-                    {% elif specialty == "dental" %}
-                    <!-- Dental fields -->
-                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
-                    <input type="hidden" name="diagnosis" value="{{ prefill_case.get('diagnosis', '') }}">
-                    <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Tooth Number(s)</label>
-                            <input name="tooth_number" class="form-control"
-                                   placeholder="e.g. 16, 17, 36">
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Procedure / Diagnosis</label>
-                            <input name="procedure" class="form-control" required
-                                   value="{{ prefill_case.get('diagnosis', '') }}"
-                                   placeholder="e.g. Root Canal Treatment">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Chief Complaint</label>
-                            <textarea name="chief_complaint" class="form-control"
-                                      rows="3" required
-                                      placeholder="Pain, sensitivity, swelling etc.">{{ prefill_case.get('symptoms', '') }}</textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Clinical Notes</label>
-                            <textarea name="notes" class="form-control" rows="3"
-                                      placeholder="X-ray findings, treatment notes">{{ prefill_case.get('notes', '') }}</textarea>
-                        </div>
-                    </div>
-
-                    {% elif specialty == "physiotherapy" %}
-                    <!-- Physiotherapy fields -->
-                    <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
-                    <textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            <label class="form-label">Pain Scale (0-10)</label>
-                            <input name="pain_scale" type="number" min="0" max="10"
-                                   class="form-control" placeholder="7">
-                        </div>
-                        <div class="col-md-8">
-                            <label class="form-label">Condition / Diagnosis</label>
-                            <input name="diagnosis" class="form-control" required
-                                   value="{{ prefill_case.get('diagnosis', '') }}"
-                                   placeholder="e.g. Lumbar disc herniation">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Symptoms / Presentation</label>
-                            <textarea name="symptoms" class="form-control"
-                                      rows="3" required
-                                      placeholder="ROM limitations, pain location, onset">{{ prefill_case.get('symptoms', '') }}</textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Rehabilitation Protocol</label>
-                            <textarea name="rehab_protocol" class="form-control"
-                                      rows="4"
-                                      placeholder="Exercises, frequency, duration, goals">{{ prefill_case.get('notes', '') }}</textarea>
-                        </div>
-                    </div>
-
-                    {% else %}
-                    <!-- Ayurveda fields (default) -->
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Prakriti</label>
-                            <input name="prakriti" class="form-control"
-                                   placeholder="Vata / Pitta / Kapha"
-                                   value="{{ prefill_case.get('prakriti', '') }}"
-                                   required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Working Diagnosis</label>
-                            <input name="diagnosis" class="form-control"
-                                   value="{{ prefill_case.get('diagnosis', '') }}"
-                                   required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Symptoms</label>
-                            <textarea name="symptoms" class="form-control"
-                                      rows="4" required>{{ prefill_case.get('symptoms', '') }}</textarea>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Clinical Notes</label>
-                            <textarea name="notes" class="form-control"
-                                      rows="4">{{ prefill_case.get('notes', '') }}</textarea>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Common fields for all specialties -->
-                    <div class="row g-3 mt-1">
-                        <div class="col-md-6">
-                            <label class="form-label">Follow-up Date</label>
-                            <input type="date" name="followup_date" class="form-control">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Follow-up Notes</label>
-                            <input name="followup_notes" class="form-control"
-                                   value="{{ prefill_case.get('followup_notes', '') }}">
-                        </div>
-                    </div>
-                    <div class="mt-4 d-flex gap-2">
-                        <button class="btn btn-success" data-loading-text="Saving...">Save Case</button>
-                        <a href="/patients/{{ patient.id }}/cases"
-                           class="btn btn-outline-dark">View Cases</a>
-                    </div>
+            </div>
+            <div class="hero-actions mb-3"><button class="btn btn-primary" id="tab-record" onclick="switchTab('record')">Record Live</button><button class="btn btn-outline-dark" id="tab-upload" onclick="switchTab('upload')">Upload File</button></div>
+            <div id="panel-record">
+                <div class="hero-actions mb-3"><button id="btn-record" class="btn btn-danger" onclick="startRecording()">Start Recording</button><button id="btn-stop" class="btn btn-outline-dark d-none" onclick="stopRecording()">Stop & Transcribe</button><span id="recording-indicator" class="text-danger d-none">Recording...</span></div>
+                <div id="record-status" class="text-muted small"></div>
+            </div>
+            <div id="panel-upload" class="d-none">
+                <form method="post" action="/patients/{{ patient.id }}/cases/transcribe-audio" enctype="multipart/form-data" data-loading-form class="section-stack">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="language" id="upload-language-input" value="auto">
+                    <div><label class="form-label">Audio File</label><input type="file" name="audio_file" class="form-control" accept=".wav,.mp3,.m4a,.ogg,.flac,.webm" required></div>
+                    <button class="btn btn-outline-success" data-loading-text="Transcribing...">Transcribe Audio</button>
                 </form>
             </div>
-        </div>
-    </div>
-<!-- Voice JS — place just before </body> -->
+            <div id="transcript-box" class="mt-4 {% if not voice_transcript %}d-none{% endif %}"><label class="form-label">Transcript</label><textarea id="transcript-text" class="form-control" rows="5" readonly>{{ voice_transcript }}</textarea></div>
+        </article>
+        <article class="hero-visual"><p class="eyebrow">Smart documentation</p><h3>Voice-assisted case entry for faster consult completion.</h3><div class="timeline-list mt-4"><div class="timeline-item"><strong>Record live</strong><p class="mb-0">Capture clinical notes from the conversation.</p></div><div class="timeline-item"><strong>Upload audio</strong><p class="mb-0">Support existing files for transcription and prefills.</p></div><div class="timeline-item"><strong>Save structured case</strong><p class="mb-0">Move directly into follow-up, AI guidance, and prescriptions.</p></div></div></article>
+    </section>
+    <section class="form-panel">
+        <form method="post" action="/patients/{{ patient.id }}/cases" data-loading-form class="section-stack">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="specialty" value="{{ specialty }}">
+            {% if specialty == "modern_medicine" %}
+            <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}"><textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea><textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
+            <div><label class="form-label">Chief Complaint</label><textarea name="chief_complaint" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea></div><div class="split-grid"><div><label class="form-label">Diagnosis</label><input name="diagnosis" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}"></div><div><label class="form-label">ICD-10 Code</label><input name="icd_code" class="form-control"></div></div><div><label class="form-label">Vitals</label><input name="vitals" class="form-control"></div><div><label class="form-label">Lab / Investigation Notes</label><textarea name="lab_notes" class="form-control" rows="3">{{ prefill_case.get('notes', '') }}</textarea></div>
+            {% elif specialty == "homeopathy" %}
+            <textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea><input type="hidden" name="diagnosis" value="{{ prefill_case.get('diagnosis', '') }}"><input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}"><textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
+            <div><label class="form-label">Chief Complaint</label><textarea name="chief_complaint" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea></div><div class="split-grid"><div><label class="form-label">Remedy</label><input name="remedy" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}"></div><div><label class="form-label">Constitution</label><input name="constitution" class="form-control" value="{{ prefill_case.get('prakriti', '') }}"></div></div><div><label class="form-label">Miasm / Case Notes</label><textarea name="miasm_notes" class="form-control" rows="3">{{ prefill_case.get('notes', '') }}</textarea></div>
+            {% elif specialty == "dental" %}
+            <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}"><input type="hidden" name="diagnosis" value="{{ prefill_case.get('diagnosis', '') }}"><textarea name="symptoms" class="d-none">{{ prefill_case.get('symptoms', '') }}</textarea>
+            <div class="split-grid"><div><label class="form-label">Tooth Number(s)</label><input name="tooth_number" class="form-control"></div><div><label class="form-label">Procedure / Diagnosis</label><input name="procedure" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}"></div></div><div><label class="form-label">Chief Complaint</label><textarea name="chief_complaint" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea></div><div><label class="form-label">Clinical Notes</label><textarea name="notes" class="form-control" rows="3">{{ prefill_case.get('notes', '') }}</textarea></div>
+            {% elif specialty == "physiotherapy" %}
+            <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}"><textarea name="notes" class="d-none">{{ prefill_case.get('notes', '') }}</textarea>
+            <div class="split-grid"><div><label class="form-label">Pain Scale (0-10)</label><input name="pain_scale" type="number" min="0" max="10" class="form-control"></div><div><label class="form-label">Condition / Diagnosis</label><input name="diagnosis" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}"></div></div><div><label class="form-label">Symptoms / Presentation</label><textarea name="symptoms" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea></div><div><label class="form-label">Rehabilitation Protocol</label><textarea name="rehab_protocol" class="form-control" rows="4">{{ prefill_case.get('notes', '') }}</textarea></div>
+            {% else %}
+            <div class="split-grid"><div><label class="form-label">Prakriti</label><input name="prakriti" class="form-control" value="{{ prefill_case.get('prakriti', '') }}" required></div><div><label class="form-label">Working Diagnosis</label><input name="diagnosis" class="form-control" value="{{ prefill_case.get('diagnosis', '') }}" required></div></div><div><label class="form-label">Symptoms</label><textarea name="symptoms" class="form-control" rows="4" required>{{ prefill_case.get('symptoms', '') }}</textarea></div><div><label class="form-label">Clinical Notes</label><textarea name="notes" class="form-control" rows="4">{{ prefill_case.get('notes', '') }}</textarea></div>
+            {% endif %}
+            <div class="split-grid"><div><label class="form-label">Follow-up Date</label><input type="date" name="followup_date" class="form-control"></div><div><label class="form-label">Follow-up Notes</label><input name="followup_notes" class="form-control" value="{{ prefill_case.get('followup_notes', '') }}"></div></div>
+            <div class="hero-actions"><button class="btn btn-primary" data-loading-text="Saving...">Save Case</button><a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-dark">View Cases</a></div>
+        </form>
+    </section>
+</div>
 <script>
-  let mediaRecorder = null;
-  let audioChunks = [];
-  const patientId = "{{ patient.id }}";
-  const csrfToken = "{{ csrf_token }}";
-
-  function switchTab(tab) {
-    document.getElementById("panel-record").classList.toggle("d-none", tab !== "record");
-    document.getElementById("panel-upload").classList.toggle("d-none", tab !== "upload");
-    document.getElementById("tab-record").classList.toggle("active", tab === "record");
-    document.getElementById("tab-upload").classList.toggle("active", tab === "upload");
-  }
-
-  function getLanguage() {
-    return document.getElementById("language-select").value;
-  }
-
-  document.getElementById("language-select").addEventListener("change", function() {
-    document.getElementById("upload-language-input").value = this.value;
-  });
-
-  async function startRecording() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunks = [];
-      mediaRecorder = new MediaRecorder(stream);
-      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-      mediaRecorder.start();
-      document.getElementById("btn-record").classList.add("d-none");
-      document.getElementById("btn-stop").classList.remove("d-none");
-      document.getElementById("recording-indicator").classList.remove("d-none");
-      document.getElementById("record-status").textContent = "";
-    } catch (err) {
-      document.getElementById("record-status").textContent =
-        "Microphone access denied. Please allow microphone permission and try again.";
-    }
-  }
-
-  async function stopRecording() {
-    if (!mediaRecorder) return;
-    mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-    document.getElementById("btn-stop").classList.add("d-none");
-    document.getElementById("recording-indicator").classList.add("d-none");
-    document.getElementById("record-status").textContent = "Transcribing...";
-
-    mediaRecorder.onstop = async () => {
-      const blob = new Blob(audioChunks, { type: "audio/webm" });
-      const formData = new FormData();
-      formData.append("audio_blob", blob, "recording.webm");
-      formData.append("language", getLanguage());
-      formData.append("csrf_token", csrfToken);
-
-      try {
-        const response = await fetch(
-          `/patients/${patientId}/cases/transcribe-live`,
-          { method: "POST", body: formData }
-        );
-        const data = await response.json();
-
-        if (data.error) {
-          document.getElementById("record-status").textContent = "Error: " + data.error;
-          document.getElementById("btn-record").classList.remove("d-none");
-          return;
-        }
-
-        document.getElementById("transcript-text").value = data.transcript;
-        document.getElementById("transcript-box").classList.remove("d-none");
-        document.getElementById("record-status").textContent = "Transcription complete.";
-        document.getElementById("btn-record").classList.remove("d-none");
-
-        // Prefill case form fields if available
-        if (data.prefill) {
-          const p = data.prefill;
-          if (p.prakriti) document.querySelector("[name=prakriti]").value = p.prakriti;
-          if (p.diagnosis) document.querySelector("[name=diagnosis]").value = p.diagnosis;
-          if (p.symptoms) document.querySelector("[name=symptoms]").value = p.symptoms;
-          if (p.notes) document.querySelector("[name=notes]").value = p.notes;
-          if (p.followup_notes) document.querySelector("[name=followup_notes]").value = p.followup_notes;
-        }
-      } catch (err) {
-        document.getElementById("record-status").textContent = "Transcription failed. Please try again.";
-        document.getElementById("btn-record").classList.remove("d-none");
-      }
-    };
-  }
+let mediaRecorder = null; let audioChunks = []; const patientId = "{{ patient.id }}"; const csrfToken = "{{ csrf_token }}";
+function switchTab(tab) { document.getElementById("panel-record").classList.toggle("d-none", tab !== "record"); document.getElementById("panel-upload").classList.toggle("d-none", tab !== "upload"); document.getElementById("tab-record").classList.toggle("btn-primary", tab === "record"); document.getElementById("tab-upload").classList.toggle("btn-primary", tab === "upload"); }
+function getLanguage() { return document.getElementById("language-select").value; }
+document.getElementById("language-select").addEventListener("change", function() { document.getElementById("upload-language-input").value = this.value; });
+async function startRecording() { try { const stream = await navigator.mediaDevices.getUserMedia({ audio: true }); audioChunks = []; mediaRecorder = new MediaRecorder(stream); mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); }; mediaRecorder.start(); document.getElementById("btn-record").classList.add("d-none"); document.getElementById("btn-stop").classList.remove("d-none"); document.getElementById("recording-indicator").classList.remove("d-none"); document.getElementById("record-status").textContent = ""; } catch (err) { document.getElementById("record-status").textContent = "Microphone access denied. Please allow microphone permission and try again."; } }
+async function stopRecording() { if (!mediaRecorder) return; mediaRecorder.stop(); mediaRecorder.stream.getTracks().forEach(t => t.stop()); document.getElementById("btn-stop").classList.add("d-none"); document.getElementById("recording-indicator").classList.add("d-none"); document.getElementById("record-status").textContent = "Transcribing..."; mediaRecorder.onstop = async () => { const blob = new Blob(audioChunks, { type: "audio/webm" }); const formData = new FormData(); formData.append("audio_blob", blob, "recording.webm"); formData.append("language", getLanguage()); formData.append("csrf_token", csrfToken); try { const response = await fetch(`/patients/${patientId}/cases/transcribe-live`, { method: "POST", body: formData }); const data = await response.json(); if (data.error) { document.getElementById("record-status").textContent = "Error: " + data.error; document.getElementById("btn-record").classList.remove("d-none"); return; } document.getElementById("transcript-text").value = data.transcript; document.getElementById("transcript-box").classList.remove("d-none"); document.getElementById("record-status").textContent = "Transcription complete."; document.getElementById("btn-record").classList.remove("d-none"); if (data.prefill) { const p = data.prefill; if (p.prakriti && document.querySelector("[name=prakriti]")) document.querySelector("[name=prakriti]").value = p.prakriti; if (p.diagnosis && document.querySelector("[name=diagnosis]")) document.querySelector("[name=diagnosis]").value = p.diagnosis; if (p.symptoms && document.querySelector("[name=symptoms]")) document.querySelector("[name=symptoms]").value = p.symptoms; if (p.notes && document.querySelector("[name=notes]")) document.querySelector("[name=notes]").value = p.notes; if (p.followup_notes && document.querySelector("[name=followup_notes]")) document.querySelector("[name=followup_notes]").value = p.followup_notes; } } catch (err) { document.getElementById("record-status").textContent = "Transcription failed. Please try again."; document.getElementById("btn-record").classList.remove("d-none"); } }; }
 </script>
-<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+{% endblock %}
+
+{% block extra_scripts %}<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>{% endblock %}
+

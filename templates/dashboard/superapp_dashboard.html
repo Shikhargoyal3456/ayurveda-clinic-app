@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Superapp Dashboard | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up superapp-dashboard">
+    <section class="page-header"><div><p class="eyebrow">Healthcare superapp</p><h1>Unified health dashboard</h1><p class="mb-0">Medicines, diagnostics, subscriptions, orders, AI support, and health insights in one control center.</p></div><div class="hero-actions"><a href="/diagnostics/lab-booking" class="btn btn-outline-dark">Book Lab Test</a><a href="/store/wellness-store" class="btn btn-primary">Health Store</a></div></section>
+    <section class="content-grid-2">
+        <article class="card health-score-widget"><div class="score-circle"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Health Score</span></div></div><p class="mt-3 mb-0">{{ health_message }}</p></article>
+        <article class="card"><p class="eyebrow">Quick actions</p><div class="quick-actions-grid"><a class="action-card" href="/order-medicines"><i class="fas fa-prescription-bottle-alt"></i><span>Order Medicine</span></a><a class="action-card" href="/diagnostics/lab-booking"><i class="fas fa-flask"></i><span>Book Lab Test</span></a><a class="action-card" href="/ai-analyzer"><i class="fas fa-user-md"></i><span>Consult Doctor</span></a><a class="action-card" href="/subscription/smart-subscriptions"><i class="fas fa-sync-alt"></i><span>Refill / Subscribe</span></a></div></article>
+    </section>
+    <section class="content-grid-2">
+        <article class="card"><p class="eyebrow">Active subscriptions</p><h2 class="h4">Smart deliveries</h2><div class="stack-list mt-3">{% for sub in subscriptions %}<div class="stack-item"><div><strong>{{ sub.medicine_name }}</strong><p class="mb-0 text-muted">Next delivery: {{ sub.next_delivery }} · {{ sub.frequency }}</p></div><div class="hero-actions"><button class="btn btn-outline-dark btn-sm" type="button">Skip</button><button class="btn btn-outline-success btn-sm" type="button">Reschedule</button></div></div>{% else %}<div class="stack-item">No active subscriptions yet.</div>{% endfor %}</div></article>
+        <article class="card"><p class="eyebrow">Recent orders</p><h2 class="h4">Recent purchases</h2><div class="stack-list mt-3">{% for order in recent_orders %}<div class="stack-item"><div><strong>Order #{{ order.id }}</strong><p class="mb-0 text-muted">{{ order.status|title }} · ₹{{ order.total_amount }}</p></div><a href="/orders/tracking/{{ order.id }}" class="btn btn-primary btn-sm">Track</a></div>{% else %}<div class="stack-item">No recent orders yet.</div>{% endfor %}</div></article>
+    </section>
+    <section class="card"><p class="eyebrow">Health insights</p><h2 class="h4">AI-guided nudges</h2><div class="feature-grid mt-3">{% for insight in health_insights %}<div class="feature-card"><i class="{{ insight.icon }}"></i><h3 class="h4 mt-2">{{ insight.title }}</h3><p class="mb-0">{{ insight.description }}</p></div>{% endfor %}</div></section>
+</div>
+{% endblock %}

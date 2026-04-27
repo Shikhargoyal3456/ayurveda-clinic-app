@@ -1,85 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kash AI | Start Your Clinic</title>
-    <meta property="og:title" content="Kash AI" />
-    <meta property="og:description" content="AI-powered Ayurveda clinic management." />
-    <meta property="og:site_name" content="Kash AI" />
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}">
-</head>
-<body class="auth-shell">
-    <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const selectedPlan = urlParams.get("plan");
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = 'Pilot signup' %}
+{% set user_role = 'New clinic setup' %}
+{% set avatar_label = 'GO' %}
 
-    if (selectedPlan && (selectedPlan === "basic" || selectedPlan === "pro")) {
-      document.addEventListener("DOMContentLoaded", function() {
-        const planName = selectedPlan.charAt(0).toUpperCase()
-                         + selectedPlan.slice(1);
-        const notice = document.createElement("div");
-        notice.className = "alert alert-info mb-3";
-        notice.textContent = "You selected the " + planName
-          + " plan. Create your account to continue to payment.";
-        const form = document.querySelector("form");
-        if (form) form.insertAdjacentElement("beforebegin", notice);
+{% block title %}Kash AI | Start Your Clinic{% endblock %}
 
-        const planInput = document.createElement("input");
-        planInput.type = "hidden";
-        planInput.name = "selected_plan";
-        planInput.value = selectedPlan;
-        if (form) form.appendChild(planInput);
-      });
-    }
-    </script>
-    <div class="auth-layout">
+{% block header_actions %}
+<a href="/login" class="btn btn-outline-dark btn-sm">Existing account</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container">
+    <div class="auth-layout fade-in-up">
         <section class="auth-story">
-            <a href="/" style="display:inline-flex;align-items:center;
-               text-decoration:none;gap:10px;">
-                <img src="{{ url_for('static', path='images/kash_ai_logo.svg') }}"
-                     alt="Kash AI"
-                     style="height:40px;width:auto;">
-            </a>
-            <p class="eyebrow">Clinic Pilot</p>
-            <h1>Launch your AI-powered clinic — any specialty, any practice.</h1>
-            <p class="auth-lead">Choose your specialty, onboard patients immediately, and use AI-assisted care workflows built for modern Indian clinics.</p>
+            <p class="eyebrow">Clinic onboarding</p>
+            <h1>Launch a beautifully modern clinic experience in minutes.</h1>
+            <p>Set up your workspace, select your specialty, and start operating with AI-assisted care and premium patient flows.</p>
             <div class="auth-points">
-                <div>
+                <div class="auth-point">
                     <strong>Patient records</strong>
-                    <p>Store registrations, case sheets, and appointment history in one place.</p>
+                    <p class="mb-0">Registrations, case sheets, and appointment histories stay in one warm dashboard.</p>
                 </div>
-                <div>
-                    <strong>AI consultation support</strong>
-                    <p>Specialty-aware AI recommendations that adapt to your practice — Ayurveda, Modern Medicine, Homeopathy, Dental, or Physiotherapy.</p>
+                <div class="auth-point">
+                    <strong>Flexible specialties</strong>
+                    <p class="mb-0">Ayurveda, modern medicine, homeopathy, dental, and physiotherapy supported.</p>
                 </div>
-                <div>
-                    <strong>Built for India</strong>
-                    <p>Hindi and English voice transcription, UPI payments, and WhatsApp diet sharing included.</p>
+                <div class="auth-point">
+                    <strong>India-ready workflows</strong>
+                    <p class="mb-0">Voice transcription, WhatsApp-friendly sharing, and medicine commerce prepared out of the box.</p>
                 </div>
             </div>
-            <a href="/" class="text-decoration-none">Back to product overview</a>
         </section>
 
-        <section class="auth-card">
-            <p class="eyebrow mb-2">Create Doctor Account</p>
-            <h2 class="h3 mb-3">Start your Kash AI workspace</h2>
+        <section class="auth-card auth-panel">
+            <p class="eyebrow">Create doctor account</p>
+            <h2>Start your Kash AI workspace</h2>
+            <p class="text-muted">Pick your specialty, add your details, and continue to onboarding or plan checkout.</p>
             {% if flash %}
-            <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+            <div class="alert alert-{{ flash.category }} mb-3">{{ flash.message }}</div>
             {% endif %}
-            <form method="post" action="/signup" data-loading-form>
+            <form method="post" action="/signup" data-loading-form class="section-stack">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 {% if request.query_params.get("plan") %}
-                <input type="hidden" name="selected_plan"
-                       value="{{ request.query_params.get('plan') }}">
+                <input type="hidden" name="selected_plan" value="{{ request.query_params.get('plan') }}">
                 {% endif %}
-                <div class="mb-3">
+                <div>
                     <label class="form-label">Full Name</label>
                     <input name="full_name" class="form-control">
                 </div>
-                <div class="mb-3">
+                <div>
                     <label class="form-label">Medical Specialty</label>
                     <select name="specialty" class="form-select" required>
                         <option value="ayurveda">Ayurveda</option>
@@ -89,27 +59,48 @@
                         <option value="physiotherapy">Physiotherapy</option>
                     </select>
                 </div>
-                <div class="mb-3">
+                <div>
                     <label class="form-label">Username</label>
                     <input name="username" class="form-control" required>
                 </div>
-                <div class="mb-3">
+                <div>
                     <label class="form-label">Password</label>
                     <input type="password" name="password" class="form-control" required>
                 </div>
-                <div class="mb-3 form-check">
+                <label class="form-check">
                     <input type="checkbox" class="form-check-input" name="consent" id="consent" required>
-                    <label class="form-check-label" for="consent">
-                        I agree to the
-                        <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>
-                        and Terms of Service
-                    </label>
-                </div>
-                <button class="btn btn-success w-100" data-loading-text="Creating...">Create My Clinic</button>
+                    <span>I agree to the <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> and Terms of Service.</span>
+                </label>
+                <button class="btn btn-primary w-100" data-loading-text="Creating...">Create my clinic</button>
             </form>
-            <p class="mt-3 mb-0 text-muted">Already registered? <a href="/login">Go to login</a></p>
+            <p class="mt-4 mb-0 text-muted">Already registered? <a href="/login">Go to login</a></p>
         </section>
     </div>
-    <script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
-</body>
-</html>
+</div>
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const selectedPlan = urlParams.get("plan");
+if (selectedPlan && (selectedPlan === "basic" || selectedPlan === "pro")) {
+  document.addEventListener("DOMContentLoaded", function() {
+    const planName = selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1);
+    const notice = document.createElement("div");
+    notice.className = "alert alert-info mb-3";
+    notice.textContent = "You selected the " + planName + " plan. Create your account to continue to payment.";
+    const form = document.querySelector("form");
+    if (form) {
+      form.insertAdjacentElement("beforebegin", notice);
+      const planInput = document.createElement("input");
+      planInput.type = "hidden";
+      planInput.name = "selected_plan";
+      planInput.value = selectedPlan;
+      form.appendChild(planInput);
+    }
+  });
+}
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+{% endblock %}
+
