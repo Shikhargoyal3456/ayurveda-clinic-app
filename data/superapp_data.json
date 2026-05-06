@@ -356,6 +356,76 @@
         }
       ],
       "prescription_name": "Ashwagandha"
+    },
+    {
+      "id": 3,
+      "user_id": "guest",
+      "items": [
+        {
+          "product_id": 1,
+          "name": "Ashwagandha Tablets",
+          "price": 349,
+          "mrp": 499,
+          "quantity": 2,
+          "category": "stress"
+        }
+      ],
+      "total_amount": 523.5,
+      "status": "packed",
+      "tracking_id": "TRK10003",
+      "delivery_partner": "QuickCare Fleet",
+      "estimated_delivery": "2026-04-30T11:27:05.685386+00:00",
+      "placed_time": "2026-04-30T10:42:05.685414+00:00",
+      "timeline": [
+        {
+          "status": "Order Placed",
+          "timestamp": "2026-04-30T10:42:05.685439+00:00",
+          "completed": true
+        },
+        {
+          "status": "Packed & Ready",
+          "timestamp": "2026-04-30T10:42:05.685460+00:00",
+          "completed": true
+        },
+        {
+          "status": "Out for Delivery",
+          "timestamp": "",
+          "completed": false
+        },
+        {
+          "status": "Delivered",
+          "timestamp": "",
+          "completed": false
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "user_id": "guest",
+      "items": [
+        {
+          "product_id": 1,
+          "name": "Ashwagandha Tablets",
+          "price": 349.0,
+          "mrp": 499.0,
+          "quantity": 1,
+          "category": "stress"
+        }
+      ],
+      "total_amount": 349.0,
+      "status": "auto_refilled",
+      "tracking_id": "ARX10004",
+      "delivery_partner": "AutoCare Fleet",
+      "estimated_delivery": "2026-04-30T18:42:05.875030+00:00",
+      "placed_time": "2026-04-30T10:42:05.875064+00:00",
+      "timeline": [
+        {
+          "status": "Auto refill created",
+          "timestamp": "2026-04-30T10:42:05.875070+00:00",
+          "completed": true
+        }
+      ],
+      "prescription_name": "Ashwagandha Tablets"
     }
   ],
   "lab_bookings": [
@@ -370,14 +440,26 @@
       "collection_time": "2026-05-01T09:00:00",
       "status": "scheduled",
       "created_at": "2026-04-27T19:20:24.264072+00:00"
+    },
+    {
+      "id": 2,
+      "user_id": "guest",
+      "test_ids": [
+        1,
+        2
+      ],
+      "collection_address": "Demo Address",
+      "collection_time": "Tomorrow 10 AM",
+      "status": "scheduled",
+      "created_at": "2026-04-30T10:42:05.770448+00:00"
     }
   ],
   "users": {
     "guest": {
       "points": 360,
       "tier": "bronze",
-      "total_spent": 4461.75,
-      "orders": 4,
+      "total_spent": 4985.25,
+      "orders": 5,
       "abandoned_carts": 1,
       "frequent_category": "ayurveda",
       "subscription_eligible": true,

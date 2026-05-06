@@ -237,6 +237,23 @@ pre {
     padding: 0.55rem;
 }
 
+.brand-logo--full {
+    width: auto;
+    min-width: 156px;
+    height: 56px;
+    padding: 0.35rem 0.7rem;
+    border-radius: 18px;
+    background: rgba(255, 253, 247, 0.96);
+    border: 1px solid rgba(45, 106, 79, 0.12);
+}
+
+.brand-logo--full img {
+    padding: 0;
+    width: auto;
+    max-width: 172px;
+    height: 100%;
+}
+
 .brand-copy strong {
     display: block;
     font-family: var(--font-heading);
@@ -2764,3 +2781,4 @@ canvas {
         grid-template-columns: 1fr;
     }
 }
+.nav-services-dropdown{position:relative;display:inline-flex;align-items:center}.nav-services-toggle{border:none;background:transparent;color:inherit;font:inherit;cursor:pointer;padding:0}.nav-services-menu{position:absolute;top:calc(100% + 10px);left:0;min-width:220px;background:#fffdf7;border:1px solid rgba(45,106,79,.14);border-radius:16px;box-shadow:0 18px 45px rgba(20,37,32,.12);padding:10px;display:none;z-index:80}.nav-services-menu.is-open{display:block}.nav-services-menu a{display:block;padding:10px 12px;border-radius:12px;text-decoration:none}.nav-services-menu a:hover{background:rgba(45,106,79,.08)}.chat-panel{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;color:#fff}.chat-messages{max-height:220px;overflow-y:auto;display:grid;gap:10px;margin-bottom:12px}.message{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08)}.message.local{background:rgba(45,106,79,.36)}.message.system{background:rgba(255,255,255,.12)}.chat-input{display:flex;gap:10px}.chat-input input,.chat-input button{border-radius:12px}.suggestion{background:#f7fbf8;border:1px solid rgba(45,106,79,.1);border-radius:12px;padding:12px;margin-bottom:10px}.prescription-panel{background:#fff;border-radius:16px;padding:18px;box-shadow:0 6px 24px rgba(15,23,42,.08)}.medicine-row{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:10px;margin-bottom:10px}.medicine-row input,.medicine-row button{border-radius:12px;border:1px solid rgba(15,23,42,.12);padding:10px 12px}.analysis-result .condition,.doctor-card{background:#f7fbf8;border:1px solid rgba(45,106,79,.12);border-radius:14px;padding:14px;margin-top:10px}.urgency-low,.urgency-medium,.urgency-high{border-radius:14px;padding:14px 16px;font-weight:600}.urgency-low{background:#edf9f1;color:#1f5138}.urgency-medium{background:#fff4da;color:#8a5a00}.urgency-high{background:#ffe5e5;color:#9f1d1d}.telemedicine-booking-card{padding:24px}@media (max-width:900px){.telemedicine-container{grid-template-columns:1fr}.medicine-row{grid-template-columns:1fr}}.portal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}.portal-card{background:#fff;border-radius:24px;padding:28px;text-align:center;text-decoration:none;color:#173126;box-shadow:0 18px 40px rgba(24,39,33,.08);transition:transform .25s,box-shadow .25s}.portal-card:hover{transform:translateY(-6px);box-shadow:0 24px 50px rgba(24,39,33,.14)}.portal-card .features{display:flex;justify-content:center;gap:10px;margin-top:18px;flex-wrap:wrap}.portal-card .features span{background:#f4f7f4;padding:6px 12px;border-radius:999px;font-size:12px}.patient-portal{border-top:5px solid #4caf50}.doctor-portal{border-top:5px solid #2196f3}.pharmacy-portal{border-top:5px solid #ff9800}.lab-portal{border-top:5px solid #9c27b0}.marketplace-live-card{border:1px solid rgba(45,106,79,.08);border-radius:20px;padding:20px;background:linear-gradient(180deg,#fff,#f7fbf8)}.metric-card{border-radius:18px;padding:18px;background:#f7fbf8;border:1px solid rgba(45,106,79,.08)}.metric-card span{display:block;color:#5c6f65;font-size:14px;margin-bottom:8px}.metric-card strong{font-size:22px;color:#173126}.upload-area{border:2px dashed rgba(45,106,79,.2);border-radius:20px;padding:32px;text-align:center;color:#2d6a4f;cursor:pointer}@media (max-width:900px){.portal-grid{grid-template-columns:1fr}}

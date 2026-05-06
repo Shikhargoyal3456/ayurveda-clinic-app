@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Stock Alerts | Pharmacy Portal{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Inventory safety</p>
+            <h1>Stock Alerts</h1>
+            <p class="mb-0">Track low-stock medicines in real time and restock before patient demand is affected.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="/portal/pharmacy/add-medicine" class="btn btn-outline-dark">Add Medicine</a>
+            <button class="btn btn-primary" type="button" onclick="autoReorderAll()">Auto-Reorder Suggestions</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="alert-filters">
+            <button class="filter-btn active" type="button" onclick="setFilter('open', this)">Open</button>
+            <button class="filter-btn" type="button" onclick="setFilter('resolved', this)">Resolved</button>
+            <button class="filter-btn critical" type="button" onclick="setSeverity('critical', this)">Critical</button>
+            <button class="filter-btn low" type="button" onclick="setSeverity('low', this)">Low</button>
+            <button class="filter-btn medium" type="button" onclick="setSeverity('medium', this)">Medium</button>
+            <button class="filter-btn" type="button" onclick="setSeverity('all', this)">All Severities</button>
+        </div>
+        <div id="alertsList" class="stack-list"></div>
+    </section>
+
+    <section class="card">
+        <div class="page-header mb-3">
+            <div><p class="eyebrow">AI planning</p><h2 class="h4 mb-0">Reorder Suggestions</h2></div>
+        </div>
+        <div id="reorderSuggestions" class="stack-list">
+            <div class="stack-item">Loading reorder suggestions...</div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const pharmacyId = {{ pharmacy_id }};
+let alertStatusFilter = 'open';
+let severityFilter = 'all';
+
+function formatLevel(level) {
+    if (level === 'critical') return 'CRITICAL';
+    if (level === 'low') return 'LOW STOCK';
+    return 'MEDIUM';
+}
+
+function setFilter(status, button) {
+    alertStatusFilter = status;
+    document.querySelectorAll('.alert-filters .filter-btn').forEach((item) => {
+        if (!item.classList.contains('critical') && !item.classList.contains('low') && !item.classList.contains('medium')) {
+            item.classList.remove('active');
+        }
+    });
+    button.classList.add('active');
+    loadAlerts();
+}
+
+function setSeverity(level, button) {
+    severityFilter = level;
+    document.querySelectorAll('.alert-filters .filter-btn.critical, .alert-filters .filter-btn.low, .alert-filters .filter-btn.medium').forEach((item) => item.classList.remove('active'));
+    button.classList.add('active');
+    loadAlerts();
+}
+
+async function loadAlerts() {
+    const response = await fetch(`/api/pharmacy/stock-alerts?status=${encodeURIComponent(alertStatusFilter)}`);
+    const alerts = await response.json();
+    const filtered = severityFilter === 'all' ? alerts : alerts.filter((item) => item.alert_level === severityFilter);
+    document.getElementById('alertsList').innerHTML = filtered.length ? filtered.map((alert) => `
+        <div class="alert-card ${alert.alert_level}">
+            <div class="alert-topline">
+                <span class="level-pill">${formatLevel(alert.alert_level)}</span>
+                <span class="text-muted">${new Date(alert.created_at).toLocaleString()}</span>
+            </div>
+            <div class="alert-body">
+                <div>
+                    <strong>${alert.medicine_name}</strong>
+                    <p class="mb-0 text-muted">${alert.brand || 'Unbranded'} · Current stock ${alert.current_stock} · Threshold ${alert.threshold}</p>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" style="width:${Math.max(6, Math.min(100, (alert.current_stock / Math.max(alert.threshold, 1)) * 100))}%"></div>
+                </div>
+            </div>
+            <div class="hero-actions">
+                <a href="/portal/pharmacy/add-medicine" class="btn btn-outline-dark btn-sm">Restock</a>
+                ${alert.is_resolved ? '<span class="text-success">Resolved</span>' : `<button class="btn btn-outline-success btn-sm" type="button" onclick="markResolved(${alert.id})">Mark Resolved</button>`}
+            </div>
+        </div>
+    `).join('') : '<div class="stack-item">No alerts match the current filters.</div>';
+}
+
+async function loadReorderSuggestions() {
+    const response = await fetch('/api/pharmacy/auto-reorder', { method: 'POST' });
+    const result = await response.json();
+    const suggestions = result.suggestions || [];
+    document.getElementById('reorderSuggestions').innerHTML = suggestions.length ? suggestions.map((item) => `
+        <div class="stack-item">
+            <div>
+                <strong>Medicine #${item.medicine_id}</strong>
+                <p class="mb-0 text-muted">Current stock ${item.current_stock} · Avg daily sales ${Number(item.avg_daily_sales || 0).toFixed(1)} · ${item.days_remaining} days remaining</p>
+            </div>
+            <span class="inventory-badge">${item.suggested_order_qty} units suggested</span>
+        </div>
+    `).join('') : '<div class="stack-item">No urgent reorder recommendations right now.</div>';
+}
+
+async function autoReorderAll() {
+    const response = await fetch('/api/pharmacy/auto-reorder', { method: 'POST' });
+    const result = await response.json();
+    showToast(`${result.ordered_count} reorder suggestion(s) prepared.`, 'success');
+    loadReorderSuggestions();
+}
+
+async function markResolved(alertId) {
+    const response = await fetch(`/api/pharmacy/stock-alerts/${alertId}/resolve`, { method: 'POST' });
+    const result = await response.json();
+    if (response.ok && result.success) {
+        showToast('Alert marked as resolved.', 'success');
+        loadAlerts();
+    }
+}
+
+const alertSocket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/stock-alerts/${pharmacyId}`);
+alertSocket.onmessage = (event) => {
+    const payload = JSON.parse(event.data);
+    if (payload.alerts) {
+        loadAlerts();
+        const critical = payload.alerts.find((item) => item.alert_level === 'critical');
+        if (critical && window.showToast) {
+            showToast(`${critical.medicine_name} is at critical stock.`, 'warning');
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAlerts();
+    loadReorderSuggestions();
+});
+</script>
+<style>
+.alert-filters{display:flex;gap:10px;flex-wrap:wrap}.filter-btn{border:none;border-radius:999px;padding:10px 14px;background:#e2e8f0;font-weight:700}.filter-btn.active{background:#173126;color:#fff}.filter-btn.critical.active{background:#9f1239}.filter-btn.low.active{background:#b91c1c}.filter-btn.medium.active{background:#b45309}.alert-card{border-radius:24px;padding:18px;border:1px solid #e2e8f0;background:#fff}.alert-card.critical{border-color:#fecdd3;background:#fff7f8}.alert-card.low{border-color:#fecaca;background:#fff7f7}.alert-card.medium{border-color:#fde68a;background:#fffdf5}.alert-topline{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:14px}.level-pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#173126;color:#fff;font-size:.8rem;font-weight:700}.progress-track{margin-top:12px;height:10px;border-radius:999px;background:#e2e8f0;overflow:hidden}.progress-fill{height:100%;background:linear-gradient(90deg,#dc2626,#f59e0b)}.inventory-badge{display:inline-flex;align-items:center;padding:6px 12px;border-radius:999px;background:#ecfdf3;color:#166534;font-weight:700}
+</style>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Manage Profiles | Kash AI{% endblock %}
+{% block page %}
+<section class="manage-profiles-shell">
+    <div class="manage-profiles-card">
+        <div class="manage-profiles-header">
+            <div>
+                <p class="manage-profiles__eyebrow">Family settings</p>
+                <h1>Manage Profiles</h1>
+                <p>{{ profiles|length }} of {{ profile_limit }} profiles used</p>
+            </div>
+            {% if profiles|length < profile_limit %}
+            <a href="/profiles/add" class="primary-btn">+ Add New Profile</a>
+            {% endif %}
+        </div>
+
+        <div class="manage-profiles-list">
+            {% for profile in profiles %}
+            <article class="manage-profile-item">
+                <div class="manage-profile-item__main">
+                    <span class="manage-profile-item__avatar">{{ profile.avatar_emoji }}</span>
+                    <div>
+                        <strong>{{ profile.profile_name }}</strong>
+                        <div class="manage-profile-item__meta">{{ profile.relationship }}</div>
+                        {% if profile.pin_code %}
+                        <span class="manage-profile-item__badge">PIN protected</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="manage-profile-item__actions">
+                    {% if profile.is_primary %}
+                    <span class="secondary-btn">Primary Profile</span>
+                    {% else %}
+                    <button type="button" class="secondary-btn" onclick="setPrimary({{ profile.id }})">Set as Primary</button>
+                    <form method="post" action="/api/profiles/delete/{{ profile.id }}" onsubmit="return confirm('Delete this profile?')">
+                        <button type="submit" class="danger-btn">Delete</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+
+        <div class="manage-profiles-footer">
+            <a href="/profiles/select" class="secondary-btn">Back to Selector</a>
+            <a href="/patient" class="secondary-btn">Back to Patient Home</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block extra_head %}
+<style>
+.manage-profiles-shell{padding:32px 16px}
+.manage-profiles-card{width:min(900px,100%);margin:0 auto;padding:30px;border-radius:28px;background:#fff;box-shadow:0 18px 42px rgba(15,23,42,.08)}
+.manage-profiles-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.manage-profiles__eyebrow{margin:0 0 8px;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;font-weight:700;color:#0f766e}
+.manage-profiles-header h1{margin:0 0 8px;font-family:"Plus Jakarta Sans",sans-serif}
+.manage-profiles-header p{margin:0;color:#5f6c7b}
+.manage-profiles-list{display:grid;gap:14px}
+.manage-profile-item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 20px;border:1px solid #dbe3ea;border-radius:22px;background:#fbfdff}
+.manage-profile-item__main{display:flex;align-items:center;gap:16px}
+.manage-profile-item__avatar{display:grid;place-items:center;width:56px;height:56px;border-radius:18px;background:#e6f4f1;font-size:2rem}
+.manage-profile-item__meta{margin-top:4px;color:#5f6c7b}
+.manage-profile-item__badge{display:inline-flex;margin-top:8px;padding:4px 10px;border-radius:999px;background:#f59e0b;color:#fff;font-size:.75rem;font-weight:700}
+.manage-profile-item__actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.manage-profiles-footer{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+@media (max-width:720px){.manage-profile-item{flex-direction:column;align-items:flex-start}.manage-profile-item__actions{width:100%}}
+</style>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function setPrimary(profileId) {
+    const response = await fetch("/api/profiles/set-primary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile_id: profileId })
+    });
+    if (!response.ok) {
+        window.alert("Could not update the primary profile.");
+        return;
+    }
+    window.location.reload();
+}
+</script>
+{% endblock %}

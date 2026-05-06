@@ -5,10 +5,10 @@
 {% set user_role = clinic_name %}
 {% set avatar_label = (doctor.full_name or doctor.username or 'KA')[:2] | upper %}
 
-{% block title %}Kash AI | Patient Dashboard{% endblock %}
+{% block title %}Kash AI | Clinic Workspace{% endblock %}
 
 {% block header_actions %}
-<a href="/medicines" class="btn btn-outline-success btn-sm">Patient ordering</a>
+<a href="/medicines" class="btn btn-outline-success btn-sm">Marketplace</a>
 <a href="#add-patient" class="btn btn-primary btn-sm">Add patient</a>
 {% endblock %}
 
@@ -343,7 +343,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
     const skeleton = document.getElementById("dashboard-skeleton");

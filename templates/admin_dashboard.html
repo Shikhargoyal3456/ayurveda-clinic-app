@@ -1,8 +1,8 @@
-{% extends 'base.html' %}
-{% set active_page = 'profile' %}
-{% set user_name = 'Admin' %}
-{% set user_role = 'System oversight' %}
-{% set avatar_label = 'AD' %}
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+{% set user_name = doctor.full_name or doctor.username or "Admin" %}
+{% set user_role = "System oversight" %}
+{% set avatar_label = "AD" %}
 
 {% block title %}Kash AI | Admin{% endblock %}
 
@@ -12,29 +12,372 @@
 {% endblock %}
 
 {% block page %}
-<div class="site-container section-stack fade-in-up">
-    <section class="page-header"><div><div class="breadcrumbs mb-2"><span>Home</span><span>Admin</span></div><p class="eyebrow">Administration</p><h1>Kash AI system dashboard</h1><p class="mb-0">Operational metrics, commerce signals, compliance readiness, and usage visibility in one founder-friendly workspace.</p></div></section>
-    <section class="stats-grid"><article class="metric-card"><span>Patients</span><strong>{{ metrics.totals.patients }}</strong></article><article class="metric-card"><span>Appointments</span><strong>{{ metrics.totals.appointments }}</strong></article><article class="metric-card"><span>Case Sheets</span><strong>{{ metrics.totals.case_sheets }}</strong></article><article class="metric-card"><span>Active Sessions</span><strong>{{ metrics.active_sessions }}</strong></article></section>
-    <section class="table-panel"><p class="eyebrow mb-2">System Health</p><pre>{{ metrics.health | tojson(indent=2) }}</pre></section>
-    <section class="content-grid"><div class="table-panel"><div class="page-header mb-3"><div><p class="eyebrow">Decision dashboard</p><h2>Conversion funnel</h2></div><button class="btn btn-outline-dark btn-sm" onclick="loadDecisionMetrics()">Refresh</button></div><div id="decision-error" class="alert alert-danger d-none"></div><div id="decision-alerts"></div><div class="stats-grid"><div class="metric-card"><span>Search</span><strong id="f-search">-</strong></div><div class="metric-card"><span>AI</span><strong id="f-ai">-</strong></div><div class="metric-card"><span>Cart</span><strong id="f-cart">-</strong></div><div class="metric-card"><span>Checkout</span><strong id="f-checkout">-</strong></div></div><div class="stats-grid mt-3"><div class="metric-card"><span>Payment</span><strong id="f-payment">-</strong></div><div class="metric-card"><span>Orders</span><strong id="f-orders">-</strong></div><div class="metric-card"><span>AI Conversion</span><strong id="label-ai-conversion">-</strong></div><div class="metric-card"><span>Cart Drop-off</span><strong id="label-cart-dropoff">-</strong></div></div></div><div class="table-panel"><p class="eyebrow mb-2">Compliance and revenue</p><div class="stats-grid"><div class="metric-card"><span>Orders</span><strong id="m-orders">-</strong></div><div class="metric-card"><span>Payments</span><strong id="m-payments">-</strong></div><div class="metric-card"><span>Revenue</span><strong id="m-revenue">-</strong></div><div class="metric-card"><span>Consent Tracking</span><strong id="c-consent">-</strong></div></div><div class="stats-grid mt-3"><div class="metric-card"><span>Error Logging</span><strong id="c-errors">-</strong></div><div class="metric-card"><span>Audit Logging</span><strong id="c-audit">-</strong></div><div class="metric-card"><span>Data Logging</span><strong id="c-data">-</strong></div><div class="metric-card"><span>Best Specialty</span><strong id="label-best-specialty">-</strong></div></div></div></section>
-    <section class="content-grid"><div class="table-panel"><p class="eyebrow mb-2">AI performance</p><div class="stats-grid"><div class="metric-card"><span>AI Usage</span><strong id="ai-uses">-</strong></div><div class="metric-card"><span>AI -> Cart</span><strong id="ai-cart-rate">-</strong></div><div class="metric-card"><span>AI -> Order</span><strong id="ai-order-rate">-</strong></div><div class="metric-card"><span>AI Orders</span><strong id="ai-orders">-</strong></div></div><div class="table-responsive mt-4"><table class="table"><thead><tr><th>Specialty</th><th>AI uses</th><th>Conversion</th><th>Contribution</th></tr></thead><tbody id="ai-specialties"></tbody></table></div></div><div class="table-panel"><p class="eyebrow mb-2">Commerce</p><div class="stats-grid"><div class="metric-card"><span>Pharmacies</span><strong id="hc-pharmacies-count">-</strong></div><div class="metric-card"><span>Low Stock</span><strong id="hc-low-stock-count">-</strong></div><div class="metric-card"><span>Subscriptions</span><strong id="hc-subscriptions-count">-</strong></div><div class="metric-card"><span>Fulfillment</span><strong id="hc-fulfillment-count">-</strong></div></div><div class="content-grid mt-4"><div class="stack-item"><strong>Top Medicines</strong><ul id="ai-medicines"></ul></div><div class="stack-item"><strong>Top Diseases</strong><ul id="ai-diseases"></ul></div><div class="stack-item"><strong>Pharmacies</strong><ul id="hc-pharmacies"></ul></div><div class="stack-item"><strong>Inventory</strong><ul id="hc-inventory"></ul></div><div class="stack-item"><strong>Subscriptions</strong><ul id="hc-subscriptions"></ul></div><div class="stack-item"><strong>Fulfillment</strong><ul id="hc-fulfillment"></ul></div></div></div></section>
-    <section class="table-panel"><div class="page-header mb-3"><div><p class="eyebrow">SaaS analytics</p><h2>Founder dashboard</h2></div><button class="btn btn-outline-dark btn-sm" onclick="loadSaasStats()">Refresh</button></div><div id="saas-error" class="alert alert-danger d-none"></div><div class="stats-grid"><div class="metric-card"><span>Total Doctors</span><strong id="s-total-doctors">-</strong></div><div class="metric-card"><span>New Doctors (24h)</span><strong id="s-new-doctors-24h">-</strong></div><div class="metric-card"><span>Total Patients</span><strong id="s-total-patients">-</strong></div><div class="metric-card"><span>New Patients (24h)</span><strong id="s-new-patients-24h">-</strong></div></div><div class="stats-grid mt-3"><div class="metric-card"><span>Total Subs</span><strong id="s-total-subs">-</strong></div><div class="metric-card"><span>Active Subs</span><strong id="s-active-subs">-</strong></div><div class="metric-card"><span>Revenue Today</span><strong id="s-rev-today">-</strong></div><div class="metric-card"><span>All-time Revenue</span><strong id="s-rev-all">-</strong></div></div><div class="chart-panel mt-4"><h3 class="h5 mb-3">Doctor Signups — Last 7 Days</h3><div id="signupChart" class="stack-list"></div></div></section>
-</div>
-<script>
-const pct = value => ((Number(value || 0)) * 100).toFixed(1) + "%";
-const topList = obj => Object.entries(obj || {}).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, count]) => `<li>${name}: <strong>${count}</strong></li>`).join("") || "<li>No data yet</li>";
-const arrayList = (items, labelKey) => (items || []).map(item => `<li>${item[labelKey] || "Unknown"}: <strong>${item.count || 0}</strong></li>`).join("") || "<li>No data yet</li>";
-const specialtyLabels = { ayurveda: "Ayurveda", modern_medicine: "Modern Medicine", homeopathy: "Homeopathy", dental: "Dental", physiotherapy: "Physiotherapy", unknown: "Unknown" };
-const specialtyOrder = ["ayurveda", "modern_medicine", "homeopathy", "dental", "physiotherapy", "unknown"];
-const specialtyName = key => specialtyLabels[key] || key || "Unknown";
-const yesNo = value => value ? "Ready" : "Pending";
-const money = value => "Rs " + Number(value || 0).toLocaleString("en-IN");
-const safeList = items => (items || []).join("") || "<li>No data yet</li>";
-async function loadDecisionMetrics() { try { const [funnelRes, errorRes, alertRes, aiRes, aiInsightsRes, complianceRes, revenueRes] = await Promise.all([fetch("/admin/funnel-metrics"), fetch("/admin/error-metrics"), fetch("/admin/alerts"), fetch("/admin/ai-metrics"), fetch("/admin/ai-insights"), fetch("/admin/compliance"), fetch("/admin/revenue-metrics")]); if (!funnelRes.ok || !errorRes.ok || !alertRes.ok || !aiRes.ok || !aiInsightsRes.ok || !complianceRes.ok || !revenueRes.ok) throw new Error("Unable to load decision metrics."); const funnel = await funnelRes.json(); const errors = await errorRes.json(); const alerts = await alertRes.json(); const aiPayload = await aiRes.json(); const insightPayload = await aiInsightsRes.json(); const compliancePayload = await complianceRes.json(); const revenuePayload = await revenueRes.json(); document.getElementById("decision-error").classList.add("d-none"); const counts = funnel.counts || {}; document.getElementById("f-search").textContent = counts.search || 0; document.getElementById("f-ai").textContent = counts.ai_used || 0; document.getElementById("f-cart").textContent = counts.add_to_cart || 0; document.getElementById("f-checkout").textContent = counts.checkout_started || 0; document.getElementById("f-payment").textContent = counts.payment_success || 0; document.getElementById("f-orders").textContent = counts.order_created || 0; const rates = funnel.conversion_rates || {}; document.getElementById("label-cart-dropoff").textContent = pct(Math.max(0, 1 - Number(rates.cart_to_checkout || 0))); document.getElementById("decision-alerts").innerHTML = (alerts.alerts || []).map(item => `<div class="alert alert-warning mb-2">${item.message}</div>`).join(""); const ai = aiPayload.ai_metrics || {}; const overall = ai.overall || {}; document.getElementById("ai-uses").textContent = overall.total_ai_uses || 0; document.getElementById("ai-cart-rate").textContent = pct(overall.ai_to_cart_rate); document.getElementById("ai-order-rate").textContent = pct(overall.ai_to_order_rate); document.getElementById("ai-orders").textContent = overall.ai_to_order || 0; const bySpecialty = ai.by_specialty || {}; document.getElementById("ai-specialties").innerHTML = specialtyOrder.map(key => { const row = bySpecialty[key] || {}; return `<tr><td>${specialtyLabels[key]}</td><td>${row.ai_uses || 0}</td><td>${pct(row.conversion_rate)}</td><td>${pct(row.contribution_rate)}</td></tr>`; }).join(""); document.getElementById("ai-medicines").innerHTML = arrayList(ai.top_medicines, "name"); document.getElementById("ai-diseases").innerHTML = arrayList(ai.top_diseases, "disease"); document.getElementById("label-ai-conversion").textContent = pct(overall.ai_to_order_rate); const insights = insightPayload.insights || {}; const best = insights.best_specialty || {}; document.getElementById("label-best-specialty").textContent = best.name ? `${specialtyName(best.name)} (${pct(best.conversion_rate)})` : "No data yet"; const revenue = revenuePayload.revenue || {}; document.getElementById("m-orders").textContent = revenue.total_orders || 0; document.getElementById("m-payments").textContent = revenue.successful_payments || 0; document.getElementById("m-revenue").textContent = money(revenue.estimated_revenue); const compliance = compliancePayload.compliance || {}; document.getElementById("c-consent").textContent = yesNo(compliance.consent_tracking); document.getElementById("c-errors").textContent = yesNo(compliance.error_logging); document.getElementById("c-audit").textContent = yesNo(compliance.audit_logging); document.getElementById("c-data").textContent = yesNo(compliance.data_logging_active); } catch (e) { const errorBanner = document.getElementById("decision-error"); errorBanner.textContent = "Decision metrics are temporarily unavailable. Please refresh and try again."; errorBanner.classList.remove("d-none"); } }
-async function loadCommerceMetrics() { try { const res = await fetch("/admin/commerce"); if (!res.ok) throw new Error(); const d = await res.json(); const pharmacies = d.pharmacies || []; const inventory = d.inventory || {}; const subscriptions = d.subscriptions || []; const fulfillment = d.fulfillment || []; document.getElementById("hc-pharmacies-count").textContent = pharmacies.length; document.getElementById("hc-low-stock-count").textContent = Object.keys(d.low_stock || {}).length; document.getElementById("hc-subscriptions-count").textContent = d.active_subscriptions || 0; document.getElementById("hc-fulfillment-count").textContent = fulfillment.length; document.getElementById("hc-pharmacies").innerHTML = safeList(pharmacies.map(item => `<li>${item.name || "Unknown"} · ${item.location || "Unknown"}</li>`)); document.getElementById("hc-inventory").innerHTML = safeList(Object.entries(inventory).map(([name, item]) => `<li>${name}: <strong>${item.stock || 0}</strong></li>`)); document.getElementById("hc-subscriptions").innerHTML = safeList(subscriptions.map(item => `<li>${item.user_id || "Unknown"} · ${(item.medicines || []).join(", ")}</li>`)); document.getElementById("hc-fulfillment").innerHTML = safeList(fulfillment.map(item => `<li>#${item.order_id}: <strong>${item.status}</strong></li>`)); } catch(e) {} }
-async function loadSaasStats() { try { const res = await fetch("/api/admin/saas-stats"); if (!res.ok) throw new Error(); const d = await res.json(); document.getElementById("saas-error").classList.add("d-none"); document.getElementById("s-total-doctors").textContent = d.doctors.total; document.getElementById("s-new-doctors-24h").textContent = d.doctors.new_24h; document.getElementById("s-total-patients").textContent = d.patients.total; document.getElementById("s-new-patients-24h").textContent = d.patients.new_24h; document.getElementById("s-total-subs").textContent = d.subscriptions.total; document.getElementById("s-active-subs").textContent = d.subscriptions.active; const fmt = v => "Rs " + parseFloat(v).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2}); document.getElementById("s-rev-today").textContent = fmt(d.revenue.today); document.getElementById("s-rev-all").textContent = fmt(d.revenue.all_time); const labels = d.doctors.daily_signups.map(x => x.date); const counts = d.doctors.daily_signups.map(x => x.count); if (signupChart) signupChart.destroy(); signupChart = new Chart(document.getElementById("signupChart"), { type: "line", data: { labels, datasets: [{ label: "Doctor Signups", data: counts, borderColor: "#2d6a4f", backgroundColor: "rgba(45,106,79,0.1)", tension: 0.3, fill: true, pointRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } }); } catch(e) { const errorBanner = document.getElementById("saas-error"); errorBanner.textContent = "SaaS analytics are temporarily unavailable. Please refresh and try again."; errorBanner.classList.remove("d-none"); } }
-async function loadSaasStats() { try { const res = await fetch("/api/admin/saas-stats"); if (!res.ok) throw new Error(); const d = await res.json(); document.getElementById("saas-error").classList.add("d-none"); document.getElementById("s-total-doctors").textContent = d.doctors.total; document.getElementById("s-new-doctors-24h").textContent = d.doctors.new_24h; document.getElementById("s-total-patients").textContent = d.patients.total; document.getElementById("s-new-patients-24h").textContent = d.patients.new_24h; document.getElementById("s-total-subs").textContent = d.subscriptions.total; document.getElementById("s-active-subs").textContent = d.subscriptions.active; const fmt = v => "Rs " + parseFloat(v).toLocaleString("en-IN", {minimumFractionDigits: 2, maximumFractionDigits: 2}); document.getElementById("s-rev-today").textContent = fmt(d.revenue.today); document.getElementById("s-rev-all").textContent = fmt(d.revenue.all_time); const points = d.doctors.daily_signups || []; const peak = Math.max(...points.map(item => Number(item.count || 0)), 1); document.getElementById("signupChart").innerHTML = points.map(item => `<div class="stack-item"><div class="d-flex justify-content-between mb-2"><strong>${item.date}</strong><span>${item.count}</span></div><div style="height:10px; border-radius:999px; background:rgba(45,106,79,0.12); overflow:hidden;"><div style="height:100%; width:${Math.max(8, (Number(item.count || 0) / peak) * 100)}%; background:linear-gradient(135deg, #2d6a4f, #52b788); border-radius:999px;"></div></div></div>`).join(""); } catch(e) { const errorBanner = document.getElementById("saas-error"); errorBanner.textContent = "SaaS analytics are temporarily unavailable. Please refresh and try again."; errorBanner.classList.remove("d-none"); } }
-loadDecisionMetrics(); loadCommerceMetrics(); loadSaasStats();
-</script>
-{% endblock %}
+<div class="admin-dashboard-enhanced">
+    <div class="admin-header">
+        <div>
+            <p class="admin-eyebrow">Kash AI Admin Panel</p>
+            <h1>Admin Dashboard</h1>
+            <p class="sr-only">System Dashboard</p>
+            <p>{{ today_date }} · Real-time platform analytics</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn-outline" type="button" onclick="refreshAllData()">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Refresh</span>
+            </button>
+            <button class="btn-primary" type="button" onclick="exportFullReport()">
+                <i class="fa-solid fa-download"></i>
+                <span>Export Report</span>
+            </button>
+            <button class="btn-secondary" type="button" onclick="scheduleReport()">
+                <i class="fa-solid fa-envelope"></i>
+                <span>Email Weekly</span>
+            </button>
+        </div>
+    </div>
 
+    <section class="stats-grid" aria-label="Admin metrics">
+        <article class="stat-card">
+            <div class="stat-icon">👥</div>
+            <strong class="stat-value" id="totalUsers">{{ total_users | default(0) }}</strong>
+            <span class="stat-label">Total Users</span>
+            <span class="stat-trend up" id="userTrend">+{{ new_users_today | default(0) }} this week</span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">🛒</div>
+            <strong class="stat-value" id="ordersToday">{{ orders_today | default(0) }}</strong>
+            <span class="stat-label">Orders Today</span>
+            <span class="stat-trend {% if order_increase | default(0) >= 0 %}up{% else %}down{% endif %}" id="orderTrend">
+                {% if order_increase | default(0) >= 0 %}+{{ order_increase | default(0) }}{% else %}{{ order_increase | default(0) }}{% endif %} from yesterday
+            </span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">💰</div>
+            <strong class="stat-value" id="revenueToday">₹{{ revenue_today | default(0) }}</strong>
+            <span class="stat-label">Revenue Today</span>
+            <span class="stat-trend {% if revenue_percent | default(0) >= 0 %}up{% else %}down{% endif %}" id="revenueTrend">
+                {% if revenue_percent | default(0) >= 0 %}+{{ revenue_percent | default(0) }}{% else %}{{ revenue_percent | default(0) }}{% endif %}%
+            </span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">📋</div>
+            <strong class="stat-value" id="activePrescriptions">{{ active_prescriptions | default(0) }}</strong>
+            <span class="stat-label">Active Prescriptions</span>
+            <span class="stat-trend {% if prescription_change | default(0) <= 0 %}up{% else %}down{% endif %}">
+                {{ prescription_change | default(0) }} from yesterday
+            </span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">🚀</div>
+            <strong class="stat-value" id="predictedOrders">{{ predicted_orders | default(0) }}</strong>
+            <span class="stat-label">Predicted Orders</span>
+            <span class="stat-trend up">Tomorrow forecast</span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">📈</div>
+            <strong class="stat-value" id="predictedRevenue">₹{{ predicted_revenue | default(0) }}</strong>
+            <span class="stat-label">Expected Revenue</span>
+            <span class="stat-trend up">Tomorrow forecast</span>
+        </article>
+    </section>
+
+    <section class="charts-grid">
+        <article class="chart-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-chart-line"></i> Orders Trend</h3>
+                <div class="chart-controls">
+                    <button class="chart-btn active" type="button" data-chart-type="orders" data-range="7d" onclick="updateChart('orders', '7d', this)">7D</button>
+                    <button class="chart-btn" type="button" data-chart-type="orders" data-range="30d" onclick="updateChart('orders', '30d', this)">30D</button>
+                    <button class="chart-btn" type="button" data-chart-type="orders" data-range="90d" onclick="updateChart('orders', '90d', this)">90D</button>
+                </div>
+            </div>
+            <canvas id="ordersChart" height="180"></canvas>
+        </article>
+        <article class="chart-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-indian-rupee-sign"></i> Revenue Trend</h3>
+                <div class="chart-controls">
+                    <button class="chart-btn active" type="button" data-chart-type="revenue" data-range="7d" onclick="updateChart('revenue', '7d', this)">7D</button>
+                    <button class="chart-btn" type="button" data-chart-type="revenue" data-range="30d" onclick="updateChart('revenue', '30d', this)">30D</button>
+                    <button class="chart-btn" type="button" data-chart-type="revenue" data-range="90d" onclick="updateChart('revenue', '90d', this)">90D</button>
+                </div>
+            </div>
+            <canvas id="revenueChart" height="180"></canvas>
+        </article>
+        <article class="chart-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-chart-column"></i> User Growth</h3>
+                <span class="card-chip">Last 30 days</span>
+            </div>
+            <canvas id="usersChart" height="180"></canvas>
+        </article>
+        <article class="chart-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-prescription-bottle-medical"></i> Popular Medicines</h3>
+                <span class="card-chip">Order mix</span>
+            </div>
+            <canvas id="medicinesChart" height="180"></canvas>
+        </article>
+    </section>
+
+    <section class="dashboard-three-columns">
+        <article class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-bolt"></i> Live Activity Feed</h3>
+                <span class="live-badge">LIVE</span>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+                {% for item in activity_feed %}
+                <a class="activity-item activity-item--{{ item.tone }}" href="{{ item.details_url }}">
+                    <span class="activity-time">{{ item.time_ago }}</span>
+                    <span class="activity-content"><span class="activity-icon">{{ item.icon }}</span><span>{{ item.message }}</span></span>
+                </a>
+                {% else %}
+                <div class="empty-state">No live activity yet</div>
+                {% endfor %}
+            </div>
+            <div class="feed-actions">
+                <button type="button" onclick="viewAllActivity()" class="btn-text">View All Activity →</button>
+            </div>
+        </article>
+
+        <article class="dashboard-card ai-enhanced">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-robot"></i> AI Predictive Insights</h3>
+                <span class="ai-badge">Gemini AI</span>
+            </div>
+            <div class="predictions-list" id="predictionsList">
+                {% for item in ai_insight_items %}
+                <div class="prediction-item {{ item.tone }}">
+                    <div class="prediction-icon">{{ item.icon }}</div>
+                    <div class="prediction-content">
+                        <div class="prediction-title">{{ item.title }}</div>
+                        <div class="prediction-desc">{{ item.desc }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+                <div class="prediction-item warning">
+                    <div class="prediction-icon">⚠️</div>
+                    <div class="prediction-content">
+                        <div class="prediction-title">Low stock prediction: {{ low_stock_prediction }}</div>
+                        <div class="prediction-desc">Peak delivery hour forecast: {{ peak_hours }}</div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-generate" type="button" onclick="refreshPredictions()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span>Refresh AI Predictions</span>
+            </button>
+        </article>
+
+        <article class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-chart-bar"></i> User Activity Heatmap</h3>
+            </div>
+            <div class="heatmap" id="activityHeatmap">
+                {% for item in activity_heatmap %}
+                <div class="heatmap-hour">
+                    <span>{{ item.label }}</span>
+                    <div class="heatbar-shell"><div class="heatbar" style="width: {{ item.width }}%"></div></div>
+                    <strong>{{ item.value }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="insight-text">Peak activity: {{ peak_hour_text }}</div>
+            <div class="behavior-mini-stats">
+                <div><span>Avg order value</span><strong>₹{{ average_order_value }}</strong></div>
+                <div><span>Cart abandonment</span><strong>{{ cart_abandonment_rate }}%</strong></div>
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-two-columns">
+        <article class="dashboard-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-magnifying-glass"></i> Top Searched Medicines</h3>
+                <span class="card-chip">Last 7 days</span>
+            </div>
+            <div class="search-terms-list" id="searchTermsList">
+                {% for item in search_terms %}
+                <div class="search-term">
+                    <span>{{ item.term }}</span>
+                    <div class="search-bar"><div class="search-fill" style="width: {{ (item.count / (search_terms[0].count if search_terms else 1) * 100) | round(0) if search_terms else 0 }}%"></div></div>
+                    <span>{{ item.count }}</span>
+                </div>
+                {% else %}
+                <div class="empty-state">No search trend data yet</div>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="dashboard-card alert-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-triangle-exclamation"></i> Anomaly Detection</h3>
+            </div>
+            <div class="anomaly-list" id="anomalyList">
+                {% for item in anomalies %}
+                <div class="anomaly-item {{ item.status }}">
+                    <div class="anomaly-icon">{{ item.icon }}</div>
+                    <div class="anomaly-content">
+                        <div class="anomaly-title">{{ item.title }}</div>
+                        <div class="anomaly-desc">{{ item.desc }}</div>
+                    </div>
+                    {% if item.status == "active" %}
+                    <button class="btn-investigate" type="button" onclick="investigateAnomaly('{{ item.id }}')">Investigate</button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="dashboard-card health-wide-card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-heart-pulse"></i> Platform Health</h3>
+            <span class="card-chip">Live checks</span>
+        </div>
+        <div class="platform-health-grid" id="platformHealth">
+            {% for item in platform_health %}
+            <div class="health-pill">
+                <span>{{ item.label }}</span>
+                <strong class="{{ item.tone }}">{{ item.text }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="dashboard-card full-width">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-table"></i> Recent Orders</h3>
+            <div class="filter-group">
+                <select id="orderStatusFilter" onchange="filterOrders()">
+                    <option value="all" {% if selected_status == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="confirmed" {% if selected_status == 'confirmed' %}selected{% endif %}>Processing</option>
+                    <option value="dispatched" {% if selected_status == 'dispatched' %}selected{% endif %}>Shipped</option>
+                    <option value="delivered" {% if selected_status == 'delivered' %}selected{% endif %}>Delivered</option>
+                    <option value="cancelled" {% if selected_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                </select>
+                <input type="date" id="orderDateFilter" value="{{ selected_date }}" onchange="filterOrders()">
+            </div>
+        </div>
+        <div class="orders-table-wrapper">
+            <table class="orders-table">
+                <thead>
+                    <tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Date</th><th></th></tr>
+                </thead>
+                <tbody id="ordersList">
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.customer_name }}</td>
+                        <td>₹{{ order.total }}</td>
+                        <td><span class="status-badge {{ order.status }}">{{ order.status_label }}</span></td>
+                        <td>{{ order.created_at }}</td>
+                        <td><button type="button" onclick="viewOrder('{{ order.id }}')" class="btn-icon">👁️</button></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="empty-state">No orders match these filters</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+<script id="admin-dashboard-bootstrap" type="application/json">{{ {
+    "chartLabels": chart_labels,
+    "chartOrdersData": chart_orders_data,
+    "chartRevenueData": chart_revenue_data,
+    "chartUsersData": chart_users_data,
+    "chartMedicinesLabels": chart_medicines_labels,
+    "chartMedicinesData": chart_medicines_data
+} | tojson }}</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="{{ url_for('static', path='js/admin-analytics.js') }}"></script>
+
+<style>
+.admin-dashboard-enhanced{max-width:1600px;margin:0 auto;padding:24px}
+.admin-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+.admin-eyebrow{margin:0 0 6px;color:#0f766e;text-transform:uppercase;letter-spacing:.14em;font-size:.78rem;font-weight:800}
+.admin-header h1{margin:0 0 4px;font-size:2rem;color:#0f2f3d}
+.admin-header p{margin:0;color:#667085}
+.header-actions{display:flex;gap:12px;flex-wrap:wrap}
+.btn-outline,.btn-primary,.btn-secondary,.btn-generate,.btn-investigate,.btn-text,.chart-btn{border:0;cursor:pointer;font:inherit;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,color .18s ease}
+.btn-outline,.btn-primary,.btn-secondary{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:999px;font-weight:700}
+.btn-outline{background:#fff;border:1px solid rgba(15,118,110,.18);color:#115e59}
+.btn-primary{background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;box-shadow:0 16px 30px rgba(15,118,110,.18)}
+.btn-secondary{background:#eef2ff;color:#4338ca}
+.btn-outline:hover,.btn-primary:hover,.btn-secondary:hover,.btn-generate:hover,.chart-btn:hover{transform:translateY(-2px)}
+.stats-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:18px;margin-bottom:28px}
+.stat-card,.dashboard-card,.chart-card{background:rgba(255,255,255,.96);border:1px solid rgba(148,163,184,.14);border-radius:22px;box-shadow:0 16px 34px rgba(15,23,42,.05)}
+.stat-card{padding:20px}
+.stat-icon{width:48px;height:48px;display:grid;place-items:center;background:#e8f6f3;border-radius:16px;font-size:1.45rem;margin-bottom:12px}
+.stat-value{display:block;color:#0f2f3d;font-size:2rem;font-weight:800;line-height:1.05}
+.stat-label{display:block;margin-top:6px;color:#667085;font-weight:600}
+.stat-trend{display:inline-flex;margin-top:10px;font-size:.87rem;font-weight:700}
+.stat-trend.up{color:#15803d}.stat-trend.down{color:#dc2626}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.chart-card,.dashboard-card{padding:22px}
+.card-header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap}
+.card-header h3{display:flex;align-items:center;gap:10px;margin:0;font-size:1.08rem;color:#0f2f3d}
+.card-chip,.ai-badge,.live-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:.72rem;font-weight:800}
+.card-chip{background:#f1f5f9;color:#475569}
+.ai-badge{background:rgba(79,70,229,.12);color:#4338ca}
+.live-badge{background:#ef4444;color:#fff;animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.chart-controls{display:flex;gap:8px;flex-wrap:wrap}
+.chart-btn{padding:8px 12px;border-radius:999px;background:#f8fafc;color:#475569;font-weight:700}
+.chart-btn.active{background:#0f766e;color:#fff}
+.dashboard-three-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-bottom:28px}
+.dashboard-two-columns{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.full-width,.health-wide-card{margin-bottom:28px}
+.activity-feed{max-height:420px;overflow:auto;display:grid;gap:10px}
+.activity-item{display:grid;gap:8px;padding:14px;border-radius:16px;background:#f8fafc;text-decoration:none;color:inherit}
+.activity-time{font-size:.78rem;color:#64748b;font-weight:700}
+.activity-content{display:flex;gap:10px;align-items:flex-start;color:#0f2f3d}
+.activity-icon{font-size:1.05rem}
+.activity-item--success{background:#effcf6}.activity-item--warning{background:#fff7ed}.activity-item--primary{background:#eff6ff}
+.feed-actions{margin-top:14px}
+.btn-text{background:none;color:#0f766e;font-weight:700;padding:0}
+.predictions-list,.anomaly-list{display:grid;gap:12px}
+.prediction-item,.anomaly-item{display:flex;gap:12px;padding:14px;border-radius:16px;background:#f8fafc}
+.prediction-item.warning,.anomaly-item.active{background:#fff7ed}
+.prediction-item.success{background:#effcf6}
+.prediction-icon,.anomaly-icon{font-size:1.2rem;line-height:1}
+.prediction-title,.anomaly-title{font-weight:700;color:#0f2f3d}
+.prediction-desc,.anomaly-desc,.insight-text{color:#667085;font-size:.88rem}
+.btn-generate{width:100%;display:inline-flex;justify-content:center;align-items:center;gap:10px;margin-top:16px;padding:14px;border-radius:14px;background:linear-gradient(135deg,#0f766e,#14b8a6);color:#fff;font-weight:700}
+.heatmap{display:grid;gap:10px}
+.heatmap-hour{display:grid;grid-template-columns:52px 1fr 34px;align-items:center;gap:12px;font-size:.84rem;color:#475569}
+.heatbar-shell{height:20px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.heatbar{height:100%;background:linear-gradient(90deg,#2bae66,#0f4c5c);border-radius:999px}
+.behavior-mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.behavior-mini-stats div{padding:14px;border-radius:16px;background:#f8fafc}
+.behavior-mini-stats span{display:block;color:#667085;font-size:.82rem}
+.behavior-mini-stats strong{display:block;margin-top:4px;color:#0f2f3d}
+.search-terms-list{display:grid;gap:16px}
+.search-term{display:grid;grid-template-columns:120px 1fr 70px;gap:12px;align-items:center}
+.search-bar{height:8px;background:#e5e7eb;border-radius:999px;overflow:hidden}
+.search-fill{height:100%;background:#2bae66;border-radius:999px}
+.btn-investigate{margin-left:auto;padding:8px 12px;border-radius:10px;background:#ef4444;color:#fff;font-weight:700}
+.anomaly-item.resolved{background:#f8fafc;opacity:.75}
+.platform-health-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.health-pill{padding:16px;border-radius:16px;background:#f8fafc}
+.health-pill span{display:block;color:#667085;font-size:.82rem}
+.health-pill strong{display:block;margin-top:6px;color:#0f2f3d}
+.health-pill .healthy{color:#15803d}.health-pill .warning{color:#b45309}.health-pill .danger{color:#b91c1c}.health-pill .neutral{color:#64748b}
+.filter-group{display:flex;gap:10px;flex-wrap:wrap}
+.filter-group select,.filter-group input{padding:10px 12px;border:1px solid #dbe2ea;border-radius:12px;background:#fff;color:#0f2f3d}
+.orders-table{width:100%;border-collapse:collapse}
+.orders-table th,.orders-table td{padding:12px 8px;text-align:left;border-bottom:1px solid #f1f5f9}
+.orders-table th{color:#667085;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.status-badge{display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;font-size:.76rem;font-weight:700}
+.status-badge.delivered{background:#e6f4f1;color:#0f766e}.status-badge.shipped,.status-badge.dispatched{background:rgba(79,70,229,.12);color:#4338ca}.status-badge.processing,.status-badge.confirmed{background:#fef3c7;color:#b45309}.status-badge.pending{background:#f3f4f6;color:#6b7280}.status-badge.cancelled{background:#fee2e2;color:#b91c1c}
+.btn-icon{background:none;border:none;cursor:pointer}
+.empty-state{text-align:center;padding:28px;color:#94a3b8}
+@media (max-width:1320px){.stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dashboard-three-columns,.platform-health-grid{grid-template-columns:1fr 1fr}.charts-grid{grid-template-columns:1fr}}
+@media (max-width:900px){.dashboard-three-columns,.dashboard-two-columns,.platform-health-grid,.behavior-mini-stats{grid-template-columns:1fr}.search-term{grid-template-columns:1fr}.filter-group{width:100%}}
+@media (max-width:720px){.admin-dashboard-enhanced{padding:16px}.stats-grid{grid-template-columns:1fr}.chart-card,.dashboard-card,.stat-card{padding:18px}.heatmap-hour{grid-template-columns:44px 1fr 30px}.orders-table th:nth-child(5),.orders-table td:nth-child(5){display:none}}
+</style>
+{% endblock %}

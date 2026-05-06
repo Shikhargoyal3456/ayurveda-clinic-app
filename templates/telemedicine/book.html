@@ -1,0 +1,171 @@
+{% extends "patient_simple_base.html" %}
+{% set simple_nav = 'health' %}
+{% block title %}Consult Doctor{% endblock %}
+{% block page %}
+<section class="landing-hero card" style="padding:2rem;">
+    <div class="content-grid-2" style="align-items:center;">
+        <div class="section-stack" style="gap:1rem;">
+            <span class="section-kicker"><i class="fa-solid fa-stethoscope"></i> Video Consultation</span>
+            <div>
+                <h1>Book a doctor with confidence.</h1>
+                <p style="font-size:1.05rem;">Find the right doctor by specialty, rating, language, and availability, then book a slot that fits your day.</p>
+            </div>
+            <div class="search-bar">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" placeholder="Search specialty, symptom, or doctor name" aria-label="Search doctor">
+                <button class="primary-btn" type="button">Search</button>
+            </div>
+            <div class="hero-actions">
+                <span class="pill-chip is-active">Ayurveda</span>
+                <span class="pill-chip">General Physician</span>
+                <span class="pill-chip">Skin & Hair</span>
+                <span class="pill-chip">Women’s Health</span>
+            </div>
+        </div>
+        <div class="card" style="padding:1.25rem;">
+            <p class="eyebrow">AI match suggestion</p>
+            <h3>Best fit: Dr. {{ doctors[0].name if doctors else 'Care Specialist' }}</h3>
+            <p>Kash AI recommends a doctor with strong patient ratings, fast availability, and the right specialty for common symptoms.</p>
+            <div class="feature-card surface-muted">
+                <strong>Why this match?</strong>
+                <p>High rating, consultation availability today, and strong experience in this care category.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-grid-2">
+    <article class="card" style="padding:1.5rem;">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Filters</p>
+                <h2 class="h4 mb-0">Choose a doctor</h2>
+                <p class="subtitle" style="margin-top:8px;">Refine your search by experience, language, fee, and availability.</p>
+            </div>
+        </div>
+        <div class="section-stack">
+            <label>
+                <strong>Choose your doctor</strong>
+                <select id="doctorId" class="booking-select" style="width:100%;margin-top:.75rem;">
+                    {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}">Dr. {{ doctor.name }} - {{ doctor.specialization }} - ⭐{{ doctor.rating }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="grid-auto-fit">
+                <div class="feature-card surface-muted"><strong>Language</strong><p>English, Hindi, local language support</p></div>
+                <div class="feature-card surface-muted"><strong>Fee range</strong><p>Transparent pricing before booking</p></div>
+                <div class="feature-card surface-muted"><strong>Rating</strong><p>Choose highly rated doctors</p></div>
+                <div class="feature-card surface-muted"><strong>Availability</strong><p>Morning, afternoon, evening slots</p></div>
+            </div>
+        </div>
+    </article>
+
+    <article class="card" style="padding:1.5rem;">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Consultation preview</p>
+                <h2 class="h4 mb-0">What to expect</h2>
+            </div>
+        </div>
+        <div class="feature-card surface-muted">
+            <strong>Video consultation</strong>
+            <p>Talk to your doctor face to face, share your symptoms, review medicines, and receive next steps.</p>
+        </div>
+        <div class="feature-card surface-muted" style="margin-top:1rem;">
+            <strong>Post-consultation flow</strong>
+            <p>Order medicines, upload prescriptions, or book tests & reports right after the call.</p>
+        </div>
+    </article>
+</section>
+
+<section class="card" style="padding:1.5rem;">
+    <div class="page-header mb-3">
+        <div>
+            <p class="eyebrow">Available doctors</p>
+            <h2 class="h4 mb-0">Choose by experience and next available slot</h2>
+        </div>
+    </div>
+    <div class="grid-auto-fit">
+        {% for doctor in doctors %}
+        <article class="feature-card">
+            <div class="hero-actions" style="justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h3>Dr. {{ doctor.name }}</h3>
+                    <p>{{ doctor.specialization }}</p>
+                </div>
+                <span class="section-kicker">⭐ {{ doctor.rating }}</span>
+            </div>
+            <p style="margin-top:.75rem;">{{ doctor.experience or '8+' }} years experience · Next available today</p>
+            <div class="hero-actions" style="margin-top:1rem;">
+                <span class="pill-chip is-active">English</span>
+                <span class="pill-chip">Video</span>
+                <span class="pill-chip">₹{{ doctor.fee or 499 }}</span>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card" style="padding:1.5rem;">
+    <div class="page-header mb-3">
+        <div>
+            <p class="eyebrow">Choose a time slot</p>
+            <h2 class="h4 mb-0">Visual slot picker</h2>
+        </div>
+    </div>
+    <div class="grid-auto-fit">
+        <button class="slot-chip is-selected" type="button" data-slot="09:00 AM">09:00 AM</button>
+        <button class="slot-chip" type="button" data-slot="10:30 AM">10:30 AM</button>
+        <button class="slot-chip" type="button" data-slot="12:00 PM">12:00 PM</button>
+        <button class="slot-chip" type="button" disabled>02:00 PM</button>
+        <button class="slot-chip" type="button" data-slot="04:00 PM">04:00 PM</button>
+        <button class="slot-chip" type="button" data-slot="06:00 PM">06:00 PM</button>
+    </div>
+    <div style="display:grid; gap:12px; margin-top:1rem;">
+        <button class="primary-btn" id="startConsultationButton" type="button" onclick="createSession()">Start Consultation</button>
+        <p id="bookingResult" class="empty-state" aria-live="polite">Your selected consultation slot will open the video room directly.</p>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+let selectedSlot = "09:00 AM";
+document.querySelectorAll(".slot-chip[data-slot]").forEach((button) => {
+    button.addEventListener("click", () => {
+        document.querySelectorAll(".slot-chip[data-slot]").forEach((chip) => chip.classList.remove("is-selected"));
+        button.classList.add("is-selected");
+        selectedSlot = button.dataset.slot;
+    });
+});
+
+async function createSession() {
+    const doctorId = Number(document.getElementById("doctorId").value || 0);
+    const target = document.getElementById("bookingResult");
+    const button = document.getElementById("startConsultationButton");
+
+    if (!doctorId) {
+        target.textContent = "Please choose a doctor first.";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Creating your consultation...";
+    target.textContent = `Booking ${selectedSlot}. Please wait...`;
+    const response = await fetch("/api/telemedicine/create-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patient_id: 0, doctor_id: doctorId, session_type: "video" })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.room_url) {
+        target.textContent = "Something went wrong. Please try again.";
+        button.disabled = false;
+        button.textContent = "Start Consultation";
+        return;
+    }
+    target.textContent = `Consultation ready for ${selectedSlot}. Opening your doctor call...`;
+    window.location.href = result.room_url;
+}
+</script>
+{% endblock %}

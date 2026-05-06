@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 class EmailService:
     def __init__(self):
-        self.smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com").strip()
+        self.smtp_server = os.getenv("SMTP_HOST", os.getenv("SMTP_SERVER", "smtp.gmail.com")).strip()
         self.smtp_port = int(os.getenv("SMTP_PORT", "587").strip())
-        self.sender_email = os.getenv("SENDER_EMAIL", "").strip()
-        self.sender_password = os.getenv("SENDER_PASSWORD", "").strip()
+        self.sender_email = os.getenv("SMTP_USER", os.getenv("SENDER_EMAIL", "")).strip()
+        self.sender_password = os.getenv("SMTP_PASSWORD", os.getenv("SENDER_PASSWORD", "")).strip()
 
     def is_configured(self) -> bool:
         return bool(self.sender_email and self.sender_password)

@@ -1,0 +1,23 @@
+{% macro metric_card(label, value, caption='', status='default') -%}
+<article class="metric-card {% if status != 'default' %}metric-card--{{ status }}{% endif %}">
+    <span>{{ label }}</span>
+    <strong>{{ value }}</strong>
+    {% if caption %}<small>{{ caption }}</small>{% endif %}
+</article>
+{%- endmacro %}
+
+{% macro notification_card(item) -%}
+<article class="notification-card level-{{ item.level }}">
+    <strong>{{ item.title }}</strong>
+    <p>{{ item.body }}</p>
+</article>
+{%- endmacro %}
+
+{% macro nav_card(title, body, href='#', icon='arrow-right', badge='') -%}
+<a class="portal-card is-clickable" href="{{ href }}">
+    {% if badge %}<span class="inline-badge is-info">{{ badge }}</span>{% endif %}
+    <h3>{{ title }}</h3>
+    <p>{{ body }}</p>
+    <i class="fa-solid fa-{{ icon }} portal-card-arrow" aria-hidden="true"></i>
+</a>
+{%- endmacro %}

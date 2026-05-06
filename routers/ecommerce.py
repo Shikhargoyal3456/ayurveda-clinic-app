@@ -118,6 +118,7 @@ def order_tracking_page(request: Request, order_id: int):
             },
             "location": {"eta": "Pending"},
         }
+    tracking.update({"request": request, "simple_nav": "orders", "page_hint": "See where your medicine is"})
     return templates.TemplateResponse(request, "orders/tracking.html", tracking)
 
 

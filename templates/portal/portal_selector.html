@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Choose Your Portal | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Marketplace entry</p>
+            <h1>Welcome to {{ platform_name }}</h1>
+            <p class="mb-0">Choose your portal to continue through the healthcare marketplace.</p>
+        </div>
+    </section>
+
+    <section class="portal-grid">
+        <a href="/auth/login/patient" class="portal-card patient-portal">
+            <i class="fas fa-user-injured fa-3x"></i>
+            <h3>Patient Portal</h3>
+            <p>Order medicines, consult doctors, and track health.</p>
+            <div class="features">
+                <span>Order Medicines</span>
+                <span>Video Consult</span>
+                <span>Health Records</span>
+            </div>
+            <button class="login-btn" type="button">Login / Register</button>
+        </a>
+        <a href="/auth/login/doctor" class="portal-card doctor-portal">
+            <i class="fas fa-user-md fa-3x"></i>
+            <h3>Doctor Portal</h3>
+            <p>Manage patients, prescribe, and run consultations.</p>
+            <div class="features">
+                <span>Patient Records</span>
+                <span>E-Prescribe</span>
+                <span>Telemedicine</span>
+            </div>
+            <button class="login-btn" type="button">Login / Register</button>
+        </a>
+        <a href="/auth/login/pharmacy" class="portal-card pharmacy-portal">
+            <i class="fas fa-store fa-3x"></i>
+            <h3>Pharmacy Owner Portal</h3>
+            <p>Manage your store, fulfill orders, and track growth.</p>
+            <div class="features">
+                <span>Order Management</span>
+                <span>Sales Analytics</span>
+                <span>Customer Reviews</span>
+            </div>
+            <button class="login-btn" type="button">Login / Register</button>
+        </a>
+        <a href="/auth/login/lab" class="portal-card lab-portal">
+            <i class="fas fa-flask fa-3x"></i>
+            <h3>Lab Owner Portal</h3>
+            <p>List tests, handle bookings, and upload reports.</p>
+            <div class="features">
+                <span>Test Listings</span>
+                <span>Appointments</span>
+                <span>Report Upload</span>
+            </div>
+            <button class="login-btn" type="button">Login / Register</button>
+        </a>
+        <a href="/auth/login/partner" class="portal-card partner-portal">
+            <i class="fas fa-motorcycle fa-3x"></i>
+            <h3>Delivery Partner Portal</h3>
+            <p>Accept deliveries, track earnings, and manage availability.</p>
+            <div class="features">
+                <span>Live Routing</span>
+                <span>Earnings</span>
+                <span>Availability</span>
+            </div>
+            <button class="login-btn" type="button">Login / Register</button>
+        </a>
+    </section>
+</div>
+<style>
+.portal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}.portal-card{background:#fff;border-radius:24px;padding:28px;text-align:center;text-decoration:none;color:#173126;box-shadow:0 18px 40px rgba(24,39,33,.08);transition:transform .25s,box-shadow .25s;display:flex;flex-direction:column;gap:16px;align-items:center}.portal-card:hover{transform:translateY(-6px);box-shadow:0 24px 50px rgba(24,39,33,.14)}.portal-card .features{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.portal-card .features span{background:#f4f7f4;padding:6px 12px;border-radius:999px;font-size:12px}.login-btn{border:none;border-radius:999px;background:#173126;color:#fff;padding:10px 18px;font-weight:700;cursor:pointer}.patient-portal{border-top:5px solid #4CAF50}.doctor-portal{border-top:5px solid #2196F3}.pharmacy-portal{border-top:5px solid #FF9800}.lab-portal{border-top:5px solid #9C27B0}.partner-portal{border-top:5px solid #ef4444}
+</style>
+{% endblock %}

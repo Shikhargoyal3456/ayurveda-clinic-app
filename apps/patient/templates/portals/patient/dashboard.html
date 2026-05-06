@@ -1,0 +1,65 @@
+{% extends "layouts/portal_base.html" %}
+{% from "components/cards.html" import metric_card %}
+{% block title %}Patient Dashboard | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="surface-card">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Patient dashboard</p>
+            <h1>{{ patient.name }}</h1>
+            <p class="muted">Health score, active orders, prescription history, and quick refill tools in one rider-style flow.</p>
+        </div>
+        <div class="cta-row">
+            {% for action in quick_actions %}<a class="ghost-button" href="{{ action.url }}">{{ action.label }}</a>{% endfor %}
+        </div>
+    </div>
+    <div class="metric-grid">
+        {{ metric_card('Health Score', health_score ~ '/100', 'Daily wellness momentum') }}
+        {{ metric_card('Active Orders', active_orders | length, 'Live tracking enabled') }}
+        {{ metric_card('Refill Reminders', refill_reminders | length, 'One-click refill ready') }}
+        {{ metric_card('Recommendations', recommended_medicines | length, 'Based on your recent care') }}
+    </div>
+</section>
+<section class="split-grid">
+    <article class="surface-card">
+        <div class="section-heading"><div><p class="eyebrow">Active orders</p><h2>Active deliveries</h2></div></div>
+        <div class="table-list">
+            {% for order in active_orders %}
+            <div class="table-row">
+                <div><strong>Order #{{ order.order_id }}</strong><div class="inline-meta"><span>{{ order.status }}</span><span>Fee Rs {{ order.delivery_fee }}</span></div></div>
+                <a href="{{ order.tracking_url or '/orders/tracking/' ~ order.order_id }}" class="ghost-button">Track</a>
+            </div>
+            {% else %}<div class="empty-state">No active deliveries right now.</div>{% endfor %}
+        </div>
+    </article>
+    <article class="surface-card" id="recent-prescriptions">
+        <div class="section-heading"><div><p class="eyebrow">Recent prescriptions</p><h2>Quick reorder</h2></div></div>
+        <div class="table-list">
+            {% for reminder in refill_reminders %}
+            <div class="table-row">
+                <div><strong>{{ reminder.name }}</strong><div class="inline-meta"><span>Refill in {{ reminder.when }}</span></div></div>
+                <a href="{{ reminder.action_url }}" class="ghost-button">Reorder</a>
+            </div>
+            {% endfor %}
+        </div>
+    </article>
+</section>
+<section class="split-grid">
+    <article class="surface-card" id="prescription-upload">
+        <div class="section-heading"><div><p class="eyebrow">Recommended medicines</p><h2>Nearby care options</h2></div></div>
+        <div class="table-list">
+            {% for store in recommended_medicines %}
+            <div class="table-row"><div><strong>{{ store.name }}</strong><div class="inline-meta"><span>Rating {{ store.rating }}</span><span>Delivery Rs {{ store.delivery_fee }}</span></div></div><a class="ghost-button" href="/order-medicines">Order</a></div>
+            {% endfor %}
+        </div>
+    </article>
+    <article class="surface-card">
+        <div class="section-heading"><div><p class="eyebrow">Appointments</p><h2>Upcoming care</h2></div></div>
+        <div class="table-list">
+            {% for appointment in appointments %}
+            <div class="table-row"><div><strong>{{ appointment.date }}</strong><div class="inline-meta"><span>{{ appointment.time }}</span><span>{{ appointment.status }}</span></div></div><a class="ghost-button" href="/appointments">Open</a></div>
+            {% else %}<div class="empty-state">No upcoming appointments.</div>{% endfor %}
+        </div>
+    </article>
+</section>
+{% endblock %}

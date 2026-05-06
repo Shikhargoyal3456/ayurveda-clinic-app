@@ -10,7 +10,6 @@ from sqlalchemy import text
 from app.ai_fallback import fallback_health_status
 from app.config import settings
 from app.database import engine
-from app.rag_engine import get_rag_engine
 from app.runtime import request_load_controller
 from services.ai_provider import GROQ_API_KEY
 from services.cache_service import redis_health_status
@@ -27,7 +26,7 @@ def database_health() -> dict[str, Any]:
 
 
 def ai_health() -> dict[str, Any]:
-    fallback = fallback_health_status()
+    fallback = fallback_health_status(probe_remote=False)
     gemini_configured = bool(settings.gemini_api_key)
     groq_configured = bool(GROQ_API_KEY)
     primary_provider = "gemini" if gemini_configured else ("groq" if groq_configured else "none")
@@ -51,15 +50,23 @@ def ai_health() -> dict[str, Any]:
 
 
 def rag_health() -> dict[str, Any]:
-    engine_instance = get_rag_engine()
-    docs_path = engine_instance._docs_path()
-    faiss_path = engine_instance._faiss_path()
-    return {
-        "status": "ok" if docs_path.exists() and faiss_path.exists() else "degraded",
-        "docs_indexed": docs_path.exists(),
-        "faiss_index_ready": faiss_path.exists(),
-        "vector_store_dir": str(settings.vector_store_dir),
-    }
+    try:
+        docs_path = settings.vector_store_dir / "docs.pkl"
+        faiss_path = settings.vector_store_dir / "index.faiss"
+        return {
+            "status": "ok" if docs_path.exists() and faiss_path.exists() else "degraded",
+            "docs_indexed": docs_path.exists(),
+            "faiss_index_ready": faiss_path.exists(),
+            "vector_store_dir": str(settings.vector_store_dir),
+        }
+    except Exception as exc:
+        return {
+            "status": "degraded",
+            "docs_indexed": False,
+            "faiss_index_ready": False,
+            "vector_store_dir": str(settings.vector_store_dir),
+            "error": str(exc),
+        }
 
 
 def disk_health(path: Path | None = None) -> dict[str, Any]:

@@ -1,16 +1,128 @@
 {% extends 'base.html' %}
 {% block title %}Superapp Dashboard | Kash AI{% endblock %}
 {% block page %}
+{% from "components/skeletons.html" import card_list %}
 <div class="site-container section-stack fade-in-up superapp-dashboard">
-    <section class="page-header"><div><p class="eyebrow">Healthcare superapp</p><h1>Unified health dashboard</h1><p class="mb-0">Medicines, diagnostics, subscriptions, orders, AI support, and health insights in one control center.</p></div><div class="hero-actions"><a href="/diagnostics/lab-booking" class="btn btn-outline-dark">Book Lab Test</a><a href="/store/wellness-store" class="btn btn-primary">Health Store</a></div></section>
-    <section class="content-grid-2">
-        <article class="card health-score-widget"><div class="score-circle"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Health Score</span></div></div><p class="mt-3 mb-0">{{ health_message }}</p></article>
-        <article class="card"><p class="eyebrow">Quick actions</p><div class="quick-actions-grid"><a class="action-card" href="/order-medicines"><i class="fas fa-prescription-bottle-alt"></i><span>Order Medicine</span></a><a class="action-card" href="/diagnostics/lab-booking"><i class="fas fa-flask"></i><span>Book Lab Test</span></a><a class="action-card" href="/ai-analyzer"><i class="fas fa-user-md"></i><span>Consult Doctor</span></a><a class="action-card" href="/subscription/smart-subscriptions"><i class="fas fa-sync-alt"></i><span>Refill / Subscribe</span></a></div></article>
+    <section class="landing-hero card" style="padding:2rem;">
+        <div class="content-grid-2" style="align-items:center;">
+            <div class="section-stack" style="gap:1rem;">
+                <span class="section-kicker"><i class="fa-solid fa-heart-pulse"></i> Personal health cockpit</span>
+                <div>
+                    <h1>Welcome back, {{ user_name | default('there') }}.</h1>
+                    <p style="font-size:1.05rem;">Track orders, reorder medicines, review your health score, and act on AI-powered health insights from one clean dashboard.</p>
+                </div>
+                <div class="quick-actions-grid">
+                    <a class="action-card" href="/order-medicines"><i class="fas fa-capsules fa-xl"></i><strong>Order Medicines</strong><span>Search and add medicines to your order</span></a>
+                    <a class="action-card" href="/patient/order/create"><i class="fas fa-file-prescription fa-xl"></i><strong>Upload Rx</strong><span>Use your prescription to build an order faster</span></a>
+                    <a class="action-card" href="/telemedicine/book"><i class="fas fa-user-doctor fa-xl"></i><strong>Consult Doctor</strong><span>Book a video consultation with specialists</span></a>
+                    <a class="action-card" href="/orders"><i class="fas fa-truck fa-xl"></i><strong>Track Orders</strong><span>See deliveries, statuses, and upcoming refills</span></a>
+                </div>
+            </div>
+            <article class="card" id="healthScoreCard"><div class="skel-group"><div class="skel skel-avatar" style="width:120px;height:120px;border-radius:50%;margin:0 auto;"></div><div class="skel skel-heading"></div><div class="skel skel-text skel-text--medium"></div></div></article>
+        </div>
     </section>
-    <section class="content-grid-2">
-        <article class="card"><p class="eyebrow">Active subscriptions</p><h2 class="h4">Smart deliveries</h2><div class="stack-list mt-3">{% for sub in subscriptions %}<div class="stack-item"><div><strong>{{ sub.medicine_name }}</strong><p class="mb-0 text-muted">Next delivery: {{ sub.next_delivery }} · {{ sub.frequency }}</p></div><div class="hero-actions"><button class="btn btn-outline-dark btn-sm" type="button">Skip</button><button class="btn btn-outline-success btn-sm" type="button">Reschedule</button></div></div>{% else %}<div class="stack-item">No active subscriptions yet.</div>{% endfor %}</div></article>
-        <article class="card"><p class="eyebrow">Recent orders</p><h2 class="h4">Recent purchases</h2><div class="stack-list mt-3">{% for order in recent_orders %}<div class="stack-item"><div><strong>Order #{{ order.id }}</strong><p class="mb-0 text-muted">{{ order.status|title }} · ₹{{ order.total_amount }}</p></div><a href="/orders/tracking/{{ order.id }}" class="btn btn-primary btn-sm">Track</a></div>{% else %}<div class="stack-item">No recent orders yet.</div>{% endfor %}</div></article>
+
+    <section class="grid-auto-fit">
+        <article class="metric-card"><span>Active Orders</span><strong>{{ recent_orders|length }}</strong><small>Orders currently in progress or recently placed</small></article>
+        <article class="metric-card"><span>Medicines Tracked</span><strong>{{ subscriptions|length }}</strong><small>Active repeat medicines and care plans</small></article>
+        <article class="metric-card"><span>Health Score</span><strong>{{ health_score }}</strong><small>{{ health_message }}</small></article>
+        <article class="metric-card"><span>AI Insights</span><strong>{{ health_insights|length }}</strong><small>New guidance available for your journey</small></article>
     </section>
-    <section class="card"><p class="eyebrow">Health insights</p><h2 class="h4">AI-guided nudges</h2><div class="feature-grid mt-3">{% for insight in health_insights %}<div class="feature-card"><i class="{{ insight.icon }}"></i><h3 class="h4 mt-2">{{ insight.title }}</h3><p class="mb-0">{{ insight.description }}</p></div>{% endfor %}</div></section>
+
+    <section class="content-grid-2">
+        <article class="card" style="padding:1.5rem;">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Recent orders</p>
+                    <h2 class="h4 mb-0">Your latest timeline</h2>
+                </div>
+            </div>
+            <div class="section-stack">
+                {% for order in recent_orders %}
+                <div class="list-row">
+                    <div class="list-copy">
+                        <strong>Order #{{ order.id }}</strong>
+                        <span>{{ order.status|title }} · ₹{{ order.total_amount }}</span>
+                    </div>
+                    <a href="/orders/tracking/{{ order.id }}" class="btn btn-primary btn-sm">Track</a>
+                </div>
+                {% else %}
+                <div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-receipt"></i></div><h3 class="empty-state__title">No recent orders yet</h3><p class="empty-state__message">Your medicine and wellness orders will appear here once you place your first order.</p><a href="/order-medicines" class="btn btn-primary btn-sm">Order Medicines</a></div>
+                {% endfor %}
+            </div>
+        </article>
+
+        <article class="card ai-card" style="padding:1.5rem;">
+            <p class="eyebrow" style="color:rgba(255,255,255,.82);">Health insights</p>
+            <h2 class="h4 mb-2" style="color:white;">Kash AI recommendations for you</h2>
+            <div class="section-stack">
+                {% for insight in health_insights %}
+                <div class="feature-card" style="background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.14); color:white;">
+                    <strong>{{ insight.title }}</strong>
+                    <p style="color:rgba(255,255,255,.82);">{{ insight.description }}</p>
+                </div>
+                {% else %}
+                <div class="feature-card" style="background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.14); color:white;">
+                    <strong>No new insights yet</strong>
+                    <p style="color:rgba(255,255,255,.82);">As you use the app more, Kash AI will personalize care suggestions here.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="card reveal-on-scroll" style="padding:1.5rem;">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Recommended for you</p>
+                <h2 class="h4 mb-0">Suggested medicines and offers</h2>
+            </div>
+        </div>
+        <div class="feature-grid mt-3" id="personalizedOffers">{{ card_list(3) }}</div>
+    </section>
+
+    <section class="content-grid-2 reveal-on-scroll">
+        <article class="card" style="padding:1.5rem;">
+            <p class="eyebrow">Upcoming refills</p>
+            <h2 class="h4 mb-3">Stay ahead of your routine</h2>
+            <div class="section-stack">
+                {% for sub in subscriptions %}
+                <div class="list-row">
+                    <div class="list-copy">
+                        <strong>{{ sub.medicine_name }}</strong>
+                        <span>Next delivery: {{ sub.next_delivery }} · {{ sub.frequency }}</span>
+                    </div>
+                    <a href="/subscription/smart-subscriptions" class="btn btn-outline-success btn-sm">Manage</a>
+                </div>
+                {% else %}
+                <div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-arrows-rotate"></i></div><h3 class="empty-state__title">No automatic reorders yet</h3><p class="empty-state__message">Set up smart subscriptions to keep important medicines on schedule.</p><a href="/subscription/smart-subscriptions" class="btn btn-primary btn-sm">Start Automatic Reorder</a></div>
+                {% endfor %}
+            </div>
+        </article>
+        <article class="card" style="padding:1.5rem;">
+            <p class="eyebrow">Quick support</p>
+            <h2 class="h4 mb-3">Need help with your care journey?</h2>
+            <div class="section-stack">
+                <div class="feature-card surface-muted"><strong>Prescription help</strong><p>Upload and explain a prescription before placing your order.</p></div>
+                <div class="feature-card surface-muted"><strong>Doctor booking</strong><p>Consult a doctor when you need guidance before reordering or testing.</p></div>
+                <div class="feature-card surface-muted"><strong>Lab follow-up</strong><p>Book tests and keep your reports close to your consultation flow.</p></div>
+            </div>
+        </article>
+    </section>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const scoreCard = document.getElementById("healthScoreCard");
+    const offersHost = document.getElementById("personalizedOffers");
+    const offers = {{ personalized_offers | default([]) | tojson }};
+    window.setTimeout(() => {
+        scoreCard.innerHTML = `<div class="score-circle"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Health Score</span></div></div><p class="mt-3 mb-0">{{ health_message }}</p>`;
+        offersHost.innerHTML = offers.length
+            ? offers.map((offer) => `<div class="feature-card"><strong>${offer.title || offer.name}</strong><p class="mb-0">${offer.description || offer.subtitle || ''}</p></div>`).join("")
+            : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-tags"></i></div><h3 class="empty-state__title">No personalized offers yet</h3><p class="empty-state__message">Fresh savings and refill suggestions will appear here once your activity gives us enough context.</p><a href="/store/wellness-store" class="btn btn-primary btn-sm">Browse Store</a></div>`;
+    }, 250);
+});
+</script>
 {% endblock %}

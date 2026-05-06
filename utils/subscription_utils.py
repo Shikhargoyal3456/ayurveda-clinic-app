@@ -25,6 +25,19 @@ from models.subscription import (
 
 
 TRIAL_LENGTH_DAYS = 14
+PUBLIC_TO_INTERNAL_PLAN = {
+    SubscriptionPlan.FREE.value: SubscriptionPlan.FREE.value,
+    "pro": SubscriptionPlan.BASIC.value,
+    "enterprise": SubscriptionPlan.PRO.value,
+    SubscriptionPlan.BASIC.value: SubscriptionPlan.BASIC.value,
+    SubscriptionPlan.PRO.value: SubscriptionPlan.PRO.value,
+}
+INTERNAL_TO_PUBLIC_PLAN = {
+    SubscriptionPlan.FREE.value: SubscriptionPlan.FREE.value,
+    SubscriptionPlan.BASIC.value: "pro",
+    SubscriptionPlan.PRO.value: "enterprise",
+    "enterprise": "enterprise",
+}
 MONTHLY_PLAN_CATALOG: dict[str, dict[str, Any]] = {
     SubscriptionPlan.FREE.value: {
         "id": SubscriptionPlan.FREE.value,
@@ -35,14 +48,14 @@ MONTHLY_PLAN_CATALOG: dict[str, dict[str, Any]] = {
     },
     SubscriptionPlan.BASIC.value: {
         "id": SubscriptionPlan.BASIC.value,
-        "name": "Basic",
+        "name": "Pro",
         "price_inr": 499,
         "billing_interval": "monthly",
         "trial_days": 0,
     },
     SubscriptionPlan.PRO.value: {
         "id": SubscriptionPlan.PRO.value,
-        "name": "Pro",
+        "name": "Enterprise",
         "price_inr": 999,
         "billing_interval": "monthly",
         "trial_days": 0,
@@ -51,14 +64,14 @@ MONTHLY_PLAN_CATALOG: dict[str, dict[str, Any]] = {
 
 FEATURE_LIMITS: dict[str, dict[str, int | None]] = {
     SubscriptionPlan.FREE.value: {
-        "ai_call": 2,
-        "voice": 1,
-        "patients": 5,
-        "prescription": 5,
+        "ai_call": None,
+        "voice": None,
+        "patients": None,
+        "prescription": None,
     },
     SubscriptionPlan.BASIC.value: {
-        "ai_call": 20,
-        "voice": 5,
+        "ai_call": 200,
+        "voice": 50,
         "patients": None,
         "prescription": None,
     },
@@ -78,10 +91,10 @@ USAGE_FIELD_MAP = {
 }
 
 PLAN_SUGGESTIONS = {
-    "ai_call": SubscriptionPlan.PRO.value,
-    "voice": SubscriptionPlan.PRO.value,
-    "patients": SubscriptionPlan.BASIC.value,
-    "prescription": SubscriptionPlan.BASIC.value,
+    "ai_call": "enterprise",
+    "voice": "enterprise",
+    "patients": "pro",
+    "prescription": "pro",
 }
 
 
@@ -94,10 +107,22 @@ def current_usage_month(now: datetime | None = None) -> str:
     return active_now.strftime("%Y-%m")
 
 
+def public_plan_id(plan_id: str) -> str:
+    normalized = (plan_id or "").strip().lower()
+    return INTERNAL_TO_PUBLIC_PLAN.get(normalized, normalized)
+
+
+def internal_plan_id(plan_id: str) -> str:
+    normalized = (plan_id or "").strip().lower()
+    return PUBLIC_TO_INTERNAL_PLAN.get(normalized, normalized)
+
+
 def list_seed_plans() -> list[dict[str, Any]]:
     return [
         {
             **MONTHLY_PLAN_CATALOG[plan_id],
+            "id": public_plan_id(plan_id),
+            "internal_plan_id": plan_id,
             "limits": _serialize_limits(FEATURE_LIMITS[plan_id]),
         }
         for plan_id in (SubscriptionPlan.FREE.value, SubscriptionPlan.BASIC.value, SubscriptionPlan.PRO.value)
@@ -109,7 +134,7 @@ def _serialize_limits(limits: dict[str, int | None]) -> dict[str, int | str]:
 
 
 def _plan_enum(plan_id: str) -> SubscriptionPlan:
-    normalized = (plan_id or "").strip().lower()
+    normalized = internal_plan_id(plan_id)
     if normalized not in MONTHLY_PLAN_CATALOG:
         raise ValueError(f"Unsupported plan_id '{plan_id}'.")
     return SubscriptionPlan(normalized)
@@ -362,7 +387,7 @@ def build_paywall_response(user: Doctor, feature: str) -> dict[str, Any]:
         "error": reason,
         "message": message,
         "upgrade_required": True,
-        "plan_suggestion": PLAN_SUGGESTIONS.get((feature or "").strip().lower(), SubscriptionPlan.PRO.value),
+        "plan_suggestion": PLAN_SUGGESTIONS.get((feature or "").strip().lower(), "enterprise"),
         "limit_exceeded": reason == "limit_exceeded",
         "trial_expired": reason == "trial_expired",
         "allowed": False,
@@ -380,7 +405,8 @@ def summarize_subscription_status(db: Session, user: Doctor) -> dict[str, Any]:
     limits = FEATURE_LIMITS[plan_id]
     return {
         "subscription": {
-            "plan_id": plan_id,
+            "plan_id": public_plan_id(plan_id),
+            "internal_plan_id": plan_id,
             "status": _status_value(subscription.status),
             "trial_end_date": subscription.trial_end_date.isoformat() if subscription.trial_end_date else None,
             "razorpay_subscription_id": subscription.razorpay_subscription_id,
@@ -414,7 +440,7 @@ def create_or_fetch_remote_plan(plan_id: str) -> dict[str, Any]:
 
     catalog = MONTHLY_PLAN_CATALOG[plan_key]
     client = get_razorpay_client()
-    normalized_name = f"AyurvedaClinic {catalog['name']} Monthly"
+    normalized_name = f"Kash AI {catalog['name']} Monthly"
 
     existing_plans = client.plan.all({"count": 100}).get("items", [])
     for item in existing_plans:
@@ -503,7 +529,8 @@ def update_subscription_from_checkout(
     return {
         "success": True,
         "subscription_id": razorpay_subscription_id,
-        "plan_id": _plan_value(subscription.plan_id),
+        "plan_id": public_plan_id(_plan_value(subscription.plan_id)),
+        "internal_plan_id": _plan_value(subscription.plan_id),
         "status": _status_value(subscription.status),
     }
 

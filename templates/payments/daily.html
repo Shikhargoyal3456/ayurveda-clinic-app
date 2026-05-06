@@ -112,7 +112,7 @@
 
 {% block extra_scripts %}
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 <script>
 const CSRF_TOKEN = "{{ csrf_token }}";
 const paymentRows = Array.from(document.querySelectorAll("#payments-table tbody tr[data-status]"));

@@ -1,22 +1,46 @@
 {% extends 'base.html' %}
 {% block title %}Lab Dashboard | Kash AI{% endblock %}
 {% block page %}
+{% from "components/skeletons.html" import table_rows %}
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
         <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Lab Dashboard</h1><p>Order tracking, result entry, and abnormal result visibility for integrated diagnostics.</p></div></div>
         <div class="card responsive-table-card">
-            <table class="data-table">
+            <div class="table-scroll-wrapper">
+            <table class="data-table" data-sortable-table data-export-name="lab-results">
                 <thead><tr><th>Lab</th><th>Priority</th><th>Status</th><th>Tests</th><th>Ordered</th></tr></thead>
-                <tbody>
-                    {% for order in lab_orders %}
-                    <tr><td>{{ order.lab_name }}</td><td>{{ order.priority }}</td><td><span class="status-pill status-pending">{{ order.status }}</span></td><td>{{ order.tests_json|length }}</td><td>{{ order.ordered_at.strftime('%d %b %Y') if order.ordered_at else 'Today' }}</td></tr>
-                    {% else %}
-                    <tr><td colspan="5">No lab orders yet.</td></tr>
-                    {% endfor %}
-                </tbody>
+                <tbody id="labOrdersBody">{{ table_rows(5, 5) }}</tbody>
             </table>
+            </div>
         </div>
     </section>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/admin-table.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const labOrders = [
+        {% for order in lab_orders %}
+        {
+            lab_name: {{ order.lab_name | tojson }},
+            priority: {{ order.priority | tojson }},
+            status: {{ order.status | tojson }},
+            tests_count: {{ order.tests_json|length }},
+            ordered_at: {{ (order.ordered_at.strftime('%d %b %Y') if order.ordered_at else 'Today') | tojson }}
+        },
+        {% endfor %}
+    ];
+    const body = document.getElementById("labOrdersBody");
+    window.setTimeout(() => {
+        body.innerHTML = labOrders.length
+            ? labOrders.map((order) => `<tr class="${order.priority === 'urgent' ? 'lab-row-critical' : order.status !== 'completed' ? 'lab-row-warning' : ''}"><td>${order.lab_name}</td><td>${order.priority === 'urgent' ? '<span class="inline-badge is-danger"><i class="fa-solid fa-triangle-exclamation"></i>Urgent</span>' : `<span class="inline-badge is-warning"><i class="fa-solid fa-clock"></i>${order.priority}</span>`}</td><td><span class="status-pill status-pending">${order.status}</span></td><td>${order.tests_count}</td><td>${order.ordered_at}</td></tr>`).join("")
+            : `<tr><td colspan="5"><div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-vial"></i></div><h3 class="empty-state__title">No lab orders yet</h3><p class="empty-state__message">Ordered tests and result updates will appear here once the care team sends them to the lab.</p><a href="/emr/clinical-reporting" class="btn btn-primary btn-sm">Open Reports</a></div></td></tr>`;
+    }, 250);
+});
+</script>
+<style>
+.lab-row-critical{background:#fff3f0}.lab-row-warning{background:#fff9ef}
+</style>
 {% endblock %}

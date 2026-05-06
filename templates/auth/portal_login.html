@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}{{ portal_name }} Portal Login | Kash AI{% endblock %}
+{% block body_class %}portal-auth-body{% endblock %}
+{% block page %}
+<div class="portal-login-container">
+    <section class="login-stage">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="portal-icon"><i class="fa-solid {{ portal_icon }}"></i></div>
+                <p class="eyebrow">Secure portal access</p>
+                <h1>{{ portal_name }} Portal</h1>
+                <p>Sign in to manage your {{ portal_name|lower }} work without guessing where to go next.</p>
+                <div class="role-summary-card">
+                    <strong>{{ portal_name }}</strong>
+                    <span>{{ portal_benefits[0] if portal_benefits else 'Manage daily operations with clear steps.' }}</span>
+                </div>
+            </div>
+
+            <form id="loginForm" class="login-form" method="post" action="/auth/login" data-loading-form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="role" value="{{ role }}">
+                <div class="required-legend">* Required</div>
+
+                <label class="input-group">
+                    <span>Email Address or Phone Number *</span>
+                    <input type="text" name="identifier" placeholder=" " required autocomplete="username">
+                    <small class="field-error" data-error-for="identifier"></small>
+                </label>
+
+                <label class="input-group">
+                    <span>Password *</span>
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="password" placeholder=" " required autocomplete="current-password">
+                        <button type="button" onclick="togglePassword()" class="toggle-password" aria-label="Show or hide password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-meter" aria-hidden="true">
+                        <div class="password-meter-fill" id="passwordMeterFill"></div>
+                    </div>
+                    <small class="password-meter-label" id="passwordMeterLabel">Use 8 or more characters for stronger security.</small>
+                    <small class="field-error" data-error-for="password"></small>
+                </label>
+
+                <div class="form-options">
+                    <label class="checkbox-label"><input type="checkbox" name="remember_me"> Keep me signed in on this device</label>
+                    <a href="/auth/forgot-password?role={{ role_slug }}" class="forgot-link">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="login-btn" data-loading-text="Processing your login...">
+                    <span class="button-label"><i class="fa-solid fa-shield-halved"></i> Login to {{ portal_name }} Portal</span>
+                    <span class="button-spinner">Processing...</span>
+                </button>
+
+                <div class="divider"><span>OR</span></div>
+
+                <button type="button" onclick="sendOTP()" class="otp-btn" id="otpTrigger">
+                    <i class="fa-solid fa-mobile-screen-button"></i>
+                    Login with OTP
+                </button>
+            </form>
+
+            <div class="register-section">
+                <p>Need an account for this portal?</p>
+                <a href="/auth/register/{{ role_slug }}" class="register-link">Register as {{ portal_name }} <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+
+            <div class="security-badges">
+                <span><i class="fa-solid fa-lock"></i> Encrypted sessions</span>
+                <span><i class="fa-solid fa-id-card-clip"></i> Identity checks</span>
+                <span><i class="fa-solid fa-compass"></i> Redirects to the correct portal after login</span>
+            </div>
+        </div>
+    </section>
+
+    <aside class="login-sidebar">
+        <div class="sidebar-content">
+            <p class="eyebrow">Built for trust</p>
+            <h2>Why {{ portal_name|lower }} teams choose Kash AI</h2>
+            <ul class="benefits-list">
+                {% for benefit in portal_benefits %}
+                <li><i class="fa-solid fa-circle-check"></i> {{ benefit }}</li>
+                {% endfor %}
+            </ul>
+            <div class="testimonial">
+                <i class="fa-solid fa-quote-left"></i>
+                <p>"The portal feels serious, secure, and easy for day-to-day operations."</p>
+                <strong>{{ sample_name }}</strong>
+            </div>
+        </div>
+    </aside>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script>
+const validationMessages = {
+    identifier: "Enter your registered email address or phone number.",
+    password: "Enter your password to continue."
+};
+
+function setFieldError(fieldName, message) {
+    const host = document.querySelector(`[data-error-for="${fieldName}"]`);
+    if (host) {
+        host.textContent = message || "";
+    }
+}
+
+function validateField(field) {
+    if (!field || !field.name) return true;
+    let message = "";
+    if (field.validity.valueMissing) {
+        message = validationMessages[field.name] || "This field is required.";
+    }
+    setFieldError(field.name, message);
+    return !message;
+}
+
+document.querySelectorAll("#loginForm input[required]").forEach((field) => {
+    field.addEventListener("blur", () => validateField(field));
+});
+
+document.getElementById("password")?.addEventListener("input", (event) => {
+    const value = event.target.value || "";
+    const fill = document.getElementById("passwordMeterFill");
+    const label = document.getElementById("passwordMeterLabel");
+    const score = [value.length >= 8, /[A-Z]/.test(value), /[0-9]/.test(value), /[^A-Za-z0-9]/.test(value)].filter(Boolean).length;
+    const widths = ["0%", "25%", "50%", "75%", "100%"];
+    const labels = [
+        "Use 8 or more characters for stronger security.",
+        "Weak password",
+        "Fair password",
+        "Strong password",
+        "Very strong password"
+    ];
+    fill.style.width = widths[Math.min(score, 4)];
+    fill.dataset.score = String(score);
+    label.textContent = labels[Math.min(score, 4)];
+});
+
+document.getElementById("loginForm")?.addEventListener("submit", (event) => {
+    const requiredFields = Array.from(event.currentTarget.querySelectorAll("input[required]"));
+    const allValid = requiredFields.every(validateField);
+    if (!allValid) {
+        event.preventDefault();
+    }
+});
+
+async function sendOTP() {
+    const identifierField = document.querySelector('input[name="identifier"]');
+    const identifier = identifierField.value.trim();
+    const role = document.querySelector('input[name="role"]').value;
+    const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+    if (!identifier) {
+        setFieldError("identifier", validationMessages.identifier);
+        identifierField.focus();
+        return;
+    }
+
+    const trigger = document.getElementById("otpTrigger");
+    trigger.disabled = true;
+    trigger.textContent = "Sending OTP...";
+    const response = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken},
+        body: JSON.stringify({identifier, role})
+    });
+    const result = await response.json();
+    trigger.disabled = false;
+    trigger.innerHTML = '<i class="fa-solid fa-mobile-screen-button"></i> Login with OTP';
+    if (!response.ok || !result.success) {
+        setFieldError("identifier", result.message || 'Unable to send OTP.');
+        return;
+    }
+    showOTPDialog(identifier, role, csrfToken, result.otp_preview || '');
+}
+
+function renderOtpBoxes() {
+    return `
+        <div class="otp-box-row" data-otp-box-row>
+            ${Array.from({ length: 6 }).map((_, index) => `<input inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-box" data-otp-index="${index}">`).join('')}
+        </div>
+    `;
+}
+
+function showOTPDialog(identifier, role, csrfToken, otpPreview) {
+    const modal = document.createElement('div');
+    modal.className = 'otp-modal';
+    modal.innerHTML = `
+        <div class="otp-modal-card" role="dialog" aria-modal="true" aria-labelledby="otpTitle">
+            <h3 id="otpTitle">Enter the 6-digit OTP</h3>
+            <p>We sent a one-time password to ${identifier}. Enter it below to continue.</p>
+            <div class="otp-step">Step 2 of 2</div>
+            ${otpPreview ? `<p class="otp-preview">Test OTP: <strong>${otpPreview}</strong></p>` : ''}
+            ${renderOtpBoxes()}
+            <small class="field-error" id="otpError"></small>
+            <div class="otp-actions">
+                <button type="button" class="login-btn" onclick="verifyOTP('${identifier}', '${role}', '${csrfToken}')">
+                    <span class="button-label">Verify OTP</span>
+                    <span class="button-spinner">Processing...</span>
+                </button>
+                <button type="button" class="otp-btn" onclick="this.closest('.otp-modal').remove()">Cancel</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    bindOtpInputs(modal);
+    modal.querySelector('.otp-box')?.focus();
+}
+
+function bindOtpInputs(root) {
+    const boxes = Array.from(root.querySelectorAll('.otp-box'));
+    boxes.forEach((box, index) => {
+        box.addEventListener('input', () => {
+            box.value = box.value.replace(/\D/g, '').slice(0, 1);
+            if (box.value && boxes[index + 1]) boxes[index + 1].focus();
+        });
+        box.addEventListener('keydown', (event) => {
+            if (event.key === 'Backspace' && !box.value && boxes[index - 1]) {
+                boxes[index - 1].focus();
+            }
+        });
+        box.addEventListener('paste', (event) => {
+            event.preventDefault();
+            const text = (event.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+            text.split('').forEach((digit, digitIndex) => {
+                if (boxes[digitIndex]) boxes[digitIndex].value = digit;
+            });
+            const targetBox = boxes[Math.min(text.length, boxes.length - 1)];
+            targetBox?.focus();
+        });
+    });
+}
+
+function collectOTP() {
+    return Array.from(document.querySelectorAll('.otp-box')).map((box) => box.value).join('');
+}
+
+async function verifyOTP(identifier, role, csrfToken) {
+    const otp = collectOTP();
+    const errorHost = document.getElementById('otpError');
+    if (otp.length !== 6) {
+        errorHost.textContent = 'Enter all 6 digits before continuing.';
+        return;
+    }
+    errorHost.textContent = '';
+    const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken},
+        body: JSON.stringify({identifier, otp, role})
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        errorHost.textContent = result.message || 'OTP verification failed.';
+        return;
+    }
+    window.location.href = result.redirect_url;
+}
+
+function togglePassword() {
+    const password = document.getElementById('password');
+    const icon = document.querySelector('.toggle-password i');
+    if (password.type === 'password') {
+        password.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        password.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+</script>
+<style>
+.portal-login-container{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr;background:radial-gradient(circle at top left,#f9f4ea,#fff 40%,#e6f4ef 100%)}.login-stage{display:flex;align-items:center;justify-content:center;padding:48px 20px}.login-card{width:min(100%,500px);background:#fff;border:1px solid rgba(26,35,50,.08);border-radius:32px;padding:36px;box-shadow:0 24px 80px rgba(26,35,50,.14)}.login-header{display:grid;gap:10px}.login-header h1{margin-bottom:4px}.portal-icon{width:82px;height:82px;border-radius:24px;display:grid;place-items:center;background:linear-gradient(135deg,#0d7a6f,#08584f);color:#fff;font-size:2rem;margin-bottom:10px}.role-summary-card{display:grid;gap:4px;padding:14px 16px;border-radius:18px;background:#f4f8f6;border:1px solid #d5dfdb}.login-form{display:grid;gap:18px;margin-top:24px}.required-legend{font-size:.82rem;font-weight:700;color:#5b6678}.input-group{display:grid;gap:8px}.input-group span{font-weight:700;color:#1a2332}.input-group input{width:100%;padding:14px 16px;border-radius:16px;border:1px solid #cbd5e1;background:#f8fafc}.password-wrapper{position:relative}.toggle-password{position:absolute;right:14px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#475569}.password-meter{height:8px;border-radius:999px;background:#e2e8f0;overflow:hidden}.password-meter-fill{height:100%;width:0;background:linear-gradient(90deg,#e67e22,#27ae60);transition:width .2s ease}.password-meter-label,.field-error{font-size:.84rem}.field-error{color:#c0392b;min-height:1.1rem}.form-options,.security-badges{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.checkbox-label,.forgot-link,.security-badges span{font-size:.92rem;color:#475569}.login-btn,.otp-btn{width:100%;padding:14px 18px;border-radius:16px;font-weight:700;border:none;cursor:pointer}.login-btn{background:linear-gradient(135deg,#0d7a6f,#08584f);color:#fff}.otp-btn{background:#e8f5f0;color:#0d7a6f}.divider{position:relative;text-align:center;color:#64748b}.divider::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#e2e8f0}.divider span{position:relative;background:#fff;padding:0 12px}.register-section{margin-top:24px;text-align:center}.register-link{font-weight:700;color:#0d7a6f;text-decoration:none}.security-badges{margin-top:24px;justify-content:center}.login-sidebar{display:flex;align-items:center;padding:48px;background:linear-gradient(160deg,#11332f 0%,#0d7a6f 48%,#8ec7b9 100%);color:#eff6ff}.sidebar-content{max-width:520px}.benefits-list{list-style:none;padding:0;margin:24px 0;display:grid;gap:14px}.testimonial{padding:24px;border-radius:24px;background:rgba(255,255,255,.12);backdrop-filter:blur(12px)}.otp-modal{position:fixed;inset:0;background:rgba(15,23,42,.56);display:grid;place-items:center;padding:20px;z-index:1100}.otp-modal-card{background:#fff;border-radius:24px;padding:28px;width:min(100%,420px)}.otp-step{display:inline-flex;margin:10px 0 4px;padding:6px 10px;border-radius:999px;background:#e8f5f0;color:#0d7a6f;font-weight:700;font-size:.84rem}.otp-box-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:18px 0}.otp-box{height:56px;border-radius:16px;border:1px solid #cbd5e1;text-align:center;font-size:1.25rem;font-weight:700}.otp-actions{display:grid;gap:12px}.otp-preview{font-size:.92rem;color:#0f766e}@media (max-width:960px){.portal-login-container{grid-template-columns:1fr}.login-sidebar{order:-1;padding:28px}.security-badges{font-size:.82rem}}@media (max-width:520px){.otp-box-row{gap:8px}.otp-box{height:50px}}
+</style>
+{% endblock %}

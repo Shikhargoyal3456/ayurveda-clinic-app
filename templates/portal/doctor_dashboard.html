@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+{% block title %}Doctor Dashboard | Kash AI{% endblock %}
+{% block page %}
+<section class="doctor-dashboard">
+    <header class="dashboard-header">
+        <div class="dashboard-header__copy">
+            <p class="dashboard-eyebrow">Doctor dashboard</p>
+            <h1>Welcome back, Dr. {{ doctor.name | default("Shikhar Goyal") }}</h1>
+            <p class="dashboard-subtitle">{{ today_date | default("Today") }} · {{ clinic_name | default("Clinic Dashboard") }}</p>
+        </div>
+        <div class="dashboard-header__actions">
+            <button class="btn-outline" type="button" onclick="startVideoConsult()">
+                <i class="fa-solid fa-video"></i>
+                <span>Start Video Call</span>
+            </button>
+            <button class="btn-primary" type="button" onclick="addNewPatient()">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Add Patient</span>
+            </button>
+        </div>
+    </header>
+
+    <section class="stats-row" aria-label="Doctor metrics">
+        {% set safe_appointments_delta = appointments_delta | default(0) %}
+        <article class="stat-card">
+            <div class="stat-icon">📅</div>
+            <strong class="stat-value">{{ today_appointments | default(today_consults | default(0)) }}</strong>
+            <span class="stat-label">Today's Appointments</span>
+            <span class="stat-trend {% if safe_appointments_delta >= 0 %}up{% else %}down{% endif %}">
+                {% if safe_appointments_delta >= 0 %}+{{ safe_appointments_delta }}{% else %}{{ safe_appointments_delta }}{% endif %} from yesterday
+            </span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">👥</div>
+            <strong class="stat-value">{{ total_patients | default(patients | length) }}</strong>
+            <span class="stat-label">Total Patients</span>
+            <span class="stat-trend up">+{{ patients_delta | default(0) }} this month</span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">📋</div>
+            <strong class="stat-value">{{ pending_prescriptions | default(prescription_requests | default(0)) }}</strong>
+            <span class="stat-label">Pending Prescriptions</span>
+            <span class="stat-trend down">Waiting for review</span>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon">💰</div>
+            <strong class="stat-value">Rs {{ today_earnings | default(0) }}</strong>
+            <span class="stat-label">Today's Earnings</span>
+            <span class="stat-trend up">From consultations</span>
+        </article>
+    </section>
+
+    <section class="dashboard-two-columns">
+        <div class="dashboard-column">
+            <article class="dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-calendar-days"></i> Upcoming Appointments</h2>
+                    <a href="/appointments" class="link-view">View all →</a>
+                </div>
+                <div class="appointments-list">
+                    {% for apt in upcoming_appointments | default([]) %}
+                    <div class="appointment-row">
+                        <div class="appointment-time">{{ apt.time }}</div>
+                        <div class="appointment-info">
+                            <div class="patient-name">{{ apt.patient_name }}</div>
+                            <div class="appointment-type">
+                                <span class="badge {{ apt.type | lower }}">{{ apt.type }}</span>
+                                <span class="appointment-status">{{ apt.status | replace("_", " ") | title }}</span>
+                            </div>
+                        </div>
+                        <button class="btn-join" type="button" onclick="joinConsultation('{{ apt.id }}')">
+                            {% if apt.type == "Video" %}Join →{% else %}View →{% endif %}
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <p>No appointments scheduled for today</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-prescription-bottle-medical"></i> Pending Prescriptions</h2>
+                    <button class="link-view link-button" type="button" onclick="writePrescription()">View all →</button>
+                </div>
+                <div class="prescriptions-list">
+                    {% for rx in pending_rx | default([]) %}
+                    <div class="prescription-row">
+                        <div class="prescription-info">
+                            <div class="patient-name">{{ rx.patient_name }}</div>
+                            <div class="medicine-name">{{ rx.medicine }}</div>
+                        </div>
+                        <button class="btn-review" type="button" onclick="reviewPrescription('{{ rx.id }}', '{{ rx.patient_name | e }}')">Review →</button>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <p>No pending prescriptions</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </div>
+
+        <div class="dashboard-column">
+            <article class="dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-users"></i> Patient Queue</h2>
+                </div>
+                <div class="queue-section">
+                    <div class="queue-header online">
+                        <span class="queue-dot online"></span>
+                        <span>Online now ({{ online_patients | default([]) | length }})</span>
+                    </div>
+                    {% for patient in online_patients | default([]) %}
+                    <div class="queue-row">
+                        <div class="patient-avatar">{{ patient.name[:1] | upper }}</div>
+                        <div class="patient-details">
+                            <div class="patient-name">{{ patient.name }}</div>
+                            <div class="wait-time">Waiting {{ patient.waiting_time }} min</div>
+                        </div>
+                        <button class="btn-start" type="button" onclick="startConsultation('{{ patient.id }}')">Start</button>
+                    </div>
+                    {% else %}
+                    <div class="empty-state-small">No patients online</div>
+                    {% endfor %}
+                </div>
+                <div class="queue-section">
+                    <div class="queue-header pending">
+                        <span class="queue-dot pending"></span>
+                        <span>Waiting for approval ({{ waiting_patients | default([]) | length }})</span>
+                    </div>
+                    {% for patient in waiting_patients | default([]) %}
+                    <div class="queue-row">
+                        <div class="patient-avatar pending">{{ patient.name[:1] | upper }}</div>
+                        <div class="patient-details">
+                            <div class="patient-name">{{ patient.name }}</div>
+                            <div class="request-time">Requested {{ patient.request_time }} ago</div>
+                        </div>
+                        <button class="btn-approve" type="button" onclick="approvePatient('{{ patient.id }}')">Approve</button>
+                    </div>
+                    {% else %}
+                    <div class="empty-state-small">No pending approvals</div>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-bolt"></i> Quick Actions</h2>
+                </div>
+                <div class="actions-grid">
+                    <button class="action-btn" type="button" onclick="writePrescription()">
+                        <i class="fa-solid fa-file-prescription"></i>
+                        <span>Write Prescription</span>
+                    </button>
+                    <button class="action-btn" type="button" onclick="addNewPatient()">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Add New Patient</span>
+                    </button>
+                    <button class="action-btn" type="button" onclick="viewReports()">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>View Reports</span>
+                    </button>
+                    <button class="action-btn" type="button" onclick="startVideoConsult()">
+                        <i class="fa-solid fa-video"></i>
+                        <span>Start Video Call</span>
+                    </button>
+                </div>
+            </article>
+
+            <article class="dashboard-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-chart-simple"></i> Today's Summary</h2>
+                </div>
+                <div class="summary-list">
+                    <div class="summary-item">
+                        <span>Consultations completed</span>
+                        <strong>{{ completed_consultations | default(0) }}</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Prescriptions issued</span>
+                        <strong>{{ prescriptions_issued | default(0) }}</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Average wait time</span>
+                        <strong>{{ avg_wait_time | default(0) }} min</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>Patient satisfaction</span>
+                        <strong>{{ satisfaction_rate | default(0) }}%</strong>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+</section>
+
+<script>
+function startVideoConsult() {
+    window.location.href = "/telemedicine/book";
+}
+
+function joinConsultation(appointmentId) {
+    window.location.href = `/telemedicine/book?appointment=${appointmentId}`;
+}
+
+function reviewPrescription(prescriptionId, patientName) {
+    window.location.href = "/appointments";
+}
+
+function writePrescription() {
+    window.location.href = "/appointments";
+}
+
+function addNewPatient() {
+    window.location.href = "/emr/patient-registry";
+}
+
+function startConsultation(patientId) {
+    window.location.href = `/emr/patient-registry?patient=${patientId}`;
+}
+
+function approvePatient(patientId) {
+    window.location.href = `/emr/patient-registry?approve=${patientId}`;
+}
+
+function viewReports() {
+    window.location.href = "/emr/doctor-dashboard";
+}
+</script>
+
+<style>
+.doctor-dashboard {
+    --bg-shell: linear-gradient(180deg, #f6fbfb 0%, #eef5f4 100%);
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --card-border: rgba(148, 163, 184, 0.16);
+    --text-main: #0f2f3d;
+    --text-muted: #667085;
+    --brand: #0f766e;
+    --brand-dark: #115e59;
+    --brand-soft: #e7f6f3;
+    --warning: #d97706;
+    max-width: 1400px;
+    margin: 24px auto;
+    padding: 28px;
+    border-radius: 32px;
+    background:
+        radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 24%),
+        var(--bg-shell);
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.08);
+}
+
+.dashboard-header,
+.card-header,
+.dashboard-header__actions {
+    display: flex;
+    align-items: center;
+}
+
+.dashboard-header {
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.dashboard-eyebrow {
+    margin: 0 0 6px;
+    color: var(--brand);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.dashboard-header h1,
+.card-header h2 {
+    margin: 0;
+    color: var(--text-main);
+}
+
+.dashboard-header h1 {
+    font-size: clamp(2rem, 3vw, 2.6rem);
+}
+
+.dashboard-subtitle,
+.appointment-status,
+.medicine-name,
+.wait-time,
+.request-time,
+.summary-item span,
+.empty-state-small {
+    color: var(--text-muted);
+}
+
+.dashboard-header__actions {
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-outline,
+.btn-join,
+.btn-review,
+.btn-start,
+.btn-approve,
+.action-btn {
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.btn-primary,
+.btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 48px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    color: #fff;
+    box-shadow: 0 16px 32px rgba(15, 118, 110, 0.2);
+}
+
+.btn-outline {
+    background: #fff;
+    color: var(--brand-dark);
+    border: 1px solid rgba(15, 118, 110, 0.18);
+}
+
+.btn-primary:hover,
+.btn-outline:hover,
+.btn-join:hover,
+.btn-review:hover,
+.btn-start:hover,
+.btn-approve:hover,
+.action-btn:hover {
+    transform: translateY(-2px);
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.stat-card,
+.dashboard-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 26px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
+}
+
+.stat-card {
+    padding: 22px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    background: var(--brand-soft);
+    font-size: 1.6rem;
+}
+
+.stat-value {
+    display: block;
+    font-size: clamp(1.9rem, 2.3vw, 2.4rem);
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1;
+}
+
+.stat-label {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.stat-trend {
+    display: inline-flex;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.stat-trend.up { color: #15803d; }
+.stat-trend.down { color: #dc2626; }
+
+.dashboard-two-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+    gap: 22px;
+}
+
+.dashboard-column {
+    display: grid;
+    gap: 22px;
+    align-content: start;
+}
+
+.dashboard-card {
+    padding: 22px;
+}
+
+.card-header {
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.88);
+}
+
+.card-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.15rem;
+}
+
+.link-view {
+    color: var(--brand);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.link-button {
+    background: none;
+    padding: 0;
+}
+
+.appointment-row,
+.prescription-row,
+.queue-row,
+.summary-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.appointment-row,
+.prescription-row,
+.queue-row {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+}
+
+.appointment-row:last-child,
+.prescription-row:last-child,
+.queue-row:last-child {
+    border-bottom: 0;
+}
+
+.appointment-time {
+    min-width: 84px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.appointment-info,
+.prescription-info,
+.patient-details {
+    flex: 1;
+}
+
+.patient-name {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.appointment-type {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    font-size: 0.9rem;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.badge.video {
+    background: rgba(79, 70, 229, 0.12);
+    color: #4338ca;
+}
+
+.badge.clinic {
+    background: rgba(15, 118, 110, 0.12);
+    color: var(--brand-dark);
+}
+
+.btn-join,
+.btn-review,
+.btn-start,
+.btn-approve {
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(15, 118, 110, 0.1);
+    color: var(--brand-dark);
+    font-weight: 700;
+}
+
+.queue-section + .queue-section {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(226, 232, 240, 0.72);
+}
+
+.queue-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 0.94rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.queue-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+}
+
+.queue-dot.online { background: #22c55e; box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12); }
+.queue-dot.pending { background: var(--warning); box-shadow: 0 0 0 5px rgba(217, 119, 6, 0.12); }
+
+.patient-avatar {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: var(--brand-soft);
+    color: var(--brand-dark);
+    font-weight: 800;
+}
+
+.patient-avatar.pending {
+    background: rgba(217, 119, 6, 0.12);
+    color: #b45309;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.98));
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    color: var(--text-main);
+    font-weight: 700;
+    text-align: left;
+}
+
+.summary-list {
+    display: grid;
+    gap: 12px;
+}
+
+.summary-item {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(248, 250, 252, 0.95);
+}
+
+.summary-item strong {
+    color: var(--text-main);
+    font-size: 1.05rem;
+}
+
+.empty-state {
+    display: grid;
+    justify-items: center;
+    gap: 10px;
+    padding: 34px 18px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: 2rem;
+    opacity: 0.55;
+}
+
+.empty-state-small {
+    padding: 12px 0 4px;
+}
+
+@media (max-width: 1120px) {
+    .stats-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-two-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .doctor-dashboard {
+        margin: 18px auto;
+        padding: 18px;
+        border-radius: 24px;
+    }
+
+    .dashboard-header,
+    .card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .stats-row,
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .appointment-row,
+    .prescription-row,
+    .queue-row,
+    .summary-item {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .appointment-time {
+        min-width: auto;
+    }
+}
+</style>
+{% endblock %}

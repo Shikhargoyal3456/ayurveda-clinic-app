@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% set hide_footer = true %}
+{% block title %}Choose Profile | Kash AI{% endblock %}
+{% block page %}
+<section class="profile-selector">
+    <div class="profile-selector__header">
+        <img src="/static/images/kash-ai-logo.svg" alt="Kash AI" class="profile-selector__logo" width="140">
+        <p class="profile-selector__eyebrow">Family profiles</p>
+        <h1>Who's ordering medicines today?</h1>
+        <p>Select a profile to continue with the right prescriptions, health info, and medicine orders.</p>
+    </div>
+
+    <div class="profile-selector__grid">
+        {% for profile in profiles %}
+        <button class="profile-card" type="button" onclick="selectProfile({{ profile.id }}, {{ 'true' if profile.pin_code else 'false' }})">
+            <span class="profile-card__avatar">{{ profile.avatar_emoji }}</span>
+            <strong class="profile-card__name">{{ profile.profile_name }}</strong>
+            <span class="profile-card__relation">{{ profile.relationship }}</span>
+            {% if profile.pin_code %}
+            <span class="profile-card__lock">PIN protected</span>
+            {% endif %}
+        </button>
+        {% endfor %}
+        {% if profiles|length < profile_limit %}
+        <button class="profile-card profile-card--add" type="button" onclick="window.location.href='/profiles/add'">
+            <span class="profile-card__avatar">+</span>
+            <strong class="profile-card__name">Add Profile</strong>
+            <span class="profile-card__relation">Up to {{ profile_limit }} profiles</span>
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="profile-selector__footer">
+        <a href="/profiles/manage" class="secondary-btn">Manage Profiles</a>
+        <a href="/auth/logout" class="secondary-btn">Sign out</a>
+    </div>
+</section>
+{% endblock %}
+{% block extra_head %}
+<style>
+.profile-selector{min-height:calc(100vh - 120px);display:grid;place-items:center;padding:48px 20px;background:radial-gradient(circle at top, rgba(20,184,166,.24), transparent 32%),linear-gradient(135deg,#073b4c 0%,#0f766e 52%,#14b8a6 100%);border-radius:32px}
+.profile-selector__header{text-align:center;max-width:760px;margin:0 auto 32px;color:#fff}
+.profile-selector__eyebrow{margin:0 0 12px;letter-spacing:.16em;text-transform:uppercase;font-size:.78rem;font-weight:700;color:rgba(255,255,255,.72)}
+.profile-selector__header h1{margin:18px 0 10px;font-size:clamp(2rem,4vw,3.25rem);font-family:"Plus Jakarta Sans",sans-serif;color:#fff}
+.profile-selector__header p{margin:0;color:rgba(255,255,255,.82);font-size:1.05rem}
+.profile-selector__grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:22px;width:min(860px,100%);margin:0 auto}
+.profile-card{display:grid;justify-items:center;gap:8px;padding:24px 18px;border:1px solid rgba(255,255,255,.18);border-radius:24px;background:rgba(255,255,255,.96);box-shadow:0 18px 40px rgba(3,22,33,.18);cursor:pointer;transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
+.profile-card:hover{transform:translateY(-4px);box-shadow:0 24px 48px rgba(3,22,33,.24);border-color:rgba(15,118,110,.26)}
+.profile-card--add{background:rgba(255,255,255,.16);color:#fff}
+.profile-card--add .profile-card__name,.profile-card--add .profile-card__relation{color:#fff}
+.profile-card__avatar{font-size:3.3rem;line-height:1}
+.profile-card__name{font-size:1.08rem;color:#102a43}
+.profile-card__relation{font-size:.86rem;color:#5f6c7b}
+.profile-card__lock{padding:4px 10px;border-radius:999px;background:#f59e0b;color:#fff;font-size:.72rem;font-weight:700}
+.profile-selector__footer{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:32px}
+@media (max-width:640px){.profile-selector{padding:28px 14px}.profile-selector__grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.profile-card{padding:18px 12px}}
+</style>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function selectProfile(profileId, requiresPinHint) {
+    const response = await fetch("/api/profiles/select", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile_id: profileId })
+    });
+    const result = await response.json();
+    if (result.requires_pin || requiresPinHint) {
+        const pin = window.prompt(`Enter PIN for ${result.profile_name || "this profile"}`);
+        if (!pin) return;
+        const pinResponse = await fetch("/api/profiles/verify-pin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ profile_id: profileId, pin })
+        });
+        if (!pinResponse.ok) {
+            window.alert("Invalid PIN. Please try again.");
+            return;
+        }
+        window.location.href = "/patient";
+        return;
+    }
+    window.location.href = result.redirect_url || "/patient";
+}
+</script>
+{% endblock %}

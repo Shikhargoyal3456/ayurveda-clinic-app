@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="aiSceneTitle">
+  <title id="aiSceneTitle">Kash AI healthcare illustration</title>
+  <defs>
+    <linearGradient id="aiBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F0F9FF"/>
+      <stop offset="60%" stop-color="#ECFDF5"/>
+      <stop offset="100%" stop-color="#E0E7FF"/>
+    </linearGradient>
+    <linearGradient id="aiPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F4C5C"/>
+      <stop offset="100%" stop-color="#1A7F6B"/>
+    </linearGradient>
+    <linearGradient id="aiAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#2BAE66"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" rx="36" fill="url(#aiBg)"/>
+  <circle cx="540" cy="86" r="50" fill="#DDEAFE"/>
+  <circle cx="102" cy="332" r="74" fill="#D1FAE5"/>
+  <rect x="72" y="70" width="496" height="278" rx="28" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="2"/>
+  <rect x="96" y="96" width="146" height="226" rx="20" fill="#F9FAFB" stroke="#E5E7EB"/>
+  <rect x="264" y="96" width="280" height="78" rx="20" fill="url(#aiPrimary)"/>
+  <rect x="264" y="192" width="132" height="130" rx="20" fill="#F9FAFB" stroke="#E5E7EB"/>
+  <rect x="412" y="192" width="132" height="130" rx="20" fill="#F9FAFB" stroke="#E5E7EB"/>
+  <rect x="112" y="122" width="112" height="12" rx="6" fill="#D1D5DB"/>
+  <rect x="112" y="148" width="82" height="12" rx="6" fill="#D1D5DB"/>
+  <rect x="112" y="190" width="112" height="86" rx="18" fill="url(#aiAccent)" opacity="0.12"/>
+  <circle cx="169" cy="233" r="26" fill="url(#aiAccent)"/>
+  <path d="M169 214v38M150 233h38" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <rect x="288" y="120" width="138" height="12" rx="6" fill="#FFFFFF" opacity="0.86"/>
+  <rect x="288" y="146" width="100" height="12" rx="6" fill="#D1FAE5"/>
+  <rect x="290" y="214" width="82" height="14" rx="7" fill="#D1D5DB"/>
+  <rect x="290" y="242" width="92" height="54" rx="14" fill="#E0E7FF"/>
+  <circle cx="478" cy="232" r="28" fill="url(#aiPrimary)"/>
+  <path d="M464 232h28M478 218v28" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+  <rect x="438" y="276" width="82" height="10" rx="5" fill="#D1D5DB"/>
+  <rect x="438" y="296" width="62" height="10" rx="5" fill="#D1D5DB"/>
+  <path d="M170 58c38 0 60-20 102-20s66 31 100 31c28 0 43-12 72-12" fill="none" stroke="#C7D2FE" stroke-width="8" stroke-linecap="round"/>
+</svg>

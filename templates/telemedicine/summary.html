@@ -1,0 +1,51 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}Consultation Summary{% endblock %}
+{% block page %}
+<section class="simple-card">
+    <h1 class="title">Consultation Summary</h1>
+    <p class="subtitle">{{ summary.diagnosis }}</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;">
+        <button class="secondary-btn" type="button" onclick="window.print()">Print Summary</button>
+        <button class="primary-btn" type="button" onclick="shareSummary()">Share on WhatsApp</button>
+    </div>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Medicines</h2>
+    {% for item in summary.prescription %}
+    <div class="list-row">
+        <div class="list-copy">
+            <strong>{{ item.medicine }}</strong>
+            <span>{{ item.dosage }} for {{ item.duration }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Next step</h2>
+    <div class="notice yellow">
+        <strong>Book your follow-up</strong>
+        <p>Suggested follow-up date: {{ followup.suggested_followup_date }}</p>
+    </div>
+    <a href="{{ followup.booking_link }}" class="primary-btn" style="margin-top:14px;">Book Follow-up</a>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Simple advice</h2>
+    <ul>
+        {% for item in summary.lifestyle_advice %}
+        <li>{{ item }}</li>
+        {% endfor %}
+    </ul>
+    <p class="subtitle"><strong>Urgent help:</strong> {{ summary.emergency_instructions }}</p>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function shareSummary() {
+    const text = encodeURIComponent(`Consultation summary: {{ summary.diagnosis }}. Follow-up: {{ followup.suggested_followup_date }}`);
+    window.location.href = `https://wa.me/?text=${text}`;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Expiry Tracker | Pharmacy Portal{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Expiry protection</p>
+            <h1>Expiry Tracker</h1>
+            <p class="mb-0">Catch near-expiry medicines early, automate clearance pricing, and reduce inventory waste.</p>
+        </div>
+    </section>
+
+    <section class="content-grid-3">
+        <article class="metric-card critical-metric"><span>Under 30 Days</span><strong>{{ critical_count }}</strong></article>
+        <article class="metric-card warning-metric"><span>30 to 60 Days</span><strong>{{ warning_count }}</strong></article>
+        <article class="metric-card notice-metric"><span>60 to 90 Days</span><strong>{{ notice_count }}</strong></article>
+    </section>
+
+    <section class="card">
+        <div class="expiry-tabs">
+            <button class="expiry-tab is-active" type="button" onclick="filterExpiry('critical', this)">Expiring in 7 days ({{ critical_count }})</button>
+            <button class="expiry-tab" type="button" onclick="filterExpiry('warning', this)">8–30 days ({{ warning_count }})</button>
+            <button class="expiry-tab" type="button" onclick="filterExpiry('notice', this)">31–90 days ({{ notice_count }})</button>
+        </div>
+        <div class="table-scroll-wrapper">
+        <table class="table" id="expiryList" data-sortable-table data-export-name="expiry-tracker">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th data-filterable>Status</th>
+                    <th data-filterable>Window</th>
+                    <th>Stock</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for medicine in expiring_medicines %}
+            <tr class="expiry-card {{ medicine.alert_level }}" data-expiry-level="{{ medicine.alert_level }}">
+                <td>
+                    <strong>{{ medicine.medicine_name }}</strong>
+                    <div class="text-muted small">{{ medicine.brand or 'Unbranded' }}</div>
+                </td>
+                <td>
+                    <span class="days-left">{{ medicine.days_left }} days left</span>
+                    {% if medicine.is_clearance %}
+                    <div class="clearance-pill mt-2">Clearance {% if medicine.clearance_price %}Rs {{ medicine.clearance_price }}{% endif %}</div>
+                    {% endif %}
+                </td>
+                <td>{{ 'Expiring in 7 days' if medicine.alert_level == 'critical' else '8-30 days' if medicine.alert_level == 'warning' else '31-90 days' }}</td>
+                <td>Qty {{ medicine.quantity }}</td>
+                <td>{{ medicine.expiry_date }}</td>
+                <td>
+                    <div class="hero-actions">
+                        <button class="btn btn-outline-success btn-sm" type="button" data-confirm data-confirm-title="Mark medicine as sold" data-confirm-message="Mark {{ medicine.medicine_name }} as sold or used?" data-confirm-action="/api/pharmacy/inventory/{{ medicine.id }}/mark-sold" data-confirm-method="POST" data-confirm-label="Yes, Mark Sold" data-confirm-type="confirm">Mark Sold</button>
+                        <button class="btn btn-outline-dark btn-sm" type="button" data-confirm data-confirm-title="Return to supplier" data-confirm-message="Return {{ medicine.medicine_name }} to the supplier inventory flow?" data-confirm-action="/api/pharmacy/inventory/{{ medicine.id }}/return-to-supplier" data-confirm-method="POST" data-confirm-label="Yes, Return" data-confirm-type="warning">Return</button>
+                        <button class="btn btn-primary btn-sm" type="button" data-confirm data-confirm-title="Start clearance pricing" data-confirm-message="Apply near-expiry clearance pricing to {{ medicine.medicine_name }}?" data-confirm-action="/api/pharmacy/inventory/{{ medicine.id }}/clearance" data-confirm-method="POST" data-confirm-payload='{"reason":"Near Expiry","discount_percent":30}' data-confirm-label="Start Clearance" data-confirm-type="warning">Start Clearance</button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <div class="empty-state__icon"><i class="fa-regular fa-calendar-check"></i></div>
+                        <h3 class="empty-state__title">No medicines expiring soon</h3>
+                        <p class="empty-state__message">Items that need urgent action will appear here so your team can clear, return, or use them in time.</p>
+                        <a href="/portal/pharmacy/add-medicine" class="btn btn-primary btn-sm">Add Medicine</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/admin-table.js') }}"></script>
+<script>
+function filterExpiry(level, button) {
+    document.querySelectorAll('.expiry-tab').forEach((tab) => tab.classList.remove('is-active'));
+    button.classList.add('is-active');
+    document.querySelectorAll('[data-expiry-level]').forEach((card) => {
+        card.hidden = card.dataset.expiryLevel !== level;
+    });
+}
+</script>
+<style>
+.content-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.critical-metric{background:#fff7f8}.warning-metric{background:#fff9ef}.notice-metric{background:#f8fbff}.expiry-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.expiry-tab{border:none;border-radius:999px;padding:10px 14px;background:#e2e8f0;font-weight:700}.expiry-tab.is-active{background:#0d7a6f;color:#fff}.expiry-card.critical{background:#fff7f8}.expiry-card.warning{background:#fffdf5}.expiry-card.notice{background:#f8fbff}.days-left,.clearance-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-weight:700}.days-left{background:#e2e8f0;color:#0f172a}.clearance-pill{background:#fff4d4;color:#7a4b00}
+@media (max-width: 800px){.content-grid-3{grid-template-columns:1fr}}
+</style>
+{% endblock %}

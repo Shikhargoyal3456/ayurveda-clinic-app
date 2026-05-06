@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Medicine Detail | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="card medicine-detail-shell">
+        <div class="medicine-header">
+            <img id="medicineImage" class="medicine-image" src="" alt="Medicine image" loading="lazy" decoding="async" width="140" height="140">
+            <div class="medicine-title">
+                <p class="eyebrow">Medicine information</p>
+                <h1 id="medicineName">{{ medicine_name }}</h1>
+                <div id="medicineRating" class="text-muted">Easy-to-read medicine guidance with live price checks from nearby pharmacies.</div>
+            </div>
+        </div>
+
+        <div class="medicine-tabs">
+            <button class="tab-btn active" type="button" data-tab="usesTab">What It's For</button>
+            <button class="tab-btn" type="button" data-tab="sideEffectsTab">Side Effects</button>
+            <button class="tab-btn" type="button" data-tab="alternativesTab">Alternatives</button>
+            <button class="tab-btn" type="button" data-tab="precautionsTab">Safety Tips</button>
+            <button class="tab-btn" type="button" data-tab="priceTab">Price Comparison</button>
+        </div>
+
+        <div id="usesTab" class="tab-pane active">
+            <div class="info-card">
+                <h2 class="h4">What is this medicine used for?</h2>
+                <p id="usesText" class="mb-0"></p>
+            </div>
+        </div>
+        <div id="sideEffectsTab" class="tab-pane" hidden>
+            <div class="info-card">
+                <h2 class="h4">Side Effects</h2>
+                <div id="sideEffectsList"></div>
+            </div>
+        </div>
+        <div id="alternativesTab" class="tab-pane" hidden>
+            <div class="info-card">
+                <h2 class="h4">Other options you can ask about</h2>
+                <div id="alternativesList"></div>
+            </div>
+        </div>
+        <div id="precautionsTab" class="tab-pane" hidden>
+            <div class="info-card">
+                <h2 class="h4">Safety tips</h2>
+                <div id="precautionsList"></div>
+            </div>
+        </div>
+        <div id="priceTab" class="tab-pane" hidden>
+            <div class="info-card">
+                <h2 class="h4">Price Comparison</h2>
+                <div id="priceComparison"></div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function switchDetailTab(tabId, button) {
+    document.querySelectorAll('.medicine-tabs .tab-btn').forEach((item) => item.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach((item) => item.hidden = true);
+    button.classList.add('active');
+    document.getElementById(tabId).hidden = false;
+}
+
+async function loadMedicineDetails(medicineName) {
+    const response = await fetch(`/api/medicine/info/${encodeURIComponent(medicineName)}`);
+    const data = await response.json();
+    document.getElementById('medicineName').innerText = data.name;
+    document.getElementById('medicineImage').src = data.image_url;
+    document.getElementById('usesText').innerText = data.uses;
+    document.getElementById('sideEffectsList').innerHTML = `<ul>${String(data.side_effects || '').split(',').map((effect) => `<li>${effect.trim()}</li>`).join('')}</ul>`;
+    document.getElementById('alternativesList').innerHTML = `<div class="stack-list">${String(data.alternatives || '').split(',').map((item) => `<div class="stack-item">${item.trim()}</div>`).join('')}</div>`;
+    document.getElementById('precautionsList').innerHTML = `<div class="stack-list">${String(data.precautions || '').split(',').map((item) => `<div class="stack-item">${item.trim()}</div>`).join('')}</div>`;
+    document.getElementById('priceComparison').innerHTML = data.prices.length ? `
+        <div class="table-scroll-wrapper"><table class="comparison-table">
+            <thead><tr><th>Pharmacy</th><th>Price</th><th>Action</th></tr></thead>
+            <tbody>${data.prices.map((row) => `<tr><td>${row.pharmacy}</td><td>Rs ${Number(row.price || 0).toFixed(2)}</td><td><a class="btn btn-outline-success btn-sm" href="/order-medicines">Add to Order</a></td></tr>`).join('')}</tbody>
+        </table></div>
+    ` : '<div class="stack-item">No live pricing available right now.</div>';
+}
+
+document.querySelectorAll('.medicine-tabs .tab-btn').forEach((button) => {
+    button.addEventListener('click', () => switchDetailTab(button.dataset.tab, button));
+});
+document.addEventListener('DOMContentLoaded', () => loadMedicineDetails({{ medicine_name | tojson }}));
+</script>
+<style>
+.medicine-detail-shell{display:grid;gap:20px}.medicine-header{display:flex;gap:22px;align-items:center}.medicine-image{width:140px;height:140px;border-radius:24px;object-fit:cover;background:#f8fafc}.medicine-tabs{display:flex;gap:10px;flex-wrap:wrap}.tab-pane .info-card{border:1px solid #e2e8f0;border-radius:24px;padding:20px;background:#fff}
+@media (max-width: 720px){.medicine-header{flex-direction:column;align-items:flex-start}}
+</style>
+{% endblock %}

@@ -7,8 +7,12 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
-import fitz
 from itsdangerous import URLSafeTimedSerializer
+
+try:
+    import fitz
+except Exception:
+    fitz = None
 
 from app.audit import write_audit_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
@@ -101,6 +105,8 @@ def _prescription_for_doctor(db: Session, doctor_id: int, prescription_id: int) 
 
 
 def _build_prescription_pdf_bytes(prescription: Prescription, doctor: Doctor) -> bytes:
+    if fitz is None:
+        raise RuntimeError("Prescription PDF download is temporarily unavailable.")
     document = fitz.open()
     page = document.new_page()
     y_position = 48
@@ -215,6 +221,7 @@ def create_prescription(
     prescription = Prescription(
         patient_id=patient.id,
         doctor_id=doctor.id,
+        profile_name=patient.name,
         diagnosis=cleaned_diagnosis,
         medicines=medicines,
         advice=advice.strip(),
@@ -279,6 +286,8 @@ def download_prescription_pdf(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     prescription = _prescription_for_doctor(db, doctor.id, prescription_id)
+    if fitz is None:
+        raise HTTPException(status_code=503, detail="Prescription download is temporarily unavailable. Please try again later.")
     pdf_bytes = _build_prescription_pdf_bytes(prescription, doctor)
     return Response(
         content=pdf_bytes,

@@ -8,18 +8,18 @@
             <div>
                 <p class="eyebrow">Ayurveda</p>
                 <h1 class="h2">Ayurveda Consultation</h1>
-                <p>{{ patient.name }} • Ashtavidha, Agni, Ama, Srotas, and formulation planning with contextual Sanskrit help.</p>
+                <p>{{ patient.name }} • Review body type, current imbalance, digestion, channels, and formulation planning with plain-language help.</p>
             </div>
             <div class="page-header-actions"><span class="badge badge-soft">Classical workflow</span></div>
         </div>
 
         <div class="content-grid-2">
             <article class="card">
-                <h2 class="h4">Prakriti-Vikriti comparison</h2>
+                <h2 class="h4">Body type and current imbalance</h2>
                 <div class="dosha-stack">
-                    <div class="dosha-card vata"><span>Prakriti</span><strong>{{ assessments.get('prakriti', {}).get('label', profile.ayurveda_profile.get('prakriti', 'Pending')) }}</strong></div>
-                    <div class="dosha-card pitta"><span>Vikriti</span><strong>{{ assessments.get('vikriti', {}).get('label', profile.ayurveda_profile.get('vikriti', 'Pending')) }}</strong></div>
-                    <div class="dosha-card kapha"><span>Agni</span><strong>{{ assessments.get('agni', {}).get('type', profile.ayurveda_profile.get('agni', 'Pending')) }}</strong></div>
+                    <div class="dosha-card vata"><span><i class="fa-solid fa-wind"></i> Prakriti</span><strong>{{ assessments.get('prakriti', {}).get('label', profile.ayurveda_profile.get('prakriti', 'Pending')) }}</strong><small title="{{ help_terms.prakriti }}">Your body type</small></div>
+                    <div class="dosha-card pitta"><span><i class="fa-solid fa-sun"></i> Vikriti</span><strong>{{ assessments.get('vikriti', {}).get('label', profile.ayurveda_profile.get('vikriti', 'Pending')) }}</strong><small title="{{ help_terms.vikriti }}">Current imbalance</small></div>
+                    <div class="dosha-card kapha"><span><i class="fa-solid fa-droplet"></i> Agni</span><strong>{{ assessments.get('agni', {}).get('type', profile.ayurveda_profile.get('agni', 'Pending')) }}</strong><small title="{{ help_terms.agni }}">Digestive strength</small></div>
                 </div>
                 <div class="help-box mt-3"><i class="fa-solid fa-circle-question"></i> <strong>Prakriti</strong>: {{ help_terms.prakriti }}</div>
             </article>
@@ -54,7 +54,12 @@
                 <div class="prakriti-result mt-3" data-prakriti-result></div>
             </article>
             <article class="card">
-                <h2 class="h4">Srotas, Ama, and Panchakarma</h2>
+                <h2 class="h4">Channels, toxins, and Panchakarma</h2>
+                <div class="pill-row mb-3">
+                    <span class="scope-pill" title="{{ help_terms.srotas }}">Srotas: body channels</span>
+                    <span class="scope-pill" title="{{ help_terms.ama }}">Ama: undigested toxins</span>
+                    <span class="scope-pill" title="{{ help_terms.anupana }}">Anupana: medicine companion</span>
+                </div>
                 <div class="form-grid">
                     <label class="checkbox-card"><input type="checkbox" checked> Annavaha Srotas disturbance</label>
                     <label class="checkbox-card"><input type="checkbox"> Pranavaha involvement</label>

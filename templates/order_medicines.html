@@ -1,253 +1,433 @@
-{% extends 'base.html' %}
-{% set active_page = 'medicines' %}
-{% set user_name = 'Medicine ordering' %}
-{% set user_role = 'Patient commerce' %}
-{% set avatar_label = 'RX' %}
-
+{% extends "patient_simple_base.html" %}
+{% set simple_nav = 'search' %}
 {% block meta %}<meta name="csrf-token" content="{{ csrf_token }}">{% endblock %}
-{% block title %}Kash AI | Order Medicines{% endblock %}
-
-{% block header_actions %}
-<a href="/dashboard" class="btn btn-outline-dark btn-sm">Doctor dashboard</a>
-{% endblock %}
-
+{% block title %}Search Medicines{% endblock %}
 {% block page %}
-<div class="site-container section-stack fade-in-up">
-    <section class="hero-grid">
-        <article class="hero-card">
-            <p class="eyebrow">Patient medicine store</p>
-            <h1>Warm, trustworthy medicine ordering with AI guidance.</h1>
-            <p>Search the catalog, get advisory-only AI suggestions, choose a nearby pharmacy, and unlock personalized Ayurveda kits built around prakriti and repeat adherence.</p>
-            <div class="search-row mt-4">
-                <div>
-                    <label for="searchInput" class="form-label">Search medicines</label>
-                    <input id="searchInput" class="form-control" type="search" placeholder="Search medicines, herbs, tonics, tablets" autocomplete="off">
-                </div>
-                <div>
-                    <label for="aiInput" class="form-label">Describe symptoms</label>
-                    <textarea id="aiInput" class="form-control" rows="2" placeholder="Acidity, cold, body pain, indigestion"></textarea>
-                    <button id="heroAiButton" type="button" class="btn btn-primary w-100 mt-3">Get AI Suggestions</button>
-                </div>
-            </div>
-            <div class="hero-actions mt-4" aria-label="Quick symptom tags">
-                <button type="button" class="btn btn-outline-success btn-sm quick-tag" data-tag="Fever">Fever</button>
-                <button type="button" class="btn btn-outline-success btn-sm quick-tag" data-tag="Cold & Cough">Cold & Cough</button>
-                <button type="button" class="btn btn-outline-success btn-sm quick-tag" data-tag="Acidity">Acidity</button>
-                <button type="button" class="btn btn-outline-success btn-sm quick-tag" data-tag="Pain Relief">Pain Relief</button>
-            </div>
-            <div class="hero-actions mt-4">
-                <span class="badge text-bg-light">Trusted pharmacies</span>
-                <span class="badge text-bg-light">Fast delivery</span>
-                <span class="badge text-bg-light">AI-powered suggestions</span>
-            </div>
-            <div class="alert alert-warning mt-4 mb-0">This platform does not replace medical advice. Do not use in emergencies. Consult a qualified doctor.</div>
-        </article>
-        <aside class="hero-visual">
-            <p class="eyebrow">Smart ordering</p>
-            <h3>From symptom to pharmacy, without losing trust.</h3>
-            <div class="timeline-list mt-4">
-                <div class="timeline-item"><strong>AI assistant</strong><p class="mb-0">Generate advisory suggestions and route users toward relevant catalog items.</p></div>
-                <div class="timeline-item"><strong>Quick kits</strong><p class="mb-0">Bundle common scenarios like acidity, cold, and pain relief for faster cart building.</p></div>
-                <div class="timeline-item"><strong>Pharmacy selection</strong><p class="mb-0">Use nearby pharmacy lookup before checkout for a realistic patient delivery flow.</p></div>
-            </div>
-        </aside>
-    </section>
-
-    <section class="competitive-advantage-banner">
-        <div class="page-header mb-3">
+<section class="landing-hero card" style="padding:2rem;">
+    <div class="content-grid-2" style="align-items:center;">
+        <div class="section-stack" style="gap:1rem;">
+            <span class="section-kicker"><i class="fa-solid fa-capsules"></i> Medicine ordering</span>
             <div>
-                <p class="eyebrow">Commerce moat</p>
-                <h2>Why this store is stronger than a generic medicine catalog</h2>
+                <h1>Search, compare, and order with confidence.</h1>
+                <p style="font-size:1.05rem;">Find allopathy, Ayurveda, wellness, and device products with AI help, prescription upload, and a cleaner checkout flow.</p>
+            </div>
+            <form class="search-bar" onsubmit="event.preventDefault(); renderMedicines();">
+                <span aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
+                <label class="sr-only" for="searchInput">Search for medicines</label>
+                <input id="searchInput" type="search" placeholder="Search for medicines..." value="{{ initial_query | e }}" aria-label="Search for medicines">
+                <button class="primary-btn" type="button" onclick="renderMedicines()">Search</button>
+            </form>
+            <div class="hero-actions">
+                <span class="pill-chip is-active">Allopathy</span>
+                <span class="pill-chip">Ayurveda</span>
+                <span class="pill-chip">Wellness</span>
+                <span class="pill-chip">Devices</span>
+            </div>
+            <div class="hero-actions">
+                <button class="secondary-btn" type="button" onclick="openUploadArea()">Upload Prescription</button>
+                <button class="secondary-btn" type="button" onclick="document.getElementById('searchInput').focus()">Voice Search Ready</button>
             </div>
         </div>
-        <div class="comparison-table-wrap">
-            <table class="comparison-table">
-                <thead><tr><th>Experience</th><th>Generic medicine apps</th><th>Kash AI</th></tr></thead>
-                <tbody>
-                    <tr><td>Personalization</td><td>Search and discount led</td><td>Prakriti-aware kits and AI-guided recommendations</td></tr>
-                    <tr><td>Continuity</td><td>One-off order focus</td><td>Subscriptions, refill loops, and follow-up linked care</td></tr>
-                    <tr><td>Clinical safety</td><td>Limited integrated context</td><td>Prescription gating and herb-drug aware escalation path</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="personalized-kits card">
-        <div class="page-header mb-3">
-            <div>
-                <p class="eyebrow">AI-powered personalization</p>
-                <h2>Personalized Ayurveda kits based on prakriti</h2>
-                <p class="mb-0">Turn adherence into a product advantage with constitution-led bundles and recurring delivery.</p>
+        <div class="card" style="padding:1.25rem;">
+            <p class="eyebrow">Why KASH AI</p>
+            <div class="section-stack">
+                <div class="feature-card surface-muted"><strong>Trusted pharmacy network</strong><p>Connected ordering and delivery from partner pharmacies.</p></div>
+                <div class="feature-card surface-muted"><strong>Prescription-aware flow</strong><p>Upload a prescription and turn it into an order faster.</p></div>
+                <div class="feature-card surface-muted"><strong>AI support built in</strong><p>Get suggestions before you place an order.</p></div>
             </div>
         </div>
-        <div class="prakriti-selector">
-            <div class="dosha-select">
-                <button class="btn btn-outline-success vata-btn" type="button" data-prakriti="vata"><i class="fas fa-wind"></i> Vata Dominant</button>
-                <button class="btn btn-outline-success pitta-btn" type="button" data-prakriti="pitta"><i class="fas fa-fire"></i> Pitta Dominant</button>
-                <button class="btn btn-outline-success kapha-btn" type="button" data-prakriti="kapha"><i class="fas fa-droplet"></i> Kapha Dominant</button>
-            </div>
+    </div>
+    <div id="searchStatus" class="empty-state" style="margin-top:1rem;" aria-live="polite">Start typing medicine name to see search results.</div>
+</section>
+
+<section class="content-grid-2" style="align-items:start;">
+    <aside class="card" style="padding:1.5rem;">
+        <p class="eyebrow">Filters</p>
+        <div class="section-stack" style="margin-top:1rem;">
+            <div class="feature-card surface-muted"><strong>Price range</strong><p>Budget-friendly to premium brands</p></div>
+            <div class="feature-card surface-muted"><strong>Brand</strong><p>Trusted manufacturers and alternatives</p></div>
+            <div class="feature-card surface-muted"><strong>Prescription required</strong><p>Clearer visibility before checkout</p></div>
         </div>
-        <div id="personalized-products" class="catalog-grid mt-4"></div>
-        <div class="subscription-banner mt-4">
-            <h3>Subscribe & Never Run Out</h3>
-            <p>Get 20% off, faster checkout, free delivery nudges, and personalized refill reminders.</p>
-            <a href="/growth/referral-system" class="btn btn-primary btn-sm">Unlock member benefits</a>
-        </div>
-    </section>
+        <section class="simple-card" id="uploadArea" {% if initial_tab != 'upload' and not has_prescription %}style="display:none; margin-top:1rem;"{% else %}style="margin-top:1rem;"{% endif %}>
+            <h3 style="margin-top:0;">Upload Prescription</h3>
+            <p class="subtitle">Take a photo or upload a file. We will read it and add the medicines for you.</p>
+            <label class="sr-only" for="prescriptionUploadInput">Upload prescription photo or file</label>
+            <input type="file" id="prescriptionUploadInput" accept="image/*,.pdf,application/pdf" aria-label="Upload prescription photo or file">
+            <div id="prescriptionUploadStatus" class="empty-state" style="margin-top:12px;" aria-live="polite">Choose a file to begin.</div>
+        </section>
+    </aside>
 
-    <div class="store-layout">
-        <div class="section-stack">
-            <section class="table-panel" aria-labelledby="aiAssistantTitle">
-                <div class="page-header mb-3">
-                    <div>
-                        <p class="eyebrow">AI assistant</p>
-                        <h2 id="aiAssistantTitle">Advisory suggestions</h2>
-                        <p class="mb-0">Consult a doctor before use.</p>
-                    </div>
-                    <button id="toggleAiButton" type="button" class="btn btn-outline-success btn-sm" aria-expanded="false" aria-controls="aiBody">Use AI Assistant</button>
-                </div>
-                <div id="aiBody" class="d-none">
-                    <button id="syncHeroSymptoms" type="button" class="btn btn-outline-dark btn-sm mb-3">Use top text</button>
-                    <label for="symptoms" class="form-label">Describe your problem</label>
-                    <textarea id="symptoms" class="form-control" rows="4" placeholder="Describe your problem"></textarea>
-                    <button id="aiButton" type="button" class="btn btn-primary mt-3">Get AI Suggestions</button>
-                    <div id="aiLoading" class="text-muted mt-3 d-none">Getting AI suggestions...</div>
-                    <div id="aiResult" class="mt-3 d-none"></div>
-                </div>
-            </section>
-
-            <section class="table-panel" aria-labelledby="quickKitsTitle">
-                <p class="eyebrow mb-2">Quick health kits</p>
-                <h2 id="quickKitsTitle">Fast bundle selection</h2>
-                <div class="hero-actions mt-3">
-                    <button type="button" class="btn btn-outline-success btn-sm kit-button" data-kit="acidity">Acidity Kit</button>
-                    <button type="button" class="btn btn-outline-success btn-sm kit-button" data-kit="cold">Cold Kit</button>
-                    <button type="button" class="btn btn-outline-success btn-sm kit-button" data-kit="pain">Pain Relief Kit</button>
-                </div>
-            </section>
-
-            <section class="table-panel" aria-labelledby="medicineCatalogTitle">
-                <div class="page-header mb-3">
-                    <div>
-                        <p class="eyebrow">Catalog</p>
-                        <h2 id="medicineCatalogTitle">Search and add medicines</h2>
-                        <p class="mb-0">Choose from the current patient medicine catalog.</p>
-                    </div>
-                    <span id="medicineCount" class="text-muted small"></span>
-                </div>
-                <div id="medicineLoading" class="catalog-grid" aria-hidden="true">
-                    <div class="skeleton skeleton-card"></div>
-                    <div class="skeleton skeleton-card"></div>
-                    <div class="skeleton skeleton-card"></div>
-                </div>
-                <div id="medicineList" class="catalog-grid"></div>
-                <p id="medicineEmpty" class="text-muted mt-3 mb-0 d-none">No medicines found. Try another search or use AI.</p>
-            </section>
-
-            <section class="table-panel" aria-labelledby="pharmacyTitle">
-                <p class="eyebrow mb-2">Pharmacy selection</p>
-                <h2 id="pharmacyTitle">Nearby pharmacies</h2>
-                <p class="mb-0">Select a pharmacy before checkout to keep the order flow realistic and backend compatible.</p>
-                <button id="findPharmaciesBtn" type="button" class="btn btn-outline-success mt-3">Find Nearby Pharmacies</button>
-                <p id="selectedPharmacyText" class="text-success mt-3 mb-0 d-none"></p>
-                <div id="pharmacyList" class="stack-list mt-3"></div>
-                <input type="hidden" id="nearby_place_id" name="nearby_place_id">
-            </section>
-        </div>
-
-        <aside id="cartPanel" class="table-panel cart-panel" aria-label="Smart cart">
+    <div class="section-stack">
+        <section class="card" style="padding:1.5rem;">
             <div class="page-header mb-3">
                 <div>
-                    <p class="eyebrow">Smart cart</p>
-                    <h2>Your cart</h2>
+                    <p class="eyebrow">AI medicine help</p>
+                    <h2 class="h4 mb-0">Describe symptoms and get guidance</h2>
                 </div>
-                <strong id="cartTotal" class="product-price">₹0</strong>
             </div>
-            <div id="cartSummary" class="alert alert-info d-none"></div>
-            <div id="cartItems" class="stack-list"></div>
-            <p id="cartEmpty" class="text-muted">Your cart is empty. Add medicines to continue.</p>
-            <div id="cartFeedback" class="alert alert-success d-none" role="status">Added to cart.</div>
-            <button id="clearCartButton" class="btn btn-outline-danger w-100 mt-3 d-none" type="button">Clear Cart</button>
-            <form id="orderForm" method="post" action="/patient/order/create" class="section-stack mt-4">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" id="medicines_json" name="medicines_json">
-                <input type="hidden" id="pharmacyId" name="pharmacy_id">
-                <input type="hidden" name="order_source" value="{{ prefill_order_source | default('manual') }}">
-                <input type="hidden" name="prescription_id" value="{{ prefill_prescription_id | default('') }}">
-                <input type="hidden" name="source_order_id" value="">
-                <div>
-                    <label for="patientName" class="form-label">Name</label>
-                    <input id="patientName" name="patient_name" class="form-control" type="text" autocomplete="name" required>
+            <div style="display:grid; gap:12px;">
+                <label class="sr-only" for="aiInput">Describe symptoms for AI suggestions</label>
+                <textarea id="aiInput" rows="3" placeholder="Example: acidity after meals, mild headache, seasonal cold" aria-label="Describe symptoms for AI suggestions"></textarea>
+                <div class="hero-actions">
+                    <button id="heroAiButton" class="primary-btn" type="button" onclick="requestAiSuggestions()">Ask Kash AI</button>
+                    <button class="secondary-btn" type="button" onclick="useAiSuggestionForSearch()">Use top suggestion in search</button>
                 </div>
-                <div>
-                    <label for="patientPhone" class="form-label">Phone</label>
-                    <input id="patientPhone" name="patient_phone" class="form-control" type="tel" pattern="[0-9]{10}" autocomplete="tel" required>
-                </div>
-                <div>
-                    <label for="patientAddress" class="form-label">Address</label>
-                    <textarea id="patientAddress" name="patient_address" class="form-control" rows="3" autocomplete="street-address" required></textarea>
-                </div>
-                <div id="pharmacyRequiredMessage" class="alert alert-warning">Please select a pharmacy before checkout.</div>
-                <button id="checkoutButton" class="btn btn-dark w-100" type="submit" disabled>Proceed to Checkout ₹0</button>
-                <div id="orderMessage" class="alert alert-info d-none"></div>
-            </form>
-            <div class="hero-actions mt-3">
-                <button id="trackOrderButton" class="btn btn-outline-success btn-sm" type="button">Track Order</button>
-                <button id="subscribeDeliveryButton" class="btn btn-outline-dark btn-sm" type="button">Monthly delivery</button>
             </div>
-        </aside>
-    </div>
-</div>
+            <div id="aiSuggestStatus" class="empty-state" style="margin-top:12px;" aria-live="polite">AI suggestions will appear here.</div>
+            <div id="aiSuggestResults" style="display:grid; gap:10px; margin-top:14px;"></div>
+        </section>
 
-<div id="toastStack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
-<div id="prescriptionModal" class="d-none" role="dialog" aria-modal="true" aria-labelledby="prescriptionModalTitle" style="position:fixed; inset:0; background:rgba(45,52,54,0.35); z-index:80; padding:1rem;">
-    <div class="auth-panel" style="max-width:420px; margin:auto;">
-        <h2 id="prescriptionModalTitle" class="h5 mb-2">Upload prescription first</h2>
-        <p class="text-muted">This item needs a valid prescription before checkout. Open the order from a prescription link or consult your doctor.</p>
-        <div class="section-stack">
-            <a href="/dashboard" class="btn btn-primary">Go to doctor dashboard</a>
-            <button id="closePrescriptionModal" type="button" class="btn btn-outline-dark">Close</button>
+        <section class="card" style="padding:1.5rem;">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Results</p>
+                    <h2 class="h4 mb-0">Search Results</h2>
+                </div>
+            </div>
+            <div id="medicineList" class="grid-auto-fit" aria-live="polite"></div>
+            <div id="medicineEmpty" class="empty-state" style="display:none; margin-top:12px;">No medicines found. Try another name.</div>
+        </section>
+    </div>
+</section>
+
+<section class="card" style="padding:1.5rem;">
+    <div class="page-header mb-3">
+        <div>
+            <p class="eyebrow">Your order</p>
+            <h2 class="h4 mb-0">Your Cart</h2>
+            <p class="subtitle" style="margin-top:8px;">Review cart and place order.</p>
         </div>
     </div>
-</div>
-
+    <div class="content-grid-2" style="align-items:start;">
+        <div>
+            <div id="cartItems" aria-live="polite"></div>
+            <div id="cartEmpty" class="empty-state">Your cart is empty. Search and add medicines first.</div>
+            <div id="cartSummary" style="display:none; margin-top:16px;">
+                <div class="list-row"><div class="list-copy"><strong>Subtotal</strong><span id="subtotalText">₹0</span></div></div>
+                <div class="list-row"><div class="list-copy"><strong>Delivery</strong><span>₹20</span></div></div>
+                <div class="list-row"><div class="list-copy"><strong>Total</strong><span id="totalText">₹0</span></div></div>
+            </div>
+        </div>
+        <form id="orderForm" method="post" action="/patient/order/create" style="display:grid; gap:12px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" id="medicines_json" name="medicines_json">
+            <input type="hidden" id="pharmacyId" name="pharmacy_id" value="1">
+            <input type="hidden" name="order_source" value="{{ prefill_order_source | default('manual') }}">
+            <input type="hidden" name="prescription_id" value="{{ prefill_prescription_id | default('') }}">
+            <input type="hidden" name="source_order_id" id="sourceOrderId" value="">
+            <input id="patientName" name="patient_name" type="text" placeholder="Your name" value="{{ (prefill_patient.name if prefill_patient is defined else '') | e }}" required autocomplete="name" aria-label="Your name">
+            <input id="patientPhone" name="patient_phone" type="tel" placeholder="10-digit phone number" pattern="[0-9]{10}" value="{{ (prefill_patient.phone if prefill_patient is defined else '') | e }}" required autocomplete="tel" inputmode="numeric" aria-label="10-digit phone number">
+            <textarea id="patientAddress" name="patient_address" rows="3" placeholder="Delivery address" required autocomplete="street-address" aria-label="Delivery address">{{ (prefill_patient.address if prefill_patient is defined else '') | e }}</textarea>
+            <button id="checkoutButton" class="primary-btn" type="submit" disabled>Place Order</button>
+            <div id="orderMessage" class="empty-state" style="display:none;" aria-live="assertive"></div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
 <script>
-const csrfToken=document.querySelector('meta[name="csrf-token"]').content,medicineSearch=document.getElementById("searchInput"),medicineList=document.getElementById("medicineList"),medicineEmpty=document.getElementById("medicineEmpty"),medicineLoading=document.getElementById("medicineLoading"),medicineCount=document.getElementById("medicineCount"),heroSymptoms=document.getElementById("aiInput"),heroAiButton=document.getElementById("heroAiButton"),symptoms=document.getElementById("symptoms"),toggleAiButton=document.getElementById("toggleAiButton"),aiBody=document.getElementById("aiBody"),syncHeroSymptoms=document.getElementById("syncHeroSymptoms"),aiButton=document.getElementById("aiButton"),aiLoading=document.getElementById("aiLoading"),aiResult=document.getElementById("aiResult"),cartPanel=document.getElementById("cartPanel"),cartSummary=document.getElementById("cartSummary"),cartItems=document.getElementById("cartItems"),cartEmpty=document.getElementById("cartEmpty"),cartFeedback=document.getElementById("cartFeedback"),cartTotal=document.getElementById("cartTotal"),clearCartButton=document.getElementById("clearCartButton"),orderForm=document.getElementById("orderForm"),orderMessage=document.getElementById("orderMessage"),checkoutButton=document.getElementById("checkoutButton"),pharmacyRequiredMessage=document.getElementById("pharmacyRequiredMessage"),trackOrderButton=document.getElementById("trackOrderButton"),subscribeDeliveryButton=document.getElementById("subscribeDeliveryButton"),medicinesJson=document.getElementById("medicines_json"),pharmacyId=document.getElementById("pharmacyId"),findPharmaciesBtn=document.getElementById("findPharmaciesBtn"),pharmacyList=document.getElementById("pharmacyList"),pharmacyInput=document.getElementById("nearby_place_id"),selectedPharmacyText=document.getElementById("selectedPharmacyText"),toastStack=document.getElementById("toastStack"),prescriptionModal=document.getElementById("prescriptionModal"),closePrescriptionModal=document.getElementById("closePrescriptionModal");
-const CART_STORAGE_KEY="kashDirectMedicineCart",quickKits={acidity:["acidity","antacid","digestion","pantoprazole","omeprazole"],cold:["cold","cough","cetirizine","paracetamol","nasal"],pain:["pain","paracetamol","ibuprofen","diclofenac","analgesic"]};
-const PREFILL_MEDICINES={{ prefill_medicines | default([], true) | tojson | safe }},HAS_PRESCRIPTION={{ has_prescription | default(false) | tojson }};
-let medicines=[],cart=loadCart(),lastAiSuggestions=[],cartFeedbackTimer=null,userLocation=null,searchTrackTimer=null,prefillApplied=false;
-let personalizedKits={};
-function money(v){return `₹${Number(v||0).toFixed(0)}`}function escapeHtml(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function loadCart(){try{const s=JSON.parse(sessionStorage.getItem(CART_STORAGE_KEY)||"[]");return Array.isArray(s)?s:[]}catch(e){return[]}}function saveCart(){sessionStorage.setItem(CART_STORAGE_KEY,JSON.stringify(cart))}function selectedPharmacyId(){return cart.length?cart[0].pharmacy_id:""}function cartTotalValue(){return cart.reduce((s,i)=>s+Number(i.price||0)*Number(i.qty||1),0)}function showOrderMessage(m,k="info"){orderMessage.className=`alert alert-${k}`;orderMessage.innerHTML=m;orderMessage.classList.remove("d-none")}function hideOrderMessage(){orderMessage.classList.add("d-none")}function medicineSearchText(m){return `${m.name||""} ${m.generic_name||""} ${m.category||""}`.toLowerCase()}
-function showToast(message){const toast=document.createElement("div");toast.className="card";toast.style.padding="0.75rem 1rem";toast.textContent=message;toastStack.appendChild(toast);setTimeout(()=>toast.remove(),2200)}
-function trackUiEvent(event,metadata={}){fetch("/order-medicines/track-event",{method:"POST",headers:{"Content-Type":"application/json","X-CSRF-Token":csrfToken},body:JSON.stringify({event,metadata}),keepalive:true}).catch(()=>{})}
-function trackPatientConsent(){trackUiEvent("patient_consent_given",{consent:true,timestamp:new Date().toISOString()})}
-function showMessage(message){showToast(message)}
-function showPrescriptionModal(){prescriptionModal.classList.remove("d-none");showOrderMessage("Upload prescription first","warning")}
-function highlightCart(){cartPanel.scrollIntoView({behavior:"smooth",block:"start"})}
-function pharmacyDistanceKm(p){if(!userLocation||!p.lat||!p.lng)return null;const R=6371,dLat=(Number(p.lat)-userLocation.lat)*Math.PI/180,dLng=(Number(p.lng)-userLocation.lng)*Math.PI/180,a=Math.sin(dLat/2)**2+Math.cos(userLocation.lat*Math.PI/180)*Math.cos(Number(p.lat)*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
-function deliveryEstimate(distance){if(distance===null)return "25-40 min";return `${Math.max(18,Math.round(18+distance*7))}-${Math.max(28,Math.round(28+distance*8))} min`}
-function canAddMedicine(m,quiet=false){if(m.fallback_only){if(!quiet)showOrderMessage("This catalog suggestion needs pharmacy availability before checkout.","warning");return false}if(m.requires_prescription&&!HAS_PRESCRIPTION){if(!quiet)showPrescriptionModal();return false}if(cart.length&&selectedPharmacyId()!==m.pharmacy_id){if(!quiet)showOrderMessage("Please order from one catalog pharmacy at a time.","warning");return false}return true}
-function showCartFeedback(){cartFeedback.classList.remove("d-none");showToast("Added to cart");clearTimeout(cartFeedbackTimer);cartFeedbackTimer=setTimeout(()=>cartFeedback.classList.add("d-none"),1800)}
-function addToCart(m,qty=1,quiet=false){if(!m||!canAddMedicine(m,quiet))return false;const ex=cart.find(i=>Number(i.medicine_id)===Number(m.id));if(ex)ex.qty=Math.max(1,Number(ex.qty||1)+qty);else cart.push({medicine_id:m.id,name:m.name,price:Number(m.price||0),qty:Math.max(1,qty),pharmacy_id:m.pharmacy_id,prescription_required:Boolean(m.requires_prescription||m.prescription_required)});hideOrderMessage();renderCart();if(!quiet){trackUiEvent("medicine_added_to_cart",{medicine:m.name,medicine_id:m.id,price:Number(m.price||0),total:cartTotalValue(),source:HAS_PRESCRIPTION?"prescription":"manual"});showCartFeedback()}return true}
-function addByTerms(terms,focusCart=false){let added=0;terms.forEach(term=>{const n=String(term||"").toLowerCase(),match=medicines.find(m=>!cart.some(i=>Number(i.medicine_id)===Number(m.id))&&(!cart.length||selectedPharmacyId()===m.pharmacy_id)&&medicineSearchText(m).includes(n));if(match&&addToCart(match,1,true))added++});if(added){trackUiEvent("medicine_added_to_cart",{source:focusCart?"ai_add_all":"quick_kit",item_count:added,total:cartTotalValue()});showCartFeedback();if(focusCart)highlightCart()}else showOrderMessage("No matching catalog medicines found for that selection.","warning")}
-function renderMedicines(){const q=medicineSearch.value.trim().toLowerCase(),visible=medicines.filter(m=>medicineSearchText(m).includes(q)).slice(0,48);medicineList.innerHTML="";medicineEmpty.classList.toggle("d-none",visible.length>0);if(!visible.length&&q)showMessage("No medicines found. Try another search or use AI.");medicineCount.textContent=medicines.length?`${visible.length} shown`:"";visible.forEach(m=>{const rx=Boolean(m.requires_prescription||m.prescription_required),disabled=Boolean(m.fallback_only||(rx&&!HAS_PRESCRIPTION)),buttonText=m.fallback_only?"Check pharmacy availability":(disabled?"Prescription Required":"Add to Cart"),card=document.createElement("article");card.className="catalog-card product-card";card.innerHTML=`<div><div class="product-meta mb-3"><div><h3 class="h4 mb-1">${escapeHtml(m.name)}</h3><p class="text-muted mb-0">${escapeHtml(m.category||m.generic_name||"Medicine")}</p></div><span class="badge ${rx?"text-bg-warning":"text-bg-success"}">${rx?"Prescription":"OTC"}</span></div><div class="product-price mb-1">${m.fallback_only?"Ask pharmacy":money(m.price)}</div><p class="text-muted mb-0">${escapeHtml(m.unit||"unit")} · Fast delivery</p></div><button type="button" class="btn btn-outline-success w-100" ${disabled?"disabled":""}>${buttonText}</button>`;card.querySelector("button").addEventListener("click",()=>addToCart(m));medicineList.appendChild(card)})}
-function updateCheckoutState(){const canCheckout=cart.length>0&&Boolean(selectedPharmacyId());checkoutButton.disabled=!canCheckout;pharmacyRequiredMessage.classList.toggle("d-none",Boolean(selectedPharmacyId())||!cart.length)}
-function renderCart(){cartItems.innerHTML="";cartEmpty.classList.toggle("d-none",cart.length>0);cartSummary.classList.toggle("d-none",cart.length===0);clearCartButton.classList.toggle("d-none",cart.length===0);pharmacyId.value=selectedPharmacyId();cart.forEach(item=>{const line=document.createElement("div");line.className="stack-item";line.innerHTML=`<div class="d-flex justify-content-between gap-2"><div><strong>${escapeHtml(item.name)}</strong><div class="text-muted small">${money(item.price)} each ${item.prescription_required?"· Prescription Required":""}</div></div><button type="button" class="btn btn-outline-danger btn-sm">Remove</button></div><div class="d-flex justify-content-between align-items-center mt-3"><div class="inline-actions"><button type="button" class="btn btn-outline-dark btn-sm" data-action="decrease">-</button><span>${item.qty}</span><button type="button" class="btn btn-outline-dark btn-sm" data-action="increase">+</button></div><strong>${money(Number(item.price||0)*Number(item.qty||1))}</strong></div>`;line.querySelector(".btn-outline-danger").addEventListener("click",()=>{cart=cart.filter(i=>Number(i.medicine_id)!==Number(item.medicine_id));renderCart()});line.querySelector("[data-action='decrease']").addEventListener("click",()=>{item.qty=Number(item.qty||1)-1;if(item.qty<=0)cart=cart.filter(i=>Number(i.medicine_id)!==Number(item.medicine_id));renderCart()});line.querySelector("[data-action='increase']").addEventListener("click",()=>{item.qty=Number(item.qty||1)+1;renderCart()});cartItems.appendChild(line)});const total=cartTotalValue(),count=cart.reduce((s,i)=>s+Number(i.qty||1),0);cartSummary.innerHTML=`<div class="d-flex justify-content-between"><span>Items: ${count}</span><strong>Total: ${money(total)}</strong></div>`;cartTotal.textContent=money(total);checkoutButton.textContent=`Proceed to Checkout ${money(total)}`;updateCheckoutState();saveCart()}
-function applyPrescriptionPrefill(){if(prefillApplied||!Array.isArray(PREFILL_MEDICINES)||!PREFILL_MEDICINES.length)return;prefillApplied=true;let added=0,missing=[];PREFILL_MEDICINES.forEach(item=>{const name=String(item.name||"").trim().toLowerCase();const match=medicines.find(m=>!m.fallback_only&&String(m.name||"").trim().toLowerCase()===name);if(match){match.prescription_required=true;match.requires_prescription=true;if(addToCart(match,Number(item.qty||1),true))added++}else if(name){missing.push(item.name)}});if(added){trackUiEvent("medicine_added_to_cart",{source:"prescription",item_count:added,total:cartTotalValue()});showCartFeedback()}if(missing.length)showOrderMessage(`Some prescription medicines are not in the pharmacy catalog yet: ${missing.map(escapeHtml).join(", ")}`,"warning")}
-async function loadMedicines(){medicineLoading.classList.remove("d-none");const r=await fetch("/patient/medicines");if(!r.ok)throw new Error("Medicine catalog failed");medicines=await r.json();medicineLoading.classList.add("d-none");applyPrescriptionPrefill();renderMedicines();renderCart()}
-function renderAiSuggestions(p){const suggestions=Array.isArray(p.suggested_medicines)?p.suggested_medicines:[],precautions=Array.isArray(p.precautions)?p.precautions:[];lastAiSuggestions=suggestions;const sHtml=suggestions.length?suggestions.map(i=>`<button type="button" class="btn btn-outline-success btn-sm" data-suggestion="${escapeHtml(i)}">${escapeHtml(i)}</button>`).join(" "):"<p class='text-muted mb-0'>No medicines found</p>",pHtml=precautions.length?`<ul>${precautions.map(i=>`<li>${escapeHtml(i)}</li>`).join("")}</ul>`:"<p class='mb-0'>No additional precautions returned.</p>";aiResult.innerHTML=`<div class="card"><h3 class="h5">AI Suggestions (Advisory Only)</h3><p class="text-muted small">Consult a doctor before use.</p><div class="hero-actions mb-3">${sHtml}</div><div class="alert alert-warning"><strong>Precautions</strong>${pHtml}</div><button id="addAiSuggestionsButton" type="button" class="btn btn-outline-success" ${suggestions.length?"":"disabled"}>Add All to Cart</button></div>`;aiResult.classList.remove("d-none");aiResult.querySelectorAll("[data-suggestion]").forEach(b=>b.addEventListener("click",()=>{medicineSearch.value=b.dataset.suggestion||"";renderMedicines();medicineSearch.focus();document.getElementById("medicineCatalogTitle").scrollIntoView({behavior:"smooth",block:"start"})}));document.getElementById("addAiSuggestionsButton").addEventListener("click",()=>{trackUiEvent("ai_add_all_clicked",{suggestion_count:lastAiSuggestions.length});addByTerms(lastAiSuggestions,true)})}
-function renderPersonalizedKits(prakriti){const host=document.getElementById("personalized-products");if(!host)return;const kits=Array.isArray(personalizedKits[prakriti])?personalizedKits[prakriti]:[];host.innerHTML=kits.length?kits.map(kit=>`<article class="kit-card catalog-card"><div><h4 class="h4 mb-2">${escapeHtml(kit.name)}</h4><p>${escapeHtml(kit.description)}</p><div class="hero-actions mt-3">${(kit.products||[]).map(product=>`<span class="pill pill-muted">${escapeHtml(product)}</span>`).join("")}</div></div><div><div class="product-price mb-3">${money(kit.price)}</div><button type="button" class="btn btn-primary w-100" data-kit-subscribe=\"${escapeHtml(kit.id)}\">Subscribe & Save 20%</button></div></article>`).join(""):'<p class=\"text-muted mb-0\">Select a prakriti profile to view recommended kits.</p>';host.querySelectorAll('[data-kit-subscribe]').forEach(btn=>btn.addEventListener('click',()=>{showToast('Subscription interest captured.');trackUiEvent('subscription_interest',{kit_id:btn.dataset.kitSubscribe,prakriti});}))}
-async function loadPersonalizedKits(){try{const r=await fetch('/api/startup/personalized-kits');if(!r.ok)throw new Error('Kit load failed');personalizedKits=await r.json();renderPersonalizedKits('vata')}catch(e){const host=document.getElementById('personalized-products');if(host)host.innerHTML='<p class=\"text-muted mb-0\">Personalized kits are loading soon.</p>'}}
-async function getAiSuggestions(){aiButton.disabled=true;aiButton.textContent="Getting AI Suggestions...";aiLoading.classList.remove("d-none");aiResult.classList.add("d-none");try{trackPatientConsent();if(!symptoms.value.trim()&&heroSymptoms.value.trim())symptoms.value=heroSymptoms.value.trim();trackUiEvent("ai_used",{symptom_length:symptoms.value.trim().length});const fd=new FormData();fd.append("symptoms",symptoms.value);fd.append("csrf_token",csrfToken);const r=await fetch("/order-medicines/ai-suggest",{method:"POST",body:fd});if(!r.ok)throw new Error("AI request failed");renderAiSuggestions(await r.json())}catch(e){trackUiEvent("error_logged",{error_type:"ai_failure",route:"/order-medicines/ai-suggest",message:e.message||"AI request failed"});showMessage("Something went wrong. Please try again.");renderAiSuggestions({suggested_medicines:[],precautions:["AI suggestions are temporarily unavailable.","Please consult a doctor"]})}finally{aiButton.disabled=false;aiButton.textContent="Get AI Suggestions";aiLoading.classList.add("d-none")}}
-function renderPharmacies(pharmacies){pharmacyList.innerHTML="";pharmacies.forEach(p=>{const distance=pharmacyDistanceKm(p),distanceText=distance===null?"Distance unavailable":`${distance.toFixed(1)} km away`,open=typeof p.open_now==="boolean"&&p.open_now?"Open":"Closed",reviews=p.user_ratings_total?` (${p.user_ratings_total} reviews)`:"",card=document.createElement("div");card.className="stack-item";card.innerHTML=`<div class="d-flex justify-content-between align-items-start gap-3"><div><strong>${escapeHtml(p.name)}</strong><div class="text-muted small">${escapeHtml(p.vicinity||"")}</div><div class="small mt-2">${escapeHtml(p.rating||"N/A")}${reviews} · ${open}</div><div class="small text-muted mt-1">${distanceText} · ${deliveryEstimate(distance)}</div></div><button type="button" class="btn btn-primary btn-sm">Select</button></div>`;card.querySelector("button").addEventListener("click",e=>{pharmacyInput.value=p.place_id||"";document.querySelectorAll("#pharmacyList .stack-item").forEach(n=>n.classList.remove("surface-tint"));document.querySelectorAll("#pharmacyList button").forEach(b=>{b.disabled=false;b.textContent="Select"});card.classList.add("surface-tint");e.currentTarget.disabled=true;e.currentTarget.textContent="Selected";selectedPharmacyText.textContent=`Selected: ${p.name}`;selectedPharmacyText.classList.remove("d-none");updateCheckoutState()});pharmacyList.appendChild(card)})}
-async function runHeroAiHelp(){const text=heroSymptoms.value.trim();if(!text){showMessage("Describe your symptoms first.");heroSymptoms.focus();return}symptoms.value=text;if(aiBody.classList.contains("d-none")){aiBody.classList.remove("d-none");toggleAiButton.setAttribute("aria-expanded","true");toggleAiButton.textContent="Hide AI Assistant"}document.getElementById("aiAssistantTitle").scrollIntoView({behavior:"smooth",block:"start"});heroAiButton.disabled=true;heroAiButton.textContent="Getting AI Suggestions...";try{await getAiSuggestions()}finally{heroAiButton.disabled=false;heroAiButton.textContent="Get AI Suggestions"}}
-toggleAiButton.addEventListener("click",()=>{const isOpen=!aiBody.classList.contains("d-none");aiBody.classList.toggle("d-none",isOpen);toggleAiButton.setAttribute("aria-expanded",String(!isOpen));toggleAiButton.textContent=isOpen?"Use AI Assistant":"Hide AI Assistant";if(!isOpen)symptoms.focus()});heroAiButton.addEventListener("click",runHeroAiHelp);aiButton.addEventListener("click",getAiSuggestions);syncHeroSymptoms.addEventListener("click",()=>{symptoms.value=heroSymptoms.value;symptoms.focus()});document.querySelectorAll("[data-tag]").forEach(b=>b.addEventListener("click",()=>{const t=b.dataset.tag||"";medicineSearch.value=t;heroSymptoms.value=t;symptoms.value=t;renderMedicines()}));document.querySelectorAll("[data-kit]").forEach(b=>b.addEventListener("click",()=>addByTerms(quickKits[b.dataset.kit]||[])));closePrescriptionModal.addEventListener("click",()=>prescriptionModal.classList.add("d-none"));clearCartButton.addEventListener("click",()=>{cart=[];cartFeedback.classList.add("d-none");renderCart()});
-document.querySelectorAll("[data-prakriti]").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll("[data-prakriti]").forEach(item=>item.classList.remove("is-active"));button.classList.add("is-active");renderPersonalizedKits(button.dataset.prakriti||"vata")}));
-trackOrderButton.addEventListener("click",async()=>{const id=prompt("Enter your order ID");if(!id)return;try{const r=await fetch(`/order-status/${encodeURIComponent(id)}`);if(!r.ok)throw new Error("Order tracking failed");const p=await r.json();const reorder=p.order_again_url?` <a href="${escapeHtml(p.order_again_url)}" class="alert-link">Reorder</a>`:"";showOrderMessage(`Order #${escapeHtml(p.order_id)} status: ${escapeHtml(p.status)}.${reorder}`,"info")}catch(e){showOrderMessage("Order tracking is temporarily unavailable.","warning")}});
-subscribeDeliveryButton.addEventListener("click",()=>showOrderMessage("Monthly delivery subscriptions are available after your first confirmed order.","info"));
-findPharmaciesBtn.addEventListener("click",()=>{if(!navigator.geolocation){pharmacyList.innerHTML="<p class='text-danger mb-0'>Geolocation is not supported by this browser.</p>";trackUiEvent("error_logged",{error_type:"pharmacy_lookup_failure",route:"/patient/nearby-pharmacies",message:"Geolocation unsupported"});showMessage("Something went wrong. Please try again.");return}findPharmaciesBtn.disabled=true;findPharmaciesBtn.textContent="Loading pharmacies...";pharmacyList.innerHTML="<p class='text-muted mb-0'>Loading pharmacies...</p>";navigator.geolocation.getCurrentPosition(async pos=>{try{userLocation={lat:pos.coords.latitude,lng:pos.coords.longitude};const r=await fetch(`/patient/nearby-pharmacies?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`);if(!r.ok)throw new Error("Pharmacy lookup failed");const pharmacies=await r.json();if(!pharmacies.length){pharmacyList.innerHTML="<p class='text-muted mb-0'>No nearby pharmacies found.</p>";return}renderPharmacies(pharmacies)}catch(e){trackUiEvent("error_logged",{error_type:"pharmacy_lookup_failure",route:"/patient/nearby-pharmacies",message:e.message||"Pharmacy lookup failed"});showMessage("Something went wrong. Please try again.");pharmacyList.innerHTML="<p class='text-danger mb-0'>Failed to load nearby pharmacies.</p>"}finally{findPharmaciesBtn.disabled=false;findPharmaciesBtn.textContent="Find Nearby Pharmacies"}},()=>{pharmacyList.innerHTML="<p class='text-danger mb-0'>Location permission is needed to find nearby pharmacies.</p>";findPharmaciesBtn.disabled=false;findPharmaciesBtn.textContent="Find Nearby Pharmacies";trackUiEvent("error_logged",{error_type:"pharmacy_lookup_failure",route:"/patient/nearby-pharmacies",message:"Location permission denied"});showMessage("Something went wrong. Please try again.")})});
-orderForm.addEventListener("submit",async e=>{e.preventDefault();if(!cart.length){showOrderMessage("Add at least one medicine before checkout.","warning");return}if(cart.some(item=>item.prescription_required)&&!HAS_PRESCRIPTION){showPrescriptionModal();return}const pharmacySelected=Boolean(selectedPharmacyId());if(!pharmacySelected){alert("Please select a pharmacy before checkout");showOrderMessage("Please select a pharmacy before checkout","warning");return}medicinesJson.value=JSON.stringify(cart);pharmacyId.value=selectedPharmacyId();checkoutButton.disabled=true;checkoutButton.textContent="Processing...";try{trackPatientConsent();trackUiEvent("checkout_started",{item_count:cart.reduce((s,i)=>s+Number(i.qty||1),0),total:cartTotalValue()});const r=await fetch(orderForm.action,{method:"POST",body:new FormData(orderForm)}),p=await r.json();if(!r.ok||p.error)throw new Error(p.detail||p.error||"Order creation failed.");showOrderMessage(`Order #${p.order_id} created for ${money(p.amount)}. <a href="/patient/order/${p.order_id}/status" class="alert-link">Open order status</a>.`,"success")}catch(err){trackUiEvent("error_logged",{error_type:"order_creation_failure",route:"/patient/order/create",message:err.message||"Order creation failed"});showMessage("Something went wrong. Please try again.");showOrderMessage(escapeHtml(err.message||"Something went wrong. Please try again."),"danger")}finally{const total=money(cartTotalValue());checkoutButton.disabled=false;checkoutButton.textContent=`Proceed to Checkout ${total}`}});
-medicineSearch.addEventListener("input",()=>{renderMedicines();clearTimeout(searchTrackTimer);const query=medicineSearch.value.trim();if(query)searchTrackTimer=setTimeout(()=>trackUiEvent("search_performed",{query,result_count:medicineList.children.length}),500)});document.addEventListener("DOMContentLoaded",()=>{renderCart();loadMedicines().catch((err)=>{trackUiEvent("error_logged",{error_type:"medicine_catalog_failure",route:"/patient/medicines",message:err.message||"Medicine catalog failed"});showMessage("Something went wrong. Please try again.");medicineLoading.classList.add("d-none");medicineEmpty.textContent="Medicines are temporarily unavailable.";medicineEmpty.classList.remove("d-none")});loadPersonalizedKits();});
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+const searchInput = document.getElementById("searchInput");
+const searchStatus = document.getElementById("searchStatus");
+const medicineList = document.getElementById("medicineList");
+const medicineEmpty = document.getElementById("medicineEmpty");
+const cartItems = document.getElementById("cartItems");
+const cartEmpty = document.getElementById("cartEmpty");
+const cartSummary = document.getElementById("cartSummary");
+const subtotalText = document.getElementById("subtotalText");
+const totalText = document.getElementById("totalText");
+const checkoutButton = document.getElementById("checkoutButton");
+const orderForm = document.getElementById("orderForm");
+const medicinesJson = document.getElementById("medicines_json");
+const pharmacyId = document.getElementById("pharmacyId");
+const sourceOrderId = document.getElementById("sourceOrderId");
+const orderMessage = document.getElementById("orderMessage");
+const aiInput = document.getElementById("aiInput");
+const aiSuggestStatus = document.getElementById("aiSuggestStatus");
+const aiSuggestResults = document.getElementById("aiSuggestResults");
+const prescriptionUploadInput = document.getElementById("prescriptionUploadInput");
+const prescriptionUploadStatus = document.getElementById("prescriptionUploadStatus");
+const prefillMedicines = {{ prefill_medicines | default([], true) | tojson | safe }};
+const initialTab = {{ initial_tab | default('', true) | tojson | safe }};
+const cartKey = "kashSimpleCart";
+const patientProfileKey = "kashSimplePatientProfile";
+let medicines = [];
+let cart = loadCart();
+
+function loadCart() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(cartKey) || "[]");
+        return Array.isArray(saved) ? saved : [];
+    } catch (error) {
+        return [];
+    }
+}
+
+function saveCart() {
+    localStorage.setItem(cartKey, JSON.stringify(cart));
+}
+
+function loadPatientProfile() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(patientProfileKey) || "{}");
+        return typeof saved === "object" && saved ? saved : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function savePatientProfile() {
+    const profile = {
+        name: document.getElementById("patientName").value.trim(),
+        phone: document.getElementById("patientPhone").value.trim(),
+        address: document.getElementById("patientAddress").value.trim()
+    };
+    localStorage.setItem(patientProfileKey, JSON.stringify(profile));
+}
+
+function applySavedPatientProfile() {
+    const profile = loadPatientProfile();
+    if (!document.getElementById("patientName").value && profile.name) document.getElementById("patientName").value = profile.name;
+    if (!document.getElementById("patientPhone").value && profile.phone) document.getElementById("patientPhone").value = profile.phone;
+    if (!document.getElementById("patientAddress").value && profile.address) document.getElementById("patientAddress").value = profile.address;
+}
+
+function openUploadArea() {
+    document.getElementById("uploadArea").style.display = "block";
+    document.getElementById("uploadArea").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderAiSuggestions(payload) {
+    const suggestions = Array.isArray(payload.suggested_medicines) ? payload.suggested_medicines : [];
+    const precautions = Array.isArray(payload.precautions) ? payload.precautions : [];
+    aiSuggestResults.innerHTML = "";
+    if (!suggestions.length) {
+        aiSuggestStatus.textContent = precautions[0] || "No AI suggestions yet. Describe your symptoms in a bit more detail.";
+        return;
+    }
+    aiSuggestStatus.textContent = payload.disclaimer || "These AI suggestions are only for guidance.";
+    suggestions.forEach((suggestion, index) => {
+        const card = document.createElement("div");
+        card.className = "list-row";
+        card.innerHTML = `<div class="list-copy"><strong>${escapeHtml(suggestion)}</strong><span>${escapeHtml(precautions[index] || precautions[0] || "Search this medicine and confirm details before ordering.")}</span></div><button class="primary-btn" type="button">Search this</button>`;
+        card.querySelector("button").addEventListener("click", () => {
+            searchInput.value = suggestion;
+            renderMedicines();
+            searchInput.scrollIntoView({behavior: "smooth", block: "center"});
+        });
+        aiSuggestResults.appendChild(card);
+    });
+}
+
+async function requestAiSuggestions() {
+    const symptoms = aiInput.value.trim();
+    aiSuggestResults.innerHTML = "";
+    aiSuggestStatus.textContent = "Kash AI is reviewing your symptoms...";
+    try {
+        const formData = new FormData();
+        formData.append("symptoms", symptoms);
+        formData.append("csrf_token", csrfToken);
+        const response = await fetch("/order-medicines/ai-suggest", {method: "POST", body: formData});
+        const payload = await response.json();
+        renderAiSuggestions(payload);
+    } catch (error) {
+        aiSuggestStatus.textContent = "AI suggestions are not available right now. Please search manually or upload a prescription.";
+    }
+}
+
+function useAiSuggestionForSearch() {
+    const firstSuggestion = aiSuggestResults.querySelector(".list-row strong");
+    if (!firstSuggestion) {
+        aiInput.focus();
+        aiSuggestStatus.textContent = "Ask Kash AI first so we have a suggestion to use.";
+        return;
+    }
+    searchInput.value = firstSuggestion.textContent.trim();
+    renderMedicines();
+}
+
+function showOrderMessage(message) {
+    orderMessage.style.display = "block";
+    orderMessage.textContent = message;
+}
+
+function money(value) { return `₹${Number(value || 0).toFixed(0)}`; }
+function escapeHtml(value) {
+    return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+function addToCart(item, qty = 1) {
+    const existing = cart.find((entry) => Number(entry.medicine_id) === Number(item.id));
+    if (existing) existing.qty += qty;
+    else cart.push({ medicine_id: item.id, name: item.name, price: Number(item.price || 0), qty: qty, pharmacy_id: item.pharmacy_id || 1 });
+    renderCart();
+}
+
+function updateQty(id, delta) {
+    const item = cart.find((entry) => Number(entry.medicine_id) === Number(id));
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) cart = cart.filter((entry) => Number(entry.medicine_id) !== Number(id));
+    renderCart();
+}
+
+function cartTotal() { return cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0); }
+
+function renderCart() {
+    cartItems.innerHTML = "";
+    if (!cart.length) {
+        cartEmpty.style.display = "block";
+        cartSummary.style.display = "none";
+        checkoutButton.disabled = true;
+        medicinesJson.value = "[]";
+        saveCart();
+        return;
+    }
+    cartEmpty.style.display = "none";
+    cartSummary.style.display = "block";
+    cart.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "list-row";
+        row.innerHTML = `<div class="list-copy"><strong>${escapeHtml(item.name)} x ${item.qty}</strong><span>${money(item.price * item.qty)}</span></div><div style="display:flex; gap:8px;"><button class="mini-btn" type="button" data-action="minus">-</button><button class="mini-btn" type="button" data-action="plus">+</button></div>`;
+        row.querySelector('[data-action="minus"]').addEventListener("click", () => updateQty(item.medicine_id, -1));
+        row.querySelector('[data-action="plus"]').addEventListener("click", () => updateQty(item.medicine_id, 1));
+        cartItems.appendChild(row);
+    });
+    const subtotal = cartTotal();
+    subtotalText.textContent = money(subtotal);
+    totalText.textContent = money(subtotal + 20);
+    checkoutButton.disabled = false;
+    medicinesJson.value = JSON.stringify(cart);
+    pharmacyId.value = String(cart[0].pharmacy_id || 1);
+    saveCart();
+}
+
+function renderMedicines() {
+    const q = searchInput.value.trim().toLowerCase();
+    const visible = medicines.filter((item) => `${item.name} ${item.category} ${item.generic_name || ""}`.toLowerCase().includes(q));
+    medicineList.innerHTML = "";
+    medicineEmpty.style.display = visible.length ? "none" : "block";
+    searchStatus.textContent = q ? "Searching for medicines..." : "Showing popular medicines near you.";
+    visible.forEach((item) => {
+        const row = document.createElement("article");
+        row.className = "feature-card";
+        row.innerHTML = `
+            <div class="hero-actions" style="justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h3 style="font-size:1.05rem;">${escapeHtml(item.name)}</h3>
+                    <p>${escapeHtml(item.description || item.category || "General use")}</p>
+                </div>
+                <span class="section-kicker">${money(item.price)}</span>
+            </div>
+            <p style="margin:1rem 0 .5rem;">Brand quality, fast delivery, and AI-guided comparison support.</p>
+            <div class="hero-actions" style="justify-content:space-between;">
+                <div>
+                    <strong>${money(item.price)}</strong>
+                    <p style="font-size:.9rem;">MRP <s>${money((Number(item.price || 0) * 1.1).toFixed(0))}</s> · Save 10%</p>
+                </div>
+                <button class="primary-btn" type="button">Add to Order</button>
+            </div>
+        `;
+        row.querySelector("button").addEventListener("click", () => addToCart(item, 1));
+        medicineList.appendChild(row);
+    });
+}
+
+async function loadMedicines() {
+    searchStatus.textContent = "Searching for medicines...";
+    const response = await fetch("/api/medicines/search?q=");
+    const payload = await response.json();
+    medicines = Array.isArray(payload.medicines) ? payload.medicines : [];
+    if (Array.isArray(prefillMedicines) && prefillMedicines.length) {
+        for (const wanted of prefillMedicines) {
+            const match = medicines.find((item) => String(item.name || "").toLowerCase() === String(wanted.name || "").toLowerCase());
+            if (match) addToCart(match, Number(wanted.qty || 1));
+        }
+    }
+    renderMedicines();
+}
+
+function validateBeforeSubmit() {
+    if (!cart.length) { showOrderMessage("Please add at least one medicine."); return false; }
+    if (!document.getElementById("patientName").value.trim()) { showOrderMessage("Please enter your name."); document.getElementById("patientName").focus(); return false; }
+    const phone = document.getElementById("patientPhone").value.trim();
+    if (!/^\d{10}$/.test(phone)) { showOrderMessage("Enter a valid 10-digit phone number."); document.getElementById("patientPhone").focus(); return false; }
+    if (!document.getElementById("patientAddress").value.trim()) { showOrderMessage("Please enter your delivery address."); document.getElementById("patientAddress").focus(); return false; }
+    return true;
+}
+
+orderForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (!validateBeforeSubmit()) return;
+    checkoutButton.disabled = true;
+    checkoutButton.textContent = "Placing your order...";
+    orderMessage.style.display = "none";
+    let response;
+    let payload;
+    try {
+        response = await fetch(orderForm.action, { method: "POST", body: new FormData(orderForm) });
+        payload = await response.json();
+    } catch (error) {
+        showOrderMessage("Network issue. Check your internet.");
+        checkoutButton.disabled = false;
+        checkoutButton.textContent = "Place Order";
+        return;
+    }
+    if (!response.ok || payload.error) {
+        showOrderMessage(payload.detail || payload.error || "Something went wrong. Please try again.");
+        checkoutButton.disabled = false;
+        checkoutButton.textContent = "Place Order";
+        return;
+    }
+    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderId, String(payload.order_id));
+    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl, payload.order_again_url || "");
+    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderStatusUrl, `/patient/order/${payload.order_id}/status`);
+    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderPhone, document.getElementById("patientPhone").value);
+    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderMessage, `Your order #AYU${String(payload.order_id).padStart(4, "0")} is confirmed! Will arrive soon.`);
+    savePatientProfile();
+    localStorage.removeItem(cartKey);
+    cart = [];
+    renderCart();
+    showOrderMessage(`Your order #AYU${String(payload.order_id).padStart(4, "0")} is confirmed! Tracking your order now.`);
+    window.location.href = `/orders?order_id=${payload.order_id}`;
+});
+
+prescriptionUploadInput.addEventListener("change", async (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    prescriptionUploadStatus.textContent = "Reading your prescription...";
+    const formData = new FormData();
+    formData.append("file", file);
+    let response;
+    let payload;
+    try {
+        response = await fetch("/api/prescription/analyze-upload", { method: "POST", body: formData });
+        payload = await response.json();
+    } catch (error) {
+        prescriptionUploadStatus.textContent = "Network issue. Check your internet.";
+        return;
+    }
+    if (response.ok && payload.order_url) {
+        prescriptionUploadStatus.innerHTML = `Prescription read successfully! <a href="${payload.order_url}">Add all to cart</a>.`;
+        return;
+    }
+    prescriptionUploadStatus.textContent = payload.detail || "We could not read that prescription. Please try another photo.";
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (initialTab === "upload") openUploadArea();
+    applySavedPatientProfile();
+    ["patientName", "patientPhone", "patientAddress"].forEach((id) => {
+        const field = document.getElementById(id);
+        field.addEventListener("change", savePatientProfile);
+        field.addEventListener("blur", savePatientProfile);
+    });
+    renderCart();
+    loadMedicines().catch(() => {
+        medicineEmpty.style.display = "block";
+        medicineEmpty.textContent = "Medicines are not loading right now. Please try again.";
+        searchStatus.textContent = "Network issue. Check your internet.";
+    });
+});
 </script>
 {% endblock %}
-

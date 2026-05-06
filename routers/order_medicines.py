@@ -13,6 +13,7 @@ from app.analytics import DIRECT_ORDER_EVENTS, log_event, log_route_errors, trac
 from app.auth import ensure_csrf_token, verify_csrf
 from app.config import settings
 from app.database import get_db
+from models.ai_features import AIPrescriptionScan
 from models.prescription import Prescription
 from services import ai_provider
 from services.medicine_catalog import get_default_medicines
@@ -188,11 +189,35 @@ def _prefill_from_prescription(prescription: Prescription | None) -> list[dict[s
     return medicines
 
 
+def _prefill_from_ai_prescription(prescription: AIPrescriptionScan | None) -> list[dict[str, object]]:
+    if prescription is None or not isinstance(prescription.medicines, list):
+        return []
+    medicines: list[dict[str, object]] = []
+    for item in prescription.medicines:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        medicines.append(
+            {
+                "name": name,
+                "qty": int(item.get("suggested_quantity", 1) or 1),
+                "dosage": str(item.get("dosage") or "").strip(),
+                "frequency": str(item.get("duration") or item.get("frequency") or "").strip(),
+                "prescription_required": True,
+            }
+        )
+    return medicines
+
+
 @router.get("/order-medicines")
 def order_medicines_page(
     request: Request,
     source: str = "",
     prescription_id: int | None = None,
+    q: str = "",
+    tab: str = "",
     db: Session = Depends(get_db),
 ):
     prescription = None
@@ -201,6 +226,9 @@ def order_medicines_page(
         try:
             prescription = db.get(Prescription, prescription_id)
             prefill_medicines = _prefill_from_prescription(prescription)
+            if not prefill_medicines:
+                ai_prescription = db.get(AIPrescriptionScan, prescription_id)
+                prefill_medicines = _prefill_from_ai_prescription(ai_prescription)
             log_event("prescription_order_initiated", {"prescription_id": prescription_id})
         except Exception as exc:
             logger.exception("Prescription order prefill failed: %s", exc)
@@ -209,6 +237,7 @@ def order_medicines_page(
         log_event("otc_order_initiated", {})
     log_event("order_medicines_page_viewed", {"source": source or "direct", "prescription_id": prescription_id})
     return templates.TemplateResponse(
+        request,
         "order_medicines.html",
         {
             "request": request,
@@ -217,6 +246,8 @@ def order_medicines_page(
             "has_prescription": bool(prefill_medicines),
             "prefill_order_source": "prescription" if prefill_medicines else "manual",
             "prefill_prescription_id": prescription_id if prefill_medicines else "",
+            "initial_query": q.strip(),
+            "initial_tab": tab.strip().lower(),
         },
     )
 

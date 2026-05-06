@@ -25,3 +25,17 @@ def is_pricing_enabled() -> bool:
 def is_whatsapp_enabled() -> bool:
     # POLISH-8-WHATSAPP-UPDATES: Toggle external WhatsApp delivery while preserving mock/fallback mode.
     return _enabled("ENABLE_WHATSAPP_API")
+
+
+def is_ai_automation_enabled() -> bool:
+    raw_value = os.getenv("ENABLE_AI_AUTOMATION", "").strip().lower()
+    if not raw_value:
+        return True
+    return raw_value in {"1", "true", "yes", "on"}
+
+
+def is_telemedicine_enabled() -> bool:
+    raw_value = os.getenv("ENABLE_TELEMEDICINE", "").strip().lower()
+    if not raw_value:
+        return True
+    return raw_value in {"1", "true", "yes", "on"}

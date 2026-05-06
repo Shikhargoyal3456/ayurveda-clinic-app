@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Kash AI icon">
+  <defs>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F4C5C"/>
+      <stop offset="50%" stop-color="#1A7F6B"/>
+      <stop offset="100%" stop-color="#2BAE66"/>
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="14" fill="#FFFFFF"/>
+  <g transform="translate(6, 8)">
+    <path d="M15,10 C15,10 8,5 5,12 C2,19 8,25 15,20 C22,25 28,19 25,12 C22,5 15,10 15,10Z" fill="url(#iconGradient)" opacity="0.92"/>
+    <path d="M15,18 C15,22 18,28 25,28 C30,28 33,25 33,20" stroke="url(#iconGradient)" stroke-width="2.5" fill="none"/>
+    <circle cx="33" cy="18" r="3" fill="url(#iconGradient)"/>
+  </g>
+</svg>

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
+{% block title %}Kash AI | Smart Entry{% endblock %}
+{% block body_class %}portal-auth-body{% endblock %}
+{% block page %}
+<div class="smart-entry-shell">
+    <section class="smart-entry-hero">
+        <div class="entry-brand">
+            <img src="/static/images/kash-ai-logo.png" alt="Kash AI logo" class="entry-brand-logo" loading="lazy" decoding="async" width="80" height="80">
+            <div>
+                <p class="eyebrow">Kash AI</p>
+                <p class="trust-copy">India's most trusted healthcare platform</p>
+            </div>
+        </div>
+        <h1>One business hub for doctors, pharmacies, labs, and delivery partners</h1>
+        <p>Patients use the main Kash AI app. Operators use this hub to sign in, register, and manage their business workflows without mixing customer and internal journeys.</p>
+
+        <form class="guest-search-bar" action="/order-medicines" method="get">
+            <span aria-hidden="true">🔍</span>
+            <input type="search" name="q" placeholder="Search medicines (no login needed)">
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="hero-actions">
+            <a class="primary-link" href="/auth/login">I already have an account</a>
+            <a class="secondary-link" href="/">Patient app</a>
+        </div>
+    </section>
+
+    <section class="smart-entry-section">
+        <div class="section-heading">
+            <p class="eyebrow">Existing users</p>
+            <h2>Go straight to your workspace</h2>
+        </div>
+        <div class="smart-entry-grid">
+            <a class="entry-card" href="/auth/login/doctor">
+                <strong>👨‍⚕️ Doctor login</strong>
+                <span>Access consultations, patient records, and prescriptions.</span>
+            </a>
+            <a class="entry-card" href="/auth/login/pharmacy">
+                <strong>🏪 Pharmacy login</strong>
+                <span>Manage inventory, orders, and pharmacy operations.</span>
+            </a>
+            <a class="entry-card" href="/auth/login/lab">
+                <strong>🔬 Lab login</strong>
+                <span>Handle test bookings, reports, and lab workflows.</span>
+            </a>
+            <a class="entry-card" href="/auth/login/partner">
+                <strong>🚚 Delivery partner login</strong>
+                <span>Accept deliveries, manage routing, and track earnings.</span>
+            </a>
+            <a class="entry-card" href="/login">
+                <strong>🛡️ Doctor / admin workspace</strong>
+                <span>Use internal clinic operations or saved admin credentials without losing the legacy workflows.</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="smart-entry-section">
+        <div class="section-heading">
+            <p class="eyebrow">New users</p>
+            <h2>Create the correct workspace once</h2>
+        </div>
+        <div class="smart-entry-grid">
+            <a class="entry-card" href="/auth/register/doctor">
+                <strong>👨‍⚕️ Create doctor account</strong>
+                <span>For consultations, records, and verified clinical access.</span>
+            </a>
+            <a class="entry-card" href="/auth/register/pharmacy">
+                <strong>🏪 Create pharmacy account</strong>
+                <span>For stock, medicine listing, and order fulfillment.</span>
+            </a>
+            <a class="entry-card" href="/auth/register/lab">
+                <strong>🔬 Create lab account</strong>
+                <span>For diagnostics, reports, and home collection workflows.</span>
+            </a>
+            <a class="entry-card" href="/auth/register/partner">
+                <strong>🚚 Create delivery partner account</strong>
+                <span>For pickup, delivery tracking, and partner earnings.</span>
+            </a>
+        </div>
+    </section>
+
+    <section class="smart-entry-section">
+        <div class="section-heading">
+            <p class="eyebrow">Need patient access?</p>
+            <h2>Patients stay in the main Kash AI app</h2>
+        </div>
+        <div class="smart-entry-grid">
+            <a class="entry-card" href="/auth/login/patient">
+                <strong>👤 Patient login</strong>
+                <span>Order medicines, upload prescriptions, and track your care from the consumer app.</span>
+            </a>
+            <a class="entry-card" href="/auth/register/patient">
+                <strong>➕ Create patient account</strong>
+                <span>Create a patient profile for medicine orders, health records, and repeat care.</span>
+            </a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<style>
+.smart-entry-shell{min-height:100vh;padding:32px 20px 56px;background:linear-gradient(180deg,#fffdf7,#eef6ff)}.smart-entry-hero,.smart-entry-section{max-width:980px;margin:0 auto}.smart-entry-hero{padding:28px;border-radius:32px;background:#fff;box-shadow:0 24px 80px rgba(15,23,42,.10);border:1px solid rgba(15,23,42,.08)}.entry-brand{display:flex;align-items:center;gap:14px;margin-bottom:8px}.entry-brand-logo{width:58px;height:58px;border-radius:18px;object-fit:contain;background:#fff;border:1px solid #dbe3ef;box-shadow:0 12px 24px rgba(15,23,42,.08);padding:7px}.trust-copy{margin:2px 0 0;color:#5d7289;font-size:.95rem;font-weight:600}.smart-entry-hero h1{margin:8px 0 10px}.smart-entry-hero p{max-width:760px}.guest-search-bar{margin-top:24px;display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:18px;border:1px solid #dbe3ef;background:#f8fbff}.guest-search-bar input{flex:1;border:none;outline:none;background:transparent;padding:6px 0}.guest-search-bar button,.primary-link,.secondary-link{min-height:52px;border-radius:16px;padding:12px 18px;font-weight:800;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}.guest-search-bar button,.primary-link{background:#1f8f53;color:#fff;border:none}.secondary-link{background:#eaf3ff;color:#1d6fd8}.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}.smart-entry-section{margin-top:26px}.section-heading h2{margin:6px 0 0}.smart-entry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:18px}.entry-card{background:#fff;border:1px solid rgba(15,23,42,.08);box-shadow:0 16px 50px rgba(15,23,42,.08);border-radius:24px;padding:22px;display:grid;gap:8px;text-decoration:none;color:#17324d}.entry-card strong{font-size:1.1rem}.entry-card span{color:#5d7289}@media (max-width:720px){.smart-entry-grid{grid-template-columns:1fr}.guest-search-bar{flex-direction:column;align-items:stretch}}
+</style>
+{% endblock %}

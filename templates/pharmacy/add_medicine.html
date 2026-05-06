@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% block title %}Add Medicines | Pharmacy Portal{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Inventory operations</p>
+            <h1>Add New Medicine</h1>
+            <p class="mb-0">Add medicines manually, scan barcodes, or use AI-assisted catalog suggestions.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="/portal/pharmacy/bulk-upload" class="btn btn-outline-dark">Bulk Upload</a>
+            <button class="btn btn-primary" type="button" onclick="refreshInventory()">Refresh Inventory</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="medicine-form-tabs">
+            <button class="tab-btn active" data-tab="manualTab" type="button">Manual Entry</button>
+            <button class="tab-btn" data-tab="barcodeTab" type="button">Scan Barcode</button>
+            <button class="tab-btn" data-tab="aiTab" type="button">AI Suggest</button>
+        </div>
+
+        <div id="manualTab" class="tab-content active">
+            <form id="manualMedicineForm" class="section-stack" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="form-grid two-up">
+                    <label class="field"><span>Medicine Name *</span><input type="text" name="name" required placeholder="e.g., Paracetamol 500mg"></label>
+                    <label class="field"><span>Brand / Manufacturer</span><input type="text" name="brand" placeholder="e.g., Cipla, Dabur"></label>
+                    <label class="field">
+                        <span>Category *</span>
+                        <select name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="allopathy">Allopathy</option>
+                            <option value="ayurveda">Ayurveda</option>
+                            <option value="homeopathy">Homeopathy</option>
+                            <option value="wellness">Wellness</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Prescription Required</span>
+                        <select name="prescription_required">
+                            <option value="0">No (OTC Medicine)</option>
+                            <option value="1">Yes (Prescription Only)</option>
+                        </select>
+                    </label>
+                    <label class="field"><span>MRP (Rs) *</span><input type="number" name="mrp" step="0.01" required></label>
+                    <label class="field"><span>Selling Price (Rs) *</span><input type="number" name="price" step="0.01" required></label>
+                    <label class="field"><span>Stock Quantity *</span><input type="number" name="stock" required></label>
+                    <label class="field"><span>Expiry Date *</span><input type="date" name="expiry_date" required></label>
+                    <label class="field"><span>Barcode</span><input type="text" name="barcode" placeholder="Optional barcode"></label>
+                    <label class="field"><span>Unit</span><input type="text" name="unit" value="unit"></label>
+                </div>
+                <input type="hidden" name="image_urls" id="imageUrlsField" value="[]">
+                <label class="field">
+                    <span>Medicine Images</span>
+                    <div class="image-upload-grid" id="imageUploadGrid">
+                        <button class="upload-box" type="button" onclick="document.getElementById('medicineImage').click()">
+                            <i class="fas fa-camera"></i>
+                            <strong>Upload photos</strong>
+                            <small>Pack front, back, and barcode shots</small>
+                        </button>
+                    </div>
+                    <input type="file" id="medicineImage" accept="image/*" multiple hidden>
+                    <div id="imagePreviewContainer" class="image-preview-container"></div>
+                    <div class="hero-actions mt-2">
+                        <button class="btn btn-outline-dark btn-sm" type="button" onclick="recognizeLatestImage()">Recognize Latest Image</button>
+                        <span id="imageRecognitionHint" class="text-muted">Upload at least one image to get AI-assisted identification.</span>
+                    </div>
+                </label>
+                <label class="field"><span>Description / Instructions</span><textarea name="description" rows="3" placeholder="Dosage, usage instructions, side effects..."></textarea></label>
+                <button type="submit" class="btn btn-primary">Add Medicine</button>
+            </form>
+        </div>
+
+        <div id="barcodeTab" class="tab-content" hidden>
+            <div class="barcode-scanner">
+                <div class="stack-list">
+                    <label class="field"><span>Barcode Number</span><input type="text" id="barcodeInput" placeholder="Scan or enter barcode"></label>
+                    <button onclick="lookupBarcode()" class="btn btn-primary" type="button">Lookup Barcode</button>
+                    <p class="text-muted mb-0">If camera barcode detection is supported in the browser, the scanner will try to read the code automatically.</p>
+                </div>
+                <video id="barcodeScanner" autoplay playsinline class="barcode-video"></video>
+                <div id="scannedResult" class="inline-feedback"></div>
+            </div>
+        </div>
+
+        <div id="aiTab" class="tab-content" hidden>
+            <div class="content-stack">
+                <div class="hero-actions">
+                    <input type="text" id="aiSearch" class="form-control" placeholder="e.g., Medicine for fever or Paracetamol 500mg">
+                    <button onclick="searchWithAI()" class="btn btn-secondary" type="button">AI Suggest</button>
+                </div>
+                <div id="aiSuggestions" class="feature-grid"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="page-header mb-3">
+            <div><p class="eyebrow">My inventory</p><h2 class="h4 mb-0">Recently added medicines</h2></div>
+        </div>
+        <div id="inventoryList" class="stack-list"></div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const csrfToken = "{{ csrf_token }}";
+let aiSuggestionCache = [];
+let barcodeSuggestion = null;
+let uploadedImageUrls = [];
+
+document.querySelectorAll('.tab-btn').forEach((button) => {
+    button.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach((item) => item.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((item) => item.hidden = true);
+        button.classList.add('active');
+        document.getElementById(button.dataset.tab).hidden = false;
+    });
+});
+
+document.getElementById('manualMedicineForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const response = await fetch('/api/pharmacy/medicines/add', {
+        method: 'POST',
+        body: formData
+    });
+    const result = await response.json();
+    if (response.ok && result.success) {
+        showToast('Medicine added successfully!', 'success');
+        event.target.reset();
+        uploadedImageUrls = [];
+        syncImageUrls();
+        document.getElementById('imagePreviewContainer').innerHTML = '';
+        document.getElementById('imageRecognitionHint').textContent = 'Upload at least one image to get AI-assisted identification.';
+        refreshInventory();
+    } else {
+        showToast(result.detail || result.error || 'Unable to add medicine.', 'error');
+    }
+});
+
+document.getElementById('medicineImage').addEventListener('change', async (event) => {
+    const files = Array.from(event.target.files || []);
+    for (const file of files) {
+        const payload = new FormData();
+        payload.append('image', file);
+        const response = await fetch('/api/medicines/upload-image', {
+            method: 'POST',
+            body: payload
+        });
+        const result = await response.json();
+        if (!response.ok || !result.image_url) {
+            showToast(result.detail || 'Image upload failed.', 'error');
+            continue;
+        }
+        uploadedImageUrls.push(result.image_url);
+        addImagePreview(result.image_url);
+        syncImageUrls();
+    }
+    event.target.value = '';
+});
+
+function syncImageUrls() {
+    document.getElementById('imageUrlsField').value = JSON.stringify(uploadedImageUrls);
+}
+
+function addImagePreview(url) {
+    const container = document.getElementById('imagePreviewContainer');
+    const item = document.createElement('div');
+    item.className = 'image-preview';
+    item.dataset.url = url;
+    item.innerHTML = `
+        <img src="${url}" alt="Medicine preview" loading="lazy" decoding="async" width="160" height="120" style="aspect-ratio:4/3">
+        <button type="button" class="btn btn-dark btn-sm" onclick="removeImage('${url}')">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    container.appendChild(item);
+}
+
+function removeImage(url) {
+    uploadedImageUrls = uploadedImageUrls.filter((item) => item !== url);
+    syncImageUrls();
+    document.querySelector(`.image-preview[data-url="${CSS.escape(url)}"]`)?.remove();
+}
+
+async function recognizeLatestImage() {
+    const imageUrl = uploadedImageUrls[uploadedImageUrls.length - 1];
+    if (!imageUrl) {
+        showToast('Upload an image first.', 'error');
+        return;
+    }
+    const formData = new FormData();
+    formData.append('image_url', imageUrl);
+    const response = await fetch('/api/medicines/recognize-image', {
+        method: 'POST',
+        body: formData
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        showToast(result.detail || 'Unable to recognize medicine.', 'error');
+        return;
+    }
+    const suggestion = Array.isArray(result.suggested_medicines) ? result.suggested_medicines[0] : null;
+    if (suggestion) {
+        fillFromSuggestion({
+            name: suggestion.name,
+            brand: suggestion.brand || '',
+            category: suggestion.category || 'allopathy',
+            mrp: suggestion.mrp || suggestion.price || '',
+            price: suggestion.price || suggestion.mrp || '',
+            description: suggestion.description || ''
+        });
+        document.getElementById('imageRecognitionHint').textContent = `Best match: ${suggestion.name} (${Math.round((result.confidence_score || 0) * 100)}% confidence)`;
+        showToast(`AI matched ${suggestion.name}.`, 'success');
+        return;
+    }
+    document.getElementById('imageRecognitionHint').textContent = 'Recognition completed, but no catalog match was found.';
+    showToast('No catalog match found for this image yet.', 'info');
+}
+
+async function refreshInventory() {
+    const response = await fetch('/api/pharmacy/inventory');
+    const payload = await response.json();
+    const rows = payload.inventory || [];
+    document.getElementById('inventoryList').innerHTML = rows.length ? rows.map((item) => `
+        <div class="stack-item">
+            <div>
+                <strong>${item.name}</strong>
+                <p class="mb-0 text-muted">${item.brand || ''} · ${item.category} · Stock ${item.stock} · Rs ${Number(item.price || 0).toFixed(2)}</p>
+                <div class="inventory-meta">
+                    <img src="${item.image_url}" alt="${item.name}" loading="lazy" decoding="async" width="80" height="80" style="aspect-ratio:1/1">
+                    ${item.is_clearance ? `<span class="inventory-badge">Clearance Rs ${Number(item.clearance_price || 0).toFixed(2)}</span>` : ''}
+                </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="removeInventory(${item.id})">Remove</button>
+        </div>
+    `).join('') : '<div class="stack-item">No inventory items yet.</div>';
+}
+
+async function removeInventory(id) {
+    const response = await fetch(`/api/pharmacy/inventory/${id}`, { method: 'DELETE' });
+    if (response.ok) {
+        showToast('Inventory item removed.', 'success');
+        refreshInventory();
+    }
+}
+
+async function lookupBarcode() {
+    const barcode = document.getElementById('barcodeInput').value.trim();
+    if (!barcode) {
+        showToast('Enter a barcode first.', 'error');
+        return;
+    }
+    const response = await fetch(`/api/pharmacy/medicines/barcode/${encodeURIComponent(barcode)}`);
+    const payload = await response.json();
+    const resultBox = document.getElementById('scannedResult');
+    if (!payload.success || !payload.medicine) {
+        resultBox.textContent = 'No medicine match found for this barcode.';
+        return;
+    }
+    const med = payload.medicine;
+    barcodeSuggestion = {name: med.name, brand: med.brand || '', category: med.category || 'allopathy', mrp: med.mrp || 0, price: med.price || med.mrp || 0, description: med.description || '', barcode: med.barcode || barcode};
+    resultBox.innerHTML = `<div class="alert alert-info mb-0"><strong>${med.name}</strong><br>${med.brand || ''}<br><button class="btn btn-primary btn-sm mt-2" type="button" onclick="fillBarcodeSuggestion()">Use This Medicine</button></div>`;
+}
+
+async function searchWithAI() {
+    const query = document.getElementById('aiSearch').value.trim();
+    const response = await fetch(`/api/ai/medicine-suggest?q=${encodeURIComponent(query)}`);
+    const suggestions = await response.json();
+    aiSuggestionCache = Array.isArray(suggestions) ? suggestions : [];
+    document.getElementById('aiSuggestions').innerHTML = aiSuggestionCache.map((med, index) => `
+        <div class="feature-card suggestion-card">
+            <strong>${med.name}</strong>
+            <div>${med.brand || ''} | Rs ${Number(med.price || 0).toFixed(2)}</div>
+            <button class="btn btn-outline-success btn-sm mt-2" type="button" onclick="fillSuggestionByIndex(${index})">Use Suggestion</button>
+        </div>
+    `).join('') || '<div class="stack-item">No suggestions found.</div>';
+}
+
+function fillFromSuggestion(med) {
+    document.querySelector('[data-tab="manualTab"]').click();
+    for (const [key, value] of Object.entries(med)) {
+        const field = document.querySelector(`#manualMedicineForm [name="${key}"]`);
+        if (field) field.value = value || '';
+    }
+    showToast('Suggestion copied into the form.', 'success');
+}
+
+function fillSuggestionByIndex(index) {
+    fillFromSuggestion(aiSuggestionCache[index] || {});
+}
+
+function fillBarcodeSuggestion() {
+    fillFromSuggestion(barcodeSuggestion || {});
+}
+
+async function startNativeBarcodeDetector() {
+    if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) return;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const video = document.getElementById('barcodeScanner');
+        video.srcObject = stream;
+        const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+        const scan = async () => {
+            if (video.readyState >= 2) {
+                const barcodes = await detector.detect(video);
+                if (barcodes.length) {
+                    document.getElementById('barcodeInput').value = barcodes[0].rawValue || '';
+                    lookupBarcode();
+                    stream.getTracks().forEach((track) => track.stop());
+                    return;
+                }
+            }
+            requestAnimationFrame(scan);
+        };
+        requestAnimationFrame(scan);
+    } catch (_) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    refreshInventory();
+    startNativeBarcodeDetector();
+});
+</script>
+<style>
+.medicine-form-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px}.tab-btn{border:none;background:#e2e8f0;color:#0f172a;padding:12px 16px;border-radius:999px;font-weight:700}.tab-btn.active{background:#173126;color:#fff}.barcode-video{width:100%;max-width:460px;border-radius:24px;background:#0f172a;min-height:240px}.suggestion-card{display:flex;flex-direction:column;gap:10px}
+.image-upload-grid{display:flex;gap:14px;flex-wrap:wrap}.upload-box{border:1px dashed #9db5a7;border-radius:20px;background:#f8fcf8;min-height:132px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:18px;color:#173126;width:220px}.image-preview-container{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px}.image-preview{position:relative;width:120px;height:120px;border-radius:18px;overflow:hidden;box-shadow:0 10px 24px rgba(15,23,42,.12)}.image-preview img{width:100%;height:100%;object-fit:cover}.image-preview button{position:absolute;top:8px;right:8px}.inventory-meta{display:flex;align-items:center;gap:10px;margin-top:8px}.inventory-meta img{width:44px;height:44px;border-radius:12px;object-fit:cover;background:#f1f5f9}.inventory-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:#fff4d4;color:#7a4b00;font-size:.82rem;font-weight:700}
+</style>
+{% endblock %}

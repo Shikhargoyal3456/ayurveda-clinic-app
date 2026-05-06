@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Bulk Upload Medicines | Pharmacy Portal{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Bulk inventory</p>
+            <h1>Bulk Upload Medicines</h1>
+            <p class="mb-0">Upload your CSV catalog, preview rows, and import medicines into your pharmacy inventory in one pass.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="/static/templates/medicine_bulk_template.csv" class="btn btn-outline-dark" download>Download CSV Template</a>
+            <a href="/portal/pharmacy/add-medicine" class="btn btn-primary">Add One Medicine</a>
+        </div>
+    </section>
+
+    <section class="card content-stack">
+        <div class="upload-stepper">
+            <div class="upload-step is-active"><strong>1. Download Template</strong><span>Start with the correct CSV columns.</span></div>
+            <div class="upload-step"><strong>2. Fill Data</strong><span>Add medicine names, stock, and pricing.</span></div>
+            <div class="upload-step"><strong>3. Upload File</strong><span>Review parsed rows before import.</span></div>
+        </div>
+        <div class="upload-area" id="dropZone">
+            <i class="fa-solid fa-cloud-arrow-up fa-3x"></i>
+            <p>Drag and drop a CSV file here or click to upload.</p>
+            <input type="file" id="csvFile" accept=".csv" hidden>
+            <button onclick="document.getElementById('csvFile').click()" class="btn btn-primary" type="button">Select CSV File</button>
+        </div>
+
+        <div id="uploadPreview" hidden>
+            <h2 class="h4">Preview: <span id="fileName"></span></h2>
+            <div class="table-responsive">
+                <table class="table" id="previewTable"></table>
+            </div>
+            <button onclick="uploadBulk()" class="btn btn-primary" type="button">Upload <span id="rowCount">0</span> Medicines</button>
+        </div>
+
+        <div id="uploadProgress" hidden>
+            <div class="progress-shell"><div class="progress-fill" id="progressFill"></div></div>
+            <p id="progressStatus">Uploading...</p>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let previewRows = [];
+
+function parseCsv(text) {
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if (!lines.length) return [];
+    const headers = lines[0].split(',').map((item) => item.trim());
+    return lines.slice(1).map((line) => {
+        const values = line.split(',');
+        const row = {};
+        headers.forEach((header, index) => row[header] = (values[index] || '').trim());
+        return row;
+    });
+}
+
+function displayPreview(rows) {
+    previewRows = rows.filter((row) => Object.values(row).some((value) => value));
+    const preview = document.getElementById('uploadPreview');
+    const table = document.getElementById('previewTable');
+    const headers = previewRows.length ? Object.keys(previewRows[0]) : [];
+    document.getElementById('rowCount').textContent = previewRows.length;
+    table.innerHTML = `
+        <thead><tr>${headers.map((header) => `<th>${header}</th>`).join('')}</tr></thead>
+        <tbody>${previewRows.slice(0, 8).map((row) => `<tr>${headers.map((header) => `<td>${row[header] || ''}</td>`).join('')}</tr>`).join('')}</tbody>
+    `;
+    preview.hidden = false;
+}
+
+document.getElementById('csvFile').addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    document.getElementById('fileName').textContent = file.name;
+    const text = await file.text();
+    displayPreview(parseCsv(text));
+});
+
+async function uploadBulk() {
+    const file = document.getElementById('csvFile').files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    document.getElementById('uploadProgress').hidden = false;
+    document.getElementById('progressFill').style.width = '45%';
+    document.getElementById('progressStatus').textContent = 'Uploading medicines...';
+
+    const response = await fetch('/api/pharmacy/medicines/bulk-upload', {
+        method: 'POST',
+        body: formData
+    });
+    const result = await response.json();
+    document.getElementById('progressFill').style.width = '100%';
+    document.getElementById('progressStatus').textContent = `Added ${result.added || 0}, failed ${result.failed || 0}`;
+    showToast(`${result.added || 0} medicines added, ${result.failed || 0} failed`, 'info');
+}
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    dropZone.classList.add('surface-tint');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('surface-tint'));
+dropZone.addEventListener('drop', (event) => {
+    event.preventDefault();
+    dropZone.classList.remove('surface-tint');
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    document.getElementById('csvFile').files = event.dataTransfer.files;
+    document.getElementById('csvFile').dispatchEvent(new Event('change'));
+});
+dropZone.addEventListener('click', () => document.getElementById('csvFile').click());
+</script>
+<style>
+.upload-stepper{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}.upload-step{padding:14px;border-radius:18px;background:#f8fafc;border:1px solid #dbe3ef;display:grid;gap:4px}.upload-step.is-active{background:#e8f5f0;border-color:#0d7a6f}.upload-area{border:2px dashed #94a3b8;border-radius:28px;padding:32px;text-align:center;background:#f8fafc;display:grid;gap:14px}.progress-shell{height:14px;border-radius:999px;background:#e2e8f0;overflow:hidden}.progress-fill{height:100%;width:0;background:linear-gradient(90deg,#173126,#22c55e);transition:width .3s ease}
+@media (max-width:760px){.upload-stepper{grid-template-columns:1fr}}
+</style>
+{% endblock %}

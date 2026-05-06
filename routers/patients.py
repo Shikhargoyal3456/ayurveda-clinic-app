@@ -13,17 +13,21 @@ from app.analytics import track_event
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
 from app.config import settings
 from app.database import commit_with_retry, get_db
+from app.portal_auth import dashboard_path_for_role, get_portal_user
 from app.models import Appointment, CaseSheet, Doctor, Patient
+from apps.patient.routes import patient_dashboard_context
 from models.medicine import MedicineOrder
 from models.outcome import Outcome
 from models.payment import Payment
 from models.prescription import Prescription
+from services.superapp_service import get_dashboard_payload
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
     increment_subscription_usage as increment_usage,
 )
 from routers.pharmacy import _is_repeat_order, _load_order_items, _order_again_token, _order_source
+from services.profile_service import active_profiles_for_user, profile_avatar_for_relationship, resolve_active_profile
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -80,10 +84,91 @@ def get_patient_insights(db: Session, patient_id: int) -> dict[str, object]:
 
 
 @router.get("/")
-def root(request: Request):
+def root(request: Request, db: Session = Depends(get_db)):
     if request.session.get("doctor_id"):
         return RedirectResponse(url="/dashboard", status_code=303)
-    return templates.TemplateResponse(request, "landing.html", {})
+    portal_user = get_portal_user(request, db)
+    if portal_user is not None:
+        role_value = getattr(portal_user.role, "value", str(portal_user.role))
+        if role_value == "patient":
+            profiles = active_profiles_for_user(db, portal_user.id)
+            if not profiles:
+                return RedirectResponse(url="/profiles/add", status_code=303)
+            if len(profiles) > 1 and not request.session.get("active_profile_id"):
+                return RedirectResponse(url="/profiles/select", status_code=303)
+            active_profile = resolve_active_profile(request, db, portal_user)
+            if active_profile is not None:
+                request.session["active_profile_name"] = active_profile.profile_name
+                request.session["active_profile_avatar"] = profile_avatar_for_relationship(active_profile.relationship, active_profile.profile_avatar)
+                request.session["active_profile_relationship"] = active_profile.relationship
+            return templates.TemplateResponse(request, "patient_home.html", patient_dashboard_context(request, portal_user))
+        return RedirectResponse(url=dashboard_path_for_role(role_value), status_code=303)
+    return templates.TemplateResponse(request, "patient_home.html", patient_dashboard_context(request))
+
+
+@router.get("/my-health")
+def my_health(request: Request, db: Session = Depends(get_db)):
+    portal_user = get_portal_user(request, db)
+    if portal_user is not None and getattr(portal_user.role, "value", str(portal_user.role)) == "patient":
+        profiles = active_profiles_for_user(db, portal_user.id)
+        if not profiles:
+            return RedirectResponse(url="/profiles/add", status_code=303)
+        if len(profiles) > 1 and not request.session.get("active_profile_id"):
+            return RedirectResponse(url="/profiles/select", status_code=303)
+    payload = get_dashboard_payload()
+    subscriptions = payload.get("subscriptions", [])
+    active_medicines = []
+    for item in subscriptions[:5]:
+        days_left = int(item.get("days_left", 0) or 0)
+        tone = "yellow" if days_left <= 3 else "green"
+        badge = "Refill soon" if days_left <= 3 else "On track"
+        refill_text = "today" if days_left <= 0 else f"in {days_left} days"
+        active_medicines.append(
+            {
+                "name": item.get("medicine_name", "Medicine"),
+                "refill_text": refill_text,
+                "tone": tone,
+                "badge": badge,
+            }
+        )
+    return templates.TemplateResponse(
+        request,
+        "patient/simple_health.html",
+        {
+            "request": request,
+            "simple_nav": "health",
+            "page_hint": "Your medicines and refill reminders",
+            "health_score": payload.get("health_score", 85),
+            "health_message": payload.get("health_message", "Your medicines and reminders are on track."),
+            "active_medicines": active_medicines,
+            "recent_consults": 2,
+            "active_profile_name": request.session.get("active_profile_name", "Myself"),
+        },
+    )
+
+
+@router.get("/orders")
+def my_orders(request: Request, db: Session = Depends(get_db)):
+    portal_user = get_portal_user(request, db)
+    if portal_user is not None and getattr(portal_user.role, "value", str(portal_user.role)) == "patient":
+        profiles = active_profiles_for_user(db, portal_user.id)
+        if not profiles:
+            return RedirectResponse(url="/profiles/add", status_code=303)
+        if len(profiles) > 1 and not request.session.get("active_profile_id"):
+            return RedirectResponse(url="/profiles/select", status_code=303)
+    return templates.TemplateResponse(
+        request,
+        "orders/tracking.html",
+        {
+            "request": request,
+            "simple_nav": "orders",
+            "page_hint": "See where your medicine is",
+            "simple_mode": True,
+            "order": {"id": "", "timeline": []},
+            "location": {"eta": ""},
+            "active_profile_name": request.session.get("active_profile_name", "Myself"),
+        },
+    )
 
 
 @router.get("/pricing")
@@ -102,6 +187,9 @@ def dashboard(
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
 ):
+    allowed_admins = {item.strip().lower() for item in settings.admin_usernames if item.strip()}
+    if (doctor.username or "").strip().lower() in allowed_admins:
+        return RedirectResponse(url="/admin", status_code=303)
     today = date.today()
     current_datetime = datetime.now()
     appointment_count_sq = (

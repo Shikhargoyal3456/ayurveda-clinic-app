@@ -1,0 +1,104 @@
+{% extends "patient_simple_base.html" %}
+{% set simple_nav = 'health' %}
+{% block title %}My Health{% endblock %}
+{% block page %}
+<section class="simple-card">
+    <h1 class="title">My Health</h1>
+    {% if user_name %}
+    <p class="subtitle"><strong>{{ user_name }}</strong></p>
+    {% endif %}
+    <p class="subtitle">{{ health_message }}</p>
+    <div class="metric-row" style="margin-top:16px;">
+        <div class="pill">
+            <strong>{{ health_score }}/100</strong>
+            <span>Health Score</span>
+        </div>
+        <div class="pill">
+            <strong>{{ active_medicines|length }}</strong>
+            <span>Active Medicines</span>
+        </div>
+        <div class="pill">
+            <strong>{{ recent_consults }}</strong>
+            <span>Recent Doctor Visits</span>
+        </div>
+    </div>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Active Medicines</h2>
+    {% for item in active_medicines %}
+    <div class="list-row">
+        <div class="list-copy">
+            <strong>{{ item.name }}</strong>
+            <span>Reorder Medicines {{ item.refill_text }}</span>
+        </div>
+        <span class="status {{ item.tone }}">{{ item.badge }}</span>
+    </div>
+    {% else %}
+    <div class="empty-state">Your active medicines will show here.</div>
+    {% endfor %}
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Past Prescriptions</h2>
+    <div id="prescriptionHistory" class="empty-state">Loading your past prescriptions...</div>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Quick Help</h2>
+    <p class="subtitle">Active deliveries and medicine reorder reminders are easy to find here.</p>
+    <div class="tile-grid">
+        <a class="action-tile" href="/order-medicines?tab=upload">
+            <div class="emoji">📄</div>
+            <strong>Upload New Prescription</strong>
+            <span>Take a photo and order faster.</span>
+        </a>
+        <a class="action-tile" href="/orders">
+            <div class="emoji">🔔</div>
+            <strong>Track My Order</strong>
+            <span>See your latest delivery status.</span>
+        </a>
+        <a class="action-tile" href="/telemedicine/book">
+            <div class="emoji">🩺</div>
+            <strong>Consult Doctor</strong>
+            <span>Choose a doctor and start your call.</span>
+        </a>
+        <button class="action-tile" type="button" onclick="window.showSimpleMessage('Reminder saved for your medicines.')">
+            <div class="emoji">⏰</div>
+            <strong>Set Reminder</strong>
+            <span>Get a simple reminder before your next reorder is due.</span>
+        </button>
+    </div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function loadPrescriptionHistory() {
+    const host = document.getElementById("prescriptionHistory");
+    try {
+        const response = await fetch("/api/prescription/history");
+        if (!response.ok) {
+            throw new Error("history unavailable");
+        }
+        const items = await response.json();
+        if (!Array.isArray(items) || !items.length) {
+            host.textContent = "No prescriptions yet. Upload one when you need medicine delivery.";
+            return;
+        }
+        host.className = "";
+        host.innerHTML = items.slice(0, 5).map((item) => `
+            <div class="list-row">
+                <div class="list-copy">
+                    <strong>${item.title || "Prescription"}</strong>
+                    <span>${item.date || item.created_at || "Recently added"}</span>
+                </div>
+                <a class="secondary-btn" href="/order-medicines?source=prescription&prescription_id=${item.id}">Order Again</a>
+            </div>
+        `).join("");
+    } catch (error) {
+        host.textContent = "Past prescriptions will appear here after you upload one.";
+    }
+}
+document.addEventListener("DOMContentLoaded", loadPrescriptionHistory);
+</script>
+{% endblock %}

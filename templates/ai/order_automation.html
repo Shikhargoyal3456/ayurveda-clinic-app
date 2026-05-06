@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}AI Order Automation | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">AI Services</p>
+            <h1>Smart order processing</h1>
+            <p class="mb-0">Parallel AI review for fraud checks, prioritization, refill prediction, and delivery batching without interrupting checkout.</p>
+        </div>
+    </section>
+
+    <section class="content-grid-2">
+        <article class="card">
+            <p class="eyebrow">Sample automation result</p>
+            <h2 class="h4">Order #{{ sample.order_id }}</h2>
+            <div class="stack-list mt-3">
+                <div class="stack-item">Priority: <strong>{{ sample.priority|title }}</strong></div>
+                <div class="stack-item">Pharmacy type: <strong>{{ sample.pharmacy_type|title }}</strong></div>
+                <div class="stack-item">Estimated processing time: <strong>{{ sample.estimated_processing_time }}</strong></div>
+            </div>
+        </article>
+        <article class="card">
+            <p class="eyebrow">Capabilities</p>
+            <div class="stack-list mt-3">
+                <div class="stack-item">AI fraud screening</div>
+                <div class="stack-item">Prescription verification placeholder</div>
+                <div class="stack-item">Alternative medicine suggestion</div>
+                <div class="stack-item">Refill prediction and route optimization</div>
+            </div>
+        </article>
+    </section>
+</div>
+{% endblock %}

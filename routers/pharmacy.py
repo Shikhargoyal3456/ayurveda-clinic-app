@@ -4,6 +4,7 @@ import os
 import re
 import time
 from collections import defaultdict, deque
+from threading import Thread
 from datetime import timedelta, timezone
 from io import BytesIO
 
@@ -24,9 +25,10 @@ from app.audit import write_audit_event
 from app.auth import ensure_csrf_token, verify_csrf
 from app.config import settings
 from app.database import commit_with_retry, get_db
+from app.portal_auth import get_portal_user
 from app.rate_limit import limiter
 from app.models import Patient
-from models.medicine import Medicine, MedicineOrder, Pharmacy, utc_now
+from models.medicine import MasterMedicine, Medicine, MedicineOrder, MedicineRequest, Pharmacy, utc_now
 from services import whatsapp
 from services.communication import send_patient_message
 from services.delivery_service import assign_delivery_safe, update_delivery_status
@@ -35,7 +37,13 @@ from services.fulfillment_service import track_order, update_status
 from services.geocoding import get_nearby_pharmacies
 from services.inventory_service import reduce_stock
 from services.medicine_catalog import get_default_medicines
+from services.medicine_management import medicine_request_payload, search_master_medicines
+from services.profile_service import profile_avatar_for_relationship, resolve_active_profile
 from services.telegram_bot import TelegramOrderNotifier
+from services.medicine_api_service import MedicineAPIService
+from services.ai_medicine_alternatives import AIMedicineAlternatives
+from services.ai_prescription_analyzer import AIPrescriptionAnalyzer
+from services.price_comparison_service import PriceComparisonService
 
 
 router = APIRouter(tags=["pharmacy"])
@@ -52,6 +60,28 @@ _VALID_ORDER_TRANSITIONS = {
     "delivered": set(),
 }
 email_service = EmailService()
+medicine_api_service = MedicineAPIService()
+ai_medicine_alternatives = AIMedicineAlternatives()
+price_comparison_service = PriceComparisonService()
+prescription_analyzer = AIPrescriptionAnalyzer()
+
+
+def _run_ai_order_processing(order_id: int) -> None:
+    try:
+        import asyncio
+
+        from services.ai_order_automation import AIOrderAutomation
+
+        asyncio.run(AIOrderAutomation().process_order_with_ai(order_id))
+    except Exception as exc:
+        logger.warning("AI background order processing failed for order %s: %s", order_id, exc)
+
+
+def _schedule_ai_order_processing(order_id: int) -> None:
+    try:
+        Thread(target=_run_ai_order_processing, args=(order_id,), daemon=True, name=f"ai-order-{order_id}").start()
+    except Exception as exc:
+        logger.warning("AI order processing could not be scheduled for order %s: %s", order_id, exc)
 
 
 def _order_again_token(order_id: int) -> str:
@@ -125,6 +155,7 @@ def _order_status_payload(order: MedicineOrder) -> dict[str, object]:
     )
     return {
         "order_id": order.id,
+        "profile_name": order.profile_name,
         "status": order.status,
         "order_status": order.status,
         "payment_status": order.payment_status,
@@ -312,6 +343,7 @@ def _patient_reordered_after(db: Session, order: MedicineOrder, anchor) -> bool:
 @router.get("/order/{token}", response_class=HTMLResponse)
 def patient_order_page(token: str, request: Request):
     return templates.TemplateResponse(
+        request,
         "patient_order.html",
         {"request": request, "token": token, "csrf_token": ensure_csrf_token(request)},
     )
@@ -335,6 +367,7 @@ def order_again_page(order_token: str, request: Request, db: Session = Depends(g
         prefill_medicines = []
 
     return templates.TemplateResponse(
+        request,
         "patient_order.html",
         {
             "request": request,
@@ -398,11 +431,123 @@ def patient_medicines(db: Session = Depends(get_db)):
     ]
 
 
+@router.get("/patient/medicine-alternatives", response_class=HTMLResponse)
+def medicine_alternatives_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "patient/medicine_alternatives.html",
+        {"request": request, "active_page": "medicines", "user_name": "Patient tools", "user_role": "Alternative finder", "avatar_label": "AL"},
+    )
+
+
+@router.get("/patient/price-comparison", response_class=HTMLResponse)
+def price_comparison_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "patient/price_comparison.html",
+        {"request": request, "active_page": "medicines", "user_name": "Patient tools", "user_role": "Price comparison", "avatar_label": "PC"},
+    )
+
+
+@router.get("/api/medicines/search")
+def search_medicines(q: str = "", db: Session = Depends(get_db)):
+    local = search_master_medicines(db, q, limit=20)
+    if local:
+        return JSONResponse(
+            {
+                "medicines": [
+                    {
+                        "id": item.id,
+                        "name": item.name,
+                        "brand": item.brand or "",
+                        "generic_name": item.generic_name or "",
+                        "category": item.category,
+                        "price": float(item.price or item.mrp or 0),
+                        "mrp": float(item.mrp or item.price or 0),
+                        "prescription_required": bool(item.prescription_required),
+                        "description": item.description or "",
+                    }
+                    for item in local
+                ]
+            }
+        )
+    return JSONResponse({"medicines": medicine_api_service.search_external_medicines(q)})
+
+
+@router.get("/api/ai/medicine-alternatives/{medicine_id}")
+def medicine_alternatives(medicine_id: int, db: Session = Depends(get_db)):
+    source = db.get(MasterMedicine, medicine_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Medicine not found")
+    query = db.query(MasterMedicine).filter(MasterMedicine.id != source.id, MasterMedicine.is_active.is_(True))
+    if source.generic_name:
+        query = query.filter(MasterMedicine.generic_name == source.generic_name)
+    else:
+        query = query.filter(MasterMedicine.category == source.category)
+    alternatives = query.order_by(MasterMedicine.popularity_score.desc(), MasterMedicine.price.asc()).limit(8).all()
+    return JSONResponse(
+        {
+            "medicine": {"id": source.id, "name": source.name},
+            "alternatives": [
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "brand": item.brand or "",
+                    "price": float(item.price or item.mrp or 0),
+                    "category": item.category,
+                }
+                for item in alternatives
+            ],
+        }
+    )
+
+
+@router.get("/api/medicines/alternatives")
+def get_alternatives(medicine_name: str = "", db: Session = Depends(get_db)):
+    try:
+        return JSONResponse(ai_medicine_alternatives.find_alternatives_by_name(db, medicine_name))
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post("/api/medicines/compare")
+async def compare_prices(request: Request, db: Session = Depends(get_db)):
+    payload = await request.json()
+    medicine_name = str(payload.get("medicine_name", "")).strip()
+    user_location = payload.get("user_location", {}) if isinstance(payload.get("user_location"), dict) else {}
+    return JSONResponse(price_comparison_service.compare_prices(db, medicine_name, user_location))
+
+
+@router.get("/api/medicines/best-deals")
+def get_best_deals(db: Session = Depends(get_db)):
+    return JSONResponse(price_comparison_service.get_best_deals(db))
+
+
+@router.post("/api/patient/request-medicine")
+async def request_medicine(request: Request, db: Session = Depends(get_db)):
+    payload = await request.json()
+    name = str(payload.get("name", "")).strip()
+    brand = str(payload.get("brand", "")).strip() or None
+    if not name:
+        raise HTTPException(status_code=400, detail="Medicine name is required")
+    patient_user = get_portal_user(request, db)
+    item = MedicineRequest(
+        patient_user_id=int(patient_user.id) if patient_user is not None else None,
+        medicine_name=name,
+        brand=brand,
+        status="pending",
+    )
+    db.add(item)
+    commit_with_retry(db)
+    db.refresh(item)
+    return JSONResponse({"success": True, "request": medicine_request_payload(item)})
+
+
 @router.get("/patient/nearby-pharmacies")
 @log_route_errors("pharmacy_lookup_failure", "/patient/nearby-pharmacies")
 async def nearby_pharmacies(lat: float | None = None, lng: float | None = None):
     if lat is None or lng is None:
-        raise HTTPException(status_code=400, detail="lat and lng are required")
+        return JSONResponse(status_code=400, content={"success": False, "error": "lat and lng are required", "detail": "lat and lng are required"})
     # GRAND-UNIFIED-1: Use Places API (New) through a cached service with static fallback.
     return await run_in_threadpool(get_nearby_pharmacies, lat, lng)
 
@@ -520,7 +665,19 @@ def create_patient_order(
     if total_amount <= 0:
         raise HTTPException(status_code=400, detail="Order amount must be greater than zero")
 
+    portal_user = get_portal_user(request, db)
+    active_profile = None
+    if portal_user is not None:
+        active_profile = resolve_active_profile(request, db, portal_user)
+        if active_profile is not None:
+            request.session["active_profile_name"] = active_profile.profile_name
+            request.session["active_profile_avatar"] = profile_avatar_for_relationship(active_profile.relationship, active_profile.profile_avatar)
+            request.session["active_profile_relationship"] = active_profile.relationship
+
     order = MedicineOrder(
+        patient_user_id=int(portal_user.id) if portal_user is not None else None,
+        profile_id=int(active_profile.id) if active_profile is not None else None,
+        profile_name=active_profile.profile_name if active_profile is not None else None,
         patient_name=patient_name,
         patient_phone=patient_phone,
         patient_address=patient_address,
@@ -534,6 +691,9 @@ def create_patient_order(
     commit_with_retry(db)
     db.refresh(order)
 
+    if clean_order_source == "prescription" and parsed_prescription_id:
+        prescription_analyzer.attach_order(db, parsed_prescription_id, order.id)
+
     order.razorpay_order_id = _create_razorpay_order_id(order, pharmacy)
     commit_with_retry(db)
     db.refresh(order)
@@ -543,6 +703,7 @@ def create_patient_order(
     track_event("order_created", order_id=order.id, pharmacy_id=pharmacy.id, total=float(total_amount), item_count=len(normalized_items))
     update_status(order.id, "placed")
     assign_delivery_safe(order.id)
+    _schedule_ai_order_processing(order.id)
     notifier = TelegramOrderNotifier(
         bot_token=os.getenv("TELEGRAM_BOT_TOKEN", "").strip(),
         chat_id=os.getenv("TELEGRAM_CHAT_ID", "").strip(),
@@ -780,6 +941,7 @@ def order_confirmation_page(order_id: int, request: Request, db: Session = Depen
     context = {
         "request": request,
         "order": order,
+        "active_profile_name": order.profile_name or order.patient_name,
         "order_items": items,
         "subtotal": subtotal,
         "delivery_charge": delivery_charge,
@@ -791,7 +953,7 @@ def order_confirmation_page(order_id: int, request: Request, db: Session = Depen
         "user_role": "Medicine order",
         "avatar_label": "OR",
     }
-    return templates.TemplateResponse("orders/confirmation.html", context)
+    return templates.TemplateResponse(request, "orders/confirmation.html", context)
 
 
 @router.get("/orders/invoice/{order_id}", response_class=HTMLResponse)
@@ -803,6 +965,7 @@ def order_invoice_page(order_id: int, request: Request, db: Session = Depends(ge
     context = {
         "request": request,
         "order": order,
+        "active_profile_name": order.profile_name or order.patient_name,
         "invoice": breakdown,
         "qr_svg": _invoice_qr_svg(order),
         "active_page": "medicines",
@@ -810,7 +973,7 @@ def order_invoice_page(order_id: int, request: Request, db: Session = Depends(ge
         "user_role": "Invoice",
         "avatar_label": "IV",
     }
-    return templates.TemplateResponse("orders/invoice.html", context)
+    return templates.TemplateResponse(request, "orders/invoice.html", context)
 
 
 @router.get("/pharmacy/dashboard", response_class=HTMLResponse)
@@ -838,6 +1001,7 @@ def pharmacy_dashboard(request: Request, db: Session = Depends(get_db)):
         or 0,
     }
     return templates.TemplateResponse(
+        request,
         "pharmacy_portal.html",
         {"request": request, "orders": orders, "dashboard_metrics": dashboard_metrics, "csrf_token": ensure_csrf_token(request)},
     )

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Add Profile | Kash AI{% endblock %}
+{% block page %}
+<section class="profile-form-shell">
+    <div class="profile-form-card">
+        <p class="profile-form__eyebrow">New family profile</p>
+        <h1>Add New Profile</h1>
+        <p class="profile-form__subtitle">Create a separate health identity for a spouse, child, parent, or anyone else you order medicines for.</p>
+
+        <form method="post" action="/api/profiles/add" class="profile-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="field">
+                <span>Profile Name</span>
+                <input type="text" name="profile_name" required placeholder="Dad, Mom, Riya, Myself">
+            </label>
+            <label class="field">
+                <span>Relationship</span>
+                <select name="relationship" required>
+                    <option value="Self">Myself</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Father">Father</option>
+                    <option value="Mother">Mother</option>
+                    <option value="Son">Son</option>
+                    <option value="Daughter">Daughter</option>
+                    <option value="Grandfather">Grandfather</option>
+                    <option value="Grandmother">Grandmother</option>
+                    <option value="Other">Other</option>
+                </select>
+            </label>
+            <fieldset class="avatar-field">
+                <legend>Select Avatar</legend>
+                <div class="avatar-selector">
+                    {% for avatar, label in [('👨','Adult Male'),('👩','Adult Female'),('👴','Senior Male'),('👵','Senior Female'),('👦','Boy'),('👧','Girl'),('👶','Baby')] %}
+                    <label class="avatar-option">
+                        <input type="radio" name="avatar" value="{{ avatar }}" {% if loop.first %}checked{% endif %}>
+                        <span class="avatar-option__emoji">{{ avatar }}</span>
+                        <span>{{ label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <div class="profile-form__grid">
+                <label class="field">
+                    <span>Date of Birth</span>
+                    <input type="date" name="date_of_birth">
+                </label>
+                <label class="field">
+                    <span>Gender</span>
+                    <select name="gender">
+                        <option value="">Select</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Blood Group</span>
+                    <select name="blood_group">
+                        <option value="">Select</option>
+                        <option>A+</option><option>A-</option>
+                        <option>B+</option><option>B-</option>
+                        <option>O+</option><option>O-</option>
+                        <option>AB+</option><option>AB-</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Profile PIN</span>
+                    <input type="password" name="pin_code" inputmode="numeric" maxlength="6" placeholder="Optional 4-6 digit PIN">
+                </label>
+            </div>
+            <label class="field">
+                <span>Medical Conditions</span>
+                <textarea name="medical_conditions" rows="3" placeholder="Diabetes, high BP, thyroid, asthma"></textarea>
+            </label>
+            <label class="field">
+                <span>Allergies</span>
+                <textarea name="allergies" rows="3" placeholder="Penicillin, nuts, dust, pollen"></textarea>
+            </label>
+            <div class="profile-form__actions">
+                <button type="submit" class="primary-btn">Create Profile</button>
+                <a href="/profiles/select" class="secondary-btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}
+{% block extra_head %}
+<style>
+.profile-form-shell{display:grid;place-items:center;padding:32px 16px}
+.profile-form-card{width:min(760px,100%);padding:30px;border-radius:28px;background:#fff;box-shadow:0 18px 42px rgba(15,23,42,.08)}
+.profile-form__eyebrow{margin:0 0 8px;letter-spacing:.14em;text-transform:uppercase;font-size:.78rem;font-weight:700;color:#0f766e}
+.profile-form-card h1{margin:0 0 10px;font-family:"Plus Jakarta Sans",sans-serif}
+.profile-form__subtitle{margin:0 0 22px;color:#5f6c7b}
+.profile-form{display:grid;gap:16px}
+.profile-form__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.avatar-field{margin:0;padding:0;border:0}
+.avatar-field legend{font-weight:600;margin-bottom:10px}
+.avatar-selector{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px}
+.avatar-option{display:grid;justify-items:center;gap:8px;padding:14px;border:1px solid #dbe3ea;border-radius:18px;cursor:pointer;background:#f8fafc}
+.avatar-option__emoji{font-size:2rem}
+.profile-form__actions{display:flex;gap:12px;flex-wrap:wrap;padding-top:8px}
+@media (max-width:720px){.profile-form-card{padding:22px}.profile-form__grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}

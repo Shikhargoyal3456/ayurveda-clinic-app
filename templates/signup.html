@@ -80,7 +80,7 @@
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const selectedPlan = urlParams.get("plan");
-if (selectedPlan && (selectedPlan === "basic" || selectedPlan === "pro")) {
+if (selectedPlan && (selectedPlan === "pro" || selectedPlan === "enterprise")) {
   document.addEventListener("DOMContentLoaded", function() {
     const planName = selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1);
     const notice = document.createElement("div");
@@ -101,6 +101,6 @@ if (selectedPlan && (selectedPlan === "basic" || selectedPlan === "pro")) {
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 {% endblock %}
 

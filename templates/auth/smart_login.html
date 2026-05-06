@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
+{% block title %}Login | Kash AI{% endblock %}
+{% block body_class %}portal-auth-body{% endblock %}
+{% block page %}
+<div class="smart-login-shell">
+    <section class="smart-login-card">
+        <div class="login-header">
+            <div class="login-brand">
+                <img src="/static/images/kash-ai-logo.svg" alt="Kash AI logo" class="login-brand-logo" loading="lazy" decoding="async" width="164" height="48">
+                <span>Kash AI</span>
+            </div>
+            <p class="eyebrow">One login for every account</p>
+            <h1>Login</h1>
+            <p>Enter your email or phone once. Kash AI will send you to the correct patient, doctor, pharmacy, lab, delivery, or admin workspace without making you guess where to go.</p>
+            <div class="hint-chip" style="{{ '' if show_role_hint and preferred_role else 'display:none' }}">
+                Preferred account: {{ preferred_role | default('') | replace("_", " ") | title }}
+            </div>
+        </div>
+
+        <div class="alert {{ 'alert-' ~ flash.category if flash else 'alert-info' }} mb-3" style="{{ '' if flash else 'display:none' }}">
+            {{ flash.message if flash else '' }}
+        </div>
+
+        <form class="smart-login-form" method="post" action="/auth/login">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="role" value="{{ preferred_role | default('') }}">
+
+            <label class="input-group">
+                <span>Email or Phone</span>
+                <input type="text" name="identifier" placeholder="Enter your email or phone" required autocomplete="username">
+            </label>
+
+            <label class="input-group">
+                <span>Password</span>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" onclick="togglePassword()" class="toggle-password" aria-label="Toggle password">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </label>
+
+            <div class="form-options">
+                <label class="checkbox-label"><input type="checkbox" name="remember_me"> Remember me</label>
+                <a href="/auth/forgot-password" class="forgot-link">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="login-btn">Login</button>
+
+            <div class="divider"><span>or</span></div>
+
+            <a class="guest-btn" href="/">Continue as Guest</a>
+        </form>
+
+        <div class="quick-portal-grid">
+            <a href="/auth/login/patient">Patient login</a>
+            <a href="/auth/login/doctor">Doctor login</a>
+            <a href="/auth/login/pharmacy">Pharmacy login</a>
+            <a href="/auth/login/lab">Lab login</a>
+            <a href="/auth/login/partner">Delivery partner login</a>
+            <a href="/portal">Business hub</a>
+        </div>
+
+        <div class="lookup-card workspace-card">
+            <strong>Doctor clinic or admin workspace?</strong>
+            <p>Use this only if your clinic still signs in through the legacy workspace. Everyone else should use the role-based login above.</p>
+            <a class="workspace-link" href="/login">Open Doctor / Admin Workspace</a>
+        </div>
+
+        <div class="lookup-card">
+            <strong>Forgot account type?</strong>
+            <p>Enter your email or phone and Kash AI will show the exact portal linked to your account.</p>
+            <div class="lookup-row">
+                <input type="text" id="accountTypeIdentifier" placeholder="Email or phone">
+                <button type="button" class="otp-btn" onclick="lookupAccountType()">Check</button>
+            </div>
+            <p id="accountTypeResult" class="lookup-result"></p>
+            <div id="accountTypeActions" class="lookup-actions"></div>
+        </div>
+
+        <div class="register-grid">
+            <a href="/auth/register/patient">New patient account</a>
+            <a href="/auth/register/doctor">New doctor account</a>
+            <a href="/auth/register/pharmacy">New pharmacy account</a>
+            <a href="/auth/register/lab">New lab account</a>
+            <a href="/auth/register/partner">New delivery partner account</a>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function lookupAccountType() {
+    const identifier = document.getElementById("accountTypeIdentifier").value.trim();
+    const host = document.getElementById("accountTypeResult");
+    const actionHost = document.getElementById("accountTypeActions");
+    if (!identifier) {
+        host.textContent = "Please enter your email or phone.";
+        actionHost.innerHTML = "";
+        return;
+    }
+    host.textContent = "Checking your account...";
+    actionHost.innerHTML = "";
+    const response = await fetch("/api/auth/account-type", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({identifier})
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success) {
+        host.textContent = payload.message || "We could not find your account.";
+        actionHost.innerHTML = "";
+        return;
+    }
+    host.textContent = `You are registered as: ${payload.roles.join(", ")}`;
+    actionHost.innerHTML = (payload.role_cards || []).map((card) => `
+        <a class="lookup-link" href="${card.login_url}">
+            Continue to ${card.label} login
+        </a>
+    `).join("");
+}
+
+function togglePassword() {
+    const password = document.getElementById("password");
+    const icon = document.querySelector(".toggle-password i");
+    if (password.type === "password") {
+        password.type = "text";
+        icon.classList.replace("fa-eye", "fa-eye-slash");
+    } else {
+        password.type = "password";
+        icon.classList.replace("fa-eye-slash", "fa-eye");
+    }
+}
+</script>
+<style>
+ .smart-login-shell{min-height:100vh;display:grid;place-items:center;padding:28px 16px;background:linear-gradient(180deg,#fffdf7,#eef6ff)}.smart-login-card{width:min(100%,560px);background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:32px;padding:34px;box-shadow:0 24px 80px rgba(15,23,42,.14)}.login-header{display:grid;justify-items:center;text-align:center;gap:8px}.login-header h1{margin:0;color:#0f172a}.login-header>p:last-of-type{max-width:44ch;margin:0;color:#475569}.login-brand{display:inline-flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;font-weight:800;color:#0f172a}.login-brand-logo{width:54px;height:54px;border-radius:16px;object-fit:contain;background:#fff;border:1px solid #dbe3ef;box-shadow:0 12px 24px rgba(15,23,42,.08);padding:6px}.eyebrow{margin:0;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#0f766e}.hint-chip{display:inline-flex;margin-top:2px;padding:8px 12px;border-radius:999px;background:#eaf3ff;color:#1d6fd8;font-weight:700}.smart-login-form{display:grid;gap:18px;margin-top:22px}.input-group span{display:block;margin-bottom:8px;font-weight:600;color:#0f172a}.input-group input{width:100%;padding:14px 16px;border-radius:16px;border:1px solid #cbd5e1;background:#f8fafc}.password-wrapper{position:relative}.toggle-password{position:absolute;right:14px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#475569}.form-options{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.checkbox-label,.forgot-link,.lookup-result{font-size:.92rem;color:#475569}.login-btn,.otp-btn,.guest-btn,.lookup-link,.workspace-link{width:100%;padding:14px 18px;border-radius:16px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.login-btn{background:linear-gradient(135deg,#0f766e,#2563eb);color:#fff}.otp-btn,.guest-btn{background:#e2e8f0;color:#0f172a}.lookup-link{background:#eaf3ff;color:#1d4ed8}.workspace-card{background:linear-gradient(135deg,#f7fbff,#eef8f2)}.workspace-link{margin-top:14px;background:#0f172a;color:#fff}.divider{position:relative;text-align:center;color:#64748b}.divider::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:#e2e8f0}.divider span{position:relative;background:#fff;padding:0 12px}.quick-portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}.quick-portal-grid a{padding:12px 14px;border-radius:16px;background:#f8fbff;border:1px solid #dbe3ef;text-align:center;font-weight:700;color:#0f766e;text-decoration:none}.lookup-card{margin-top:22px;padding:18px;border-radius:22px;background:#f8fbff;border:1px solid #dbe3ef}.lookup-card p{margin:8px 0 0}.lookup-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px}.lookup-row input{padding:14px 16px;border-radius:16px;border:1px solid #cbd5e1}.lookup-actions{display:grid;gap:10px;margin-top:12px}.register-grid{display:grid;gap:10px;margin-top:22px}.register-grid a{font-weight:700;color:#0f766e;text-decoration:none}@media (max-width:560px){.smart-login-card{padding:28px 22px}.lookup-row,.quick-portal-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}

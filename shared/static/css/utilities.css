@@ -1,0 +1,133 @@
+.muted { color: var(--muted); }
+.text-danger { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-info { color: var(--color-info); }
+
+.kpi {
+    font-size: var(--text-3xl);
+    font-weight: 800;
+    font-family: var(--font-heading);
+}
+
+.inline-meta {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    color: var(--muted);
+}
+
+.pill-row {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.empty-state {
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px dashed var(--border);
+    color: var(--muted);
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+}
+
+.mobile-only {
+    display: none;
+}
+
+.reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.reveal-on-scroll.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal-on-scroll {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: flex;
+    }
+}
+
+.site-container {
+    width: min(1180px, calc(100% - 2rem));
+    margin: 0 auto;
+}
+
+.section-stack {
+    display: grid;
+    gap: var(--space-xl);
+}
+
+.hero-actions {
+    display: flex;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.surface-muted {
+    background: var(--color-bg-tertiary);
+}
+
+.grid-auto-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--space-lg);
+}
+
+.desktop-only {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none;
+    }
+
+    .site-container {
+        width: min(100%, calc(100% - 1rem));
+    }
+}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Medicine Alternatives | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Patient savings tool</p>
+            <h1>Lower-Cost Medicine Options</h1>
+            <p class="mb-0">Find other medicine options with clear savings estimates so you can compare before you place an order.</p>
+        </div>
+    </section>
+
+    <section class="card section-stack">
+        <div class="hero-actions">
+            <label class="sr-only" for="medicineSearch">Medicine name</label>
+            <input type="text" id="medicineSearch" class="form-control" placeholder="Search medicine name...">
+            <button class="btn btn-primary" type="button" onclick="findAlternatives()">Find Options</button>
+        </div>
+        <div id="originalMedicine" hidden></div>
+        <div id="alternativesList" class="feature-grid"></div>
+        <div id="savingsDisplay"></div>
+    </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function findAlternatives() {
+    const medicineName = document.getElementById('medicineSearch').value.trim();
+    if (!medicineName) {
+        showToast('Enter a medicine name first.', 'error');
+        return;
+    }
+    const response = await fetch(`/api/medicines/alternatives?medicine_name=${encodeURIComponent(medicineName)}`);
+    const result = await response.json();
+    if (!response.ok) {
+        showToast(result.detail || 'Medicine not found.', 'error');
+        return;
+    }
+    document.getElementById('originalMedicine').hidden = false;
+    document.getElementById('originalMedicine').innerHTML = `
+        <div class="stack-item">
+            <div>
+                <strong>${result.original.name}</strong>
+                <p class="mb-0 text-muted">${result.original.brand || 'Original selection'} · Rs ${Number(result.original.price || 0).toFixed(2)}</p>
+            </div>
+        </div>
+    `;
+    const alternatives = result.alternatives || [];
+    document.getElementById('alternativesList').innerHTML = alternatives.length ? alternatives.map((alt) => `
+        <div class="feature-card">
+            <span class="savings-pill">Save Rs ${Number(alt.savings || 0).toFixed(2)} (${Number(alt.savings_percent || 0).toFixed(1)}%)</span>
+            <strong>${alt.name}</strong>
+            <div class="text-muted">${alt.brand || 'Generic'} · ${alt.similarity_reason}</div>
+            <div class="price-line">
+                <span class="struck">Rs ${Number(alt.original_price || 0).toFixed(2)}</span>
+                <span class="deal-price">Rs ${Number(alt.price || 0).toFixed(2)}</span>
+            </div>
+            <button class="btn btn-outline-success btn-sm" type="button" onclick="addAlternativeToCart('${alt.name.replace(/'/g, "\\'")}')">Add to Order</button>
+        </div>
+    `).join('') : '<div class="stack-item">No alternatives found for this medicine yet.</div>';
+    document.getElementById('savingsDisplay').innerHTML = `
+        <div class="stack-item savings-summary">
+            <strong>Best savings potential: ${Number(result.max_savings_percent || 0).toFixed(1)}%</strong>
+            <p class="mb-0 text-muted">These suggestions prioritize clinically similar or lower-cost catalog matches.</p>
+        </div>
+    `;
+}
+
+function addAlternativeToCart(name) {
+    showToast(`${name} is ready to search in the medicine order flow.`, 'success');
+}
+</script>
+<style>
+.savings-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#ecfdf3;color:#166534;font-weight:700;font-size:.82rem}.price-line{display:flex;gap:10px;align-items:center}.struck{text-decoration:line-through;color:#64748b}.deal-price{font-weight:800;color:#173126}.savings-summary{background:#f8fcf8}
+</style>
+{% endblock %}

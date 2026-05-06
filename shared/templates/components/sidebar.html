@@ -1,0 +1,59 @@
+{% set grouped_navigation = namespace(items=[]) %}
+{% for item in portal_navigation | default([]) %}
+    {% set group_name = item.group | default('Workspace') %}
+    {% if group_name not in grouped_navigation.items %}
+        {% set _ = grouped_navigation.items.append(group_name) %}
+    {% endif %}
+{% endfor %}
+<aside class="portal-sidebar">
+    <div class="portal-sidebar-main">
+        {% for group_name in grouped_navigation.items %}
+        <div class="sidebar-section">
+            <p class="sidebar-label">{{ group_name }}</p>
+            {% for item in portal_navigation | default([]) if item.group | default('Workspace') == group_name %}
+            <a href="{{ item.url }}" class="sidebar-link {% if active_page == item.name | lower %}is-active{% endif %}">
+                <i class="fa-solid fa-{{ item.icon }}"></i>
+                <span class="sidebar-link-copy">
+                    <span>{{ item.name }}</span>
+                    {% if item.description %}<small>{{ item.description }}</small>{% endif %}
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        {% if quick_actions %}
+        <div class="sidebar-section">
+            <p class="sidebar-label">Quick Actions</p>
+            {% for action in quick_actions %}
+            <a href="{{ action.url }}" class="quick-link">
+                <i class="fa-solid fa-{{ action.icon }}"></i>
+                <span class="quick-link-copy">
+                    <span>{{ action.label }}</span>
+                    {% if action.description %}<small>{{ action.description }}</small>{% endif %}
+                </span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="portal-sidebar-footer">
+        <a href="/auth/logout" class="sidebar-link">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span class="sidebar-link-copy">
+                <span>Logout</span>
+                <small>Sign out safely from this workspace</small>
+            </span>
+        </a>
+    </div>
+</aside>
+
+<nav class="portal-bottom-nav" aria-label="Mobile workspace navigation">
+    {% for item in (portal_navigation | default([]))[:5] %}
+    <a href="{{ item.url }}" class="mobile-nav-item {% if active_page == item.name | lower %}is-active{% endif %}">
+        <i class="fa-solid fa-{{ item.icon }}"></i>
+        <span>{{ item.name }}</span>
+    </a>
+    {% endfor %}
+</nav>

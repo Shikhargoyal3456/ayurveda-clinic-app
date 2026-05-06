@@ -20,10 +20,13 @@ async def test_global_exception_handler_returns_json_500():
 
     transport = ASGITransport(app=app, raise_app_exceptions=False)
     async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        response = await client.get("/_test/unhandled-error")
+        response = await client.get("/_test/unhandled-error", headers={"accept": "application/json"})
 
     assert response.status_code == 500
-    assert response.json() == {"error": "Internal server error"}
+    payload = response.json()
+    assert payload["success"] is False
+    assert "error" in payload
+    assert "error_id" in payload
 
     del app.router.routes[route_count:]
 

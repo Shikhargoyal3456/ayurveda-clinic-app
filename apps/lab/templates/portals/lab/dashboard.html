@@ -1,0 +1,73 @@
+{% extends "layouts/portal_base.html" %}
+{% from "components/cards.html" import metric_card, nav_card %}
+{% block title %}Lab Dashboard | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="surface-card">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Lab dashboard</p>
+            <h1>{{ lab.lab_name }}</h1>
+            <p class="muted">Home collections, report publishing, and booking throughput aligned into one operations board.</p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-primary btn-sm" href="/lab#reports">Manage reports</a>
+            <a class="btn btn-outline-dark btn-sm" href="/lab#today-bookings">Today bookings</a>
+            <a class="btn btn-outline-success btn-sm" href="/lab#collections">Home collections</a>
+        </div>
+    </div>
+    <div class="metric-grid">
+        {{ metric_card('Today Bookings', todays_bookings, 'New collections today') }}
+        {{ metric_card('Active Tests', active_tests, 'Currently in pipeline') }}
+        {{ metric_card('Report Backlog', report_backlog, 'Awaiting release') }}
+        {{ metric_card('Earnings', earnings_summary, 'This week') }}
+    </div>
+</section>
+<section class="split-grid">
+    {{ nav_card("Upload and release reports", "Review today's reports and jump into the upload workflow without leaving the lab console.", "/lab#reports", "file-arrow-up", "Reports") }}
+    {{ nav_card('Review home collection queue', 'Keep technician pickups and home sample requests visible in one place.', '/lab#collections', 'truck-medical', 'Field Ops') }}
+</section>
+<section class="split-grid">
+    <article class="surface-card" id="today-bookings">
+        <div class="section-heading"><div><p class="eyebrow">Bookings</p><h2>Today schedule</h2></div></div>
+        <div class="table-list">
+            {% for item in today_appointments %}
+            <div class="table-row"><div><strong>{{ item.patient_name if item.patient_name is defined else 'Patient' }}</strong><div class="inline-meta"><span>{{ item.status }}</span><span>{{ item.ordered_at }}</span></div></div></div>
+            {% else %}<div class="empty-state"><strong>No bookings yet.</strong><span class="muted">New test bookings and home collection requests will show here as they arrive.</span></div>{% endfor %}
+        </div>
+    </article>
+    <article class="surface-card" id="collections">
+        <div class="section-heading"><div><p class="eyebrow">Collections</p><h2>Home collection queue</h2></div></div>
+        <div class="table-list">
+            {% for item in home_collections %}
+            <div class="table-row"><div><strong>{{ item.test_name if item.test_name is defined else 'Lab order' }}</strong><div class="inline-meta"><span>{{ item.status }}</span></div></div></div>
+            {% else %}<div class="empty-state"><strong>No pending collections.</strong><span class="muted">Home visits that need assignment or confirmation will appear here.</span></div>{% endfor %}
+        </div>
+    </article>
+</section>
+<section class="split-grid">
+    <article class="surface-card" id="reports">
+        <div class="section-heading"><div><p class="eyebrow">Reports</p><h2>Release center</h2></div></div>
+        <div class="table-list">
+            {% if report_backlog %}
+            <div class="table-row">
+                <div>
+                    <strong>{{ report_backlog }} reports waiting for release</strong>
+                    <div class="inline-meta"><span>Use the lab API workflow to publish completed results safely.</span></div>
+                </div>
+                <a class="ghost-button" href="/lab#reports">Review report queue</a>
+            </div>
+            {% else %}
+            <div class="empty-state"><strong>No reports waiting.</strong><span class="muted">Completed reports that need upload or release will show here first.</span></div>
+            {% endif %}
+        </div>
+    </article>
+    <article class="surface-card" id="analytics">
+        <div class="section-heading"><div><p class="eyebrow">Analytics</p><h2>Operations summary</h2></div></div>
+        <div class="table-list">
+            <div class="table-row"><div><strong>Backlog</strong><div class="inline-meta"><span>{{ report_backlog }} reports pending</span></div></div></div>
+            <div class="table-row"><div><strong>Bookings today</strong><div class="inline-meta"><span>{{ todays_bookings }} active bookings</span></div></div></div>
+            <div class="table-row"><div><strong>Earnings</strong><div class="inline-meta"><span>{{ earnings_summary }}</span></div></div></div>
+        </div>
+    </article>
+</section>
+{% endblock %}

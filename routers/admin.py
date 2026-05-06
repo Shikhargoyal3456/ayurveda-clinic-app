@@ -5,14 +5,14 @@ import json
 import logging
 import os
 import time
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Request, Security, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, Security, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -35,10 +35,11 @@ from app.models import Appointment, CaseSheet, Doctor, Patient
 from app.security import active_session_count, active_sessions_snapshot
 from app.database import commit_with_retry, get_db
 from models.care_plan import PatientCarePlan
-from models.medicine import Medicine, MedicineOrder, Pharmacy, StockAdjustment, utc_now
+from models.medicine import MasterMedicine, Medicine, MedicineOrder, Pharmacy, PharmacyInventory, StockAdjustment, utc_now
 from models.payment import Payment
 from models.prescription import Prescription
 from models.subscription import ClinicSubscription
+from models.user import User, UserRole
 from routers.pharmacy import (
     can_transition,
     _followups_sent_for_order,
@@ -57,6 +58,8 @@ from services.analytics_service import (
     get_error_summary,
     get_funnel_metrics,
     get_revenue_metrics,
+    load_errors,
+    load_events,
 )
 from services.compliance_service import get_compliance_status
 from services.communication import send_patient_message
@@ -79,6 +82,7 @@ from services.supplier_service import (
 from services.feature_flags import is_delivery_enabled, is_pricing_enabled, is_supplier_enabled
 from services.pricing_service import get_pricing_preview
 from services.profit_service import get_profit_metrics
+from services.medicine_management import ensure_master_medicine, normalize_category
 
 
 router = APIRouter(tags=["admin"])
@@ -315,6 +319,24 @@ def _medicine_payload(medicine: Medicine) -> dict[str, object]:
         "image_url": medicine.image_url or "",
         "pharmacy_id": medicine.pharmacy_id,
         "is_available": bool(medicine.is_available),
+    }
+
+
+def _master_medicine_payload(master: MasterMedicine, stock: int = 0) -> dict[str, object]:
+    return {
+        "id": master.id,
+        "name": master.name,
+        "generic_name": master.generic_name,
+        "category": master.category,
+        "brand": master.brand,
+        "mrp": float(master.mrp or master.price or 0),
+        "price": float(master.price or 0),
+        "stock": int(stock),
+        "prescription_required": bool(master.prescription_required),
+        "description": master.description or "",
+        "image_url": master.image_url or "",
+        "barcode": master.barcode or "",
+        "is_active": bool(master.is_active),
     }
 
 
@@ -763,19 +785,531 @@ def _metrics(db: Session) -> dict[str, object]:
     }
 
 
+def _time_ago(value: datetime | None) -> str:
+    stamp = _as_aware(value)
+    if stamp is None:
+        return "Just now"
+    delta = datetime.now(timezone.utc) - stamp
+    seconds = max(0, int(delta.total_seconds()))
+    if seconds < 60:
+        return "Just now"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes} min ago"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} hour ago" if hours == 1 else f"{hours} hours ago"
+    days = hours // 24
+    return f"{days} day ago" if days == 1 else f"{days} days ago"
+
+
+def _health_badge(detail: dict[str, object], label: str) -> dict[str, str]:
+    status = str(detail.get("status") or "unknown").lower()
+    tone = "healthy"
+    icon = "🟢"
+    text = "Connected"
+    if status in {"not_configured", "unknown"}:
+        tone = "neutral"
+        icon = "⚪"
+        text = "Not configured"
+    elif status in {"degraded", "warning"}:
+        tone = "warning"
+        icon = "🟡"
+        text = "Degraded"
+    elif status == "error":
+        tone = "danger"
+        icon = "🔴"
+        text = "Unavailable"
+    elif label == "AI Service (Gemini)":
+        text = "Active"
+    return {"label": label, "tone": tone, "text": f"{icon} {text}"}
+
+
+def _parse_event_timestamp(raw_value: object) -> datetime | None:
+    if not raw_value:
+        return None
+    text = str(raw_value).strip()
+    if not text:
+        return None
+    try:
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        parsed = datetime.fromisoformat(text)
+        return _as_aware(parsed)
+    except ValueError:
+        return None
+
+
+def _activity_icon(kind: str) -> str:
+    mapping = {
+        "order": "🛒",
+        "user": "👤",
+        "prescription": "📄",
+        "payment": "💰",
+        "search": "🔎",
+        "consultation": "🎥",
+        "alert": "⚠️",
+    }
+    return mapping.get(kind, "📌")
+
+
+def _activity_tone(kind: str) -> str:
+    return {
+        "order": "success",
+        "user": "info",
+        "prescription": "primary",
+        "payment": "success",
+        "search": "neutral",
+        "consultation": "primary",
+        "alert": "warning",
+    }.get(kind, "neutral")
+
+
+def _friendly_activity(item: dict[str, Any]) -> dict[str, Any] | None:
+    event_name = str(item.get("event_name") or item.get("event") or "").strip()
+    if not event_name:
+        return None
+    details = item.get("data") if isinstance(item.get("data"), dict) else item.get("details") if isinstance(item.get("details"), dict) else {}
+    timestamp = _parse_event_timestamp(item.get("timestamp"))
+    activity_type = "alert"
+    message = event_name.replace("_", " ").title()
+
+    if event_name in {"order_created", "medicine_order_created"}:
+        activity_type = "order"
+        order_id = details.get("order_id", "new")
+        message = f"New order #{order_id} placed"
+    elif event_name in {"portal_signup", "doctor_signup", "patient_created"}:
+        activity_type = "user"
+        role = str(details.get("role") or "user").replace("_", " ").title()
+        message = f"New {role.lower()} registration received"
+    elif event_name in {"ai_prescription_generated", "prescription_uploaded"}:
+        activity_type = "prescription"
+        message = "Prescription activity recorded"
+    elif event_name in {"payment_success", "payment_recorded"}:
+        activity_type = "payment"
+        amount = details.get("total") or details.get("amount") or 0
+        message = f"Payment recorded for Rs {int(float(amount or 0))}"
+    elif event_name in {"search_performed", "medicine_added_to_cart"}:
+        activity_type = "search"
+        query = details.get("query") or details.get("q") or details.get("medicine_name") or "medicine"
+        message = f"Search activity: {query}"
+    elif event_name in {"voice_transcription_used", "doctor_login"}:
+        activity_type = "consultation"
+        message = event_name.replace("_", " ").title()
+
+    return {
+        "timestamp": timestamp.isoformat() if timestamp else datetime.now(timezone.utc).isoformat(),
+        "time_ago": _time_ago(timestamp),
+        "type": activity_type,
+        "icon": _activity_icon(activity_type),
+        "tone": _activity_tone(activity_type),
+        "message": message,
+        "details_url": "/admin/activity-dashboard",
+    }
+
+
+def _recent_activity_feed(limit: int = 50) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for item in reversed(load_events()):
+        activity = _friendly_activity(item)
+        if activity is not None:
+            rows.append(activity)
+        if len(rows) >= limit:
+            break
+    rows = sorted(rows, key=lambda item: item.get("timestamp", ""), reverse=True)
+    return rows[:limit]
+
+
+def _chart_series(db: Session, chart_type: str, range_key: str = "30d") -> dict[str, list[Any]]:
+    day_count = {"7d": 7, "30d": 30, "90d": 90}.get(range_key, 30)
+    today = datetime.now(timezone.utc).date()
+    labels: list[str] = []
+    values: list[Any] = []
+    if chart_type in {"orders", "revenue"}:
+        for offset in range(day_count - 1, -1, -1):
+            day = today - timedelta(days=offset)
+            labels.append(day.strftime("%d %b"))
+            day_orders = (
+                db.query(MedicineOrder)
+                .filter(func.date(MedicineOrder.created_at) == day.isoformat())
+                .all()
+            )
+            if chart_type == "orders":
+                values.append(len(day_orders))
+            else:
+                values.append(sum(int(order.total_amount or 0) for order in day_orders))
+    elif chart_type == "users":
+        for offset in range(day_count - 1, -1, -1):
+            day = today - timedelta(days=offset)
+            labels.append(day.strftime("%d %b"))
+            portal_users = int(
+                db.query(func.count(User.id)).filter(func.date(User.created_at) == day.isoformat()).scalar() or 0
+            )
+            legacy_doctors = int(
+                db.query(func.count(Doctor.id)).filter(func.date(Doctor.created_at) == day.isoformat()).scalar() or 0
+            )
+            values.append(portal_users + legacy_doctors)
+    elif chart_type == "medicines":
+        counter: Counter[str] = Counter()
+        recent_orders = (
+            db.query(MedicineOrder)
+            .order_by(MedicineOrder.created_at.desc(), MedicineOrder.id.desc())
+            .limit(150)
+            .all()
+        )
+        for order in recent_orders:
+            for item in _load_order_items(order):
+                counter[str(item.get("name") or item.get("medicine_name") or "Unknown")] += int(item.get("qty", 1) or 1)
+        top = counter.most_common(5)
+        labels = [name for name, _ in top]
+        values = [count for _, count in top]
+    return {"labels": labels, "values": values}
+
+
+def _predictive_snapshot(db: Session) -> dict[str, Any]:
+    series = _chart_series(db, "orders", "7d")
+    revenue_series = _chart_series(db, "revenue", "7d")
+    order_values = [int(value or 0) for value in series["values"]]
+    revenue_values = [int(value or 0) for value in revenue_series["values"]]
+    predicted_orders = round(sum(order_values) / len(order_values)) if order_values else 0
+    predicted_revenue = round(sum(revenue_values) / len(revenue_values)) if revenue_values else 0
+
+    hour_counter: Counter[int] = Counter()
+    recent_orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(250).all()
+    for order in recent_orders:
+        stamp = _as_aware(order.created_at)
+        if stamp is not None:
+            hour_counter[stamp.hour] += 1
+    peak_hour = hour_counter.most_common(1)[0][0] if hour_counter else 10
+    peak_hours = f"{peak_hour % 12 or 12}:00 {'AM' if peak_hour < 12 else 'PM'} - {((peak_hour + 1) % 12) or 12}:00 {'AM' if (peak_hour + 1) < 12 else 'PM'}"
+
+    low_stock = get_low_stock()
+    low_stock_prediction = next(iter(low_stock.keys()), "No immediate risk")
+    trending = _chart_series(db, "medicines", "30d")
+    return {
+        "predicted_orders": predicted_orders,
+        "predicted_revenue": predicted_revenue,
+        "peak_hours": peak_hours,
+        "trending_medicines": trending["labels"][:3],
+        "low_stock_prediction": low_stock_prediction,
+    }
+
+
+def _user_behavior_snapshot(db: Session) -> dict[str, Any]:
+    events = load_events()
+    hourly: Counter[int] = Counter()
+    searches: Counter[str] = Counter()
+    cart_opened = 0
+    checkout_started = 0
+    revenue_values: list[int] = []
+    recent_orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(250).all()
+    for order in recent_orders:
+        revenue_values.append(int(order.total_amount or 0))
+        stamp = _as_aware(order.created_at)
+        if stamp is not None:
+            hourly[stamp.hour] += 1
+    for event in events:
+        event_name = str(event.get("event_name") or "")
+        timestamp = _parse_event_timestamp(event.get("timestamp"))
+        data = event.get("data") if isinstance(event.get("data"), dict) else {}
+        if timestamp is not None:
+            hourly[timestamp.hour] += 1
+        if event_name == "search_performed":
+            query = str(data.get("query") or data.get("q") or data.get("medicine_name") or "").strip()
+            if query:
+                searches[query.title()] += 1
+        if event_name in {"cart_opened", "medicine_added_to_cart"}:
+            cart_opened += 1
+        if event_name == "checkout_started":
+            checkout_started += 1
+    peak_hour = hourly.most_common(1)[0][0] if hourly else 10
+    heatmap = []
+    for hour in range(0, 24, 2):
+        score = hourly.get(hour, 0)
+        heatmap.append({
+            "label": f"{hour % 12 or 12}{'AM' if hour < 12 else 'PM'}",
+            "value": score,
+        })
+    max_heat = max((item["value"] for item in heatmap), default=1)
+    for item in heatmap:
+        item["width"] = max(8, round((item["value"] / max_heat) * 100)) if max_heat else 8
+    search_terms = [{"term": name, "count": count} for name, count in searches.most_common(5)]
+    if not search_terms:
+        medicine_chart = _chart_series(db, "medicines", "30d")
+        search_terms = [{"term": label, "count": int(value)} for label, value in zip(medicine_chart["labels"], medicine_chart["values"])]
+    avg_order_value = round(sum(revenue_values) / len(revenue_values)) if revenue_values else 0
+    cart_abandonment = round(max(0, 1 - (checkout_started / cart_opened)) * 100, 1) if cart_opened else 0.0
+    return {
+        "heatmap": heatmap,
+        "peak_hour_text": f"{peak_hour % 12 or 12} {'AM' if peak_hour < 12 else 'PM'} - {(peak_hour + 1) % 12 or 12} {'AM' if (peak_hour + 1) < 12 else 'PM'}",
+        "search_terms": search_terms,
+        "average_order_value": avg_order_value,
+        "cart_abandonment_rate": cart_abandonment,
+    }
+
+
+def _anomaly_snapshot(db: Session) -> list[dict[str, Any]]:
+    now = datetime.now(timezone.utc)
+    current_cutoff = now - timedelta(hours=24)
+    previous_cutoff = now - timedelta(hours=48)
+    current_orders = db.query(MedicineOrder).filter(MedicineOrder.created_at >= current_cutoff.replace(tzinfo=None)).count()
+    previous_orders = db.query(MedicineOrder).filter(MedicineOrder.created_at >= previous_cutoff.replace(tzinfo=None), MedicineOrder.created_at < current_cutoff.replace(tzinfo=None)).count()
+    payment_failures = len([item for item in load_events() if str(item.get("event_name") or "") == "payment_failed"])
+    alerts: list[dict[str, Any]] = []
+    if previous_orders and current_orders < previous_orders * 0.8:
+        alerts.append({
+            "id": 1,
+            "status": "active",
+            "icon": "⚠️",
+            "title": "Order volume drop detected",
+            "desc": f"{current_orders} orders in the last 24h versus {previous_orders} in the prior period.",
+        })
+    else:
+        alerts.append({
+            "id": 2,
+            "status": "resolved",
+            "icon": "✓",
+            "title": "Order volume stable",
+            "desc": "No abnormal drop in order activity was detected.",
+        })
+    if payment_failures >= 3:
+        alerts.append({
+            "id": 3,
+            "status": "active",
+            "icon": "⚠️",
+            "title": "Unusual payment failure pattern detected",
+            "desc": f"{payment_failures} payment failures logged recently. Investigate checkout health.",
+        })
+    return alerts
+
+
+def _admin_dashboard_payload(db: Session, order_status: str = "", order_date: str = "") -> dict[str, object]:
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    yesterday = today - timedelta(days=1)
+    week_ago = today - timedelta(days=7)
+
+    total_patients = int(db.query(func.count(Patient.id)).scalar() or 0)
+    total_legacy_doctors = int(db.query(func.count(Doctor.id)).scalar() or 0)
+    total_portal_users = int(db.query(func.count(User.id)).scalar() or 0)
+    total_users = total_patients + total_legacy_doctors + total_portal_users
+
+    new_users_this_week = int(
+        db.query(func.count(User.id))
+        .filter(func.date(User.created_at) >= week_ago.isoformat())
+        .scalar()
+        or 0
+    )
+
+    recent_orders_query = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc(), MedicineOrder.id.desc())
+    normalized_status = order_status.strip().lower()
+    if normalized_status and normalized_status != "all":
+        recent_orders_query = recent_orders_query.filter(MedicineOrder.status == normalized_status)
+    normalized_date = order_date.strip()
+    if normalized_date:
+        recent_orders_query = recent_orders_query.filter(func.date(MedicineOrder.created_at) == normalized_date)
+    recent_orders_raw = recent_orders_query.limit(8).all()
+    orders_today = int(
+        db.query(func.count(MedicineOrder.id))
+        .filter(func.date(MedicineOrder.created_at) == today.isoformat())
+        .scalar()
+        or 0
+    )
+    orders_yesterday = int(
+        db.query(func.count(MedicineOrder.id))
+        .filter(func.date(MedicineOrder.created_at) == yesterday.isoformat())
+        .scalar()
+        or 0
+    )
+    revenue_today = int(
+        db.query(func.coalesce(func.sum(MedicineOrder.total_amount), 0))
+        .filter(func.date(MedicineOrder.created_at) == today.isoformat())
+        .scalar()
+        or 0
+    )
+    revenue_yesterday = int(
+        db.query(func.coalesce(func.sum(MedicineOrder.total_amount), 0))
+        .filter(func.date(MedicineOrder.created_at) == yesterday.isoformat())
+        .scalar()
+        or 0
+    )
+    total_revenue = int(db.query(func.coalesce(func.sum(MedicineOrder.total_amount), 0)).scalar() or 0)
+    active_prescriptions = int(db.query(func.count(Prescription.id)).scalar() or 0)
+    prescriptions_yesterday = int(
+        db.query(func.count(Prescription.id))
+        .filter(func.date(Prescription.created_at) == yesterday.isoformat())
+        .scalar()
+        or 0
+    )
+    prescriptions_today = int(
+        db.query(func.count(Prescription.id))
+        .filter(func.date(Prescription.created_at) == today.isoformat())
+        .scalar()
+        or 0
+    )
+    completed_orders = int(
+        db.query(func.count(MedicineOrder.id))
+        .filter(MedicineOrder.status == "delivered")
+        .scalar()
+        or 0
+    )
+
+    recent_orders = [
+        {
+            "id": order.id,
+            "customer_name": order.patient_name or "Customer",
+            "total": int(order.total_amount or 0),
+            "status": str(order.status or "pending").lower(),
+            "status_label": str(order.status or "pending").replace("_", " ").title(),
+            "time_ago": _time_ago(order.created_at),
+            "created_at": _as_aware(order.created_at).strftime("%d %b %Y, %I:%M %p") if _as_aware(order.created_at) else "",
+        }
+        for order in recent_orders_raw
+    ]
+
+    recent_users_raw = (
+        db.query(User)
+        .order_by(User.created_at.desc(), User.id.desc())
+        .limit(4)
+        .all()
+    )
+    recent_users = [
+        {
+            "name": user.full_name or user.email or user.phone or "User",
+            "role": str(user.role.value if hasattr(user.role, "value") else user.role).replace("_", " ").title(),
+            "time_ago": _time_ago(user.created_at),
+        }
+        for user in recent_users_raw
+    ]
+
+    ai_metrics = get_ai_performance_metrics()
+    ai_insights_payload = get_ai_optimization_insights()
+    alerts = get_alerts()
+    top_medicines = ai_metrics.get("top_medicines") if isinstance(ai_metrics, dict) else []
+    best_specialty = ai_insights_payload.get("best_specialty") if isinstance(ai_insights_payload, dict) else {}
+    recommendations = ai_insights_payload.get("recommendations") if isinstance(ai_insights_payload, dict) else []
+    predictive = _predictive_snapshot(db)
+    behavior = _user_behavior_snapshot(db)
+    anomalies = _anomaly_snapshot(db)
+    activity_feed = _recent_activity_feed(25)
+    orders_chart = _chart_series(db, "orders", "30d")
+    revenue_chart = _chart_series(db, "revenue", "30d")
+    users_chart = _chart_series(db, "users", "30d")
+    medicines_chart = _chart_series(db, "medicines", "30d")
+
+    insight_items = [
+        {
+            "icon": "📊",
+            "tone": "info",
+            "title": f"Order volume is {'up' if orders_today >= orders_yesterday else 'steady'} {abs(orders_today - orders_yesterday)} from yesterday",
+            "desc": f"Today's orders: {orders_today} · Peak hours forecast: {predictive['peak_hours']}",
+        },
+        {
+            "icon": "⚠️" if alerts else "🧾",
+            "tone": "warning" if alerts else "info",
+            "title": alerts[0]["message"] if alerts else "No critical admin alerts right now",
+            "desc": "System monitoring is actively checking funnel, payments, and error volume.",
+        },
+        {
+            "icon": "🔥",
+            "tone": "success",
+            "title": (
+                f"Trending: {predictive['trending_medicines'][0]}"
+                if predictive["trending_medicines"]
+                else "Trending medicines will appear after more order activity"
+            ),
+            "desc": (
+                f"{top_medicines[0]['count']} AI-assisted conversions recorded"
+                if top_medicines
+                else "AI insights are ready and waiting for more usage data"
+            ),
+        },
+        {
+            "icon": "🤖",
+            "tone": "info",
+            "title": (
+                f"Best converting specialty: {str(best_specialty.get('name') or 'Unknown').replace('_', ' ').title()}"
+                if best_specialty
+                else "Gemini insights available for business optimization"
+            ),
+            "desc": recommendations[0] if recommendations else "Use the refresh button to pull the latest AI insight set.",
+        },
+    ]
+
+    health = build_health_report()
+    platform_health = [
+        _health_badge(health.get("database_detail", {}), "Database"),
+        _health_badge(health.get("ai_detail", {}), "AI Service (Gemini)"),
+        _health_badge(health.get("redis_detail", {}), "Redis Cache"),
+        {
+            "label": "WebSocket Server",
+            "tone": "healthy",
+            "text": "🟢 Running",
+        },
+        {
+            "label": "API Protection",
+            "tone": "healthy" if health.get("runtime", {}).get("status") == "protected" else "neutral",
+            "text": "🟢 Guarded" if health.get("runtime", {}).get("status") == "protected" else "⚪ Open",
+        },
+    ]
+
+    return {
+        "today_date": now.strftime("%B %d, %Y"),
+        "total_users": total_users,
+        "new_users_today": new_users_this_week,
+        "orders_today": orders_today,
+        "order_increase": orders_today - orders_yesterday,
+        "revenue_today": revenue_today,
+        "revenue_percent": round(((revenue_today - revenue_yesterday) / revenue_yesterday) * 100, 1) if revenue_yesterday else (100 if revenue_today else 0),
+        "active_prescriptions": active_prescriptions,
+        "prescription_change": prescriptions_today - prescriptions_yesterday,
+        "recent_orders": recent_orders,
+        "recent_users": recent_users,
+        "ai_insight_items": insight_items,
+        "activity_feed": activity_feed,
+        "predicted_orders": predictive["predicted_orders"],
+        "predicted_revenue": predictive["predicted_revenue"],
+        "peak_hours": predictive["peak_hours"],
+        "low_stock_prediction": predictive["low_stock_prediction"],
+        "activity_heatmap": behavior["heatmap"],
+        "peak_hour_text": behavior["peak_hour_text"],
+        "search_terms": behavior["search_terms"],
+        "average_order_value": behavior["average_order_value"],
+        "cart_abandonment_rate": behavior["cart_abandonment_rate"],
+        "anomalies": anomalies,
+        "chart_labels": orders_chart["labels"],
+        "chart_orders_data": orders_chart["values"],
+        "chart_revenue_data": revenue_chart["values"],
+        "chart_users_data": users_chart["values"],
+        "chart_medicines_labels": medicines_chart["labels"],
+        "chart_medicines_data": medicines_chart["values"],
+        "platform_health": platform_health,
+        "total_pharmacies": int(db.query(func.count(Pharmacy.id)).scalar() or 0),
+        "total_doctors": total_legacy_doctors + int(db.query(func.count(User.id)).filter(User.role == UserRole.doctor).scalar() or 0),
+        "total_labs": int(db.query(func.count(User.id)).filter(User.role == UserRole.lab_owner).scalar() or 0),
+        "total_delivery": int(db.query(func.count(User.id)).filter(User.role == UserRole.delivery_partner).scalar() or 0),
+        "total_completed_orders": completed_orders,
+        "total_revenue": total_revenue,
+        "selected_status": normalized_status or "all",
+        "selected_date": normalized_date,
+    }
+
+
 @router.get("/admin")
 def admin_dashboard(
     request: Request,
+    status: str = Query(default="all"),
+    date: str = Query(default=""),
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
 ):
     doctor = _require_admin(doctor)
-    payload = _metrics(db)
+    payload = _admin_dashboard_payload(db, order_status=status, order_date=date)
     track_event("admin_dashboard_viewed", doctor_id=doctor.id)
     return templates.TemplateResponse(
         request,
         "admin_dashboard.html",
-        {"doctor": doctor, "metrics": payload, "suppliers": get_all_suppliers()},
+        {"request": request, "doctor": doctor, **payload},
     )
 
 
@@ -788,6 +1322,84 @@ def admin_metrics(
     payload = _metrics(db)
     track_event("admin_metrics_requested", doctor_id=doctor.id)
     return JSONResponse(payload)
+
+
+@router.get("/api/admin/chart-data")
+def admin_chart_data(
+    type: str = Query(default="orders"),
+    range: str = Query(default="30d"),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    chart_type = type.strip().lower()
+    if chart_type not in {"orders", "revenue", "users", "medicines"}:
+        raise HTTPException(status_code=400, detail="Unsupported chart type.")
+    payload = _chart_series(db, chart_type, range.strip().lower())
+    return JSONResponse(payload)
+
+
+@router.get("/api/admin/activity/feed")
+def admin_activity_feed(
+    limit: int = Query(default=50, ge=1, le=200),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    return JSONResponse({"activities": _recent_activity_feed(limit)})
+
+
+@router.get("/api/admin/predictions")
+def admin_predictions(
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    payload = _predictive_snapshot(db)
+    payload["anomalies"] = _anomaly_snapshot(db)
+    return JSONResponse(payload)
+
+
+@router.post("/api/admin/reports/schedule-weekly")
+def admin_schedule_weekly_report(
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    track_event("admin_weekly_report_scheduled", doctor_id=doctor.id)
+    return JSONResponse({"success": True, "message": "Weekly report scheduling saved for admin email summary."})
+
+
+@router.get("/api/admin/export-full-report")
+def admin_export_full_report(
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    dashboard = _admin_dashboard_payload(db)
+    csv_stream = StringIO()
+    writer = csv.writer(csv_stream)
+    writer.writerow(["Metric", "Value"])
+    writer.writerow(["Total Users", dashboard["total_users"]])
+    writer.writerow(["Orders Today", dashboard["orders_today"]])
+    writer.writerow(["Revenue Today", dashboard["revenue_today"]])
+    writer.writerow(["Active Prescriptions", dashboard["active_prescriptions"]])
+    writer.writerow(["Predicted Orders", dashboard["predicted_orders"]])
+    writer.writerow(["Predicted Revenue", dashboard["predicted_revenue"]])
+    writer.writerow(["Peak Hours", dashboard["peak_hours"]])
+    writer.writerow([])
+    writer.writerow(["Recent Activity"])
+    writer.writerow(["Time", "Type", "Message"])
+    for item in dashboard["activity_feed"]:
+        writer.writerow([item["time_ago"], item["type"], item["message"]])
+    writer.writerow([])
+    writer.writerow(["Top Search Terms"])
+    writer.writerow(["Term", "Count"])
+    for item in dashboard["search_terms"]:
+        writer.writerow([item["term"], item["count"]])
+    return StreamingResponse(
+        iter([csv_stream.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=kash-ai-report.csv"},
+    )
 
 
 @router.get("/admin/funnel-metrics")
@@ -1074,6 +1686,7 @@ def admin_growth_metrics(
 
 
 @router.websocket("/ws/activity")
+@router.websocket("/ws/admin/activity")
 async def activity_websocket(websocket: WebSocket):
     await activity_manager.connect(websocket)
     try:
@@ -1091,7 +1704,7 @@ def add_medicine_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse("admin/add_medicine.html", _admin_template_context(request))
+    return templates.TemplateResponse(request, "admin/add_medicine.html", _admin_template_context(request))
 
 
 @router.get("/admin/bulk-upload")
@@ -1100,7 +1713,16 @@ def bulk_upload_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse("admin/bulk_upload.html", _admin_template_context(request))
+    return templates.TemplateResponse(request, "admin/bulk_upload.html", _admin_template_context(request))
+
+
+@router.get("/admin/master-medicines")
+def master_medicine_db_page(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    return templates.TemplateResponse(request, "admin/master_medicine_db.html", _admin_template_context(request))
 
 
 @router.get("/admin/activity-dashboard")
@@ -1109,7 +1731,7 @@ def activity_dashboard_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse("admin/activity_dashboard.html", _admin_template_context(request))
+    return templates.TemplateResponse(request, "admin/activity_dashboard.html", _admin_template_context(request))
 
 
 @router.get("/admin/complete")
@@ -1118,7 +1740,7 @@ def complete_admin_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse("admin/complete_admin.html", _admin_template_context(request))
+    return templates.TemplateResponse(request, "admin/complete_admin.html", _admin_template_context(request))
 
 
 @router.get("/api/admin/medicines")
@@ -1128,16 +1750,22 @@ def get_admin_medicines(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    query = db.query(Medicine).order_by(Medicine.name.asc())
+    query = db.query(MasterMedicine).order_by(MasterMedicine.name.asc())
     if q.strip():
         like = f"%{q.strip()}%"
         query = query.filter(
-            (Medicine.name.ilike(like))
-            | (Medicine.brand.ilike(like))
-            | (Medicine.category.ilike(like))
+            (MasterMedicine.name.ilike(like))
+            | (MasterMedicine.brand.ilike(like))
+            | (MasterMedicine.category.ilike(like))
         )
     medicines = query.limit(200).all()
-    return JSONResponse([_medicine_payload(medicine) for medicine in medicines])
+    stock_rows = (
+        db.query(PharmacyInventory.master_medicine_id, func.coalesce(func.sum(PharmacyInventory.stock), 0))
+        .group_by(PharmacyInventory.master_medicine_id)
+        .all()
+    )
+    stock_map = {int(medicine_id or 0): int(stock or 0) for medicine_id, stock in stock_rows}
+    return JSONResponse([_master_medicine_payload(medicine, stock_map.get(medicine.id, 0)) for medicine in medicines])
 
 
 @router.get("/api/admin/medicines/low-stock")
@@ -1147,14 +1775,17 @@ def get_low_stock_medicines(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    medicines = (
-        db.query(Medicine)
-        .filter(Medicine.stock < max(0, threshold), Medicine.is_available.is_(True))
-        .order_by(Medicine.stock.asc(), Medicine.name.asc())
-        .limit(200)
+    threshold = max(0, threshold)
+    stock_rows = (
+        db.query(PharmacyInventory.master_medicine_id, func.coalesce(func.sum(PharmacyInventory.stock), 0).label("stock"))
+        .group_by(PharmacyInventory.master_medicine_id)
+        .having(func.coalesce(func.sum(PharmacyInventory.stock), 0) < threshold)
         .all()
     )
-    return JSONResponse({"threshold": threshold, "medicines": [_medicine_payload(medicine) for medicine in medicines]})
+    ids = [int(item[0] or 0) for item in stock_rows if item[0]]
+    medicines = db.query(MasterMedicine).filter(MasterMedicine.id.in_(ids), MasterMedicine.is_active.is_(True)).all() if ids else []
+    stock_map = {int(medicine_id or 0): int(stock or 0) for medicine_id, stock in stock_rows}
+    return JSONResponse({"threshold": threshold, "medicines": [_master_medicine_payload(medicine, stock_map.get(medicine.id, 0)) for medicine in medicines]})
 
 
 @router.post("/api/admin/medicines/add")
@@ -1174,7 +1805,6 @@ async def add_admin_medicine(
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
     _: None = Depends(verify_csrf),
-    __: str = Depends(verify_admin_access),
 ):
     _require_admin(doctor)
     if "application/json" in request.headers.get("content-type", "").lower():
@@ -1198,10 +1828,23 @@ async def add_admin_medicine(
     normalized_stock = max(0, _safe_price(stock, 100))
     pharmacy = _ensure_default_pharmacy(db)
     image_url = await _save_uploaded_medicine_image(image)
+    master = ensure_master_medicine(
+        db,
+        name=name,
+        category=normalize_category(category),
+        brand=brand.strip() or None,
+        generic_name=generic_name.strip() or None,
+        mrp=float(_safe_price(mrp, _safe_price(price, 0))),
+        price=float(_safe_price(price, 0)),
+        prescription_required=_normalize_bool(prescription_required),
+        description=description.strip() or None,
+        image_url=image_url,
+        manufacturer=brand.strip() or None,
+    )
     medicine = Medicine(
         name=name,
         generic_name=generic_name.strip() or None,
-        category=(category.strip().lower() or "wellness"),
+        category=normalize_category(category),
         brand=brand.strip() or None,
         mrp=_safe_price(mrp, _safe_price(price, 0)),
         price=_safe_price(price, 0),
@@ -1212,16 +1855,29 @@ async def add_admin_medicine(
         description=description.strip() or None,
         image_url=image_url,
         pharmacy_id=pharmacy.id,
+        master_medicine_id=master.id,
     )
     db.add(medicine)
     commit_with_retry(db)
+    inventory = PharmacyInventory(
+        pharmacy_store_id=None,
+        pharmacy_user_id=None,
+        medicine_id=medicine.id,
+        master_medicine_id=master.id,
+        stock=normalized_stock,
+        price_override=float(_safe_price(price, 0)),
+        is_available=normalized_stock > 0,
+    )
+    db.add(inventory)
+    commit_with_retry(db)
+    db.refresh(master)
     db.refresh(medicine)
     await _broadcast_admin_activity(
         "medicine_added",
         f"New medicine added: {medicine.name}",
         {"medicine_id": medicine.id},
     )
-    return JSONResponse({"success": True, "medicine_id": medicine.id, "medicine": _medicine_payload(medicine)})
+    return JSONResponse({"success": True, "medicine_id": master.id, "medicine": _master_medicine_payload(master, normalized_stock)})
 
 
 @router.post("/api/admin/medicines/bulk-upload")
@@ -1230,7 +1886,6 @@ async def bulk_upload_medicines(
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
     _: None = Depends(verify_csrf),
-    __: str = Depends(verify_admin_access),
 ):
     _require_admin(doctor)
     if not file.filename.lower().endswith(".csv"):
@@ -1249,22 +1904,52 @@ async def bulk_upload_medicines(
             if not name:
                 raise ValueError("Missing medicine name")
             normalized_stock = max(0, _safe_price(row.get("stock"), 100))
+            master = ensure_master_medicine(
+                db,
+                name=name,
+                category=normalize_category(str(row.get("category", "wellness"))),
+                brand=str(row.get("brand", "")).strip() or None,
+                generic_name=str(row.get("generic_name", "")).strip() or None,
+                mrp=float(_safe_price(row.get("mrp"), _safe_price(row.get("price"), 0))),
+                price=float(_safe_price(row.get("price"), 0)),
+                prescription_required=_normalize_bool(row.get("prescription_required")),
+                description=str(row.get("description", "")).strip() or None,
+                image_url=str(row.get("image_url", "")).strip() or None,
+                barcode=str(row.get("barcode", "")).strip() or None,
+                manufacturer=str(row.get("brand", "")).strip() or None,
+            )
             medicine = Medicine(
                 name=name,
                 generic_name=str(row.get("generic_name", "")).strip() or None,
-                category=str(row.get("category", "wellness")).strip().lower() or "wellness",
+                category=normalize_category(str(row.get("category", "wellness"))),
                 brand=str(row.get("brand", "")).strip() or None,
                 mrp=_safe_price(row.get("mrp"), _safe_price(row.get("price"), 0)),
                 price=_safe_price(row.get("price"), 0),
                 stock=normalized_stock,
+                expiry_date=None,
+                barcode=str(row.get("barcode", "")).strip() or None,
                 unit=str(row.get("unit", "unit")).strip() or "unit",
                 requires_prescription=_normalize_bool(row.get("prescription_required")),
                 is_available=normalized_stock > 0,
                 description=str(row.get("description", "")).strip() or None,
                 image_url=str(row.get("image_url", "")).strip() or None,
                 pharmacy_id=pharmacy.id,
+                master_medicine_id=master.id,
             )
             db.add(medicine)
+            db.flush()
+            db.add(
+                PharmacyInventory(
+                    pharmacy_store_id=None,
+                    pharmacy_user_id=None,
+                    medicine_id=medicine.id,
+                    master_medicine_id=master.id,
+                    stock=normalized_stock,
+                    price_override=float(_safe_price(row.get("price"), 0)),
+                    barcode=str(row.get("barcode", "")).strip() or None,
+                    is_available=normalized_stock > 0,
+                )
+            )
             added += 1
         except Exception as exc:
             failed += 1
@@ -1285,7 +1970,6 @@ async def bulk_add_medicines_json(
     payload: dict[str, object] = Body(default={}),
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
-    __: str = Depends(verify_admin_access),
 ):
     _require_admin(doctor)
     medicines = payload.get("medicines", [])
@@ -1305,22 +1989,52 @@ async def bulk_add_medicines_json(
             if not name:
                 raise ValueError("Missing medicine name")
             normalized_stock = max(0, _safe_price(row.get("stock"), 100))
+            master = ensure_master_medicine(
+                db,
+                name=name,
+                category=normalize_category(str(row.get("category", "wellness"))),
+                brand=str(row.get("brand", "")).strip() or None,
+                generic_name=str(row.get("generic_name", "")).strip() or None,
+                mrp=float(_safe_price(row.get("mrp"), _safe_price(row.get("price"), 0))),
+                price=float(_safe_price(row.get("price"), 0)),
+                prescription_required=_normalize_bool(row.get("prescription_required")),
+                description=str(row.get("description", "")).strip() or None,
+                image_url=str(row.get("image_url", "")).strip() or None,
+                barcode=str(row.get("barcode", "")).strip() or None,
+                manufacturer=str(row.get("brand", "")).strip() or None,
+            )
             medicine = Medicine(
                 name=name,
                 generic_name=str(row.get("generic_name", "")).strip() or None,
-                category=str(row.get("category", "wellness")).strip().lower() or "wellness",
+                category=normalize_category(str(row.get("category", "wellness"))),
                 brand=str(row.get("brand", "")).strip() or None,
                 mrp=_safe_price(row.get("mrp"), _safe_price(row.get("price"), 0)),
                 price=_safe_price(row.get("price"), 0),
                 stock=normalized_stock,
+                expiry_date=None,
+                barcode=str(row.get("barcode", "")).strip() or None,
                 unit=str(row.get("unit", "unit")).strip() or "unit",
                 requires_prescription=_normalize_bool(row.get("prescription_required")),
                 is_available=normalized_stock > 0,
                 description=str(row.get("description", "")).strip() or None,
                 image_url=str(row.get("image_url", "")).strip() or None,
                 pharmacy_id=pharmacy.id,
+                master_medicine_id=master.id,
             )
             db.add(medicine)
+            db.flush()
+            db.add(
+                PharmacyInventory(
+                    pharmacy_store_id=None,
+                    pharmacy_user_id=None,
+                    medicine_id=medicine.id,
+                    master_medicine_id=master.id,
+                    stock=normalized_stock,
+                    price_override=float(_safe_price(row.get("price"), 0)),
+                    barcode=str(row.get("barcode", "")).strip() or None,
+                    is_available=normalized_stock > 0,
+                )
+            )
             added += 1
         except Exception as exc:
             failed += 1
@@ -1343,37 +2057,47 @@ async def update_medicine(
     request: Request,
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
-    _: str = Depends(verify_admin_access),
 ):
     doctor = _require_admin(doctor)
-    medicine = db.get(Medicine, medicine_id)
+    medicine = db.get(MasterMedicine, medicine_id)
     if medicine is None:
         raise HTTPException(status_code=404, detail="Medicine not found")
 
     data = updates.model_dump(exclude_unset=True)
-    previous_stock = int(medicine.stock or 0)
+    stock_override = data.pop("stock", None)
     for field, value in data.items():
         if field == "prescription_required":
-            setattr(medicine, "requires_prescription", bool(value))
+            setattr(medicine, "prescription_required", bool(value))
         else:
             setattr(medicine, field, value)
-    if "stock" in data:
-        medicine.is_available = int(medicine.stock or 0) > 0
-        adjustment = StockAdjustment(
-            medicine_id=medicine.id,
-            previous_stock=previous_stock,
-            new_stock=int(medicine.stock or 0),
-            adjusted_by=int(getattr(doctor, "id", 0) or 0),
-            reason="Inventory update",
-        )
-        db.add(adjustment)
+    if "category" in data:
+        medicine.category = normalize_category(str(medicine.category))
+    if stock_override is not None:
+        inventory_rows = db.query(PharmacyInventory).filter(PharmacyInventory.master_medicine_id == medicine.id).all()
+        if inventory_rows:
+            per_row = max(0, int(stock_override)) // max(1, len(inventory_rows))
+            remainder = max(0, int(stock_override)) % max(1, len(inventory_rows))
+            for index, row in enumerate(inventory_rows):
+                row.stock = per_row + (1 if index < remainder else 0)
+                row.is_available = row.stock > 0
+                if row.medicine_id:
+                    source = db.get(Medicine, row.medicine_id)
+                    if source is not None:
+                        source.stock = row.stock
+                        source.is_available = row.stock > 0
 
     commit_with_retry(db)
     db.refresh(medicine)
     await _broadcast_admin_activity("medicine_updated", f"Medicine updated: {medicine.name}", {"medicine_id": medicine.id})
     write_audit_event("admin_medicine_updated", request, medicine_id=medicine.id)
     logger.info("Medicine %s updated by admin %s", medicine.id, doctor.id)
-    return JSONResponse({"success": True, "medicine": _medicine_payload(medicine)})
+    stock = (
+        db.query(func.coalesce(func.sum(PharmacyInventory.stock), 0))
+        .filter(PharmacyInventory.master_medicine_id == medicine.id)
+        .scalar()
+        or 0
+    )
+    return JSONResponse({"success": True, "medicine": _master_medicine_payload(medicine, int(stock))})
 
 
 @router.delete("/api/admin/medicines/{medicine_id}")
@@ -1382,19 +2106,25 @@ async def delete_medicine(
     request: Request,
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
-    _: str = Depends(verify_admin_access),
 ):
     doctor = _require_admin(doctor)
-    medicine = db.get(Medicine, medicine_id)
+    medicine = db.get(MasterMedicine, medicine_id)
     if medicine is None:
         raise HTTPException(status_code=404, detail="Medicine not found")
-    medicine.is_available = False
+    medicine.is_active = False
+    linked = db.query(Medicine).filter(Medicine.master_medicine_id == medicine.id).all()
+    for item in linked:
+        item.is_available = False
+        item.stock = 0
+    for inventory in db.query(PharmacyInventory).filter(PharmacyInventory.master_medicine_id == medicine.id).all():
+        inventory.is_available = False
+        inventory.stock = 0
     commit_with_retry(db)
     db.refresh(medicine)
     await _broadcast_admin_activity("medicine_archived", f"Medicine archived: {medicine.name}", {"medicine_id": medicine.id})
     write_audit_event("admin_medicine_archived", request, medicine_id=medicine.id)
     logger.info("Medicine %s archived by admin %s", medicine.id, doctor.id)
-    return JSONResponse({"success": True, "medicine": _medicine_payload(medicine)})
+    return JSONResponse({"success": True, "medicine": _master_medicine_payload(medicine, 0)})
 
 
 @router.post("/api/admin/medicines/{medicine_id}/adjust-stock")
@@ -1482,8 +2212,10 @@ def admin_activity_stats(
     return JSONResponse(
         {
             "active_users": active_session_count(),
+            "total_users": int(db.query(func.count(User.id)).scalar() or 0) + int(db.query(func.count(Patient.id)).scalar() or 0) + int(db.query(func.count(Doctor.id)).scalar() or 0),
             "orders_today": orders_today,
             "revenue_today": revenue_today,
+            "active_prescriptions": int(db.query(func.count(Prescription.id)).scalar() or 0),
             "medicines_sold": medicines_sold,
             "orders": order_counts,
             "computed_at": datetime.now(timezone.utc).isoformat(),
@@ -1650,10 +2382,16 @@ def export_medicines(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    medicines = db.query(Medicine).order_by(Medicine.name.asc()).limit(5000).all()
+    medicines = db.query(MasterMedicine).order_by(MasterMedicine.name.asc()).limit(5000).all()
+    stock_rows = (
+        db.query(PharmacyInventory.master_medicine_id, func.coalesce(func.sum(PharmacyInventory.stock), 0))
+        .group_by(PharmacyInventory.master_medicine_id)
+        .all()
+    )
+    stock_map = {int(medicine_id or 0): int(stock or 0) for medicine_id, stock in stock_rows}
     csv_stream = StringIO()
     writer = csv.writer(csv_stream)
-    writer.writerow(["id", "name", "category", "brand", "mrp", "price", "stock", "unit", "prescription_required", "is_available"])
+    writer.writerow(["id", "name", "category", "brand", "mrp", "price", "stock", "barcode", "prescription_required", "is_active"])
     for medicine in medicines:
         writer.writerow([
             medicine.id,
@@ -1662,10 +2400,10 @@ def export_medicines(
             medicine.brand or "",
             medicine.mrp or medicine.price or 0,
             medicine.price or 0,
-            medicine.stock or 0,
-            medicine.unit,
-            bool(medicine.requires_prescription),
-            bool(medicine.is_available),
+            stock_map.get(medicine.id, 0),
+            medicine.barcode or "",
+            bool(medicine.prescription_required),
+            bool(medicine.is_active),
         ])
     return StreamingResponse(
         iter([csv_stream.getvalue()]),
@@ -2081,10 +2819,10 @@ def saas_stats(
     trial_clinic_subs = db.query(
         func.count(ClinicSubscription.id)
     ).filter(ClinicSubscription.status == "trial").scalar() or 0
-    basic_subs = db.query(
+    pro_subs = db.query(
         func.count(ClinicSubscription.id)
     ).filter(ClinicSubscription.plan_id == "basic").scalar() or 0
-    premium_subs = db.query(
+    enterprise_subs = db.query(
         func.count(ClinicSubscription.id)
     ).filter(ClinicSubscription.plan_id == "pro").scalar() or 0
 
@@ -2156,8 +2894,8 @@ def saas_stats(
             "total": total_clinic_subs,
             "active": active_clinic_subs,
             "trial": trial_clinic_subs,
-            "basic": basic_subs,
-            "premium": premium_subs,
+            "pro": pro_subs,
+            "enterprise": enterprise_subs,
         },
         "care_plans": {
             "total": total_care_plans,

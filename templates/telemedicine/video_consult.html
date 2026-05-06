@@ -1,0 +1,212 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}Doctor Call{% endblock %}
+{% block page %}
+{% from "components/skeletons.html" import card_list %}
+<section class="simple-card">
+    <h1 class="title">Doctor Call</h1>
+    <p class="subtitle">You are speaking with Dr. {{ doctor_name }}.</p>
+    <p class="subtitle">{% include "components/ws_status.html" %}</p>
+    <div id="chatMessages" class="empty-state" style="margin-top:14px;" aria-live="polite">Consultation started at {{ start_time }}</div>
+</section>
+
+<section class="simple-card">
+    <div class="video-shell">
+        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;">
+        <div class="notice blue">
+            <strong>Doctor video</strong>
+            <video id="doctorStream" autoplay playsinline style="width:100%; border-radius:16px; margin-top:10px; background:#dbe9fb;"></video>
+        </div>
+        <div class="notice green">
+            <strong>Your video</strong>
+            <video id="patientStream" autoplay playsinline muted style="width:100%; border-radius:16px; margin-top:10px; background:#dff4e6;"></video>
+        </div>
+        </div>
+        <aside class="ai-side-panel" id="aiPanel">
+            <button class="secondary-btn" type="button" aria-label="Toggle AI Assistant panel" onclick="document.getElementById('aiPanel').classList.toggle('is-collapsed')">Toggle AI Assistant</button>
+            <div id="aiSuggestions" style="margin-top:12px;" role="status" aria-live="polite">
+                {{ card_list(2) }}
+            </div>
+        </aside>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px;">
+        <button onclick="toggleMic()" class="secondary-btn" type="button">Mute or unmute</button>
+        <button onclick="toggleCamera()" class="secondary-btn" type="button">Turn camera on or off</button>
+        <button onclick="shareScreen()" class="secondary-btn" type="button">Share screen</button>
+        <button onclick="endCall()" class="danger-btn" type="button">End call</button>
+    </div>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Chat</h2>
+    <div style="display:grid; gap:12px;">
+        <label class="sr-only" for="chatInput">Type message</label>
+        <input type="text" id="chatInput" placeholder="Type message..." aria-label="Type message">
+        <button onclick="sendChatMessage()" class="primary-btn" type="button">Send</button>
+    </div>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Doctor notes</h2>
+    <label class="sr-only" for="consultNotes">Doctor notes</label>
+    <textarea id="consultNotes" rows="5" placeholder="Write down what the doctor says." style="width:100%; border:1px solid var(--line); border-radius:16px; padding:12px 14px;" aria-label="Doctor notes"></textarea>
+    <button onclick="saveNotes()" type="button" class="secondary-btn" style="margin-top:12px;">Save notes</button>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+let localStream = null;
+let peerConnection = null;
+let signalingSocket = null;
+let micEnabled = true;
+let cameraEnabled = true;
+const roomId = "{{ session_id }}";
+const telemedicineStatus = document.querySelector("[data-ws-status]");
+const configuration = {
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+let telemedicineStarted = false;
+
+function appendMessage(kind, text) {
+    const container = document.getElementById("chatMessages");
+    const wrapper = document.createElement("div");
+    wrapper.className = `notice ${kind === "system" ? "blue" : kind === "remote" ? "green" : "yellow"}`;
+    wrapper.style.marginTop = "10px";
+    wrapper.textContent = text;
+    container.appendChild(wrapper);
+    container.scrollTop = container.scrollHeight;
+}
+
+async function startCall() {
+    if (telemedicineStarted) return;
+    telemedicineStarted = true;
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const patientStream = document.getElementById("patientStream");
+        if (patientStream) patientStream.srcObject = localStream;
+        await setupWebRTC();
+        await joinRoom();
+        appendMessage("system", "Doctor call is ready.");
+    } catch (error) {
+        appendMessage("system", "Camera or microphone access was not available. You can still use chat and notes.");
+    }
+}
+
+async function setupWebRTC() {
+    peerConnection = new RTCPeerConnection(configuration);
+    if (localStream) {
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+    }
+    peerConnection.ontrack = (event) => {
+        const doctorStream = document.getElementById("doctorStream");
+        if (doctorStream) doctorStream.srcObject = event.streams[0];
+    };
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate && signalingSocket) {
+            signalingSocket.send({ type: "candidate", candidate: event.candidate });
+        }
+    };
+}
+
+async function joinRoom() {
+    if (signalingSocket) return;
+    signalingSocket = new KashWS(`/ws/telemedicine/${roomId}`, {
+        statusEl: telemedicineStatus,
+        onMessage: async (message) => {
+        if (!peerConnection) return;
+        if (message.type === "candidate" && message.candidate) {
+            await peerConnection.addIceCandidate(message.candidate);
+        }
+        if (message.type === "chat" && message.text) {
+            appendMessage("remote", message.text);
+        }
+        }
+    });
+    signalingSocket.connect();
+}
+
+function loadAiSuggestions() {
+    const aiSuggestions = document.getElementById("aiSuggestions");
+    if (!aiSuggestions) return;
+    window.setTimeout(() => {
+        aiSuggestions.innerHTML = `
+            <div class="notice yellow">
+                <strong>AI Assistant</strong>
+                <p>Real-time suggestions, follow-up questions, and summary support will appear here without blocking the call.</p>
+            </div>
+            <div class="notice blue" style="margin-top:12px;">
+                <strong>Next best prompt</strong>
+                <p>Ask about onset, sleep changes, and appetite before finalizing the summary.</p>
+            </div>
+        `;
+    }, 250);
+}
+
+function toggleMic() {
+    if (!localStream) return;
+    micEnabled = !micEnabled;
+    localStream.getAudioTracks().forEach(track => {
+        track.enabled = micEnabled;
+    });
+}
+
+function toggleCamera() {
+    if (!localStream) return;
+    cameraEnabled = !cameraEnabled;
+    localStream.getVideoTracks().forEach(track => {
+        track.enabled = cameraEnabled;
+    });
+}
+
+async function shareScreen() {
+    appendMessage("system", "Screen sharing is ready for implementation when the second participant is connected.");
+}
+
+function saveNotes() {
+    const notes = document.getElementById("consultNotes").value.trim();
+    window.showSimpleMessage(notes ? "Your notes are saved on this device." : "No notes to save.");
+}
+
+function sendChatMessage() {
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+    if (!text) return;
+    appendMessage("local", text);
+    if (signalingSocket) {
+        signalingSocket.send({ type: "chat", text });
+    }
+    input.value = "";
+}
+
+async function endCall() {
+    if (peerConnection) {
+        peerConnection.close();
+    }
+    if (signalingSocket) {
+        signalingSocket.disconnect();
+    }
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+    try {
+        await fetch("/api/telemedicine/summary", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: roomId })
+        });
+    } catch (error) {}
+    window.location.href = `/telemedicine/summary/${roomId}`;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadAiSuggestions();
+    startCall();
+});
+window.addEventListener("beforeunload", () => signalingSocket?.disconnect());
+</script>
+<style>
+.video-shell{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:14px;align-items:start}.ai-side-panel{border:1px solid #d5dfdb;border-radius:20px;padding:14px;background:#fff}.ai-side-panel.is-collapsed .notice{display:none}
+@media (max-width:820px){.video-shell{grid-template-columns:1fr}}
+</style>
+{% endblock %}

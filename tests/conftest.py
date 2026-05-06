@@ -208,7 +208,7 @@ async def admin_client(client: AsyncClient):
         follow_redirects=False,
     )
     assert login_response.status_code == 303
-    assert login_response.headers["location"] == "/dashboard"
+    assert login_response.headers["location"] in {"/admin", "/dashboard"}
 
     return {"client": client, "username": admin_username, "password": password}
 

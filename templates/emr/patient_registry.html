@@ -65,11 +65,16 @@
             </article>
             {% else %}
             <article class="card empty-state">
-                <h3 class="h4">No patients found</h3>
-                <p>Try a broader search or register a new patient.</p>
+                <div class="empty-state__icon"><i class="fa-solid fa-user-plus"></i></div>
+                <h3 class="empty-state__title">No patients found</h3>
+                <p class="empty-state__message">Try a broader search or register a new patient to start their clinical record.</p>
+                <a href="/emr/patient-registration" class="btn btn-primary btn-sm">Register Patient</a>
             </article>
             {% endfor %}
         </div>
     </section>
 </div>
+<a href="/emr/patient-registration" class="fab mobile-only" aria-label="Register Patient">
+    <i class="fa-solid fa-plus"></i>
+</a>
 {% endblock %}

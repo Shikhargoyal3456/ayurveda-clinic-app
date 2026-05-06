@@ -1,0 +1,51 @@
+{% extends "layouts/portal_base.html" %}
+{% from "components/cards.html" import metric_card, nav_card %}
+{% block title %}Pharmacy Dashboard | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="surface-card">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Pharmacy dashboard</p>
+            <h1>{{ pharmacy.store_name }}</h1>
+            <p class="muted">Restaurant-style medicine operations with a real-time order queue, stock alerts, and daily earnings.</p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-primary btn-sm" href="/portal/pharmacy/add-medicine">Add medicine</a>
+            <a class="btn btn-outline-dark btn-sm" href="/portal/pharmacy/bulk-upload">Bulk upload</a>
+            <a class="btn btn-outline-success btn-sm" href="/portal/pharmacy/stock-alerts">Stock alerts</a>
+        </div>
+    </div>
+    <div class="metric-grid">
+        {{ metric_card('Real-time Queue', orders | length, 'Orders in the live board') }}
+        {{ metric_card('Stock Alerts', stock_alerts, 'Immediate replenishment needed') }}
+        {{ metric_card('Daily Earnings', 'Rs ' ~ today_revenue, 'Today only') }}
+        {{ metric_card('Customer Rating', rating, 'Marketplace trust signal') }}
+    </div>
+</section>
+<section class="split-grid">
+    {{ nav_card('Manage inventory', 'Add products, update stock, and keep your live catalog ready for patient orders.', '/portal/pharmacy/add-medicine', 'boxes-stacked', 'Inventory') }}
+    {{ nav_card('Review expiry tracker', 'Check medicines that need action before they become difficult to sell.', '/portal/pharmacy/expiry-tracker', 'calendar-xmark', 'Safety') }}
+</section>
+<section class="split-grid">
+    <article class="surface-card" id="live-orders">
+        <div class="section-heading"><div><p class="eyebrow">Order queue</p><h2>Real-time order queue</h2></div></div>
+        <div class="table-list">
+            {% for order in orders %}
+            <div class="table-row">
+                <div><strong>Order #{{ order.id }}</strong><div class="inline-meta"><span>{{ order.patient_name }}</span><span>Rs {{ order.total_amount }}</span><span class="status-pill">{{ order.status }}</span></div></div>
+                <a class="ghost-button" href="/pharmacy#live-orders">Review</a>
+            </div>
+            {% else %}<div class="empty-state"><strong>No live orders right now.</strong><span class="muted">New prescription and medicine requests will appear here the moment patients place them.</span></div>{% endfor %}
+        </div>
+    </article>
+    <article class="surface-card">
+        <div class="section-heading"><div><p class="eyebrow">Inventory insights</p><h2>Stock and performance</h2></div></div>
+        <div class="table-list">
+            {% for insight in inventory_insights %}
+            <div class="table-row"><div><strong>{{ insight.label }}</strong><div class="muted">{{ insight.value }}</div></div></div>
+            {% endfor %}
+            <div class="table-row"><div><strong>Total products</strong><div class="muted">{{ total_products }} active SKUs</div></div></div>
+        </div>
+    </article>
+</section>
+{% endblock %}

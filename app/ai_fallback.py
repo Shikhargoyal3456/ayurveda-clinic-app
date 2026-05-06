@@ -222,9 +222,15 @@ class AIFallback:
 fallback_handler = AIFallback()
 
 
-def fallback_health_status() -> dict[str, Any]:
+def fallback_health_status(probe_remote: bool = False) -> dict[str, Any]:
+    if not probe_remote:
+        return {
+            "available": False,
+            "checked": False,
+            "mode": "probe_skipped",
+        }
     try:
         response = requests.get("http://localhost:11434/api/tags", timeout=2)
-        return {"available": response.status_code < 500, "status_code": response.status_code}
+        return {"available": response.status_code < 500, "status_code": response.status_code, "checked": True}
     except requests.RequestException as exc:
-        return {"available": False, "error": str(exc)}
+        return {"available": False, "error": str(exc), "checked": True}

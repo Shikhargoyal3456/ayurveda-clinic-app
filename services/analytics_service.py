@@ -22,9 +22,16 @@ EVENT_NAMES = (
 )
 MAX_LOG_LINES = 5000
 SPECIALTIES = ("ayurveda", "modern_medicine", "homeopathy", "dental", "physiotherapy", "unknown")
+_JSONL_CACHE: dict[tuple[str, int], tuple[tuple[str, int, int], list[dict[str, Any]]]] = {}
 
 
 def _read_jsonl(path: Path, limit: int = MAX_LOG_LINES) -> list[dict[str, Any]]:
+    if path.exists():
+        stat = path.stat()
+        signature = (str(path), stat.st_mtime_ns, stat.st_size)
+        cached = _JSONL_CACHE.get((str(path), limit))
+        if cached and cached[0] == signature:
+            return list(cached[1])
     items: list[dict[str, Any]] = []
     try:
         if not path.exists():
@@ -40,6 +47,9 @@ def _read_jsonl(path: Path, limit: int = MAX_LOG_LINES) -> list[dict[str, Any]]:
                 items.append(item)
     except Exception:
         return []
+    if path.exists():
+        stat = path.stat()
+        _JSONL_CACHE[(str(path), limit)] = ((str(path), stat.st_mtime_ns, stat.st_size), items)
     return items
 
 

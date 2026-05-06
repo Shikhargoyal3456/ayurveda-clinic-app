@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Patient Detail | Kash AI{% endblock %}
 {% block page %}
+{% from "components/skeletons.html" import card_list %}
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
@@ -47,10 +48,8 @@
         <div class="content-grid-2 mt-4">
             <article class="card">
                 <h2 class="h4">Allergies & family history</h2>
-                <div class="stack-sm">
-                    <div class="info-chip"><i class="fa-solid fa-triangle-exclamation"></i> {{ patient_record.allergies|length }} allergy entries</div>
-                    <div class="info-chip"><i class="fa-solid fa-people-group"></i> {{ patient_record.family_history|length }} family history entries</div>
-                    <div class="info-chip"><i class="fa-solid fa-heart-pulse"></i> {{ patient_record.medical_history.past_conditions|join(', ') if patient_record.medical_history.past_conditions else 'No chronic issues tagged yet' }}</div>
+                <div id="patientHistory" role="status" aria-live="polite">
+                    {{ card_list(1) }}
                 </div>
             </article>
             <article class="card">
@@ -68,12 +67,8 @@
         <div class="content-grid-2 mt-4">
             <article class="card">
                 <h2 class="h4">Consultation timeline</h2>
-                <div class="timeline-list">
-                    {% for item in timeline %}
-                    <div class="timeline-entry"><span class="timeline-dot"></span><div><strong>{{ item.title }}</strong><p class="mb-1">{{ item.type|replace('-', ' ')|title }}</p><small class="text-muted">{{ item.date or 'Pending date' }} • {{ item.meta or 'No metadata' }}</small></div></div>
-                    {% else %}
-                    <p>No timeline entries yet.</p>
-                    {% endfor %}
+                <div class="timeline-list" id="patientTimeline" role="status" aria-live="polite">
+                    {{ card_list(3) }}
                 </div>
             </article>
             <article class="card">
@@ -89,4 +84,41 @@
         </div>
     </section>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const timelineContainer = document.getElementById("patientTimeline");
+    const historyContainer = document.getElementById("patientHistory");
+    const timeline = {{ timeline | default([]) | tojson }};
+    const pastConditions = {{ patient_record.medical_history.past_conditions | default([]) | tojson }};
+    const allergies = {{ patient_record.allergies | default([]) | tojson }};
+    const familyHistory = {{ patient_record.family_history | default([]) | tojson }};
+
+    if (timelineContainer) {
+        window.setTimeout(() => {
+            timelineContainer.innerHTML = timeline.length ? timeline.map((item) => `
+                <div class="timeline-entry">
+                    <span class="timeline-dot"></span>
+                    <div>
+                        <strong>${item.title || "Clinical update"}</strong>
+                        <p class="mb-1">${String(item.type || "entry").replace(/-/g, " ")}</p>
+                        <small class="text-muted">${item.date || "Pending date"} • ${item.meta || "No metadata"}</small>
+                    </div>
+                </div>
+            `).join("") : '<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-notes-medical"></i></div><h3 class="empty-state__title">No timeline entries yet</h3><p class="empty-state__message">Consultations, prescriptions, and appointment updates will appear here over time.</p><a href="/emr/modern-consultation/{{ patient.id }}" class="btn btn-primary btn-sm">Add Consultation</a></div>';
+        }, 250);
+    }
+
+    if (historyContainer) {
+        window.setTimeout(() => {
+            historyContainer.innerHTML = `
+                <div class="stack-sm">
+                    <div class="info-chip"><i class="fa-solid fa-triangle-exclamation"></i> ${allergies.length} allergy entries</div>
+                    <div class="info-chip"><i class="fa-solid fa-people-group"></i> ${familyHistory.length} family history entries</div>
+                    <div class="info-chip"><i class="fa-solid fa-heart-pulse"></i> ${pastConditions.length ? pastConditions.join(", ") : "No chronic issues tagged yet"}</div>
+                </div>
+            `;
+        }, 280);
+    }
+});
+</script>
 {% endblock %}

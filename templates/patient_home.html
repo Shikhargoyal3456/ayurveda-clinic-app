@@ -1,0 +1,137 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}Kash AI | Patient Home{% endblock %}
+{% block page %}
+<section class="simple-card">
+    <h1 class="title">Welcome{% if user_name %}, {{ user_name }}{% endif %}</h1>
+    <p class="subtitle">Order medicines, upload a prescription, track deliveries, and book a doctor consult without switching apps.</p>
+    {% if active_profile_name %}
+    <div class="notice blue" style="margin-top:14px;">
+        <p><strong>Active profile: {{ active_profile_avatar | default('👤') }} {{ active_profile_name }}</strong></p>
+        <p>Orders, health details, and prescriptions will follow this family profile.</p>
+        <a class="secondary-btn" href="/profiles/select" style="margin-top:10px;">Switch profile</a>
+    </div>
+    {% endif %}
+    <div style="display:grid;gap:12px;margin-top:16px;">
+        <a class="primary-btn" href="/order-medicines">Order medicines</a>
+        <a class="secondary-btn" href="/my-health">Open my health</a>
+        <div class="tile-grid">
+            <a class="action-tile" href="/order-medicines">
+                <div class="emoji">👤</div>
+                <strong>Order medicines</strong>
+                <span>Search, compare, and buy quickly from nearby pharmacies.</span>
+            </a>
+            <a class="action-tile" href="/order-medicines?tab=upload">
+                <div class="emoji">👨‍⚕️</div>
+                <strong>Upload prescription</strong>
+                <span>Use AI extraction to add medicines faster and avoid typing.</span>
+            </a>
+            <a class="action-tile" href="/telemedicine/book">
+                <div class="emoji">🏪</div>
+                <strong>Consult a doctor</strong>
+                <span>Choose a doctor and begin a consultation in a few guided steps.</span>
+            </a>
+            <a class="action-tile" href="/orders">
+                <div class="emoji">🔬</div>
+                <strong>Track active orders</strong>
+                <span>See where your medicine is and when it should reach you.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Plus Jakarta Sans', sans-serif;">Care shortcuts</h2>
+    <p class="subtitle">Everything a patient usually needs after login, without admin or clinic-only distractions.</p>
+    <div class="tile-grid" style="margin-top:16px;">
+        <a class="action-tile" href="/my-health">
+            <div class="emoji">💚</div>
+            <strong>My health</strong>
+            <span>See prescriptions, refills, and your latest health summary.</span>
+        </a>
+        <a class="action-tile" href="/orders">
+            <div class="emoji">📦</div>
+            <strong>Track active orders</strong>
+            <span>Follow your delivery progress and repeat recent orders quickly.</span>
+        </a>
+    </div>
+</section>
+
+<section class="simple-card">
+    <form class="search-bar" method="get" action="/order-medicines">
+        <span aria-hidden="true">🔍</span>
+        <input type="search" name="q" placeholder="Search for medicines..." value="{{ initial_query | default('') }}">
+        <button class="primary-btn" type="submit">Search</button>
+    </form>
+</section>
+
+<section class="tile-grid">
+    <a class="action-tile" href="/order-medicines?tab=upload">
+        <div class="emoji">📄</div>
+        <strong>Upload Prescription</strong>
+        <span>Take a photo and add all medicines quickly.</span>
+    </a>
+    <a class="action-tile" href="/orders">
+        <div class="emoji">📦</div>
+        <strong>Track Orders</strong>
+        <span>See where your medicine is right now.</span>
+    </a>
+    <button class="action-tile" type="button" onclick="refillLastOrder()">
+        <div class="emoji">🔄</div>
+        <strong>Refill Last Order</strong>
+        <span>Order the same medicines again in one tap.</span>
+    </button>
+    <a class="action-tile" href="/my-health">
+        <div class="emoji">👤</div>
+        <strong>My Health</strong>
+        <span>See medicines, refills, and past prescriptions.</span>
+    </a>
+</section>
+
+<section class="simple-card">
+    <a class="action-tile" href="/telemedicine/book">
+        <div class="emoji">🩺</div>
+        <strong>Consult Doctor</strong>
+        <span>Choose a doctor and start your call in 3 quick steps.</span>
+    </a>
+</section>
+
+<section class="simple-card">
+    <a class="action-tile" href="/contact">
+        <div class="emoji">❓</div>
+        <strong>❓ Help</strong>
+        <span>Reach support quickly if you need help with an order, refill, or consultation.</span>
+    </a>
+</section>
+
+<section class="simple-card">
+    <h2 style="margin-top:0; font-family:'Plus Jakarta Sans', sans-serif;">Quick Actions</h2>
+    {% for item in quick_actions %}
+    <div class="notice {{ item.tone }}">
+        <p><strong>{{ item.title }}</strong></p>
+        <p>{{ item.body }}</p>
+        {% if item.href %}
+        <a class="secondary-btn" href="{{ item.href }}" style="margin-top:10px;">{{ item.action_label }}</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div style="display:grid; gap:12px; margin-top:14px;">
+        <button class="secondary-btn" type="button" onclick="refillLastOrder()">Reorder last medicines</button>
+        <a class="secondary-btn" href="/order-medicines?tab=upload">Upload a new prescription</a>
+    </div>
+    <div id="refillMessage" class="empty-state" style="display:none; margin-top:12px;"></div>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function refillLastOrder() {
+    const refillMessage = document.getElementById("refillMessage");
+    const url = window.localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl);
+    if (url) {
+        window.location.href = url;
+        return;
+    }
+    refillMessage.style.display = "block";
+    refillMessage.textContent = "Your last order will appear here after your first medicine order.";
+}
+</script>
+{% endblock %}

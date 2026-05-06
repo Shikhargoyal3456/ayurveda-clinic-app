@@ -1,0 +1,23 @@
+{% extends "layouts/portal_base.html" %}
+{% block title %}Choose your portal | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="surface-card">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Welcome to {{ platform_name }}</p>
+            <h1>Choose your portal</h1>
+            <p><strong>{{ welcome_title }}</strong></p>
+            <p class="muted">Choose your experience and jump into a clean, role-specific workspace built for healthcare operations.</p>
+        </div>
+    </div>
+    <div class="portal-card-grid">
+        {% for card in portal_cards %}
+        <a class="portal-card" href="/auth/login/{{ card.slug }}">
+            <div class="pill-row"><span class="scope-pill"><i class="fa-solid fa-{{ card.icon }}"></i> {{ card.label }}</span></div>
+            <h3>{{ card.label }}</h3>
+            <p class="muted">{{ card.description }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

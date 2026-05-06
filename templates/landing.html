@@ -3,216 +3,179 @@
 {% set user_name = 'Visitor' %}
 {% set user_role = 'Integrated care' %}
 {% set avatar_label = 'KA' %}
-{% set seo_title = "Kash AI | India's Integrated Ayurveda + Modern Medicine Platform" %}
-{% set seo_description = "AI-powered Ayurveda and modern medicine platform with dual diagnosis, Panchakarma marketplace, personalized kits, trusted doctors, and measurable outcomes." %}
+{% set seo_title = "Kash AI | Ayurveda + Healthcare Intelligence Superapp" %}
+{% set seo_description = "Kash AI combines Ayurveda care, medicine ordering, labs, consultations, delivery, and AI support into one premium healthcare experience." %}
 
-{% block title %}Kash AI | India's Integrated Ayurveda + Modern Medicine Platform{% endblock %}
+{% block title %}Kash AI | Ayurveda + Healthcare Intelligence Superapp{% endblock %}
 
 {% block header_actions %}
 <a href="/trust/verified-practitioners" class="btn btn-outline-dark btn-sm">Trust Center</a>
-<a href="/signup" class="btn btn-primary btn-sm">Start Pilot</a>
+<a href="/signup" class="btn btn-primary btn-sm">Get Started</a>
 {% endblock %}
 
 {% block page %}
 <div class="site-container section-stack fade-in-up">
-    <section class="hero-startup card hero-card reveal-stagger">
-        <div class="hero-grid startup-hero-grid">
-            <div>
-                <p class="eyebrow">Integrated healthcare startup</p>
-                <h1>India's first <span class="gradient-text">AI-powered</span> Ayurveda + modern medicine care operating system.</h1>
-                <p>Kash AI combines grounded Ayurvedic intelligence, modern clinical workflows, medicine ordering, outcome analytics, and long-term patient engagement in one premium platform.</p>
-                <div class="hero-stats">
-                    <div class="stat-chip"><strong>500+</strong><span>Verified doctors</span></div>
-                    <div class="stat-chip"><strong>50,000+</strong><span>Patients supported</span></div>
-                    <div class="stat-chip"><strong>4.9/5</strong><span>Care satisfaction</span></div>
+    <section class="landing-hero card" style="padding:clamp(1.5rem, 4vw, 3rem);">
+        <div class="content-grid-2" style="align-items:center;">
+            <div class="section-stack" style="gap:1.25rem;">
+                <span class="section-kicker"><i class="fa-solid fa-sparkles"></i> Trusted like Tata 1mg, intuitive like Practo, intelligent like modern AI</span>
+                <div>
+                    <h1>One superapp for <span class="text-gradient">Ayurveda, medicines, consultations, labs, and AI care guidance.</span></h1>
+                    <p style="font-size:1.05rem; max-width:60ch;">Kash AI helps patients, clinics, pharmacies, and care teams move from symptom to consultation to prescription to delivery with a clean, trustworthy experience.</p>
                 </div>
-                <div class="hero-actions mt-4">
-                    <a href="/signup" class="btn btn-primary btn-lg">Start Free Consultation</a>
-                    <a href="/demo" class="btn btn-outline-dark btn-lg">Watch Demo</a>
-                    <a href="/marketplace/panchakarma-booking" class="btn btn-outline-success btn-lg">Explore Panchakarma</a>
+                <div class="hero-actions">
+                    <a href="/order-medicines" class="btn btn-primary btn-lg">Order Medicines</a>
+                    <a href="/telemedicine/book" class="btn btn-outline-dark btn-lg">Consult a Doctor</a>
+                    <a href="/demo" class="btn btn-outline-success btn-lg">Watch Demo</a>
                 </div>
-                <div class="trust-badges mt-4">
-                    <span class="auth-badge"><i class="fa-solid fa-shield-heart"></i> BAMS / MD / NMC ready</span>
-                    <span class="auth-badge"><i class="fa-solid fa-book-medical"></i> Samhita-grounded AI</span>
-                    <span class="auth-badge"><i class="fa-solid fa-chart-line"></i> Measurable outcomes</span>
+                <div class="trust-banner" style="margin:0;">
+                    <div class="trust-item"><i class="fa-solid fa-users"></i><span>10L+ customers reached</span></div>
+                    <div class="trust-item"><i class="fa-solid fa-store"></i><span>500+ partner pharmacies</span></div>
+                    <div class="trust-item"><i class="fa-solid fa-star"></i><span>4.8 rated care journeys</span></div>
                 </div>
             </div>
-            <aside class="glass-panel startup-hero-panel">
-                <p class="eyebrow">Why we win</p>
-                <h3>Competitors solve fragments. We connect the full healing loop.</h3>
-                <div class="timeline-list mt-4">
-                    <div class="timeline-item"><strong>Dual AI reasoning</strong><p class="mb-0">Modern differential support and Ayurvedic root-cause analysis side by side.</p></div>
-                    <div class="timeline-item"><strong>From consult to commerce</strong><p class="mb-0">Prescription, pharmacy, refill, subscription, and follow-up happen in one journey.</p></div>
-                    <div class="timeline-item"><strong>Trust built in</strong><p class="mb-0">Verified practitioners, explainable sources, and patient outcome visibility increase confidence.</p></div>
+            <div class="card" style="padding:1rem; background:rgba(255,255,255,.72);">
+                <img src="/static/images/ai-illustration.svg" alt="Kash AI healthcare platform illustration" width="640" height="420" style="width:100%;height:auto;border-radius:1.25rem;">
+                <div class="grid-auto-fit" style="margin-top:1rem;">
+                    <div class="feature-card surface-muted">
+                        <strong>AI Prescription Support</strong>
+                        <p>Read, explain, and order medicines faster.</p>
+                    </div>
+                    <div class="feature-card surface-muted">
+                        <strong>Video Consultations</strong>
+                        <p>Book doctors with transparent slots and ratings.</p>
+                    </div>
                 </div>
-            </aside>
+            </div>
         </div>
     </section>
 
-    <section class="competitive-advantage-banner reveal-stagger">
-        <div class="page-header mb-3">
-            <div>
-                <p class="eyebrow">Competitive edge</p>
-                <h2>Why clinics and patients choose Kash AI over generic health apps</h2>
-            </div>
-            <a href="/investors" class="btn btn-outline-dark btn-sm">Investor story</a>
-        </div>
-        <div class="comparison-table-wrap">
-            <table class="comparison-table">
-                <thead>
-                    <tr>
-                        <th>Feature</th>
-                        <th>Typical health apps</th>
-                        <th>We have</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Authentic Ayurveda consultation</td>
-                        <td>General consult layers or wellness content</td>
-                        <td>Ayurveda-first diagnostic workflows with BAMS / MD-ready support</td>
-                    </tr>
-                    <tr>
-                        <td>Integrated care journey</td>
-                        <td>Separate apps for consult, medicine, and follow-up</td>
-                        <td>Consultation, EMR, medicines, payments, outcomes, and reminders in one OS</td>
-                    </tr>
-                    <tr>
-                        <td>Ayurveda + allopathy interaction safety</td>
-                        <td>Rarely addressed clearly</td>
-                        <td>Cross-system interaction checker built for integrated care</td>
-                    </tr>
-                    <tr>
-                        <td>Panchakarma discovery and booking</td>
-                        <td>Mostly offline and fragmented</td>
-                        <td>Marketplace-ready center selection, pricing, and scheduling</td>
-                    </tr>
-                    <tr>
-                        <td>Measured treatment outcomes</td>
-                        <td>Little long-term healing visibility</td>
-                        <td>Outcome tracking with recovery trends and future prediction surfaces</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <section class="feature-grid reveal-stagger">
+    <section class="grid-auto-fit">
         <article class="feature-card">
-            <p class="eyebrow">USP 01</p>
-            <h3>Samhita-grounded AI analyzer</h3>
-            <p>Grounded retrieval from Ayurvedic knowledge sources turns AI from a gimmick into a clinician-trust feature.</p>
-            <a href="/ai-analyzer" class="text-link">Open dual analyzer</a>
+            <i class="fa-solid fa-brain fa-xl"></i>
+            <h3>AI-powered symptom and prescription help</h3>
+            <p>Upload prescriptions, ask health questions, and get guided next steps with clear, patient-friendly suggestions.</p>
         </article>
         <article class="feature-card">
-            <p class="eyebrow">USP 02</p>
-            <h3>Panchakarma marketplace</h3>
-            <p>Productize one of Ayurveda’s least digitized categories with discovery, trust badges, and transparent pricing.</p>
-            <a href="/marketplace/panchakarma-booking" class="text-link">Explore centers</a>
+            <i class="fa-solid fa-user-doctor fa-xl"></i>
+            <h3>Consult verified doctors</h3>
+            <p>Find Ayurveda and modern medicine specialists, compare availability, and start a video consultation in minutes.</p>
         </article>
         <article class="feature-card">
-            <p class="eyebrow">USP 03</p>
-            <h3>Personalized kits by prakriti</h3>
-            <p>Move beyond generic commerce into individualized Ayurveda subscriptions tied to constitution and symptoms.</p>
-            <a href="/medicines" class="text-link">See medicine store</a>
+            <i class="fa-solid fa-capsules fa-xl"></i>
+            <h3>Trusted medicine ordering</h3>
+            <p>Search medicines, compare value, upload prescriptions, and get home delivery from trusted pharmacy partners.</p>
+        </article>
+        <article class="feature-card">
+            <i class="fa-solid fa-flask-vial fa-xl"></i>
+            <h3>Tests & reports in one place</h3>
+            <p>Book health tests, access reports, and keep your care records connected across doctors, labs, and follow-ups.</p>
         </article>
     </section>
 
-    <section class="split-grid reveal-stagger">
-        <article class="glass-panel">
-            <p class="eyebrow">Social proof</p>
-            <h2>Healing journeys that are easy to share and easy to trust</h2>
-            <div class="testimonial-grid mt-4">
-                <div class="quote-panel"><strong>“I finally understood both the symptom and the root cause.”</strong><p class="mb-0">Integrated consults help patients compare immediate relief with long-term balance.</p></div>
-                <div class="quote-panel"><strong>“The clinic stopped feeling fragmented.”</strong><p class="mb-0">Doctors move from intake to prescription to follow-up without switching systems.</p></div>
-                <div class="quote-panel"><strong>“Medicine ordering felt personalized.”</strong><p class="mb-0">Kits and subscriptions turn adherence into a product advantage.</p></div>
-            </div>
-        </article>
-        <article class="glass-panel surface-tint">
-            <p class="eyebrow">Growth loops</p>
-            <h2>Built-in startup mechanics</h2>
-            <ul class="timeline-list mt-4">
-                <li class="list-group-item">Referral and waitlist flows for high-demand services</li>
-                <li class="list-group-item">Verified practitioner trust center and patient-proof stories</li>
-                <li class="list-group-item">Community challenges that create repeat engagement and shares</li>
-            </ul>
-            <div class="hero-actions mt-4">
-                <a href="/growth/referral-system" class="btn btn-primary btn-sm">Referral engine</a>
-                <a href="/community/wellness-feed" class="btn btn-outline-dark btn-sm">Community feed</a>
-                <a href="/trust/verified-practitioners" class="btn btn-outline-success btn-sm">Trust center</a>
-            </div>
-        </article>
-    </section>
-
-    <section class="pricing-startup reveal-stagger">
+    <section class="card" style="padding:2rem;">
         <div class="page-header mb-3">
             <div>
-                <p class="eyebrow">Startup pricing</p>
-                <h2>Designed for launch, retention, and premium care delivery</h2>
-            </div>
-            <div class="pricing-toggle">
-                <button class="monthly active" type="button">Monthly</button>
-                <button class="yearly" type="button">Yearly (Save 30%)</button>
+                <p class="eyebrow">How it works</p>
+                <h2>From symptom to recovery in four simple steps</h2>
             </div>
         </div>
-        <div class="pricing-cards startup-pricing-grid">
-            <article class="card pricing-card starter">
-                <h3>Starter</h3>
-                <div class="price">Rs 499<span>/month</span></div>
-                <p>For small clinics testing integrated digital care.</p>
-                <a href="/pricing" class="btn btn-outline-dark w-100">Get Started</a>
-            </article>
-            <article class="card pricing-card pro featured">
-                <div class="popular-badge">Most Popular</div>
-                <h3>Pro</h3>
-                <div class="price">Rs 999<span>/month</span></div>
-                <p>Unlock AI, dual workflows, pharmacy operations, and growth tools.</p>
-                <a href="/pricing" class="btn btn-primary w-100">Start 7-Day Free Trial</a>
-            </article>
-            <article class="card pricing-card enterprise">
-                <h3>Enterprise</h3>
-                <div class="price">Custom</div>
-                <p>For hospital groups, Panchakarma networks, and multi-city clinics.</p>
-                <a href="/pricing" class="btn btn-outline-success w-100">Contact Sales</a>
-            </article>
+        <div class="grid-auto-fit">
+            <div class="feature-card">
+                <span class="section-kicker">01</span>
+                <h3>Search or upload</h3>
+                <p>Start with a medicine search, prescription upload, or doctor booking depending on what you need.</p>
+            </div>
+            <div class="feature-card">
+                <span class="section-kicker">02</span>
+                <h3>Get AI-guided support</h3>
+                <p>Use Kash AI to understand your prescription, compare options, and choose the right care path.</p>
+            </div>
+            <div class="feature-card">
+                <span class="section-kicker">03</span>
+                <h3>Consult, test, or order</h3>
+                <p>Book a doctor, place an order, or schedule a test without jumping across multiple apps.</p>
+            </div>
+            <div class="feature-card">
+                <span class="section-kicker">04</span>
+                <h3>Track and follow up</h3>
+                <p>Stay on top of delivery, reports, prescriptions, and follow-up reminders from one dashboard.</p>
+            </div>
         </div>
     </section>
 
-    <section class="investor-section card reveal-stagger">
-        <div class="page-header mb-3">
+    <section class="content-grid-2">
+        <article class="card" style="padding:2rem;">
+            <p class="eyebrow">Testimonials</p>
+            <h2>People trust clarity, speed, and a care experience that feels human.</h2>
+            <div class="section-stack" style="margin-top:1rem;">
+                <div class="feature-card surface-muted"><strong>“Ordering medicines and understanding my prescription finally felt simple.”</strong><p>Patient review • Delhi NCR</p></div>
+                <div class="feature-card surface-muted"><strong>“The consultation flow feels premium and practical for real clinic work.”</strong><p>Doctor review • Ayurveda Clinic</p></div>
+                <div class="feature-card surface-muted"><strong>“We got pharmacy visibility, delivery flow, and patient trust in one system.”</strong><p>Pharmacy partner review</p></div>
+            </div>
+        </article>
+        <article class="card" style="padding:2rem;">
+            <p class="eyebrow">Impact at scale</p>
+            <h2>Built for growth, trust, and operational depth.</h2>
+            <div class="grid-auto-fit" style="margin-top:1rem;">
+                <div class="metric-card"><span>Orders delivered</span><strong>2.4M+</strong><small>Across medicines, wellness, and repeat care</small></div>
+                <div class="metric-card"><span>Active users</span><strong>10L+</strong><small>Patients and care teams across journeys</small></div>
+                <div class="metric-card"><span>Cities covered</span><strong>120+</strong><small>Growing healthcare and pharmacy network</small></div>
+                <div class="metric-card"><span>Average rating</span><strong>4.8/5</strong><small>Trusted care and delivery experience</small></div>
+            </div>
+        </article>
+    </section>
+
+    <section class="card" style="padding:2rem;">
+        <div class="content-grid-2" style="align-items:center;">
             <div>
-                <p class="eyebrow">Investor-ready narrative</p>
-                <h2>Why investors will care</h2>
+                <p class="eyebrow">Get the app experience</p>
+                <h2>Scan, sign in, and manage your health anywhere.</h2>
+                <p>Use Kash AI for medicines, consultations, tests & reports, and order tracking on the go.</p>
+                <div class="hero-actions" style="margin-top:1rem;">
+                    <a href="/superapp/dashboard" class="btn btn-primary">Open Superapp</a>
+                    <a href="/contact" class="btn btn-outline-dark">Talk to Support</a>
+                </div>
             </div>
-            <a href="/investor-demo" class="btn btn-primary btn-sm">Open investor demo</a>
-        </div>
-        <div class="feature-grid investor-grid">
-            <article class="feature-card investor-card">
-                <i class="fas fa-chart-line fa-2x"></i>
-                <h3>TAM narrative</h3>
-                <p>Large Ayurveda, chronic care, and wellness spend can be bundled into one integrated digital care layer.</p>
-            </article>
-            <article class="feature-card investor-card">
-                <i class="fas fa-users fa-2x"></i>
-                <h3>Patient + clinic wedge</h3>
-                <p>Doctor workflow software and patient retention loops create a two-sided growth story instead of one-off bookings.</p>
-            </article>
-            <article class="feature-card investor-card">
-                <i class="fas fa-shield-alt fa-2x"></i>
-                <h3>Defensible moat</h3>
-                <p>Classical-text AI, dual-system care, Panchakarma network, and commerce continuity are hard to copy together.</p>
-            </article>
+            <div class="grid-auto-fit">
+                <div class="feature-card surface-muted" style="text-align:center;">
+                    <div style="width:120px;height:120px;margin:0 auto 1rem;border-radius:1rem;background:repeating-linear-gradient(45deg,#111827 0 6px,#fff 6px 12px);"></div>
+                    <strong>Scan QR to continue</strong>
+                </div>
+                <div class="feature-card surface-muted">
+                    <strong>Download options</strong>
+                    <p>App Store badge area</p>
+                    <p>Google Play badge area</p>
+                    <p>Mobile web works beautifully too</p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section class="cta-band">
-        <div>
-            <p class="eyebrow">Ready to lead the category</p>
-            <h3>Launch with clearer positioning, deeper trust, stronger retention, and a product story competitors will struggle to copy.</h3>
-        </div>
-        <div class="hero-actions">
-            <a href="/signup" class="btn btn-primary">Create Workspace</a>
-            <a href="/admin/growth-dashboard" class="btn btn-outline-dark">Growth Dashboard</a>
+    <section class="card" style="padding:2rem;">
+        <div class="grid-auto-fit">
+            <div>
+                <img src="/static/images/logo-white.svg" alt="Kash AI white logo" width="200" height="60" style="background:linear-gradient(135deg,#0f4c5c,#1a7f6b);padding:1rem;border-radius:1rem;">
+                <p style="margin-top:1rem;">Ayurveda • Healthcare • Intelligence</p>
+            </div>
+            <div>
+                <strong>Explore</strong>
+                <p><a href="/order-medicines">Medicines</a></p>
+                <p><a href="/telemedicine/book">Consult</a></p>
+                <p><a href="/diagnostics/lab-booking">Tests & Reports</a></p>
+            </div>
+            <div>
+                <strong>For business</strong>
+                <p><a href="/portal">Clinic operations</a></p>
+                <p><a href="/auth/login/pharmacy">Pharmacy portal</a></p>
+                <p><a href="/admin">Admin workspace</a></p>
+            </div>
+            <div>
+                <strong>Contact</strong>
+                <p><a href="/contact">Support center</a></p>
+                <p><a href="/privacy">Privacy</a></p>
+                <p><a href="/launch/press-kit">Press kit</a></p>
+            </div>
         </div>
     </section>
 </div>

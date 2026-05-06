@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-labelledby="kashWhiteTitle">
+  <title id="kashWhiteTitle">Kash AI logo white</title>
+  <g transform="translate(10, 10)">
+    <path d="M15,10 C15,10 8,5 5,12 C2,19 8,25 15,20 C22,25 28,19 25,12 C22,5 15,10 15,10Z" fill="#FFFFFF" opacity="0.92"/>
+    <path d="M15,18 C15,22 18,28 25,28 C30,28 33,25 33,20" stroke="#FFFFFF" stroke-width="2.5" fill="none"/>
+    <circle cx="33" cy="18" r="3" fill="#FFFFFF"/>
+  </g>
+  <text x="55" y="38" font-family="'Inter', sans-serif" font-weight="700" font-size="26" fill="#FFFFFF">KASH</text>
+  <text x="115" y="38" font-family="'Inter', sans-serif" font-weight="500" font-size="20" fill="#D1D5DB">AI</text>
+  <text x="55" y="52" font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#E5E7EB">AYURVEDA • HEALTHCARE • INTELLIGENCE</text>
+</svg>

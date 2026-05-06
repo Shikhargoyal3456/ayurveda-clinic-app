@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
 {% set active_page = 'profile' %}
 {% set user_name = 'Doctor access' %}
 {% set user_role = 'Secure workspace' %}
 {% set avatar_label = 'DR' %}
 
-{% block title %}Kash AI | Doctor Login{% endblock %}
+{% block title %}Kash AI | Doctor / Admin Workspace{% endblock %}
 
 {% block header_actions %}
 <a href="/signup" class="btn btn-primary btn-sm">Create account</a>
@@ -14,9 +16,9 @@
 <div class="site-container">
     <div class="auth-layout fade-in-up">
         <section class="auth-story">
-            <p class="eyebrow">Doctor workspace</p>
+            <p class="eyebrow">Legacy clinic workspace</p>
             <h1>Modern Ayurveda operations, with a warmer first impression.</h1>
-            <p>Appointments, patients, AI support, prescriptions, and follow-ups live in one focused clinical experience.</p>
+            <p>Appointments, patients, AI support, prescriptions, and follow-ups live in one focused clinical experience. Use this page only for legacy doctor or admin workspace accounts.</p>
             <div class="auth-points">
                 <div class="auth-point">
                     <strong>Retention first</strong>
@@ -41,7 +43,7 @@
         <section class="auth-card auth-panel">
             <p class="eyebrow">Secure login</p>
             <h2>Enter your clinic workspace</h2>
-            <p class="text-muted">Use your doctor credentials to continue into the command center.</p>
+            <p class="text-muted">Use your legacy doctor or admin credentials to continue into the clinic workspace.</p>
             {% if flash %}
             <div class="alert alert-{{ flash.category }} mb-3">{{ flash.message }}</div>
             {% endif %}
@@ -64,6 +66,6 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 {% endblock %}
 

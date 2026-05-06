@@ -1,0 +1,183 @@
+{% set session_role = request.session.get('portal_user_role') if request is defined and request.session is defined else None %}
+{% set resolved_role = portal_role_key | default(session_role or 'patient', true) %}
+{% if resolved_role == 'pharmacy_owner' %}
+    {% set nav_role = 'pharmacy' %}
+{% elif resolved_role == 'lab_owner' %}
+    {% set nav_role = 'lab' %}
+{% elif resolved_role == 'delivery_partner' %}
+    {% set nav_role = 'partner' %}
+{% else %}
+    {% set nav_role = resolved_role %}
+{% endif %}
+{% set portal_role_label = portal_role_label | default(resolved_role | replace('_', ' ') | title) %}
+{% set portal_clinic_name = clinic_name | default(APP_NAME) %}
+{% set unread_notifications = notifications | default([]) | length %}
+{% set user_initials = avatar_label | default(portal_role_label[:2] | upper) %}
+{% if nav_role == 'doctor' %}
+    {% set primary_nav = [
+        {'href': '/doctor/dashboard', 'label': 'Dashboard'},
+        {'href': '/appointments', 'label': 'Appointments'},
+        {'href': '/emr/patient-registry', 'label': 'Patients'},
+        {'href': '/telemedicine/book', 'label': 'Video Call'},
+        {'href': '/doctor/dashboard#prescription-studio', 'label': 'Prescriptions'}
+    ] %}
+    {% set account_links = [
+        {'href': '/doctor/dashboard', 'label': 'My Dashboard'},
+        {'href': '/appointments', 'label': 'Appointments'},
+        {'href': '/emr/patient-registry', 'label': 'Patients'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+{% elif nav_role == 'pharmacy' %}
+    {% set primary_nav = [
+        {'href': '/pharmacy', 'label': 'Dashboard'},
+        {'href': '/pharmacy#live-orders', 'label': 'Orders'},
+        {'href': '/portal/pharmacy/add-medicine', 'label': 'Inventory'},
+        {'href': '/portal/pharmacy/stock-alerts', 'label': 'Stock Alerts'},
+        {'href': '/portal/pharmacy/expiry-tracker', 'label': 'Expiry'}
+    ] %}
+    {% set account_links = [
+        {'href': '/pharmacy', 'label': 'My Dashboard'},
+        {'href': '/pharmacy#live-orders', 'label': 'Orders'},
+        {'href': '/portal/pharmacy/add-medicine', 'label': 'Inventory'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+{% elif nav_role == 'lab' %}
+    {% set primary_nav = [
+        {'href': '/lab', 'label': 'Dashboard'},
+        {'href': '/lab#today-bookings', 'label': 'Bookings'},
+        {'href': '/lab#reports', 'label': 'Reports'},
+        {'href': '/lab#collections', 'label': 'Collections'},
+        {'href': '/lab#analytics', 'label': 'Analytics'}
+    ] %}
+    {% set account_links = [
+        {'href': '/lab', 'label': 'My Dashboard'},
+        {'href': '/lab#today-bookings', 'label': 'Bookings'},
+        {'href': '/lab#reports', 'label': 'Reports'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+{% elif nav_role == 'partner' %}
+    {% set primary_nav = [
+        {'href': '/delivery', 'label': 'Dashboard'},
+        {'href': '/delivery#assignments', 'label': 'Deliveries'},
+        {'href': '/delivery#tracking', 'label': 'Live Map'},
+        {'href': '/delivery#earnings', 'label': 'Earnings'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+    {% set account_links = [
+        {'href': '/delivery', 'label': 'My Dashboard'},
+        {'href': '/delivery#assignments', 'label': 'Assignments'},
+        {'href': '/delivery#earnings', 'label': 'Earnings'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+{% elif nav_role == 'admin' %}
+    {% set primary_nav = [
+        {'href': '/admin', 'label': 'Overview'},
+        {'href': '/admin/pharmacies', 'label': 'Pharmacies'},
+        {'href': '/admin/suppliers', 'label': 'Suppliers'},
+        {'href': '/admin/fulfillment', 'label': 'Fulfillment'},
+        {'href': '/admin/growth-metrics', 'label': 'Growth'}
+    ] %}
+    {% set account_links = [
+        {'href': '/admin', 'label': 'Admin Dashboard'},
+        {'href': '/admin/pharmacies', 'label': 'Pharmacies'},
+        {'href': '/admin/suppliers', 'label': 'Suppliers'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+{% else %}
+    {% set primary_nav = [
+        {'href': '/patient', 'label': 'Home'},
+        {'href': '/order-medicines', 'label': 'Medicines'},
+        {'href': '/telemedicine/book', 'label': 'Consult'},
+        {'href': '/orders', 'label': 'Orders'},
+        {'href': '/my-health', 'label': 'My Health'}
+    ] %}
+    {% set account_links = [
+        {'href': '/patient', 'label': 'My Home'},
+        {'href': '/orders', 'label': 'Orders'},
+        {'href': '/my-health', 'label': 'Health Records'},
+        {'href': '/contact', 'label': 'Support'}
+    ] %}
+{% endif %}
+<header class="portal-navbar kash-navbar">
+    <div class="portal-navbar__inner">
+        <div class="portal-navbar__left">
+            <a href="{{ primary_nav[0].href }}" class="portal-brand" aria-label="Kash AI home">
+                <img src="/static/images/kash-ai-logo.svg" alt="Kash AI" class="portal-brand-logo" width="164" height="48">
+            </a>
+            <nav class="portal-primary-nav desktop-only" aria-label="Primary navigation">
+                {% for item in primary_nav %}
+                <a href="{{ item.href }}" class="portal-primary-nav__link">{{ item.label }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+
+        <form class="global-search desktop-only" method="get" action="/api/v1/search" data-global-search>
+            <input type="hidden" name="role" value="{{ resolved_role }}">
+            <div class="search-input-shell">
+                <i class="fa-solid fa-magnifying-glass text-info" aria-hidden="true"></i>
+                <input
+                    type="search"
+                    name="q"
+                    placeholder="Search patients, medicines, orders, labs"
+                    aria-label="Global search"
+                    autocomplete="off"
+                    data-global-search-input
+                >
+                <span class="scope-pill" aria-hidden="true">Ctrl+K</span>
+            </div>
+            <div class="search-results-dropdown" hidden data-global-search-results>
+                <a class="search-result-link" href="/api/v1/search?q=patients"><span>Find patients quickly</span><small class="muted">Patients</small></a>
+                <a class="search-result-link" href="/api/v1/search?q=medicines"><span>Search medicines and stock</span><small class="muted">Medicines</small></a>
+                <a class="search-result-link" href="/api/v1/search?q=orders"><span>Review active orders</span><small class="muted">Orders</small></a>
+                <a class="search-result-link" href="/api/v1/search?q=labs"><span>Open lab bookings and reports</span><small class="muted">Labs</small></a>
+            </div>
+        </form>
+
+        <div class="portal-navbar-actions">
+            <div class="portal-navbar-meta desktop-only">
+                <span class="portal-role-badge"><i class="fa-solid fa-shield-heart" aria-hidden="true"></i>{{ portal_role_label }}</span>
+                <span class="portal-clinic-chip">{{ portal_clinic_name }}</span>
+            </div>
+            {% if nav_role == 'patient' %}
+            <a href="/profiles/select" class="ghost-button" aria-label="Switch patient profile">
+                <span>{{ request.session.get('active_profile_avatar', '👤') }}</span>
+                <span class="desktop-only">{{ request.session.get('active_profile_name', 'Select Profile') }}</span>
+            </a>
+            {% endif %}
+            <a href="/cart" class="ghost-button navbar-cart" aria-label="Open cart">
+                <i class="fa-solid fa-cart-shopping" aria-hidden="true"></i>
+            </a>
+            <button class="ghost-button navbar-bell" type="button" id="notif-bell" aria-label="Notifications" aria-expanded="false">
+                <i class="fa-regular fa-bell" aria-hidden="true"></i>
+                <span class="notif-badge" id="notif-count" {% if not unread_notifications %}hidden{% endif %}>{{ unread_notifications }}</span>
+            </button>
+            <div class="notif-dropdown" id="notif-dropdown" hidden role="menu">
+                <div class="notif-dropdown__header">
+                    <span>Notifications</span>
+                    <button id="mark-all-read" class="link-btn" type="button">Mark all read</button>
+                </div>
+                <div class="notif-dropdown__list" id="notif-list">
+                    <div class="empty-state" style="padding: var(--space-xl)">
+                        <p>No new notifications</p>
+                    </div>
+                </div>
+            </div>
+            <details class="portal-user-menu">
+                <summary class="portal-user-chip">
+                    <span class="avatar-badge">{{ user_initials }}</span>
+                    <span class="portal-brand-copy desktop-only">
+                        <strong>{{ user_name | default(portal_role_label) }}</strong>
+                        <small>{{ portal_role_label }}</small>
+                    </span>
+                    <i class="fa-solid fa-chevron-down desktop-only" aria-hidden="true"></i>
+                </summary>
+                <div class="portal-user-menu__panel">
+                    {% for item in account_links %}
+                    <a href="{{ item.href }}">{{ item.label }}</a>
+                    {% endfor %}
+                    <a href="/auth/logout">Logout</a>
+                </div>
+            </details>
+        </div>
+    </div>
+</header>

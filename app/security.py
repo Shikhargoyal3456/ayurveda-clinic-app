@@ -5,6 +5,7 @@ import hmac
 import html
 import json
 import logging
+import re
 import secrets
 import time
 from collections import defaultdict, deque
@@ -14,14 +15,21 @@ from threading import Lock
 from typing import Any, Callable
 
 from fastapi import HTTPException, Request, status
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.config import settings
+
+try:
+    import bleach  # type: ignore
+except Exception:  # pragma: no cover
+    bleach = None
 
 
 logger = logging.getLogger(__name__)
 _security_lock = Lock()
 _active_sessions: dict[str, dict[str, Any]] = {}
 _login_attempts: dict[str, deque[float]] = defaultdict(deque)
+_EMAIL_REGEX = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.IGNORECASE)
 
 
 def utc_now() -> datetime:
@@ -33,6 +41,36 @@ def sanitize_text(value: str, max_length: int | None = None) -> str:
     if max_length is not None:
         cleaned = cleaned[:max_length]
     return cleaned
+
+
+class Sanitizer:
+    @staticmethod
+    def sanitize_html(text: str) -> str:
+        raw = str(text or "").strip()
+        if bleach is None:
+            return sanitize_text(raw)
+        return bleach.clean(raw, tags=["b", "i", "u", "p", "br"], attributes={}, strip=True)
+
+    @staticmethod
+    def sanitize_phone(phone: str) -> str:
+        digits = "".join(char for char in str(phone or "") if char.isdigit())
+        if len(digits) != 10:
+            raise ValueError("Invalid phone number")
+        return digits
+
+    @staticmethod
+    def sanitize_pincode(pincode: str) -> str:
+        digits = "".join(char for char in str(pincode or "") if char.isdigit())
+        if len(digits) != 6:
+            raise ValueError("Invalid pincode")
+        return digits
+
+    @staticmethod
+    def sanitize_email(email: str) -> str:
+        cleaned = str(email or "").strip().lower()
+        if not _EMAIL_REGEX.match(cleaned):
+            raise ValueError("Invalid email address")
+        return cleaned
 
 
 def validate_password_complexity(password: str) -> list[str]:
@@ -171,3 +209,71 @@ def ensure_https_request(request: Request) -> None:
     forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
     if forwarded_proto != "https" and settings.is_production:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="HTTPS is required.")
+
+
+class SecureModels:
+    class MedicineInput(BaseModel):
+        model_config = ConfigDict(str_strip_whitespace=True)
+
+        name: str = Field(min_length=2, max_length=200)
+        price: float
+        stock: int
+
+        @field_validator("name")
+        @classmethod
+        def validate_name(cls, value: str) -> str:
+            return Sanitizer.sanitize_html(value)
+
+        @field_validator("price")
+        @classmethod
+        def validate_price(cls, value: float) -> float:
+            if value <= 0:
+                raise ValueError("Price must be positive")
+            if value > 100000:
+                raise ValueError("Price too high")
+            return round(float(value), 2)
+
+        @field_validator("stock")
+        @classmethod
+        def validate_stock(cls, value: int) -> int:
+            if value < 0:
+                raise ValueError("Stock cannot be negative")
+            if value > 100000:
+                raise ValueError("Stock too high")
+            return int(value)
+
+    class OrderInput(BaseModel):
+        model_config = ConfigDict(str_strip_whitespace=True)
+
+        items: list[dict[str, Any]]
+        address: str = Field(min_length=5, max_length=500)
+        payment_method: str = Field(min_length=2, max_length=40)
+
+        @field_validator("address")
+        @classmethod
+        def validate_address(cls, value: str) -> str:
+            return Sanitizer.sanitize_html(value)
+
+    class ContactInput(BaseModel):
+        model_config = ConfigDict(str_strip_whitespace=True)
+
+        email: str
+        phone: str
+        pincode: str | None = None
+
+        @field_validator("email")
+        @classmethod
+        def validate_email(cls, value: str) -> str:
+            return Sanitizer.sanitize_email(value)
+
+        @field_validator("phone")
+        @classmethod
+        def validate_phone(cls, value: str) -> str:
+            return Sanitizer.sanitize_phone(value)
+
+        @field_validator("pincode")
+        @classmethod
+        def validate_pincode(cls, value: str | None) -> str | None:
+            if value in {None, ""}:
+                return None
+            return Sanitizer.sanitize_pincode(value)

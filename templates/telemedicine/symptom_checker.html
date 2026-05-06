@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}AI Symptom Checker | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <div class="symptom-checker">
+        <h2>AI Symptom Checker</h2>
+        <p>Answer one question at a time so we can guide you to the right level of care.</p>
+
+        <div class="symptom-input conversation-card">
+            <p class="eyebrow">Question 1 of 2</p>
+            <label for="symptoms"><strong>What symptoms are you feeling right now?</strong></label>
+            <textarea id="symptoms" rows="4" class="form-control" placeholder="Example: Fever, headache, and body ache for 2 days"></textarea>
+            <button onclick="analyzeSymptoms()" class="btn btn-primary mt-3" type="button">Check My Symptoms</button>
+        </div>
+
+        <div id="analysisResult" class="analysis-result mt-4" style="display:none">
+            <h3>AI Analysis</h3>
+            <div class="possible-conditions">
+                <h4>Possible Conditions</h4>
+                <div id="conditions"></div>
+            </div>
+
+            <div class="urgency-level mt-3">
+                <h4>Urgency Level</h4>
+                <div id="urgency"></div>
+            </div>
+
+            <div class="recommendations mt-3">
+                <h4>AI Recommendations</h4>
+                <div id="recommendations"></div>
+            </div>
+
+            <div class="doctor-matching mt-3">
+                <h4>Recommended Doctors</h4>
+                <div id="doctors"></div>
+            </div>
+
+            <button onclick="bookConsultation()" class="btn btn-primary mt-4" type="button">
+                Book Consultation Now
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function analyzeSymptoms() {
+    const symptoms = document.getElementById("symptoms").value.trim();
+    const response = await fetch("/api/telemedicine/analyze-symptoms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symptoms })
+    });
+    const result = await response.json();
+
+    document.getElementById("analysisResult").style.display = "block";
+    document.getElementById("conditions").innerHTML = (result.conditions || []).map(c =>
+        `<div class="condition">${c.name} (${c.probability}% probability)</div>`
+    ).join("");
+    document.getElementById("urgency").innerHTML = `
+        <div class="urgency-${result.urgency}">
+            ${result.urgency === "high" ? "Seek immediate consultation" :
+              result.urgency === "medium" ? "Consult within 24-48 hours" :
+              "Can wait for a regular appointment"}
+        </div>
+    `;
+    document.getElementById("recommendations").innerHTML = `
+        <ul>${(result.recommendations || []).map(r => `<li>${r}</li>`).join("")}</ul>
+    `;
+    document.getElementById("doctors").innerHTML = (result.doctors || []).map(doc => `
+        <div class="doctor-card">
+            <strong>Dr. ${doc.name}</strong> (${doc.specialization})
+            <div>Rating ${doc.rating} | ${doc.experience} years</div>
+            <button class="btn btn-outline-success btn-sm mt-2" type="button" onclick="bookWithDoctor(${doc.id})">Book Now</button>
+        </div>
+    `).join("");
+}
+
+function bookConsultation() {
+    window.location.href = "/telemedicine/book";
+}
+
+function bookWithDoctor(doctorId) {
+    window.location.href = `/telemedicine/book?doctor_id=${doctorId}`;
+}
+</script>
+<style>
+.conversation-card{display:grid;gap:12px;padding:18px;border-radius:22px;background:#fff;border:1px solid #d5dfdb}
+</style>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Session Debug | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="card" style="padding:2rem;">
+        <p class="eyebrow">Debug</p>
+        <h1>Session Debug Info</h1>
+        <p>Use this page right after login to verify the stored portal role and the resolved database user.</p>
+    </section>
+
+    <section class="card" style="padding:2rem;">
+        <h2 class="h4">Session</h2>
+        <pre style="white-space:pre-wrap;word-break:break-word;">{{ session_info | tojson(indent=2) }}</pre>
+    </section>
+
+    <section class="card" style="padding:2rem;">
+        <h2 class="h4">User from Database</h2>
+        <pre style="white-space:pre-wrap;word-break:break-word;">{{ user_info | tojson(indent=2) }}</pre>
+    </section>
+
+    <section class="card" style="padding:2rem;">
+        <h2 class="h4">Resolved Active Portal User</h2>
+        <pre style="white-space:pre-wrap;word-break:break-word;">{{ active_user_info | tojson(indent=2) }}</pre>
+    </section>
+
+    <div class="hero-actions">
+        <a href="/" class="btn btn-outline-dark">Go Home</a>
+        <a href="/auth/logout" class="btn btn-primary">Logout</a>
+    </div>
+</div>
+{% endblock %}

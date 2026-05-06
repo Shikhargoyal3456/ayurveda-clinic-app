@@ -3,7 +3,7 @@
 {% block page %}
 <div class="site-container section-stack fade-in-up">
     <section class="growth-metrics">
-        <div class="page-header"><div><p class="eyebrow">Admin growth view</p><h1>Real-time startup dashboard</h1><p class="mb-0">Track the metrics that matter for fundraising, retention, and product-market fit.</p></div></div>
+        <div class="page-header"><div><p class="eyebrow">Admin growth view</p><h1>Real-time startup dashboard</h1><p class="mb-0">Track the metrics that matter for fundraising, retention, and product-market fit.</p></div><div class="hero-actions"><button class="btn btn-outline-danger btn-sm" type="button" data-confirm data-confirm-title="Reset demo data" data-confirm-message="Reset investor demo data and reseed the workspace?" data-confirm-action="/api/admin/seed-demo-data" data-confirm-method="POST" data-confirm-label="Reset Demo Data" data-confirm-type="danger">Reset Demo Data</button><button class="btn btn-outline-dark btn-sm" type="button" data-confirm data-confirm-title="Trigger payment reminders" data-confirm-message="Send payment reminder messages to users with pending dues?" data-confirm-action="/admin/trigger-payment-reminders" data-confirm-method="POST" data-confirm-label="Send Reminders" data-confirm-type="warning">Trigger Reminders</button></div></div>
         <div class="kpi-grid">
             <article class="metric-card"><span>Daily Active Users</span><strong>{{ dau }}</strong><p class="trend up">+{{ dau_growth }}%</p></article>
             <article class="metric-card"><span>Conversion Rate</span><strong>{{ conversion_rate }}%</strong><p class="trend up">+{{ conversion_growth }}%</p></article>
@@ -26,6 +26,11 @@
         <article class="card">
             <p class="eyebrow">Revenue streams</p>
             <h2 class="h4">Monetization map</h2>
+            <div class="mini-chart-list mt-3">
+                {% for item in revenue_streams %}
+                <div class="chart-row"><span>{{ item }}</span><div class="chart-bar"><i style="width:{{ 35 + loop.index0 * 12 }}%;"></i></div></div>
+                {% endfor %}
+            </div>
             <div class="stack-list mt-3">
                 {% for item in revenue_streams %}
                 <div class="stack-item">{{ item }}</div>
@@ -45,4 +50,9 @@
         </article>
     </section>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<style>
+.mini-chart-list{display:grid;gap:10px}.chart-row{display:grid;gap:6px}.chart-bar{height:10px;border-radius:999px;background:#e8f5f0;overflow:hidden}.chart-bar i{display:block;height:100%;background:linear-gradient(90deg,#0d7a6f,#27ae60);border-radius:999px}
+</style>
 {% endblock %}

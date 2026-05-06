@@ -19,15 +19,32 @@
                 <button class="btn btn-primary btn-pill" type="submit">Load vitals</button>
             </form>
             <canvas id="weightTrendChart" class="mini-chart mt-4" height="140"></canvas>
+            <div class="table-scroll-wrapper mt-4">
+                <table class="table" data-sortable-table data-export-name="vitals-history">
+                    <thead><tr><th>Date</th><th>Weight</th><th>Heart Rate</th><th>Trend</th></tr></thead>
+                    <tbody>
+                {% for vital in vitals %}
+                    <tr>
+                        <td>{{ vital.recorded_at.strftime('%d %b %Y') if vital.recorded_at else 'Recent' }}</td>
+                        <td>{{ vital.payload.get('weight_kg', '--') }} kg</td>
+                        <td>{{ vital.payload.get('heart_rate', '--') }} bpm</td>
+                        <td><span class="sparkline" aria-hidden="true"><i></i><i></i><i></i><i></i></span></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-heart-pulse"></i></div><h3 class="empty-state__title">No vitals recorded yet</h3><p class="empty-state__message">Weight, pulse, and other vital trends will appear here after the first recording.</p><a href="/emr/patient-registry" class="btn btn-primary btn-sm">Open Patient Registry</a></div></td></tr>
+                {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             <div class="stack-sm mt-4">
                 {% for vital in vitals %}
-                <div class="metric-inline"><span>{{ vital.recorded_at.strftime('%d %b %Y') if vital.recorded_at else 'Recent' }}</span><strong>{{ vital.payload.get('weight_kg', '--') }} kg • {{ vital.payload.get('heart_rate', '--') }} bpm</strong></div>
+                <div class="metric-inline vital-row"><span>{{ vital.recorded_at.strftime('%d %b %Y') if vital.recorded_at else 'Recent' }}</span><strong>{{ vital.payload.get('weight_kg', '--') }} kg • {{ vital.payload.get('heart_rate', '--') }} bpm</strong><span class="sparkline" aria-hidden="true"><i></i><i></i><i></i><i></i></span></div>
                 {% else %}
-                <p>No vitals to display.</p>
+                <p class="text-muted">A compact summary will appear here after the first vital entry.</p>
                 {% endfor %}
             </div>
         </div>
     </section>
 </div>
 {% endblock %}
-{% block extra_scripts %}<script src="{{ url_for('static', path='js/emr/vital_charts.js') }}"></script>{% endblock %}
+{% block extra_scripts %}<script defer src="{{ url_for('static', path='js/admin-table.js') }}"></script><script defer src="{{ url_for('static', path='js/emr/vital_charts.js') }}"></script><style>.vital-row{display:grid;grid-template-columns:160px 1fr auto;align-items:center;gap:12px}.sparkline{display:inline-grid;grid-auto-flow:column;gap:3px;align-items:end;height:24px}.sparkline i{display:block;width:5px;border-radius:999px;background:#0d7a6f}.sparkline i:nth-child(1){height:9px}.sparkline i:nth-child(2){height:14px}.sparkline i:nth-child(3){height:18px}.sparkline i:nth-child(4){height:12px}@media (max-width:720px){.vital-row{grid-template-columns:1fr}}</style>{% endblock %}

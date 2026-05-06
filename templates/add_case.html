@@ -80,5 +80,5 @@ async function stopRecording() { if (!mediaRecorder) return; mediaRecorder.stop(
 </script>
 {% endblock %}
 
-{% block extra_scripts %}<script src="{{ url_for('static', path='js/form_submit.js') }}"></script>{% endblock %}
+{% block extra_scripts %}<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>{% endblock %}
 

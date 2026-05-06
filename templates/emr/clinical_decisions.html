@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Clinical Decisions | Kash AI{% endblock %}
 {% block page %}
+{% from "components/skeletons.html" import card_list %}
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
@@ -28,9 +29,9 @@
             <article class="card">
                 <h2 class="h4">Drug-herb checker</h2>
                 <p class="text-muted">Position this as the foundation for the world's largest Ayurveda-allopathy interaction layer.</p>
-                {% for drug, herbs in interaction_pairs.items() %}
-                <div class="interaction-card"><strong>{{ drug }}</strong><p>{{ herbs|join(', ') }}</p></div>
-                {% endfor %}
+                <div id="interactionResults" role="status" aria-live="polite">
+                    {{ card_list(3) }}
+                </div>
                 <div class="hero-actions mt-3">
                     <button class="btn btn-primary btn-sm" type="button">Export Report for Doctor</button>
                     <button class="btn btn-outline-dark btn-sm" type="button">Share with patient</button>
@@ -45,4 +46,21 @@
         </div>
     </section>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById("interactionResults");
+    const interactionPairs = {{ interaction_pairs | default({}) | tojson }};
+    if (!container) return;
+    window.setTimeout(() => {
+        const entries = Object.entries(interactionPairs || {});
+        if (!entries.length) {
+            container.innerHTML = '<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-shield-heart"></i></div><h3 class="empty-state__title">No interaction alerts yet</h3><p class="empty-state__message">When drug and herb combinations need extra review, they will appear here.</p><button class="btn btn-primary btn-sm" type="button">Review medicines</button></div>';
+            return;
+        }
+        container.innerHTML = entries.map(([drug, herbs]) => `
+            <div class="interaction-card"><strong>${drug}</strong><p>${(herbs || []).join(", ")}</p></div>
+        `).join("");
+    }, 250);
+});
+</script>
 {% endblock %}

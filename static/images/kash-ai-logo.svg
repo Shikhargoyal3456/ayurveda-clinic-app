@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" role="img" aria-labelledby="kashTitle">
+  <title id="kashTitle">Kash AI logo</title>
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0F4C5C"/>
+      <stop offset="50%" style="stop-color:#1A7F6B"/>
+      <stop offset="100%" style="stop-color:#2BAE66"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(10, 10)">
+    <path d="M15,10 C15,10 8,5 5,12 C2,19 8,25 15,20 C22,25 28,19 25,12 C22,5 15,10 15,10Z" fill="url(#primaryGradient)" opacity="0.9"/>
+    <path d="M15,18 C15,22 18,28 25,28 C30,28 33,25 33,20" stroke="url(#primaryGradient)" stroke-width="2.5" fill="none"/>
+    <circle cx="33" cy="18" r="3" fill="url(#primaryGradient)"/>
+  </g>
+  <text x="55" y="38" font-family="'Inter', sans-serif" font-weight="700" font-size="26" fill="url(#primaryGradient)">KASH</text>
+  <text x="115" y="38" font-family="'Inter', sans-serif" font-weight="500" font-size="20" fill="#4B5563">AI</text>
+  <text x="55" y="52" font-family="'Inter', sans-serif" font-weight="400" font-size="9" fill="#6B7280">AYURVEDA • HEALTHCARE • INTELLIGENCE</text>
+</svg>

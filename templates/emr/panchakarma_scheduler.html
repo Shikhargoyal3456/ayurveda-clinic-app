@@ -20,10 +20,12 @@
                 <span class="pill pill-warning">Waitlist & premium packages</span>
             </div>
         </section>
-        <div class="grid-auto">
+        <div class="panchakarma-calendar">
             {% for plan in plans %}
-            <article class="card">
-                <p class="eyebrow">{{ plan.date }}</p>
+            <article class="card schedule-cell">
+                <p class="eyebrow">Treatment date</p>
+                <h3 class="h5">{{ plan.date }}</h3>
+                <hr>
                 <h3 class="h4">{{ plan.name }}</h3>
                 <p>{{ plan.patient }} • {{ plan.staff }}</p>
                 <span class="status-pill status-confirmed">{{ plan.status }}</span>
@@ -34,4 +36,9 @@
         </div>
     </section>
 </div>
+{% endblock %}
+{% block extra_scripts %}
+<style>
+.panchakarma-calendar{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.schedule-cell{min-height:220px;align-content:start}.schedule-cell hr{border:0;border-top:1px solid #e2e8f0;margin:10px 0 14px}
+</style>
 {% endblock %}

@@ -18,6 +18,8 @@ class Prescription(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
     doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    profile_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    profile_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     diagnosis: Mapped[str] = mapped_column(String(255))
     medicines: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)
     advice: Mapped[str] = mapped_column(Text, default="")

@@ -9,6 +9,45 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 25000) {
     }
 }
 
+window.__kashScriptInitialized = window.__kashScriptInitialized || false;
+
+function getMockNotifications() {
+    return {
+        notifications: [
+            {
+                id: 1,
+                message: "Your order #AYU123 has been delivered",
+                unread: true,
+                link: "/orders/tracking/123",
+                icon: "📦",
+                timestamp: "5 min ago"
+            },
+            {
+                id: 2,
+                message: "Prescription refill reminder: Paracetamol",
+                unread: true,
+                link: "/prescription/refill",
+                icon: "💊",
+                timestamp: "2 hours ago"
+            }
+        ]
+    };
+}
+
+async function fetchNotifications() {
+    try {
+        const response = await fetch("/api/v1/notifications");
+        if (!response.ok) {
+            throw new Error("Notifications endpoint unavailable");
+        }
+        return await response.json();
+    } catch (error) {
+        return getMockNotifications();
+    }
+}
+
+window.fetchNotifications = fetchNotifications;
+
 async function analyzeSymptoms() {
     const result = document.getElementById("result");
     const form = document.getElementById("ai-analyzer-form");
@@ -211,6 +250,94 @@ async function rebuildKnowledgeBase() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    if (window.__kashScriptInitialized) {
+        return;
+    }
+    window.__kashScriptInitialized = true;
     initAiAnalyzer();
     initScheduleDemoChips();
+
+    if ("IntersectionObserver" in window) {
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("revealed");
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -40px 0px" });
+
+        document.querySelectorAll(".reveal-on-scroll").forEach((element) => {
+            revealObserver.observe(element);
+        });
+    } else {
+        document.querySelectorAll(".reveal-on-scroll").forEach((element) => {
+            element.classList.add("revealed");
+        });
+    }
+
+    const progress = document.getElementById("page-progress");
+    if (progress) {
+        document.addEventListener("click", (event) => {
+            const link = event.target.closest("a[href]");
+            if (!link) return;
+            const href = link.getAttribute("href");
+            if (!href) return;
+            const currentUrl = new URL(window.location.href);
+            const isNonNavigationalScheme = /^(#|javascript:|mailto:|tel:)/i.test(href);
+            const targetUrl = !isNonNavigationalScheme ? new URL(href, window.location.href) : null;
+            const isSamePage = targetUrl && targetUrl.pathname === currentUrl.pathname && targetUrl.search === currentUrl.search;
+            const isExternal = targetUrl && targetUrl.origin !== window.location.origin;
+            if (
+                isNonNavigationalScheme ||
+                link.hasAttribute("download") ||
+                link.target === "_blank" ||
+                isSamePage ||
+                isExternal
+            ) {
+                return;
+            }
+            progress.style.width = "0%";
+            progress.style.opacity = "";
+            progress.classList.add("active");
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => { progress.style.width = "70%"; });
+            });
+        });
+
+        window.addEventListener("pageshow", () => {
+            progress.style.width = "100%";
+            window.setTimeout(() => {
+                progress.style.opacity = "0";
+                window.setTimeout(() => {
+                    progress.style.width = "0%";
+                    progress.style.opacity = "";
+                }, 300);
+            }, 200);
+        });
+    }
+
+    document.querySelectorAll('a[href^="/"]').forEach((link) => {
+        if (link.dataset.transitionBound === "true") return;
+        link.dataset.transitionBound = "true";
+        if (link.target || link.hasAttribute("download")) return;
+        link.addEventListener("click", (event) => {
+            const href = link.getAttribute("href");
+            if (!href || href === window.location.pathname || href.startsWith("#")) return;
+            event.preventDefault();
+            document.body.style.transition = "opacity 0.2s ease";
+            document.body.style.opacity = "0";
+            window.setTimeout(() => {
+                window.location.href = href;
+            }, 200);
+        });
+    });
+
+    window.addEventListener("kash:notification", (event) => {
+        const bell = document.getElementById("notif-bell");
+        if (!bell) return;
+        const detail = event.detail || {};
+        const notifEvent = new CustomEvent("kash:notification-received", { detail });
+        window.dispatchEvent(notifEvent);
+    });
 });

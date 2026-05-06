@@ -1,38 +1,63 @@
 {% extends 'base.html' %}
 {% block title %}Doctor Dashboard | Kash AI{% endblock %}
 {% block page %}
+{% from "components/skeletons.html" import card_list %}
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
-        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Doctor Dashboard</h1><p>Integrated operations view for modern medicine and Ayurveda teams.</p></div></div>
+        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Doctor Dashboard</h1><p>Start the day with the numbers that matter most: appointments, pending clinical work, and unread labs.</p></div></div>
         <div class="stats-grid stats-grid-4">
             <article class="metric-card"><span class="metric-label">Today's appointments</span><strong>{{ today_appointments|length }}</strong></article>
-            <article class="metric-card"><span class="metric-label">Patients</span><strong>{{ clinical_stats.total_patients }}</strong></article>
-            <article class="metric-card"><span class="metric-label">Pending labs</span><strong>{{ pending_labs|length }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Pending prescriptions</span><strong>{{ clinical_stats.consultations }}</strong></article>
+            <article class="metric-card"><span class="metric-label">Unread lab results</span><strong>{{ pending_labs|length }}</strong></article>
             <article class="metric-card"><span class="metric-label">Revenue today</span><strong>Rs {{ '%.2f'|format(revenue_today) }}</strong></article>
         </div>
         <div class="content-grid-2 mt-4">
             <article class="card">
                 <h2 class="h4">Today's appointments</h2>
-                <div class="stack-sm">
-                    {% for item in today_appointments %}
-                    <div class="appointment-row"><strong>{{ item.patient.name if item.patient else 'Patient' }}</strong><span>{{ item.time }} • {{ item.reason }}</span></div>
-                    {% else %}
-                    <p>No appointments today.</p>
-                    {% endfor %}
+                <div class="stack-sm" id="doctorAppointmentsList">
+                    {{ card_list(3) }}
                 </div>
             </article>
             <article class="card">
                 <h2 class="h4">Follow-up reminders</h2>
-                <div class="stack-sm">
-                    {% for item in followups_due %}
-                    <div class="appointment-row"><strong>{{ item.title }}</strong><span>{{ item.followup_date }}</span></div>
-                    {% else %}
-                    <p>No follow-ups due.</p>
-                    {% endfor %}
+                <div class="stack-sm" id="doctorFollowupsList">
+                    {{ card_list(2) }}
                 </div>
             </article>
         </div>
     </section>
 </div>
+<a href="/emr/modern-consultation/new" class="fab mobile-only" aria-label="New Consultation">
+    <i class="fa-solid fa-plus"></i>
+</a>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const appointments = [
+        {% for item in today_appointments %}
+        { name: {{ (item.patient.name if item.patient else 'Patient') | tojson }}, meta: {{ ((item.time or 'Time pending') ~ ' • ' ~ (item.reason or 'Visit reason pending')) | tojson }} },
+        {% endfor %}
+    ];
+    const followups = [
+        {% for item in followups_due %}
+        { title: {{ item.title | tojson }}, date: {{ item.followup_date | string | tojson }} },
+        {% endfor %}
+    ];
+
+    const appointmentsHost = document.getElementById("doctorAppointmentsList");
+    const followupsHost = document.getElementById("doctorFollowupsList");
+
+    window.setTimeout(() => {
+        appointmentsHost.innerHTML = appointments.length
+            ? appointments.map((item) => `<div class="appointment-row"><strong>${item.name}</strong><span>${item.meta}</span></div>`).join("")
+            : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-regular fa-calendar"></i></div><h3 class="empty-state__title">No appointments today</h3><p class="empty-state__message">New bookings and walk-ins scheduled for today will appear here for quick review.</p><a href="/appointments" class="btn btn-primary btn-sm">View Appointments</a></div>`;
+
+        followupsHost.innerHTML = followups.length
+            ? followups.map((item) => `<div class="appointment-row"><strong>${item.title}</strong><span>${item.date}</span></div>`).join("")
+            : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-regular fa-bell"></i></div><h3 class="empty-state__title">No follow-ups due</h3><p class="empty-state__message">When patients need a check-in or review, their follow-up reminders will show up here.</p><a href="/followups" class="btn btn-primary btn-sm">Open Follow-ups</a></div>`;
+    }, 250);
+});
+</script>
 {% endblock %}

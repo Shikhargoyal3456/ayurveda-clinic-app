@@ -1,8 +1,186 @@
-{% extends 'base.html' %}
-{% block title %}Order Tracking | Kash AI{% endblock %}
+{% extends "patient_simple_base.html" %}
+{% set simple_nav = 'orders' %}
+{% block title %}Track Orders{% endblock %}
 {% block page %}
-<div class="site-container section-stack fade-in-up">
-<section class="order-tracking-system"><div class="page-header"><div><p class="eyebrow">Order tracking</p><h1>Track your order in real time</h1><p class="mb-0">Follow the delivery timeline, ETA, partner details, and control actions from one page.</p></div></div><div class="content-grid-2"><article class="card"><div class="tracking-map" id="orderMap"><div class="demo-media-placeholder">Live map placeholder</div></div></article><article class="card"><div class="order-timeline stack-list">{% for step in order.timeline %}<div class="stack-item {% if step.completed %}surface-tint{% endif %}"><strong>{{ step.status }}</strong><p class="mb-0 text-muted">{{ step.timestamp or 'Pending' }}</p></div>{% endfor %}</div><div class="delivery-partner-info stack-item mt-3"><div><strong>{{ order.delivery_partner }}</strong><p class="mb-0 text-muted">Tracking ID: {{ order.tracking_id }}</p></div><span id="eta">{{ location.eta }}</span></div><div class="hero-actions mt-3"><button id="rescheduleOrderBtn" class="btn btn-outline-dark" data-order-id="{{ order.id }}" type="button">Reschedule Delivery</button><button id="cancelOrderBtn" class="btn btn-outline-danger" data-order-id="{{ order.id }}" type="button">Cancel Order</button></div></article></div></section>
-</div>
+<section class="simple-card">
+    <h1 class="title">Track Orders</h1>
+    <p class="subtitle">See where your order is and when it will arrive.</p>
+    {% if active_profile_name %}
+    <p class="subtitle" style="margin-top:10px;">Showing orders for {{ active_profile_name }}</p>
+    {% endif %}
+</section>
+
+<section class="simple-card" id="trackingCard">
+    <div id="trackingFlash" class="notice green" style="display:none;" aria-live="polite"></div>
+    <div id="trackingEmpty" class="empty-state" aria-live="polite">
+        <div class="empty-state__icon">📦</div>
+        <h3 class="empty-state__title">No orders to track yet</h3>
+        <p class="empty-state__message">Your latest order will appear here after you place it.</p>
+        <div style="display:grid; gap:12px; margin-top:14px;">
+            <a class="secondary-btn" href="/order-medicines">Add Medicines to Order</a>
+            <a class="secondary-btn" href="/order-medicines?tab=upload">Upload Prescription</a>
+        </div>
+    </div>
+    <div class="subtitle">{% include "components/ws_status.html" %}</div>
+    <div id="trackingSkeleton" class="skel-group" role="status" aria-live="polite" aria-label="Loading order tracking">
+        <div class="skel skel-heading"></div>
+        <div class="skel skel-text skel-text--medium"></div>
+        <div class="skel skel-text skel-text--short"></div>
+        <div class="skel" style="height:88px;"></div>
+    </div>
+    <div id="trackingContent" style="display:none;" aria-live="polite">
+        <div class="list-row">
+            <div class="list-copy">
+                <strong id="orderTitle">Order</strong>
+                <span id="arrivalText">Checking delivery time...</span>
+            </div>
+            <span class="status blue" id="orderStatusBadge">Checking</span>
+        </div>
+        <div class="order-stepper" style="margin-top:14px;">
+            <div class="order-step is-active"><strong>Placed</strong><p id="stepPlaced">Waiting for update</p></div>
+            <div class="order-step"><strong>Confirmed</strong><p id="stepConfirmed">Waiting for update</p></div>
+            <div class="order-step"><strong>Dispatched</strong><p id="stepDelivery">Waiting for update</p></div>
+            <div class="order-step"><strong>Delivered</strong><p id="stepDelivered">Waiting for update</p></div>
+        </div>
+        <div class="list-row" style="margin-top:14px;">
+            <div class="list-copy">
+                <strong id="deliveryPartnerName">Delivery Partner: Rajesh</strong>
+                <span id="deliveryPartnerMeta">Location updates are on.</span>
+            </div>
+            <a class="secondary-btn" id="deliveryPartnerContact" href="tel:9999999999">Contact Delivery Partner</a>
+        </div>
+        <div class="list-row" style="margin-top:14px;">
+            <div class="list-copy">
+                <strong>Delivery person location</strong>
+                <span id="mapText">Live map updates available during delivery.</span>
+            </div>
+        </div>
+        <iframe id="deliveryMap" title="Delivery location" style="width:100%;min-height:220px;border:0;border-radius:18px;margin-top:14px;display:none;" loading="lazy"></iframe>
+        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px;">
+            <button class="secondary-btn" type="button" onclick="reorderSameItems()">🔄 Reorder Same Items</button>
+            <button class="secondary-btn" type="button" onclick="window.location.href='/'">🏠 Home</button>
+        </div>
+    </div>
+</section>
 {% endblock %}
-{% block extra_scripts %}<script src="{{ url_for('static', path='js/superapp/tracking.js') }}"></script>{% endblock %}
+{% block extra_scripts %}
+<script>
+let trackingSocket = null;
+
+function getLatestOrderId() {
+    const fromQuery = new URLSearchParams(window.location.search).get("order_id");
+    return fromQuery || localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderId) || "";
+}
+
+function setText(id, value) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = value;
+}
+
+function showTrackingFlash() {
+    const host = document.getElementById("trackingFlash");
+    const message = localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderMessage) || "";
+    if (!message) return;
+    host.style.display = "block";
+    host.textContent = message;
+    localStorage.removeItem(window.KASH_SIMPLE_KEYS.latestOrderMessage);
+}
+
+function statusTone(status) {
+    if (status === "delivered") return "green";
+    if (status === "dispatched") return "blue";
+    if (status === "confirmed") return "blue";
+    if (status === "pending") return "yellow";
+    return "red";
+}
+
+function reorderSameItems() {
+    const url = localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl);
+    if (url) {
+        window.location.href = url;
+        return;
+    }
+    window.showSimpleMessage("Your last order will appear here after your first medicine order.");
+}
+
+function applyTrackingPayload(statusPayload, deliveryPayload = {}) {
+    const status = String(statusPayload.status || "pending").toLowerCase();
+    const badge = document.getElementById("orderStatusBadge");
+    badge.textContent = status.replace(/_/g, " ");
+    badge.className = `status ${statusTone(status)}`;
+    setText("arrivalText", deliveryPayload.remaining_eta_minutes ? `Your order will arrive in ${deliveryPayload.remaining_eta_minutes} minutes` : "Your order is being prepared");
+    setText("stepPlaced", "Order received");
+    setText("stepConfirmed", status === "pending" ? "Waiting for confirmation" : "Pharmacy confirmed");
+    setText("stepDelivery", status === "dispatched" ? `On the way • ${deliveryPayload.remaining_eta_minutes || 25} min left` : status === "delivered" ? "Delivered" : "Waiting for pickup");
+    setText("stepDelivered", status === "delivered" ? "Delivered successfully" : "Will update after delivery");
+    setText("deliveryPartnerName", `Delivery Partner: ${deliveryPayload.partner_name || "Rajesh"} (⭐4.8)`);
+    setText("deliveryPartnerMeta", deliveryPayload.partner_phone ? `Call ${deliveryPayload.partner_phone}` : "Delivery partner is assigned.");
+    document.getElementById("deliveryPartnerContact").href = `tel:${deliveryPayload.partner_phone || "9999999999"}`;
+    setText("mapText", deliveryPayload.partner_location ? `Live location: ${deliveryPayload.partner_location.lat}, ${deliveryPayload.partner_location.lng}` : "Location will appear when the order is out for delivery.");
+    const steps = Array.from(document.querySelectorAll(".order-step"));
+    const stepIndex = status === "delivered" ? 4 : status === "dispatched" ? 3 : status === "confirmed" ? 2 : 1;
+    steps.forEach((step, index) => step.classList.toggle("is-active", index < stepIndex));
+    const map = document.getElementById("deliveryMap");
+    if (deliveryPayload.partner_location?.lat && deliveryPayload.partner_location?.lng) {
+        map.style.display = "block";
+        map.src = `https://www.google.com/maps?q=${deliveryPayload.partner_location.lat},${deliveryPayload.partner_location.lng}&z=15&output=embed`;
+    } else {
+        map.style.display = "none";
+        map.removeAttribute("src");
+    }
+}
+
+async function loadTracking() {
+    showTrackingFlash();
+    const orderId = getLatestOrderId();
+    if (!orderId) {
+        document.getElementById("trackingSkeleton").style.display = "none";
+        const wsStatus = document.querySelector("[data-ws-status]");
+        if (wsStatus) {
+            wsStatus.style.display = "none";
+        }
+        return;
+    }
+    const wsStatus = document.querySelector("[data-ws-status]");
+    document.getElementById("trackingEmpty").style.display = "none";
+    setText("orderTitle", `Order #AYU${String(orderId).padStart(4, "0")}`);
+
+    try {
+        const [statusResponse, deliveryResponse] = await Promise.all([
+            fetch(`/patient/order/${orderId}/status`),
+            fetch(`/api/delivery/track/${orderId}`)
+        ]);
+        if (!statusResponse.ok) {
+            throw new Error("status unavailable");
+        }
+        const statusPayload = await statusResponse.json();
+        const deliveryPayload = deliveryResponse.ok ? await deliveryResponse.json() : {};
+        applyTrackingPayload(statusPayload, deliveryPayload);
+        document.getElementById("trackingSkeleton").style.display = "none";
+        document.getElementById("trackingContent").style.display = "block";
+        if (trackingSocket) return;
+        trackingSocket = new KashWS(`/ws/order-tracking/${orderId}`, {
+            statusEl: wsStatus,
+            onMessage: (data) => {
+                const liveStatus = data.order || data;
+                const liveDelivery = data.delivery || deliveryPayload;
+                applyTrackingPayload(liveStatus, liveDelivery);
+            }
+        });
+        trackingSocket.connect();
+    } catch (error) {
+        document.getElementById("trackingEmpty").style.display = "block";
+        document.getElementById("trackingEmpty").innerHTML = `<div class="empty-state__icon">📦</div><h3 class="empty-state__title">We could not load your order</h3><p class="empty-state__message">Please try again in a moment.</p>`;
+        document.getElementById("trackingSkeleton").style.display = "none";
+        document.getElementById("trackingContent").style.display = "none";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadTracking);
+window.addEventListener("beforeunload", () => trackingSocket?.disconnect());
+</script>
+<style>
+.order-stepper{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.order-step{padding:14px;border-radius:18px;border:1px solid #d6e0dd;background:#fff}.order-step strong{display:block;color:#1a2332}.order-step p{margin-top:4px;font-size:.92rem;color:#5b6678}.order-step.is-active{background:#e8f5f0;border-color:#0d7a6f}
+@media (max-width:720px){.order-stepper{grid-template-columns:1fr 1fr}}
+</style>
+{% endblock %}

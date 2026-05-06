@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kash AI{% endblock %}</title>
+    {% block meta %}{% endblock %}
+    <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/shared-static/css/variables.css">
+    <link rel="stylesheet" href="/shared-static/css/components.css">
+    <link rel="stylesheet" href="/shared-static/css/utilities.css">
+    <style>
+        body { margin: 0; background: linear-gradient(180deg, #fcfdff 0%, #f9fafb 100%); color: var(--color-text-primary); font-family: "Inter", sans-serif; }
+        .app-shell { max-width: 1240px; margin: 0 auto; padding: 1rem 1rem 7rem; }
+        .top-bar { position: sticky; top: 0; z-index: var(--z-sticky); display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding: 1rem 1.25rem; background: rgba(255,255,255,.84); backdrop-filter: blur(14px); border: 1px solid var(--color-border); border-radius: 1.25rem; box-shadow: var(--shadow-sm); }
+        .brand-lockup { display: flex; align-items: center; gap: 1rem; }
+        .brand-logo { width: 164px; height: 48px; object-fit: contain; }
+        .app-brand strong { display: block; font-family: "Plus Jakarta Sans", sans-serif; font-size: 1.15rem; }
+        .app-brand small { color: var(--color-text-secondary); font-size: 0.95rem; }
+        .top-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        .mini-btn { min-height: 46px; padding: 0.8rem 1rem; border-radius: 9999px; border: 1px solid var(--color-border); background: white; color: var(--color-text-primary); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+        .mini-btn:hover { border-color: rgba(15, 76, 92, 0.25); color: var(--color-primary-light); }
+        .portal-strip { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+        .portal-link { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0.65rem 0.95rem; border: 1px solid var(--color-border); border-radius: 9999px; background: white; color: var(--color-ai-dark); font-weight: 600; }
+        .profile-switcher-wrap { position: relative; }
+        .profile-switcher { min-height: 46px; padding: 0.7rem 0.95rem; border-radius: 9999px; border: 1px solid var(--color-border); background: white; color: var(--color-text-primary); font-weight: 600; display: inline-flex; align-items: center; gap: 0.55rem; cursor: pointer; }
+        .profile-switcher:hover { border-color: rgba(15, 76, 92, 0.25); }
+        .profile-switcher__avatar { font-size: 1.1rem; }
+        .profile-dropdown { position: absolute; right: 0; top: calc(100% + 10px); min-width: 260px; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 1.1rem; background: white; box-shadow: var(--shadow-dropdown); display: none; z-index: calc(var(--z-sticky) + 2); }
+        .profile-dropdown.is-open { display: block; }
+        .profile-dropdown__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding-bottom: 0.5rem; margin-bottom: 0.5rem; border-bottom: 1px solid #edf2f7; }
+        .profile-dropdown__item { width: 100%; display: grid; grid-template-columns: auto 1fr auto; gap: 0.75rem; align-items: center; padding: 0.7rem; border: 0; border-radius: 0.9rem; background: transparent; text-align: left; cursor: pointer; }
+        .profile-dropdown__item:hover { background: #f8fafc; }
+        .profile-dropdown__meta { color: var(--color-text-secondary); font-size: 0.85rem; }
+        .page-stack { display: grid; gap: 1.25rem; }
+        .simple-card { padding: 1.5rem; }
+        .title { margin: 0; font-family: "Plus Jakarta Sans", sans-serif; font-size: 2rem; line-height: 1.2; }
+        .subtitle { margin: 0.5rem 0 0; color: var(--color-text-secondary); font-size: 1rem; }
+        .search-bar { display: flex; gap: 0.75rem; align-items: center; background: white; }
+        .search-bar input { flex: 1; border: none; outline: none; padding: 0; background: transparent; }
+        .primary-btn, .secondary-btn, .danger-btn { min-height: 52px; }
+        .secondary-btn { padding: 0.9rem 1.1rem; border-radius: 9999px; border: 1px solid var(--color-border); background: white; color: var(--color-text-primary); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
+        .danger-btn { padding: 0.9rem 1.1rem; border-radius: 9999px; border: none; background: var(--color-danger-soft); color: var(--color-danger); font-weight: 700; }
+        .tile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .action-tile { display: block; min-height: 120px; padding: 1.25rem; text-align: left; }
+        .action-tile strong { display: block; margin-top: 0.75rem; font-size: 1.1rem; font-family: "Plus Jakarta Sans", sans-serif; }
+        .action-tile span { display: block; margin-top: 0.35rem; color: var(--color-text-secondary); }
+        .notice { padding: 1rem 1.1rem; border-radius: 1rem; }
+        .notice.green { background: var(--color-secondary-light); }
+        .notice.blue { background: var(--color-ai-light); }
+        .notice.yellow { background: #fff8e8; }
+        .list-row { padding: 1rem 1.1rem; border-radius: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .list-row + .list-row { margin-top: 0.85rem; }
+        .list-copy strong { display: block; }
+        .list-copy span { color: var(--color-text-secondary); }
+        .metric-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+        .pill { padding: 1rem; border-radius: 1rem; }
+        .pill strong { display: block; font-size: 1.2rem; }
+        .pill span { color: var(--color-text-secondary); }
+        .bottom-nav { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(760px, calc(100% - 1rem)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--color-border); border-radius: 1.5rem; background: rgba(255,255,255,.94); backdrop-filter: blur(18px); box-shadow: var(--shadow-lg); z-index: var(--z-sticky); }
+        .nav-link { padding: 0.8rem 0.4rem; text-align: center; border-radius: 1rem; color: var(--color-text-secondary); font-weight: 600; }
+        .nav-link.active { background: var(--color-primary-lighter); color: var(--color-primary-light); }
+        .help-sheet { position: fixed; inset: auto 1rem 6.5rem auto; width: min(380px, calc(100vw - 2rem)); z-index: var(--z-popover); display: none; }
+        .help-sheet.is-open { display: block; }
+        .help-sheet-card { padding: 1.25rem; border-radius: 1.5rem; background: white; border: 1px solid var(--color-border); box-shadow: var(--shadow-xl); }
+        .help-sheet-header { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+        .help-sheet h2 { margin: 0; font-family: "Plus Jakarta Sans", sans-serif; font-size: 1.35rem; }
+        .help-sheet p { margin: 0.4rem 0; color: var(--color-text-secondary); }
+        .help-sheet-actions { display: grid; gap: 0.75rem; margin-top: 1rem; }
+        .help-overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.34); backdrop-filter: blur(4px); z-index: calc(var(--z-overlay) - 1); display: none; }
+        .help-overlay.is-open { display: block; }
+        .skip-link { position: absolute; left: 1rem; top: -3rem; background: var(--color-primary); color: white; padding: 0.6rem 0.9rem; border-radius: 0.75rem; z-index: var(--z-tooltip); }
+        .skip-link:focus { top: 1rem; }
+        .trust-banner { margin-bottom: 0.5rem; }
+        @media (max-width: 860px) {
+            .top-bar { flex-direction: column; align-items: stretch; }
+            .metric-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .tile-grid { grid-template-columns: 1fr; }
+            .top-actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .list-row { flex-direction: column; align-items: flex-start; }
+            .brand-logo { width: 136px; height: 42px; }
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {% set portal_session_role = request.session.get('portal_user_role') if request is defined and request.session is defined else '' %}
+    {% set portal_session_name = request.session.get('portal_user_name') if request is defined and request.session is defined else '' %}
+    {% set patient_home_href = '/patient' if portal_session_role == 'patient' else '/' %}
+    <a class="skip-link" href="#mainContent">Skip to main content</a>
+    <div class="app-shell">
+        <header class="top-bar">
+            <div class="app-brand">
+                <div class="brand-lockup">
+                    <img class="brand-logo" src="/static/images/kash-ai-logo.svg" alt="Kash AI logo" loading="lazy" decoding="async" width="164" height="48">
+                    <div>
+                        <strong>Kash AI</strong>
+                        <small>{% if portal_session_name %}Signed in as {{ portal_session_name }}{% else %}{{ page_hint | default('Ayurveda, healthcare, delivery, and AI in one superapp') }}{% endif %}</small>
+                    </div>
+                </div>
+                <div class="portal-strip" aria-label="Portal access">
+                    {% if portal_session_role == 'patient' %}
+                    <a class="portal-link" href="/patient">Home</a>
+                    <a class="portal-link" href="/order-medicines">Medicines</a>
+                    <a class="portal-link" href="/orders">Orders</a>
+                    <a class="portal-link" href="/my-health">My Health</a>
+                    <a class="portal-link" href="/auth/logout">Logout</a>
+                    {% else %}
+                    <a class="portal-link" href="/auth/login/patient">Patient Login</a>
+                    <a class="portal-link" href="/auth/login/doctor">Doctor Login</a>
+                    <a class="portal-link" href="/auth/login/pharmacy">Pharmacy</a>
+                    <a class="portal-link" href="/auth/login/lab">Labs</a>
+                    <a class="portal-link" href="/auth/login/partner">Delivery</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="top-actions">
+                {% if portal_session_role == 'patient' %}
+                <div class="profile-switcher-wrap">
+                    <button type="button" class="profile-switcher" id="profileSwitcher" aria-haspopup="menu" aria-expanded="false">
+                        <span class="profile-switcher__avatar">{{ request.session.get('active_profile_avatar', '👤') }}</span>
+                        <span>{{ request.session.get('active_profile_name', 'Select Profile') }}</span>
+                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="profile-dropdown" id="profileDropdown" role="menu" aria-label="Switch profile">
+                        <div class="profile-dropdown__header">
+                            <strong>Switch Profile</strong>
+                            <a href="/profiles/manage">Manage</a>
+                        </div>
+                        <div id="profileDropdownItems">
+                            <a class="portal-link" href="/profiles/select" style="justify-content:flex-start;">Open profile selector</a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <button type="button" class="mini-btn" aria-label="Go back" onclick="history.length > 1 ? history.back() : window.location.href='{{ patient_home_href }}'">Back</button>
+                <a class="mini-btn" href="{{ patient_home_href }}">Home</a>
+                <a class="mini-btn" href="/portal">Business</a>
+                {% if portal_session_role == 'patient' %}
+                <a class="mini-btn" href="/auth/logout">Logout</a>
+                {% else %}
+                <a class="mini-btn" href="/auth/login">Login</a>
+                {% endif %}
+                <button type="button" class="mini-btn" id="helpButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="helpSheet">Help</button>
+            </div>
+        </header>
+        <main class="page-stack" id="mainContent" tabindex="-1">
+            <div class="trust-banner" aria-label="Trust certifications">
+                <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2L15 8.5L22 9.5L17 14L18.5 21L12 17.5L5.5 21L7 14L2 9.5L9 8.5L12 2Z" fill="#FFD700"/></svg><span>NABH Accredited</span></div>
+                <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3L4 7V12C4 17 7.4 21.7 12 23C16.6 21.7 20 17 20 12V7L12 3Z" fill="#10B981"/></svg><span>ISO 27001 Certified</span></div>
+                <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="#6366F1"/><path d="M4 20C4 16.7 7.6 14 12 14C16.4 14 20 16.7 20 20" stroke="#6366F1" stroke-width="2"/></svg><span>10L+ Happy Users</span></div>
+                <div class="trust-item"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 7H18V19H6V7Z" stroke="#1A7F6B" stroke-width="2"/><path d="M9 7V5C9 3.9 9.9 3 11 3H13C14.1 3 15 3.9 15 5V7" stroke="#1A7F6B" stroke-width="2"/></svg><span>500+ Partner Pharmacies</span></div>
+            </div>
+            {% block page %}{% endblock %}
+        </main>
+    </div>
+
+    <div class="help-overlay" id="helpOverlay"></div>
+    <aside class="help-sheet" id="helpSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="helpTitle">
+        <div class="help-sheet-card">
+            <div class="help-sheet-header">
+                <div>
+                    <h2 id="helpTitle">Need help?</h2>
+                    <p>Call us: +91 9350397175</p>
+                    <p>WhatsApp: +91 9350397175</p>
+                    <p>Email: goyalshikhar67@gmail.com</p>
+                </div>
+                <button type="button" class="mini-btn" id="closeHelpButton">Close</button>
+            </div>
+            <div class="help-sheet-actions">
+                <a class="secondary-btn" href="tel:+919350397175">Call now</a>
+                <a class="secondary-btn" href="https://wa.me/919350397175">Open WhatsApp</a>
+                <a class="secondary-btn" href="mailto:goyalshikhar67@gmail.com">Send Email</a>
+            </div>
+        </div>
+    </aside>
+
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <a class="nav-link {% if simple_nav == 'home' %}active{% endif %}" href="{{ patient_home_href }}">Home</a>
+        <a class="nav-link {% if simple_nav == 'search' %}active{% endif %}" href="/order-medicines">Medicines</a>
+        <a class="nav-link {% if simple_nav == 'orders' %}active{% endif %}" href="/orders">Orders</a>
+        <a class="nav-link {% if simple_nav == 'contact' %}active{% endif %}" href="/contact">Support</a>
+        <a class="nav-link {% if simple_nav == 'health' %}active{% endif %}" href="/my-health">Health</a>
+    </nav>
+
+    <div class="ai-chat-widget" id="aiChatWidget">
+        <button class="ai-chat-toggle" id="aiChatToggle" aria-label="Open KASH AI Assistant">
+            <span class="ai-pulse"></span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white" opacity="0.9"/>
+                <path d="M8 10h8M8 14h6" stroke="#0F4C5C" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+        <div class="ai-chat-panel" id="aiChatPanel" style="display:none;">
+            <div class="ai-chat-header">
+                <span>🤖 KASH AI Assistant</span>
+                <button id="closeChat" type="button" aria-label="Close chat">✕</button>
+            </div>
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-chat-bubble ai-chat-bubble--bot">Hi, I can help with medicines, consultations, orders, and reports.</div>
+            </div>
+            <div class="ai-chat-input">
+                <input type="text" placeholder="Ask me anything..." id="aiChatInput">
+                <button id="aiChatSend" class="primary-btn" type="button">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="/static/js/script.js?v=20260506-1"></script>
+    <script src="/static/js/ws-manager.js?v=20260506-1"></script>
+    <script>
+        window.KASH_SIMPLE_KEYS = {
+            latestOrderId: "kashSimpleLatestOrderId",
+            latestOrderAgainUrl: "kashSimpleLastOrderAgainUrl",
+            latestOrderStatusUrl: "kashSimpleLastOrderStatusUrl",
+            latestOrderPhone: "kashSimpleLastOrderPhone",
+            latestOrderMessage: "kashSimpleLatestOrderMessage"
+        };
+        window.showSimpleMessage = function(message) {
+            window.alert(message);
+        };
+        document.addEventListener("DOMContentLoaded", function () {
+            const helpButton = document.getElementById("helpButton");
+            const closeHelpButton = document.getElementById("closeHelpButton");
+            const helpSheet = document.getElementById("helpSheet");
+            const helpOverlay = document.getElementById("helpOverlay");
+            let lastFocusedElement = null;
+
+            const closeHelp = function () {
+                helpSheet.classList.remove("is-open");
+                helpOverlay.classList.remove("is-open");
+                helpSheet.setAttribute("aria-hidden", "true");
+                helpButton?.setAttribute("aria-expanded", "false");
+                lastFocusedElement?.focus?.();
+            };
+
+            const openHelp = function () {
+                lastFocusedElement = document.activeElement;
+                helpSheet.classList.add("is-open");
+                helpOverlay.classList.add("is-open");
+                helpSheet.setAttribute("aria-hidden", "false");
+                helpButton?.setAttribute("aria-expanded", "true");
+                closeHelpButton?.focus();
+            };
+
+            helpButton?.addEventListener("click", openHelp);
+            closeHelpButton?.addEventListener("click", closeHelp);
+            helpOverlay?.addEventListener("click", closeHelp);
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") closeHelp();
+            });
+
+            const aiChatToggle = document.getElementById("aiChatToggle");
+            const aiChatPanel = document.getElementById("aiChatPanel");
+            const closeChat = document.getElementById("closeChat");
+            const aiChatInput = document.getElementById("aiChatInput");
+            const aiChatSend = document.getElementById("aiChatSend");
+            const aiChatMessages = document.getElementById("aiChatMessages");
+
+            const appendChat = function (message, type) {
+                if (!aiChatMessages) return;
+                const bubble = document.createElement("div");
+                bubble.className = `ai-chat-bubble ${type === "user" ? "ai-chat-bubble--user" : "ai-chat-bubble--bot"}`;
+                bubble.textContent = message;
+                aiChatMessages.appendChild(bubble);
+                aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+            };
+
+            const toggleChat = function (open) {
+                if (!aiChatPanel) return;
+                aiChatPanel.style.display = open ? "block" : "none";
+            };
+
+            aiChatToggle?.addEventListener("click", function () {
+                toggleChat(aiChatPanel?.style.display === "none");
+            });
+            closeChat?.addEventListener("click", function () { toggleChat(false); });
+            aiChatSend?.addEventListener("click", function () {
+                const text = aiChatInput?.value.trim();
+                if (!text) return;
+                appendChat(text, "user");
+                aiChatInput.value = "";
+                window.setTimeout(function () {
+                    appendChat("I can guide you to medicines, consultations, tests & reports, or order tracking. Use the page actions above for the fastest path.", "bot");
+                }, 300);
+            });
+
+            const profileSwitcher = document.getElementById("profileSwitcher");
+            const profileDropdown = document.getElementById("profileDropdown");
+            const profileDropdownItems = document.getElementById("profileDropdownItems");
+            async function loadProfiles() {
+                if (!profileDropdownItems) return;
+                try {
+                    const response = await fetch("/api/profiles/list");
+                    if (!response.ok) return;
+                    const payload = await response.json();
+                    const activeId = payload.active_profile_id;
+                    profileDropdownItems.innerHTML = (payload.profiles || []).map((profile) => `
+                        <button type="button" class="profile-dropdown__item" data-profile-id="${profile.id}">
+                            <span>${profile.avatar_emoji}</span>
+                            <span><strong>${profile.profile_name}</strong><span class="profile-dropdown__meta" style="display:block;">${profile.relationship}</span></span>
+                            <span>${Number(activeId) === Number(profile.id) ? "Active" : ""}</span>
+                        </button>
+                    `).join("") || '<a class="portal-link" href="/profiles/add" style="justify-content:flex-start;">Add your first profile</a>';
+                } catch (error) {}
+            }
+            async function switchProfile(profileId) {
+                const response = await fetch("/api/profiles/select", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ profile_id: profileId })
+                });
+                const result = await response.json();
+                if (result.requires_pin) {
+                    const pin = window.prompt(`Enter PIN for ${result.profile_name || "this profile"}`);
+                    if (!pin) return;
+                    const verifyResponse = await fetch("/api/profiles/verify-pin", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ profile_id: profileId, pin })
+                    });
+                    if (!verifyResponse.ok) {
+                        window.alert("Invalid PIN.");
+                        return;
+                    }
+                }
+                window.location.reload();
+            }
+            profileSwitcher?.addEventListener("click", async function () {
+                const isOpen = profileDropdown?.classList.contains("is-open");
+                if (profileDropdown) {
+                    profileDropdown.classList.toggle("is-open", !isOpen);
+                    profileSwitcher.setAttribute("aria-expanded", String(!isOpen));
+                }
+                if (!isOpen) await loadProfiles();
+            });
+            profileDropdownItems?.addEventListener("click", function (event) {
+                const button = event.target.closest("[data-profile-id]");
+                if (!button) return;
+                switchProfile(button.getAttribute("data-profile-id"));
+            });
+            document.addEventListener("click", function (event) {
+                if (!profileDropdown || !profileSwitcher) return;
+                if (profileDropdown.contains(event.target) || profileSwitcher.contains(event.target)) return;
+                profileDropdown.classList.remove("is-open");
+                profileSwitcher.setAttribute("aria-expanded", "false");
+            });
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Master Medicine Database | Kash AI{% endblock %}
+{% block page %}
+<section class="page-section">
+    <div class="site-container content-stack">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Central medicine catalog</p>
+                <h1>Master Medicine Database</h1>
+                <p class="page-subtitle">Manage the catalog that powers AI suggestions, pharmacy onboarding, bulk imports, and patient medicine discovery.</p>
+            </div>
+            <div class="header-actions-row">
+                <button onclick="showAddMedicineModal()" class="btn btn-primary">Add Medicine</button>
+                <button onclick="bulkImport()" class="btn btn-secondary">Bulk Import</button>
+                <button onclick="exportDatabase()" class="btn btn-ghost">Export Database</button>
+            </div>
+        </div>
+
+        <div class="card content-stack">
+            <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+            <div class="form-grid three-up">
+                <label class="field"><span>Search</span><input type="text" id="searchMedicine" placeholder="Search medicines..."></label>
+                <label class="field">
+                    <span>Category</span>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="allopathy">Allopathy</option>
+                        <option value="ayurveda">Ayurveda</option>
+                        <option value="homeopathy">Homeopathy</option>
+                        <option value="wellness">Wellness</option>
+                    </select>
+                </label>
+                <div class="field field-actions"><span>&nbsp;</span><button onclick="loadMedicines()" class="btn btn-outline-success">Search</button></div>
+            </div>
+
+            <div class="table-scroll-wrapper">
+                <table class="table" id="medicinesTable" data-sortable-table data-export-name="master-medicines" data-loading="true">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="medicinesList"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="medicineModal" class="modal-shell" hidden>
+    <div class="modal-card">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Catalog editor</p>
+                <h2 id="modalTitle">Add New Medicine</h2>
+            </div>
+            <button class="btn btn-ghost btn-sm" type="button" onclick="closeModal()">Close</button>
+        </div>
+        <form id="medicineForm" class="content-stack">
+            <input type="hidden" id="editingMedicineId">
+            <div class="form-grid two-up">
+                <label class="field"><span>Medicine Name</span><input type="text" name="name" id="medName" required></label>
+                <label class="field"><span>Brand</span><input type="text" name="brand" id="medBrand"></label>
+                <label class="field">
+                    <span>Category</span>
+                    <select name="category" id="medCategory" required>
+                        <option value="allopathy">Allopathy</option>
+                        <option value="ayurveda">Ayurveda</option>
+                        <option value="homeopathy">Homeopathy</option>
+                        <option value="wellness">Wellness</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Prescription Required</span>
+                    <select name="prescription_required" id="medPrescription">
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </label>
+                <label class="field"><span>MRP (Rs)</span><input type="number" name="mrp" id="medMrp" step="0.01" required></label>
+                <label class="field"><span>Selling Price (Rs)</span><input type="number" name="price" id="medPrice" step="0.01" required></label>
+                <label class="field"><span>Stock</span><input type="number" name="stock" id="medStock" min="0" value="0"></label>
+                <label class="field"><span>Barcode</span><input type="text" name="barcode" id="medBarcode"></label>
+            </div>
+            <label class="field"><span>Description</span><textarea name="description" id="medDescription" rows="3"></textarea></label>
+            <button type="submit" class="btn btn-primary">Save Medicine</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/admin-table.js') }}"></script>
+<script>
+let currentRows = [];
+
+function money(value) { return `Rs ${Number(value || 0).toFixed(2)}`; }
+
+function filteredRows(rows) {
+    const category = document.getElementById('categoryFilter').value;
+    return rows.filter((row) => !category || row.category === category);
+}
+
+async function loadMedicines() {
+    const search = document.getElementById('searchMedicine').value.trim();
+    const response = await fetch(`/api/admin/medicines?q=${encodeURIComponent(search)}`);
+    const medicines = await response.json();
+    currentRows = filteredRows(medicines);
+    document.getElementById('medicinesList').innerHTML = currentRows.map((med) => `
+        <tr>
+            <td>${med.id}</td>
+            <td><strong>${med.name}</strong><br><small>${med.brand || ''}</small></td>
+            <td><span class="badge-soft">${med.category}</span></td>
+            <td>${money(med.price)}</td>
+            <td>${med.stock || 0}</td>
+            <td>${med.is_active ? 'Active' : 'Inactive'}</td>
+            <td class="table-actions">
+                <button class="btn btn-outline-success btn-sm" type="button" onclick="editMedicine(${med.id})">Edit</button>
+                <button class="btn btn-ghost btn-sm" type="button" data-confirm data-confirm-title="Archive medicine" data-confirm-message="Archive ${med.name} from the master medicine database?" data-confirm-action="/api/admin/medicines/${med.id}" data-confirm-method="DELETE" data-confirm-label="Archive Medicine" data-confirm-type="danger">Archive</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function showAddMedicineModal() {
+    document.getElementById('modalTitle').textContent = 'Add New Medicine';
+    document.getElementById('editingMedicineId').value = '';
+    document.getElementById('medicineForm').reset();
+    document.getElementById('medicineModal').hidden = false;
+}
+
+function closeModal() {
+    document.getElementById('medicineModal').hidden = true;
+}
+
+function editMedicine(id) {
+    const med = currentRows.find((item) => item.id === id);
+    if (!med) return;
+    document.getElementById('modalTitle').textContent = 'Edit Medicine';
+    document.getElementById('editingMedicineId').value = med.id;
+    document.getElementById('medName').value = med.name || '';
+    document.getElementById('medBrand').value = med.brand || '';
+    document.getElementById('medCategory').value = med.category || 'wellness';
+    document.getElementById('medPrescription').value = String(Boolean(med.prescription_required));
+    document.getElementById('medMrp').value = med.mrp || 0;
+    document.getElementById('medPrice').value = med.price || 0;
+    document.getElementById('medStock').value = med.stock || 0;
+    document.getElementById('medBarcode').value = med.barcode || '';
+    document.getElementById('medDescription').value = med.description || '';
+    document.getElementById('medicineModal').hidden = false;
+}
+
+function bulkImport() {
+    window.location.href = '/admin/bulk-upload';
+}
+
+function exportDatabase() {
+    window.location.href = '/api/admin/medicines/export';
+}
+
+document.getElementById('medicineForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const editingId = document.getElementById('editingMedicineId').value;
+    if (editingId) {
+        const payload = Object.fromEntries(formData.entries());
+        const response = await fetch(`/api/admin/medicines/${editingId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+            showToast('Medicine updated.', 'success');
+            closeModal();
+            loadMedicines();
+        }
+        return;
+    }
+    const response = await fetch('/api/admin/medicines/add', {
+        method: 'POST',
+        headers: {'X-CSRF-Token': document.getElementById('csrfToken').value},
+        body: formData
+    });
+    if (response.ok) {
+        showToast('Medicine added to master database.', 'success');
+        closeModal();
+        loadMedicines();
+    }
+});
+
+document.addEventListener('DOMContentLoaded', loadMedicines);
+</script>
+<style>
+.modal-shell{position:fixed;inset:0;background:rgba(15,23,42,.55);display:grid;place-items:center;padding:24px;z-index:1000}.modal-card{width:min(100%,860px);background:#fff;border-radius:28px;padding:28px;box-shadow:0 24px 80px rgba(15,23,42,.18)}.table-actions{display:flex;gap:8px;flex-wrap:wrap}.badge-soft{background:#ecfeff;color:#155e75;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}.field-actions{display:flex;align-items:flex-end}
+</style>
+{% endblock %}

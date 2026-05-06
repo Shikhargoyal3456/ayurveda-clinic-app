@@ -14,6 +14,11 @@ from app.config import settings
 _analytics_lock = Lock()
 _event_lock = Lock()
 _error_lock = Lock()
+_analytics_cache_lock = Lock()
+_analytics_cache: dict[str, Any] = {
+    "signature": None,
+    "payload": None,
+}
 ORDER_FUNNEL_EVENTS = ("search_performed", "medicine_added_to_cart", "checkout_started", "payment_success")
 DIRECT_ORDER_EVENTS = {
     "search_performed",
@@ -135,6 +140,12 @@ def aggregate_daily_statistics() -> dict[str, Any]:
     if not path.exists():
         return {"days": {}, "totals": {}, "funnel": {"search": 0, "cart": 0, "checkout": 0, "payment": 0}}
 
+    stat = path.stat()
+    signature = (str(path), stat.st_mtime_ns, stat.st_size)
+    with _analytics_cache_lock:
+        if _analytics_cache.get("signature") == signature and isinstance(_analytics_cache.get("payload"), dict):
+            return dict(_analytics_cache["payload"])
+
     daily: dict[str, Counter[str]] = {}
     totals: Counter[str] = Counter()
     for raw_line in path.read_text(encoding="utf-8").splitlines():
@@ -146,7 +157,7 @@ def aggregate_daily_statistics() -> dict[str, Any]:
         event = str(item.get("event", "unknown"))
         daily.setdefault(day, Counter())[event] += 1
         totals[event] += 1
-    return {
+    payload = {
         "days": {day: dict(counter) for day, counter in sorted(daily.items())},
         "totals": dict(totals),
         "funnel": {
@@ -156,3 +167,7 @@ def aggregate_daily_statistics() -> dict[str, Any]:
             "payment": totals["payment_success"],
         },
     }
+    with _analytics_cache_lock:
+        _analytics_cache["signature"] = signature
+        _analytics_cache["payload"] = payload
+    return dict(payload)

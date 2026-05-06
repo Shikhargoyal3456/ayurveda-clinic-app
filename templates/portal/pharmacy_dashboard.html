@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Pharmacy Owner Portal | Kash AI{% endblock %}
+{% block page %}
+{% from "components/skeletons.html" import table_rows %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Pharmacy owner portal</p>
+            <h1>{{ pharmacy.store_name }}</h1>
+            <p class="mb-0">Zomato-style medicine operations with live orders, analytics, and delivery assignment.</p>
+        </div>
+        <div class="live-meta">
+            {% include "components/ws_status.html" %}
+            <span class="text-muted" id="lastUpdatedLabel">Last updated just now</span>
+        </div>
+        <div class="hero-actions">
+            <button onclick="toggleStoreStatus()" class="btn btn-primary" id="storeStatusBtn" type="button">{{ 'Open' if pharmacy.is_open else 'Closed' }}</button>
+            <button onclick="viewAnalytics()" class="btn btn-outline-dark" type="button">Analytics</button>
+            <a href="/portal/pharmacy/add-medicine" class="btn btn-outline-success">Add Medicines</a>
+            <a href="/portal/pharmacy/bulk-upload" class="btn btn-outline-dark">Bulk Upload</a>
+            <a href="/portal/pharmacy/stock-alerts" class="btn btn-outline-dark">Stock Alerts</a>
+            <a href="/portal/pharmacy/expiry-tracker" class="btn btn-outline-dark">Expiry Tracker</a>
+        </div>
+    </section>
+
+    <section class="content-grid-2">
+        <article class="card">
+            <div class="alert alert-warning mb-3" id="criticalStockBanner" hidden>
+                <strong>Critical stock alert:</strong> One or more medicines need urgent restocking.
+            </div>
+            <div class="page-header mb-3">
+                <div><p class="eyebrow">Live orders</p><h2 class="h4 mb-0">Real-time order queue</h2></div>
+            </div>
+            <div class="hero-actions mb-3">
+                <button class="btn btn-outline-dark btn-sm">New</button>
+                <button class="btn btn-outline-dark btn-sm">Preparing</button>
+                <button class="btn btn-outline-dark btn-sm">Ready</button>
+                <button class="btn btn-outline-dark btn-sm">Completed</button>
+            </div>
+            <div class="table-scroll-wrapper">
+            <table class="table" id="liveOrdersTable" data-sortable-table data-export-name="pharmacy-live-orders" data-pagination="false">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th data-filterable>Patient</th>
+                        <th>Total</th>
+                        <th data-filterable>Status</th>
+                        <th data-filterable>Prescription</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="liveOrdersList" aria-live="polite">{{ table_rows(4, 6) }}</tbody>
+            </table>
+            </div>
+        </article>
+        <article class="card reveal-on-scroll">
+            <p class="eyebrow">AI order assistant</p>
+            <div id="aiSuggestions" class="stack-list">
+                <div class="stack-item">Batch orders for nearby sectors to reduce delivery time.</div>
+                <div class="stack-item">High-value paid orders should be prepared first for SLA compliance.</div>
+            </div>
+        </article>
+    </section>
+
+    <section class="content-grid-2">
+        <article class="card reveal-on-scroll">
+            <p class="eyebrow">Inventory</p>
+            <div class="stats-grid mt-3">
+                <div class="metric-card"><span>Low Stock Alerts</span><strong>{{ low_stock_count }}</strong></div>
+                <div class="metric-card"><span>Expiring Soon</span><strong>{{ expiring_count }}</strong></div>
+                <div class="metric-card"><span>Total Products</span><strong>{{ total_products }}</strong></div>
+            </div>
+        </article>
+        <article class="card reveal-on-scroll">
+            <p class="eyebrow">Performance</p>
+            <div class="stats-grid mt-3">
+                <div class="metric-card"><span>Today's Orders</span><strong>{{ today_orders }}</strong></div>
+                <div class="metric-card"><span>Revenue</span><strong>Rs {{ today_revenue }}</strong></div>
+                <div class="metric-card"><span>Prep Time</span><strong>{{ avg_prep_time }} min</strong></div>
+                <div class="metric-card"><span>Rating</span><strong>{{ rating }}</strong></div>
+            </div>
+        </article>
+    </section>
+</div>
+<a href="/portal/pharmacy/add-medicine" class="fab mobile-only" aria-label="Add medicine">
+    <i class="fa-solid fa-plus"></i>
+</a>
+<div id="prescriptionModal" class="d-none" style="position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:70;padding:1rem;">
+    <div class="card" style="max-width:780px;margin:auto;">
+        <div class="page-header mb-3">
+            <div><p class="eyebrow">Prescription verification</p><h2 class="h4 mb-0">Review attached prescription</h2></div>
+            <button class="btn btn-outline-dark btn-sm" type="button" onclick="closePrescriptionModal()">Close</button>
+        </div>
+        <div id="prescriptionModalBody" class="section-stack"></div>
+        <div class="hero-actions mt-3">
+            <button class="btn btn-outline-success" type="button" onclick="reviewPrescription('verified')">Approve</button>
+            <button class="btn btn-outline-danger" type="button" onclick="reviewPrescription('rejected')">Reject</button>
+            <button class="btn btn-outline-dark" type="button" onclick="reviewPrescription('pending')">Request Clarity</button>
+        </div>
+    </div>
+</div>
+<script defer src="{{ url_for('static', path='js/admin-table.js') }}"></script>
+<script>
+const pharmacyId = {{ pharmacy.id }};
+const initialOrders = [
+    {% for order in orders %}
+    {
+        id: {{ order.id }},
+        patient_name: {{ order.patient_name | tojson }},
+        total_amount: {{ order.total_amount }},
+        status: {{ order.status | tojson }},
+        has_prescription: {{ order.has_prescription | tojson }}
+    },
+    {% endfor %}
+];
+let orderSocket = null;
+let stockSocket = null;
+let activePrescriptionId = 0;
+let refreshTick = 0;
+const wsStatusEl = document.querySelector("[data-ws-status]");
+
+setInterval(() => {
+    refreshTick += 30;
+    const label = document.getElementById("lastUpdatedLabel");
+    if (label) label.textContent = `Last updated ${refreshTick} seconds ago`;
+}, 30000);
+
+function renderEmptyOrdersState() {
+    document.getElementById("liveOrdersList").innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-bag-shopping"></i></div><h3 class="empty-state__title">No live orders yet</h3><p class="empty-state__message">New prescription and medicine orders will appear here the moment patients place them.</p><a href="/portal/pharmacy/add-medicine" class="btn btn-primary btn-sm">Add Medicine</a></div></td></tr>`;
+}
+
+function addOrUpdateOrderCard(order) {
+    let row = document.getElementById(`live-order-${order.id}`);
+    if (!row) {
+        row = document.createElement("tr");
+        row.id = `live-order-${order.id}`;
+        document.getElementById("liveOrdersList").prepend(row);
+    }
+    row.innerHTML = `
+        <td><strong>Order #${order.id}</strong></td>
+        <td>${order.patient_name}</td>
+        <td>Rs ${order.total_amount}</td>
+        <td><span data-status>${order.status}</span></td>
+        <td>${order.has_prescription ? 'Attached' : 'Not attached'}</td>
+        <td><div class="hero-actions">
+            <button class="btn btn-success btn-sm action-accept" type="button" onclick="acceptOrder(${order.id})">Accept</button>
+            <button class="btn btn-info btn-sm action-dispatch" type="button" onclick="updateOrderStatus(${order.id}, 'dispatched')">Dispatch</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="updateOrderStatus(${order.id}, 'delivered')">Deliver</button>
+            <button class="btn btn-outline-danger btn-sm" type="button" data-confirm data-confirm-title="Cancel Order #${order.id}" data-confirm-message="Are you sure you want to cancel Order #${order.id} for ${order.patient_name}?" data-confirm-action="/api/orders/${order.id}/cancel" data-confirm-method="POST" data-confirm-label="Yes, Cancel Order" data-confirm-type="danger">Cancel</button>
+            ${order.has_prescription ? `<button class="btn btn-outline-dark btn-sm" type="button" onclick="viewPrescription(${order.id})">View Rx</button><button class="btn btn-outline-dark btn-sm" type="button" onclick="verifyWithAI(${order.id})">AI Verify</button>` : ''}
+        </div></td>
+    `;
+}
+
+function hydrateInitialOrders() {
+    const list = document.getElementById("liveOrdersList");
+    if (!list) return;
+    if (!initialOrders.length) {
+        renderEmptyOrdersState();
+        return;
+    }
+    list.innerHTML = "";
+    initialOrders.forEach(addOrUpdateOrderCard);
+}
+
+async function acceptOrder(orderId) {
+    const response = await fetch(`/api/pharmacy/orders/${orderId}/accept`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ auto_assigned: true }) });
+    const result = await response.json();
+    if (window.showToast) window.showToast(`Order #${orderId} accepted. ETA ${result.estimated_prep_time} min.`, "success");
+}
+
+async function updateOrderStatus(orderId, status) {
+    await fetch(`/api/pharmacy/orders/${orderId}/status`, { method: "PUT", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ status }) });
+    if (window.showToast) window.showToast(`Order #${orderId} moved to ${status}.`, "info");
+}
+
+function toggleStoreStatus() {
+    const btn = document.getElementById("storeStatusBtn");
+    btn.textContent = btn.textContent.trim() === "Open" ? "Closed" : "Open";
+}
+
+async function viewAnalytics() {
+    const response = await fetch(`/api/pharmacy/analytics?store_id=${pharmacyId}`);
+    const result = await response.json();
+    if (window.showToast) window.showToast(`Orders ${result.total_orders}, revenue Rs ${result.revenue}.`, "info");
+}
+
+async function loadPrescriptionForOrder(orderId, verify = false) {
+    const response = await fetch(`/api/pharmacy/orders/${orderId}/prescription`);
+    const result = await response.json();
+    if (!response.ok) {
+        if (window.showToast) window.showToast(result.detail || 'Prescription not available.', 'error');
+        return;
+    }
+    activePrescriptionId = result.id;
+    document.getElementById('prescriptionModal').classList.remove('d-none');
+    document.getElementById('prescriptionModalBody').innerHTML = `
+        <div class="hero-actions">
+            ${result.image_url ? `<img src="${result.image_url}" alt="Prescription" loading="lazy" decoding="async" width="320" height="240" style="width:100%;max-width:320px;border-radius:20px;object-fit:cover;aspect-ratio:4/3">` : '<div class="stack-item">Generated e-prescription</div>'}
+            <div class="stack-list" style="flex:1">
+                <div class="stack-item"><strong>${result.title}</strong><span class="text-muted">Confidence ${Number(result.confidence || 0).toFixed(0)}%</span></div>
+                <div class="stack-item">${(result.extracted_medicines || result.medicines || []).map((item) => `${item.name} (${item.dosage || 'As directed'})`).join('<br>')}</div>
+                ${verify ? `<div class="stack-item ${result.is_verified ? 'text-success' : 'text-danger'}">${result.is_verified ? 'No AI red flags detected.' : (result.red_flags || []).join(', ')}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function viewPrescription(orderId) { loadPrescriptionForOrder(orderId, false); }
+async function verifyWithAI(orderId) {
+    const viewResponse = await fetch(`/api/pharmacy/orders/${orderId}/prescription`);
+    const viewResult = await viewResponse.json();
+    if (!viewResponse.ok) {
+        if (window.showToast) window.showToast(viewResult.detail || 'Prescription not available.', 'error');
+        return;
+    }
+    const verifyResponse = await fetch('/api/prescription/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prescription_id: viewResult.id })
+    });
+    const verifyResult = await verifyResponse.json();
+    activePrescriptionId = viewResult.id;
+    document.getElementById('prescriptionModal').classList.remove('d-none');
+    document.getElementById('prescriptionModalBody').innerHTML = `
+        <div class="stack-list">
+            <div class="stack-item"><strong>${viewResult.title}</strong><span class="${verifyResult.is_verified ? 'text-success' : 'text-danger'}">${verifyResult.is_verified ? 'AI verified' : 'Needs manual review'}</span></div>
+            <div class="stack-item">${(verifyResult.extracted_medicines || []).map((item) => `${item.name} (${item.dosage || 'As directed'})`).join('<br>')}</div>
+            <div class="stack-item">${verifyResult.red_flags?.length ? verifyResult.red_flags.join(', ') : 'No red flags detected.'}</div>
+        </div>
+    `;
+}
+
+function closePrescriptionModal() {
+    document.getElementById('prescriptionModal').classList.add('d-none');
+    activePrescriptionId = 0;
+}
+
+async function reviewPrescription(status) {
+    if (!activePrescriptionId) return;
+    const response = await fetch(`/api/prescription/${activePrescriptionId}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+    });
+    const result = await response.json();
+    if (response.ok && window.showToast) {
+        window.showToast(`Prescription marked ${result.status}.`, 'success');
+        closePrescriptionModal();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.__pharmacyDashboardSocketsStarted) return;
+    window.__pharmacyDashboardSocketsStarted = true;
+    window.setTimeout(hydrateInitialOrders, 250);
+
+    orderSocket = new KashWS(`/ws/pharmacy-orders/${pharmacyId}`, {
+        statusEl: wsStatusEl,
+        onMessage: (payload) => {
+            refreshTick = 0;
+            document.getElementById("lastUpdatedLabel").textContent = "Last updated just now";
+            if (!payload.orders) return;
+            payload.orders.forEach(addOrUpdateOrderCard);
+        }
+    });
+    stockSocket = new KashWS(`/ws/stock-alerts/${pharmacyId}`, {
+        statusEl: wsStatusEl,
+        onMessage: (payload) => {
+            if (!payload.alerts || !payload.alerts.length) return;
+            const critical = payload.alerts.find((item) => item.alert_level === "critical");
+            if (critical && window.showToast) {
+                window.showToast(`${critical.medicine_name} is at critical stock.`, "warning");
+                document.getElementById("criticalStockBanner").hidden = false;
+            }
+        }
+    });
+    orderSocket.connect();
+    stockSocket.connect();
+});
+window.addEventListener("beforeunload", () => {
+    orderSocket?.disconnect?.();
+    stockSocket?.disconnect?.();
+});
+</script>
+<style>
+.live-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.action-accept{background:#27ae60;border-color:#27ae60}.action-dispatch{background:#2c7be5;border-color:#2c7be5;color:#fff}
+</style>
+{% endblock %}

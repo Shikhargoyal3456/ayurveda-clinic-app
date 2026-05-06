@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -36,6 +36,28 @@ class Pharmacy(Base):
     )
 
 
+class MasterMedicine(Base):
+    __tablename__ = "medicines_master"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+    brand: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    generic_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    category: Mapped[str] = mapped_column(String(64), index=True)
+    mrp: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    prescription_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    images_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    default_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    manufacturer: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    popularity_score: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+
+
 class Medicine(Base):
     __tablename__ = "medicines"
 
@@ -49,10 +71,13 @@ class Medicine(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(255), nullable=True)
     stock: Mapped[int] = mapped_column(Integer, default=0)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     unit: Mapped[str] = mapped_column(String(40), default="unit")
     requires_prescription: Mapped[bool] = mapped_column(Boolean, default=False)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     pharmacy_id: Mapped[int] = mapped_column(ForeignKey("pharmacies.id"), index=True)
+    master_medicine_id: Mapped[int | None] = mapped_column(ForeignKey("medicines_master.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     pharmacy: Mapped["Pharmacy"] = relationship(back_populates="medicines")
@@ -62,10 +87,58 @@ class Medicine(Base):
     )
 
 
+class PharmacyInventory(Base):
+    __tablename__ = "pharmacy_inventory"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    pharmacy_store_id: Mapped[int | None] = mapped_column(ForeignKey("pharmacy_stores.id"), nullable=True, index=True)
+    pharmacy_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    medicine_id: Mapped[int | None] = mapped_column(ForeignKey("medicines.id"), nullable=True, index=True)
+    master_medicine_id: Mapped[int | None] = mapped_column(ForeignKey("medicines_master.id"), nullable=True, index=True)
+    stock: Mapped[int] = mapped_column(Integer, default=0)
+    expiry_date: Mapped[date | None] = mapped_column(Date, nullable=True, index=True)
+    price_override: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    barcode: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    is_clearance: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    clearance_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    clearance_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_available: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class MedicineRequest(Base):
+    __tablename__ = "medicine_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    medicine_name: Mapped[str] = mapped_column(String(255), index=True)
+    brand: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    status: Mapped[str] = mapped_column(String(40), default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+
+
+class StockAlert(Base):
+    __tablename__ = "stock_alerts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    pharmacy_store_id: Mapped[int | None] = mapped_column(ForeignKey("pharmacy_stores.id"), nullable=True, index=True)
+    medicine_id: Mapped[int | None] = mapped_column(ForeignKey("medicines.id"), nullable=True, index=True)
+    master_medicine_id: Mapped[int | None] = mapped_column(ForeignKey("medicines_master.id"), nullable=True, index=True)
+    alert_level: Mapped[str] = mapped_column(String(20), index=True)
+    current_stock: Mapped[int] = mapped_column(Integer, default=0)
+    threshold: Mapped[int] = mapped_column(Integer, default=0)
+    is_resolved: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+
+
 class MedicineOrder(Base):
     __tablename__ = "medicine_orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_user_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    profile_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    profile_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     patient_name: Mapped[str] = mapped_column(String(160), nullable=False)
     patient_phone: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
     patient_address: Mapped[str] = mapped_column(String(255), nullable=False)

@@ -110,9 +110,10 @@ def _parse_places_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
 def get_nearby_pharmacies(lat: float, lng: float) -> list[dict[str, Any]]:
     key = _cache_key(lat, lng)
     redis_key = f"nearby_pharmacies:{key}"
-    cached_remote = cache_get_json(redis_key)
-    if isinstance(cached_remote, list):
-        return [dict(item) for item in cached_remote]
+    if not settings.is_testing:
+        cached_remote = cache_get_json(redis_key)
+        if isinstance(cached_remote, list):
+            return [dict(item) for item in cached_remote]
     cached = _CACHE.get(key)
     now = time.time()
     if cached and now - cached[0] < _CACHE_TTL_SECONDS:

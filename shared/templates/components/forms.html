@@ -1,0 +1,22 @@
+{% macro floating_field(field_id, field_name, label, field_type='text', value='', required=false, icon='', placeholder=' ', autocomplete='off') -%}
+<label class="portal-floating-field {% if icon %}has-icon{% endif %}" for="{{ field_id }}">
+    {% if icon %}<i class="fa-solid fa-{{ icon }}" aria-hidden="true"></i>{% endif %}
+    <input
+        id="{{ field_id }}"
+        name="{{ field_name }}"
+        type="{{ field_type }}"
+        value="{{ value }}"
+        placeholder="{{ placeholder }}"
+        autocomplete="{{ autocomplete }}"
+        {% if required %}required aria-required="true"{% endif %}
+    >
+    <span>{{ label }}{% if required %} *{% endif %}</span>
+</label>
+{%- endmacro %}
+
+<div class="search-scope-row">
+    <span><strong>Search scopes</strong></span>
+    {% for scope in search_scopes | default([]) %}
+    <span class="scope-pill">{{ scope }}</span>
+    {% endfor %}
+</div>

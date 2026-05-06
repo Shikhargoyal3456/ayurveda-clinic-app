@@ -85,7 +85,9 @@ class Settings:
     app_name: str
     base_dir: Path
     templates_dir: Path
+    shared_templates_dir: Path
     static_dir: Path
+    shared_static_dir: Path
     logs_dir: Path
     data_dir: Path
     backups_dir: Path
@@ -145,6 +147,15 @@ class Settings:
     allowed_origins: list[str]
     trusted_hosts: list[str]
     admin_usernames: list[str]
+    admin_bootstrap_password: str
+    admin_bootstrap_full_name: str
+    rate_limit_enabled: bool
+    rate_limit_requests: int
+    rate_limit_period: int
+    cache_enabled: bool
+    cache_ttl_seconds: int
+    backup_enabled: bool
+    backup_retention_days: int
     analytics_log_path: Path
     audit_log_path: Path
     request_log_path: Path
@@ -170,7 +181,7 @@ class Settings:
     @property
     def SENTRY_DSN(self) -> str:
         # PROD-LAUNCH-1: Compatibility alias for launch scripts/tests that use env-style names.
-        return self.sentry_dsn
+        return self.sentry_dsn or "disabled"
 
     @property
     def REDIS_URL(self) -> str:
@@ -205,7 +216,9 @@ def _build_settings() -> Settings:
         app_name=os.getenv("APP_NAME", os.getenv("CLINIC_NAME", "kash-ai")).strip() or "kash-ai",
         base_dir=base_dir,
         templates_dir=base_dir / "templates",
+        shared_templates_dir=base_dir / "shared" / "templates",
         static_dir=base_dir / "static",
+        shared_static_dir=base_dir / "shared" / "static",
         logs_dir=logs_dir,
         data_dir=base_dir / "data",
         backups_dir=base_dir / "backups",
@@ -265,6 +278,15 @@ def _build_settings() -> Settings:
         allowed_origins=_get_list("ALLOWED_ORIGINS", ["http://127.0.0.1:8000", "http://localhost:8000"]),
         trusted_hosts=_get_list("TRUSTED_HOSTS", ["127.0.0.1", "localhost", "testserver"]),
         admin_usernames=_get_list("ADMIN_USERNAMES"),
+        admin_bootstrap_password=os.getenv("ADMIN_BOOTSTRAP_PASSWORD", "").strip(),
+        admin_bootstrap_full_name=os.getenv("ADMIN_BOOTSTRAP_FULL_NAME", "Kash AI Admin").strip() or "Kash AI Admin",
+        rate_limit_enabled=_get_bool("RATE_LIMIT_ENABLED", True),
+        rate_limit_requests=_get_int("RATE_LIMIT_REQUESTS", 100),
+        rate_limit_period=_get_int("RATE_LIMIT_PERIOD", 60),
+        cache_enabled=_get_bool("CACHE_ENABLED", bool(os.getenv("REDIS_URL", "").strip())),
+        cache_ttl_seconds=_get_int("CACHE_TTL", 300),
+        backup_enabled=_get_bool("BACKUP_ENABLED", True),
+        backup_retention_days=_get_int("BACKUP_RETENTION_DAYS", 7),
         analytics_log_path=logs_dir / "analytics.jsonl",
         audit_log_path=logs_dir / "security_audit.jsonl",
         request_log_path=logs_dir / "application.log",

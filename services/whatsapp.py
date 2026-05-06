@@ -35,11 +35,12 @@ def whatsapp_health_status() -> dict[str, object]:
     config = _meta_whatsapp_config()
     cloud_api_configured = bool(config["access_token"] and config["phone_number_id"])
     return {
-        "status": "ok" if cloud_api_configured else "not_configured",
+        "status": "ok",
         "cloud_api_configured": cloud_api_configured,
         "template_configured": bool(config["template_name"]),
         "delivery_mode": "meta_cloud_api" if cloud_api_configured else "wa_link_only",
         "api_version": config["api_version"],
+        "message": "Meta Cloud API configured." if cloud_api_configured else "Using wa.me link fallback mode.",
     }
 
 

@@ -21,6 +21,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from app.analytics import track_event
 from app.config import settings
 from app.database import SessionLocal, init_db
+from app.exception_handlers import register_exception_handlers
 try:
     from app.health import build_health_report, production_launch_metrics
     from services.cache_service import redis_ping
@@ -47,11 +48,19 @@ except Exception as exc:
     async def redis_ping() -> bool:
         return False
 from app.logging_config import clear_request_id, configure_logging, set_request_id
+from app.monitoring import PerformanceMonitoringMiddleware
 from app.rate_limit import limiter
 from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
 from models.subscription import ClinicSubscription  # noqa: F401
-from app.pdf_loader import ensure_runtime_dirs
+try:
+    from app.pdf_loader import ensure_runtime_dirs
+except Exception:
+    def ensure_runtime_dirs() -> None:
+        settings.samhita_pdfs_dir.mkdir(parents=True, exist_ok=True)
+        settings.vector_store_dir.mkdir(parents=True, exist_ok=True)
+        settings.logs_dir.mkdir(parents=True, exist_ok=True)
+        (settings.static_dir / "images").mkdir(parents=True, exist_ok=True)
 from app.runtime import request_load_controller
 try:
     from app.rag_engine import get_rag_engine
@@ -61,20 +70,36 @@ except Exception as exc:
     def get_rag_engine():
         raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
 from app.security import ensure_https_request
+from apps.api.routes import router as api_v1_router
+from apps.delivery.routes import router as delivery_portal_router
+from apps.doctor.routes import router as doctor_portal_router
+from apps.lab.routes import router as lab_portal_router
+from apps.patient.routes import router as patient_portal_router
+from apps.pharmacy.routes import router as pharmacy_portal_router
 from routers.admin import router as admin_router
 from routers.ai import router as ai_router
+from routers.ai_features import router as ai_features_router
 from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.cases import router as cases_router
+from routers.contact import router as contact_router
 from routers.emr import router as emr_router
 from routers.ecommerce import router as ecommerce_router
 from routers.health import router as health_router
+from routers.lab_owner import router as lab_owner_router
+from routers.marketplace import router as marketplace_router
+from routers.medicine_info import router as medicine_info_router
 from routers.patients import router as patients_router
 from routers.order_medicines import router as order_medicines_router
+from routers.pharmacy_owner import router as pharmacy_owner_router
 from routers.pharmacy import router as pharmacy_router
+from routers.profiles import router as profiles_router
 from routers.public_clinic import router as public_clinic_router
 from routers.startup import router as startup_router
 from routers.subscriptions import router as subscriptions_router
+from routers.telemedicine import router as telemedicine_router
+from routers.delivery import router as delivery_router
+from routers.debug import router as debug_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
 from routes.payment import router as payment_router
@@ -146,6 +171,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                 duration_ms,
             )
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -175,7 +201,7 @@ class OverloadProtectionMiddleware(BaseHTTPMiddleware):
             logger.warning("Overload protection rejected request path=%s", request.url.path)
             return JSONResponse(
                 status_code=503,
-                content={"error": "Server is busy. Please retry shortly."},
+                content={"success": False, "error": "Too many people are using the app right now. Please try again shortly."},
                 headers={"Retry-After": "2"},
             )
         try:
@@ -240,16 +266,17 @@ def create_app() -> FastAPI:
             logger.warning("Sentry configuration skipped: %s", exc)
 
     application = FastAPI(
-        title="Ayurvedic Clinic Management System",
+        title="Kash AI",
         version=settings.app_version,
         description=(
-            "Production-ready Ayurveda healthcare superapp covering consultations, EMR, "
+            "Kash AI is a production-ready healthcare superapp covering consultations, EMR, "
             "pharmacy commerce, telemedicine, diagnostics, growth systems, and admin operations."
         ),
         lifespan=lifespan,
     )
     application.state.limiter = limiter
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    register_exception_handlers(application)
     application.add_middleware(
         SessionMiddleware,
         secret_key=settings.secret_key,
@@ -264,10 +291,14 @@ def create_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
         allow_headers=["*"],
     )
-    allowed_hosts = list(dict.fromkeys((settings.trusted_hosts or []) + ["127.0.0.1", "localhost", "testserver"]))
-    application.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts or ["*"])
+    if settings.is_production:
+        allowed_hosts = list(dict.fromkeys((settings.trusted_hosts or []) + ["127.0.0.1", "localhost", "testserver"]))
+    else:
+        allowed_hosts = ["*"]
+    application.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
     application.add_middleware(GZipMiddleware, minimum_size=512)
     application.add_middleware(SlowAPIMiddleware)
+    application.add_middleware(PerformanceMonitoringMiddleware)
     application.add_middleware(RequestContextMiddleware)
     application.add_middleware(OverloadProtectionMiddleware)
 
@@ -322,35 +353,44 @@ def create_app() -> FastAPI:
             db.close()
 
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
+    application.mount("/shared-static", StaticFiles(directory=settings.shared_static_dir), name="shared-static")
+    public_dir = settings.base_dir / "public"
+    if public_dir.exists():
+        application.mount("/public", StaticFiles(directory=public_dir), name="public")
     application.include_router(public_clinic_router)
     application.include_router(startup_router)
     application.include_router(health_router)
     application.include_router(auth_router)
     application.include_router(patients_router)
     application.include_router(cases_router)
+    application.include_router(contact_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
+    application.include_router(ai_features_router)
+    application.include_router(api_v1_router)
+    application.include_router(marketplace_router)
+    application.include_router(patient_portal_router)
+    application.include_router(doctor_portal_router)
+    application.include_router(pharmacy_portal_router)
+    application.include_router(lab_portal_router)
+    application.include_router(delivery_portal_router)
+    application.include_router(medicine_info_router)
+    application.include_router(delivery_router)
+    application.include_router(debug_router)
+    application.include_router(pharmacy_owner_router)
+    application.include_router(lab_owner_router)
     application.include_router(pharmacy_router)
+    application.include_router(profiles_router)
     application.include_router(ecommerce_router)
     application.include_router(order_medicines_router)
     application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(emr_router)
+    application.include_router(telemedicine_router)
     application.include_router(prescription_router)
     application.include_router(payment_router)
     application.include_router(outcome_router)
     application.include_router(demo_router)
-
-    @application.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
-        logger.exception("Unhandled error during request %s %s", request.method, request.url.path, exc_info=exc)
-        accept_header = request.headers.get("accept", "").lower()
-        if "text/html" in accept_header:
-            return HTMLResponse(
-                status_code=500,
-                content="<h2>Something went wrong. Please try again.</h2>",
-            )
-        return JSONResponse(status_code=500, content={"error": "Internal server error"})
 
     return application
 

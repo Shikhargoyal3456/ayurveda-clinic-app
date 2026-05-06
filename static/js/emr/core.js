@@ -62,9 +62,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const modernSaveButton = document.querySelector("[data-save-modern-consultation]");
     if (modernSaveButton) {
         modernSaveButton.addEventListener("click", async () => {
+            const originalText = modernSaveButton.innerHTML;
+            modernSaveButton.disabled = true;
+            modernSaveButton.innerHTML = '<span class="fa-solid fa-spinner fa-spin" aria-hidden="true"></span> Processing...';
             const editor = document.querySelector(".soap-editor");
             const patientId = Number(editor?.dataset.patientId || 0);
-            if (!patientId) return;
+            if (!patientId) {
+                modernSaveButton.disabled = false;
+                modernSaveButton.innerHTML = originalText;
+                return;
+            }
             const payload = {
                 patient_id: patientId,
                 status: "finalized",
@@ -83,7 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 chief_complaint: document.querySelector(".soap-subjective")?.value || "",
                 treatment_plan: document.querySelector(".soap-plan")?.value || "",
             };
-            await window.EMR.saveConsultation("modern", payload);
+            try {
+                await window.EMR.saveConsultation("modern", payload);
+            } finally {
+                modernSaveButton.disabled = false;
+                modernSaveButton.innerHTML = originalText;
+            }
         });
     }
 

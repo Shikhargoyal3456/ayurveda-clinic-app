@@ -1,0 +1,44 @@
+<section class="portal-modal-shell" id="notification-center" data-portal-modal hidden>
+    <div class="portal-modal-backdrop" data-modal-close></div>
+    <div class="portal-modal-card" role="dialog" aria-modal="true" aria-labelledby="notificationCenterTitle" tabindex="-1">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Notification center</p>
+                <h2 id="notificationCenterTitle">Everything in one place</h2>
+            </div>
+            <button class="ghost-button" type="button" data-modal-close aria-label="Close notifications">
+                <i class="fa-solid fa-xmark"></i>
+                <span>Close</span>
+            </button>
+        </div>
+        <div class="notification-list">
+            {% for item in notifications | default([]) %}
+                {% from "components/cards.html" import notification_card %}
+                {{ notification_card(item) }}
+            {% else %}
+                <div class="portal-empty-state">
+                    <i class="fa-regular fa-bell"></i>
+                    <strong>No notifications yet</strong>
+                    <p>Important updates, reminders, and live alerts will appear here.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="portal-modal-shell" id="global-confirm-modal" data-confirm-modal hidden>
+    <div class="portal-modal-backdrop" data-confirm-close></div>
+    <div class="portal-modal-card modal-box confirm-modal-card" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" tabindex="-1">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Please confirm</p>
+                <h2 id="confirmModalTitle">Confirm action</h2>
+            </div>
+        </div>
+        <p class="confirm-modal-message" id="confirmModalMessage">Are you sure you want to continue?</p>
+        <div class="confirm-modal-actions">
+            <button class="ghost-button" type="button" data-confirm-close>Go Back</button>
+            <button class="portal-primary-button confirm-button" type="button" id="confirmModalSubmit">Confirm</button>
+        </div>
+    </div>
+</section>

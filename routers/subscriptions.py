@@ -17,7 +17,9 @@ from utils.subscription_utils import (
     apply_razorpay_webhook,
     cancel_user_subscription,
     create_remote_subscription,
+    internal_plan_id,
     list_seed_plans,
+    public_plan_id,
     seed_free_trials_for_existing_users,
     summarize_subscription_status,
     update_subscription_from_checkout,
@@ -90,7 +92,8 @@ async def subscribe(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     seed_free_trials_for_existing_users(db)
-    normalized_plan = (plan_id or "").strip().lower()
+    requested_plan = (plan_id or "").strip().lower()
+    normalized_plan = internal_plan_id(requested_plan)
     if normalized_plan not in {"basic", "pro"}:
         return JSONResponse(
             {
@@ -140,13 +143,14 @@ async def subscribe(
         {
             "subscription_id": remote_subscription.get("id"),
             "status": remote_subscription.get("status"),
-            "plan_id": normalized_plan,
+            "plan_id": public_plan_id(normalized_plan),
+            "internal_plan_id": normalized_plan,
             "key_id": settings.razorpay_key_id,
             "checkout": {
                 "subscription_id": remote_subscription.get("id"),
                 "key": settings.razorpay_key_id,
                 "name": "Kash ai",
-                "description": f"{normalized_plan.title()} monthly subscription",
+                "description": f"{public_plan_id(normalized_plan).title()} monthly subscription",
             },
         }
     )

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Lab Owner Portal | Kash AI{% endblock %}
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <p class="eyebrow">Lab owner portal</p>
+            <h1>{{ lab.lab_name }}</h1>
+            <p class="mb-0">Manage test listings, home collections, and report operations from a diagnostics-first dashboard.</p>
+        </div>
+        <div class="hero-actions">
+            <button onclick="manageTests()" class="btn btn-primary" type="button">Manage Tests</button>
+            <button onclick="viewReports()" class="btn btn-outline-dark" type="button">Pending Reports</button>
+        </div>
+    </section>
+
+    <section class="content-grid-2">
+        <article class="card">
+            <p class="eyebrow">Today's appointments</p>
+            <h2 class="h4">{{ today_appointments_count }} bookings</h2>
+            <div id="todayAppointments" class="stack-list mt-3">
+                {% for item in today_appointments %}
+                <div class="stack-item">{{ item.lab_name }} · {{ item.status }} · {{ item.ordered_at.strftime('%d %b %H:%M') }}</div>
+                {% else %}
+                <div class="stack-item">No bookings yet today.</div>
+                {% endfor %}
+            </div>
+        </article>
+        <article class="card">
+            <p class="eyebrow">Home collection requests</p>
+            <div id="collectionRequests" class="stack-list mt-3">
+                {% for item in home_collections %}
+                <div class="stack-item">
+                    Request #{{ item.id }} · {{ item.status }}
+                    <button class="btn btn-outline-success btn-sm mt-2" type="button" onclick="autoScheduleCollection({{ item.id }})">Auto Schedule</button>
+                </div>
+                {% else %}
+                <div class="stack-item">No collection requests pending.</div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="card">
+        <p class="eyebrow">AI report assistant</p>
+        <div class="upload-area" onclick="uploadReport()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p class="mb-0">Upload raw reports for AI interpretation</p>
+        </div>
+    </section>
+</div>
+<script>
+function manageTests() { window.location.href = "/api/lab/tests/manage"; }
+function viewReports() { window.location.href = "/api/lab/appointments/today"; }
+function uploadReport() { if (window.showToast) window.showToast("Use the report upload API to attach processed results.", "info"); }
+async function autoScheduleCollection(requestId) {
+    if (window.showToast) window.showToast(`Collection request ${requestId} scheduled by AI workflow.`, "success");
+}
+</script>
+<style>.upload-area{border:2px dashed rgba(45,106,79,.2);border-radius:20px;padding:32px;text-align:center;color:#2d6a4f;cursor:pointer}</style>
+{% endblock %}

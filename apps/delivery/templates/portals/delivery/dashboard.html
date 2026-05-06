@@ -1,0 +1,57 @@
+{% extends "layouts/portal_base.html" %}
+{% from "components/cards.html" import metric_card, nav_card %}
+{% block title %}Delivery Dashboard | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="surface-card">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Delivery dashboard</p>
+            <h1>{{ partner.name }}</h1>
+            <p class="muted">Assignments, live routes, earnings, and availability in one courier operations console.</p>
+        </div>
+        <div class="hero-actions">
+            <a class="btn btn-primary btn-sm" href="/delivery#assignments">Open assignments</a>
+            <a class="btn btn-outline-dark btn-sm" href="/delivery#tracking">Live routes</a>
+            <a class="btn btn-outline-dark btn-sm" href="/delivery#earnings">Earnings</a>
+            <a class="btn btn-outline-success btn-sm" href="/contact">Need support?</a>
+        </div>
+    </div>
+    <div class="metric-grid">
+        {{ metric_card('Assignments', assignments | length, 'Live now') }}
+        {{ metric_card('Earnings Today', earnings_today, 'Shift progress') }}
+        {{ metric_card('Completion Rate', completion_rate, 'Last 30 days') }}
+        {{ metric_card('Status', partner.status, 'Current availability') }}
+    </div>
+</section>
+<section class="split-grid">
+    {{ nav_card('Review live assignments', 'See the next deliveries in queue and prioritize the most urgent routes.', '/delivery#assignments', 'route', 'Live') }}
+    {{ nav_card('Open route tracking', 'Jump into delivery tracking and keep route visibility close at hand during the shift.', '/delivery#tracking', 'location-dot', 'Tracking') }}
+</section>
+<section class="surface-card" id="assignments">
+    <div class="section-heading"><div><p class="eyebrow">Assignment board</p><h2>Current deliveries</h2></div></div>
+        <div class="table-list">
+            {% for item in assignments %}
+            <div class="table-row"><div><strong>Order #{{ item.order_id }}</strong><div class="inline-meta"><span>{{ item.pickup }}</span><span>{{ item.drop }}</span><span>{{ item.eta }}</span></div></div><a class="ghost-button" href="/orders/tracking/{{ item.order_id }}">Track</a></div>
+        {% else %}<div class="empty-state"><strong>No deliveries assigned right now.</strong><span class="muted">Once new orders are routed to you, they will appear here with pickup, drop, and ETA details.</span></div>
+        {% endfor %}
+    </div>
+</section>
+<section class="split-grid">
+    <article class="surface-card" id="tracking">
+        <div class="section-heading"><div><p class="eyebrow">Route tracking</p><h2>Live route visibility</h2></div></div>
+        <div class="table-list">
+            {% for item in assignments %}
+            <div class="table-row"><div><strong>Order #{{ item.order_id }}</strong><div class="inline-meta"><span>{{ item.pickup }}</span><span>{{ item.drop }}</span><span>{{ item.eta }}</span></div></div><a class="ghost-button" href="/orders/tracking/{{ item.order_id }}">Open map</a></div>
+            {% else %}<div class="empty-state"><strong>No live routes yet.</strong><span class="muted">When you accept deliveries, live route tracking links will appear here.</span></div>{% endfor %}
+        </div>
+    </article>
+    <article class="surface-card" id="earnings">
+        <div class="section-heading"><div><p class="eyebrow">Earnings</p><h2>Shift payout summary</h2></div></div>
+        <div class="table-list">
+            <div class="table-row"><div><strong>Today's payout</strong><div class="inline-meta"><span>{{ earnings_today }}</span></div></div></div>
+            <div class="table-row"><div><strong>Completion rate</strong><div class="inline-meta"><span>{{ completion_rate }}</span></div></div></div>
+            <div class="table-row" id="availability"><div><strong>Status</strong><div class="inline-meta"><span>{{ partner.status }}</span></div></div></div>
+        </div>
+    </article>
+</section>
+{% endblock %}
