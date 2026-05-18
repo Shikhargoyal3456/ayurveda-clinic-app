@@ -4,19 +4,17 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, Form, Request
-from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.analytics import DIRECT_ORDER_EVENTS, log_event, log_route_errors, track_error_event
+from app.analytics import DIRECT_ORDER_EVENTS, log_event, log_route_errors
 from app.auth import ensure_csrf_token, verify_csrf
 from app.config import settings
 from app.database import get_db
 from models.ai_features import AIPrescriptionScan
 from models.prescription import Prescription
 from services import ai_provider
-from services.medicine_catalog import get_default_medicines
 
 
 router = APIRouter(tags=["direct-medicine-ordering"])
@@ -47,120 +45,18 @@ def _string_list(value: object) -> list[str]:
     return normalized
 
 
-_AI_FALLBACK_PRECAUTIONS = [
-    "Use over-the-counter medicines only as directed on the label.",
-    "Consult a doctor if symptoms are severe, persistent, or worsening.",
-]
-
-_SYMPTOM_SUGGESTION_RULES: list[tuple[tuple[str, ...], list[str], list[str]]] = [
-    (
-        ("acidity", "acid", "heartburn", "gas", "bloating", "indigestion", "reflux", "stomach burn"),
-        ["Avipattikar Churna", "Hingvastak Churna", "Triphala"],
-        ["Avoid spicy or oily food until symptoms settle."],
-    ),
-    (
-        ("fever", "temperature", "headache", "head pain", "body ache", "pain"),
-        ["Paracetamol", "Giloy Tablet", "Tulsi Drops"],
-        ["Check temperature and seek care for high fever or severe headache."],
-    ),
-    (
-        ("cold", "cough", "sore throat", "throat", "congestion", "runny nose", "sneezing"),
-        ["Sitopaladi Churna", "Tulsi Drops", "Mulethi Powder"],
-        ["Seek medical advice for breathing difficulty, chest pain, or prolonged cough."],
-    ),
-    (
-        ("weakness", "tired", "fatigue", "immunity", "low energy"),
-        ["Chyawanprash", "Amla Juice", "Ashwagandha"],
-        ["Persistent weakness can need clinical evaluation."],
-    ),
-    (
-        ("stress", "sleep", "anxiety", "restless"),
-        ["Ashwagandha", "Brahmi Vati"],
-        ["Avoid sedating products before driving or operating machinery."],
-    ),
-    (
-        ("skin", "acne", "pimple", "rash", "itch"),
-        ["Neem Capsules", "Haridra Tablet"],
-        ["Seek care quickly for spreading rash, swelling, or fever."],
-    ),
-    (
-        ("joint", "muscle", "sprain", "back pain", "knee pain"),
-        ["Diclofenac Gel", "Ibuprofen"],
-        ["Avoid ibuprofen if you have ulcers, kidney disease, or blood thinner use unless advised."],
-    ),
-    (
-        ("mouth", "gum", "tooth", "dental"),
-        ["Chlorhexidine Mouthwash"],
-        ["Dental pain or swelling should be checked by a dentist."],
-    ),
-]
-
-_AI_CATEGORY_ALIASES: list[tuple[tuple[str, ...], list[str]]] = [
-    (("antacid", "h2 blocker", "proton pump", "omeprazole", "famotidine"), ["Avipattikar Churna", "Hingvastak Churna"]),
-    (("analgesic", "pain reliever", "acetaminophen"), ["Paracetamol"]),
-    (("nsaid",), ["Ibuprofen", "Diclofenac Gel"]),
-    (("cough", "expectorant"), ["Sitopaladi Churna", "Mulethi Powder"]),
-]
-
-
-def _catalog_names() -> set[str]:
-    return {str(item.get("name") or "").strip() for item in get_default_medicines() if item.get("name")}
-
-
 def _dedupe_suggestions(values: list[str]) -> list[str]:
-    catalog_names = _catalog_names()
     normalized: list[str] = []
     seen: set[str] = set()
     for value in values:
         text = str(value or "").strip()
         if not text:
             continue
-        catalog_match = next((name for name in catalog_names if name.lower() == text.lower()), text)
-        key = catalog_match.lower()
+        key = text.lower()
         if key not in seen:
             seen.add(key)
-            normalized.append(catalog_match)
+            normalized.append(text)
     return normalized[:6]
-
-
-def _rule_based_ai_help(symptoms: str) -> dict[str, list[str]]:
-    text = symptoms.lower()
-    suggestions: list[str] = []
-    precautions: list[str] = []
-    for triggers, rule_suggestions, rule_precautions in _SYMPTOM_SUGGESTION_RULES:
-        if any(trigger in text for trigger in triggers):
-            suggestions.extend(rule_suggestions)
-            precautions.extend(rule_precautions)
-
-    if not suggestions:
-        suggestions = ["Chyawanprash", "Amla Juice", "Triphala"]
-
-    return {
-        "suggested_medicines": _dedupe_suggestions(suggestions),
-        "precautions": _dedupe_suggestions(precautions + _AI_FALLBACK_PRECAUTIONS),
-    }
-
-
-def _catalog_friendly_suggestions(raw_suggestions: list[str], symptoms: str) -> list[str]:
-    suggestions = _dedupe_suggestions(raw_suggestions)
-    expanded: list[str] = []
-    for suggestion in suggestions:
-        lower = suggestion.lower()
-        for aliases, replacements in _AI_CATEGORY_ALIASES:
-            if any(alias in lower for alias in aliases):
-                expanded.extend(replacements)
-                break
-        else:
-            expanded.append(suggestion)
-
-    fallback = _rule_based_ai_help(symptoms)["suggested_medicines"]
-    catalog_names = _catalog_names()
-    catalog_matches = [
-        item
-        for item in expanded
-        if any(name.lower() == item.lower() or item.lower() in name.lower() for name in catalog_names)
-    ]
-    return _dedupe_suggestions(catalog_matches or fallback)
 
 
 def _prefill_from_prescription(prescription: Prescription | None) -> list[dict[str, object]]:
@@ -279,46 +175,55 @@ async def order_medicines_ai_suggest(
     if not cleaned_symptoms:
         return {
             "suggested_medicines": [],
-            "precautions": ["Describe your symptoms before requesting AI suggestions."],
+            "precautions": ["Symptoms are required before requesting AI suggestions."],
             "disclaimer": "AI suggestions are advisory. Consult a doctor if needed.",
         }
 
     try:
-        raw_response, provider = await run_in_threadpool(
-            ai_provider.chat_with_fallback,
-            (
-                "You suggest over-the-counter pharmacy medicine options for a medicine ordering UI. "
-                "Return JSON only with keys suggested_medicines and precautions. "
-                "suggested_medicines must be an array of concise medicine names or categories. "
-                "precautions must be an array of concise safety notes. Do not diagnose."
-            ),
-            f"Symptoms: {cleaned_symptoms}",
-            0.2,
-            "application/json",
+        system_prompt = (
+            "You suggest pharmacy medicine options for a medicine ordering UI. "
+            "Return JSON only with keys suggested_medicines and precautions. "
+            "suggested_medicines must be an array of 3 to 5 concise medicine names or medicine categories, "
+            "including both allopathy and Ayurveda options where appropriate. "
+            "precautions must be an array of concise safety notes. Do not diagnose and do not claim certainty."
         )
-        try:
-            parsed = ai_provider.parse_json_response(raw_response)
-        except ValueError:
-            logger.warning("Direct medicine AI returned non-JSON response")
-            parsed = {"suggested_medicines": [raw_response], "precautions": []}
+        detailed_prompt = (
+            f"Patient symptoms: {cleaned_symptoms}\n\n"
+            "Suggest 3 to 5 relevant medicine options. Include OTC options where appropriate. "
+            "If prescription medicines may be relevant, mention that doctor review is needed.\n\n"
+            'Return JSON like {"suggested_medicines":[""],"precautions":[""]}.'
+        )
+        simpler_prompt = (
+            f"Symptoms: {cleaned_symptoms}\n"
+            'Return JSON with suggested_medicines and precautions only.'
+        )
+        parsed, provider = await ai_provider.call_ai_json_with_retry(
+            system_prompt=system_prompt,
+            user_prompt=detailed_prompt,
+            simpler_user_prompt=simpler_prompt,
+            temperature=0.2,
+            max_output_tokens=900,
+        )
 
         suggested_medicines = parsed.get("suggested_medicines") or parsed.get("medicines") or []
         precautions = parsed.get("precautions") or []
-        fallback_help = _rule_based_ai_help(cleaned_symptoms)
+        suggestions = _dedupe_suggestions(_string_list(suggested_medicines))
 
         return {
-            "suggested_medicines": _catalog_friendly_suggestions(_string_list(suggested_medicines), cleaned_symptoms),
-            "precautions": _string_list(precautions) or fallback_help["precautions"],
-            "provider": provider.value,
+            "suggested_medicines": suggestions,
+            "precautions": _string_list(precautions),
+            "provider": provider,
             "disclaimer": "AI suggestions are advisory. Consult a doctor if needed.",
         }
     except Exception as exc:
         logger.exception("Direct medicine AI suggestion failed: %s", exc)
-        track_error_event("ai_failure", "/order-medicines/ai-suggest", str(exc))
-        fallback_help = _rule_based_ai_help(cleaned_symptoms)
-        return {
-            "suggested_medicines": fallback_help["suggested_medicines"],
-            "precautions": ["AI suggestions are temporarily unavailable."] + fallback_help["precautions"],
-            "provider": "fallback",
-            "disclaimer": "AI suggestions are advisory. Consult a doctor if needed.",
-        }
+        return JSONResponse(
+            {
+                "suggested_medicines": [],
+                "precautions": [],
+                "provider": "error",
+                "error": str(exc),
+                "disclaimer": "AI suggestions are advisory. Consult a doctor if needed.",
+            },
+            status_code=503,
+        )

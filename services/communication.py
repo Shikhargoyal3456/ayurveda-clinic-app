@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from email.utils import parseaddr
 
 from services.email_service import send_email
-from services.whatsapp import build_whatsapp_link, send_whatsapp_message
+from services.sms_service import SMSService
 
 
 logger = logging.getLogger(__name__)
+sms_service = SMSService()
 
 
 def send_patient_message(
@@ -16,7 +18,7 @@ def send_patient_message(
     message: str,
     subject: str = "Kash AI Update",
 ) -> dict[str, bool | str]:
-    result = {"whatsapp": False, "email": False, "whatsapp_link": ""}
+    result = {"sms": False, "email": False, "whatsapp": False, "whatsapp_link": ""}
     phone = (phone or "").strip()
     email = (email or "").strip() if email else ""
     message = (message or "").strip()
@@ -30,18 +32,20 @@ def send_patient_message(
 
     if phone:
         try:
-            result["whatsapp"] = send_whatsapp_message(phone, message)
+            sms_result = asyncio.run(sms_service.send_sms(phone, message))
+            result["sms"] = bool(sms_result.get("success"))
+            result["whatsapp"] = result["sms"]
         except Exception as exc:
-            logger.exception("Patient WhatsApp message failed: %s", exc)
-        if not result["whatsapp"]:
+            logger.exception("Patient SMS message failed: %s", exc)
+        if not result["sms"]:
             try:
-                logger.info("Retrying patient WhatsApp message to=%s after first failure.", phone)
-                result["whatsapp"] = send_whatsapp_message(phone, message)
+                logger.info("Retrying patient SMS message to=%s after first failure.", phone)
+                sms_result = asyncio.run(sms_service.send_sms(phone, message))
+                result["sms"] = bool(sms_result.get("success"))
+                result["whatsapp"] = result["sms"]
             except Exception as exc:
-                logger.exception("Patient WhatsApp retry failed: %s", exc)
-        if not result["whatsapp"]:
-            result["whatsapp_link"] = build_whatsapp_link(phone, message)
-        logger.info("Sent message to %s: whatsapp=%s", phone, result["whatsapp"])
+                logger.exception("Patient SMS retry failed: %s", exc)
+        logger.info("Sent message to %s: sms=%s", phone, result["sms"])
 
     try:
         if email:

@@ -7,14 +7,14 @@
         <div>
             <p class="eyebrow">Patient dashboard</p>
             <h1>{{ patient.name }}</h1>
-            <p class="muted">Health score, active orders, prescription history, and quick refill tools in one rider-style flow.</p>
+            <p class="muted">Order activity, prescription history, and refill tools in one rider-style flow.</p>
         </div>
         <div class="cta-row">
             {% for action in quick_actions %}<a class="ghost-button" href="{{ action.url }}">{{ action.label }}</a>{% endfor %}
         </div>
     </div>
     <div class="metric-grid">
-        {{ metric_card('Health Score', health_score ~ '/100', 'Daily wellness momentum') }}
+        {{ metric_card('Wellness Outlook', health_score ~ '/100', 'Daily wellness momentum') }}
         {{ metric_card('Active Orders', active_orders | length, 'Live tracking enabled') }}
         {{ metric_card('Refill Reminders', refill_reminders | length, 'One-click refill ready') }}
         {{ metric_card('Recommendations', recommended_medicines | length, 'Based on your recent care') }}

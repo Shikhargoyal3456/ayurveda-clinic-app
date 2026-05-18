@@ -13,6 +13,7 @@
 
 {% block page %}
 <div class="site-container section-stack fade-in-up">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <section class="page-header">
         <div>
             <div class="breadcrumbs mb-2"><span>Home</span><span>Patients</span><span>Case history</span></div>
@@ -33,6 +34,47 @@
         <article class="metric-card"><span>Total Cases</span><strong>{{ case_items|length }}</strong></article>
         <article class="metric-card"><span>Latest Follow-up</span><strong>{{ latest_followup }}</strong></article>
     </section>
+
+    <section class="table-panel">
+        <div class="page-header mb-2">
+            <div>
+                <p class="eyebrow">AI Prescription Mode</p>
+                <h2 class="mb-0">
+                    <strong id="activeAIModeLabel">
+                        {% if current_doctor_type == 'ayurveda' %}🌿 Ayurveda (Samhita-based)
+                        {% elif current_doctor_type == 'modern' %}🏥 Modern Medicine
+                        {% elif current_doctor_type == 'integrated' %}🔄 Integrated
+                        {% elif current_doctor_type == 'homeopathy' %}💊 Homeopathy
+                        {% elif current_doctor_type == 'physiotherapy' %}🦵 Physiotherapy
+                        {% elif current_doctor_type == 'dentistry' %}🦷 Dentistry
+                        {% else %}🤖 {{ current_doctor_type|replace('_', ' ')|title }}
+                        {% endif %}
+                    </strong>
+                </h2>
+            </div>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="showModeSelector()">Change</button>
+        </div>
+        <p class="mb-0 text-muted">AI prescriptions follow your doctor type automatically. Override it any time for a different clinical lens.</p>
+    </section>
+
+    <div id="modeSelector" class="table-panel" style="display:none;">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Manual Override</p>
+                <h2>Select AI prescription mode</h2>
+            </div>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="closeModeSelector()">Close</button>
+        </div>
+        <div class="hero-actions">
+            <button type="button" class="btn btn-outline-success btn-sm" onclick="setAIMode('ayurveda')">🌿 Ayurveda (Samhita)</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="setAIMode('modern')">🏥 Modern Medicine</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="setAIMode('integrated')">🔄 Integrated</button>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="setAIMode('homeopathy')">💊 Homeopathy</button>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="setAIMode('physiotherapy')">🦵 Physiotherapy</button>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="setAIMode('dentistry')">🦷 Dentistry</button>
+            <button type="button" class="btn btn-outline-dark btn-sm" onclick="setAIMode('general')">🤖 General AI</button>
+        </div>
+    </div>
 
     {% for item in case_items %}
     {% set case = item.record %}
@@ -55,39 +97,273 @@
                 <div class="stack-item"><strong>Follow-up Plan</strong><p class="mb-0">{{ case.followup_notes or 'None' }}</p></div>
             </div>
             <div class="hero-actions mt-4">
-                <form method="post" action="/cases/{{ case.id }}/generate-ai"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-warning">Generate AI Prescription</button></form>
-                <form method="post" action="/cases/{{ case.id }}/generate-diet"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="btn btn-outline-success">Generate AI Diet Plan</button></form>
+                <button type="button" class="btn btn-warning" onclick="generateCaseAIPrescription({{ case.id }})">Generate AI Prescription</button>
+                <button type="button" class="btn btn-outline-success" onclick="generateCaseDietPlan({{ case.id }})">Generate AI Diet Plan</button>
             </div>
         </article>
-        {% if ai_view %}
-        <article class="table-panel">
+        <article class="table-panel" id="case-ai-panel-{{ case.id }}" {% if not ai_view %}style="display:none;"{% endif %}>
             <div class="page-header mb-3"><div><p class="eyebrow">AI Clinical Draft</p><h2>Grounded treatment guidance</h2></div><span class="badge text-bg-warning">Doctor review required</span></div>
-            {% if ai_view.sections %}
+            <div id="case-ai-content-{{ case.id }}">
+            {% if ai_view and ai_view.sections %}
             <div class="stack-list">{% for section in ai_view.sections %}<div class="stack-item"><strong>{{ section.heading }}</strong><p class="mb-0">{{ section.body }}</p></div>{% endfor %}</div>
-            {% else %}
+            {% elif ai_view %}
             <div class="glass-panel"><pre>{{ ai_view.raw_answer }}</pre></div>
+            {% else %}
+            <div class="glass-panel">Generate AI prescription to see the case-specific draft here.</div>
             {% endif %}
-            {% if ai_view.sources %}<div class="stack-item mt-4"><strong>Referenced Sources</strong><ul>{% for source in ai_view.sources %}<li>{{ source }}</li>{% endfor %}</ul></div>{% endif %}
+            {% if ai_view and ai_view.sources %}<div class="stack-item mt-4"><strong>Referenced Sources</strong><ul>{% for source in ai_view.sources %}<li>{{ source }}</li>{% endfor %}</ul></div>{% endif %}
+            </div>
+            <div class="mt-3">
+                <button type="button" class="btn btn-outline-dark btn-sm" onclick="showFeedbackSection({{ case.id }})">Rate This AI Draft</button>
+            </div>
+            <div class="ai-feedback-section mt-3" id="aiFeedbackSection-{{ case.id }}" style="display:none; padding:16px; border:1px solid #e0e0e0; border-radius:8px;">
+                <h4 style="margin:0 0 12px 0;">Rate this AI prescription</h4>
+                <div class="rating-row" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                    {% for i in range(1, 6) %}
+                    <button
+                        class="rating-btn rating-btn-{{ case.id }}"
+                        data-case-id="{{ case.id }}"
+                        data-rating="{{ i }}"
+                        onclick="selectRating({{ case.id }}, {{ i }})"
+                        style="padding:8px 14px; border:1px solid #ccc; border-radius:6px; cursor:pointer; background:#fff;">
+                        {{ i }} Star
+                    </button>
+                    {% endfor %}
+                </div>
+                <div style="display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+                    <button
+                        onclick="submitFeedback({{ case.id }}, true)"
+                        style="padding:8px 16px; background:#22c55e; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+                        Used as-is
+                    </button>
+                    <button
+                        onclick="submitFeedback({{ case.id }}, false)"
+                        style="padding:8px 16px; background:#ef4444; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+                        Modified before use
+                    </button>
+                </div>
+                <textarea
+                    id="feedbackNotes-{{ case.id }}"
+                    placeholder="Optional: What could be improved? Stored locally only."
+                    rows="2"
+                    style="width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; resize:vertical;"></textarea>
+                <p id="feedbackStatus-{{ case.id }}" style="margin-top:8px; font-size:13px; color:#666;"></p>
+            </div>
         </article>
-        {% endif %}
     </section>
-    {% if item.diet_view %}
-    <section class="table-panel">
-        <div class="page-header mb-3"><div><p class="eyebrow">Diet AI</p><h2>Ayurvedic diet guidance</h2></div>{% if item.diet_view.whatsapp_link %}<a href="{{ item.diet_view.whatsapp_link }}" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener">Share Via WhatsApp</a>{% endif %}</div>
-        {% if item.diet_view.plan.summary %}<div class="stack-item mb-3"><strong>Summary</strong><p class="mb-0">{{ item.diet_view.plan.summary }}</p></div>{% endif %}
+    {% set diet_view = item.diet_view %}
+    {% set diet_plan = diet_view.plan if diet_view else None %}
+    <section class="table-panel" id="case-diet-panel-{{ case.id }}" {% if not item.diet_view %}style="display:none;"{% endif %}>
+        <div class="page-header mb-3"><div><p class="eyebrow">Diet AI</p><h2>Ayurvedic diet guidance</h2></div>{% if diet_view and diet_view.whatsapp_link %}<a href="{{ diet_view.whatsapp_link }}" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener">Share Via WhatsApp</a>{% endif %}</div>
+        <div id="case-diet-content-{{ case.id }}">
+        {% if diet_plan and diet_plan.summary %}<div class="stack-item mb-3"><strong>Summary</strong><p class="mb-0">{{ diet_plan.summary }}</p></div>{% endif %}
         <div class="content-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
-            <div class="stack-item"><strong>Dosha Assessment</strong><p class="mb-0">{{ item.diet_view.plan.dosha_assessment }}</p></div>
-            <div class="stack-item"><strong>Meal Plan</strong><p class="mb-0">{% for line in item.diet_view.plan.meal_plan %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p></div>
-            <div class="stack-item"><strong>Foods To Favor</strong><p class="mb-0">{% for line in item.diet_view.plan.foods_to_favor %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p></div>
-            <div class="stack-item"><strong>Foods To Avoid</strong><p class="mb-0">{% for line in item.diet_view.plan.foods_to_avoid %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p></div>
-            <div class="stack-item"><strong>Lifestyle Tips</strong><p class="mb-0">{% for line in item.diet_view.plan.lifestyle_tips %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p></div>
-            <div class="stack-item"><strong>Precautions</strong><p class="mb-0">{% for line in item.diet_view.plan.precautions %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p></div>
+            <div class="stack-item"><strong>Dosha Assessment</strong><p class="mb-0">{{ diet_plan.dosha_assessment if diet_plan else '' }}</p></div>
+            <div class="stack-item"><strong>Meal Plan</strong><p class="mb-0">{% if diet_plan %}{% for line in diet_plan.meal_plan %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% endif %}</p></div>
+            <div class="stack-item"><strong>Foods To Favor</strong><p class="mb-0">{% if diet_plan %}{% for line in diet_plan.foods_to_favor %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% endif %}</p></div>
+            <div class="stack-item"><strong>Foods To Avoid</strong><p class="mb-0">{% if diet_plan %}{% for line in diet_plan.foods_to_avoid %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% endif %}</p></div>
+            <div class="stack-item"><strong>Lifestyle Tips</strong><p class="mb-0">{% if diet_plan %}{% for line in diet_plan.lifestyle_tips %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% endif %}</p></div>
+            <div class="stack-item"><strong>Precautions</strong><p class="mb-0">{% if diet_plan %}{% for line in diet_plan.precautions %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% endif %}</p></div>
+        </div>
         </div>
     </section>
-    {% endif %}
     {% else %}
     <div class="alert alert-warning">No cases found for this patient.</div>
     {% endfor %}
 </div>
 {% endblock %}
 
+{% block extra_scripts %}
+<script>
+const caseCsrfToken = {{ csrf_token | tojson }};
+let activeAIMode = {{ current_doctor_type | tojson }};
+const selectedRatings = {};
+const aiModeLabels = {
+    ayurveda: "🌿 Ayurveda (Samhita-based)",
+    modern: "🏥 Modern Medicine",
+    integrated: "🔄 Integrated",
+    homeopathy: "💊 Homeopathy",
+    physiotherapy: "🦵 Physiotherapy",
+    dentistry: "🦷 Dentistry",
+    general: "🤖 General AI",
+};
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function renderCaseAiView(caseId, aiView) {
+    const panel = document.getElementById(`case-ai-panel-${caseId}`);
+    const host = document.getElementById(`case-ai-content-${caseId}`);
+    if (!panel || !host) return;
+    panel.style.display = "";
+    const sections = Array.isArray(aiView?.sections) ? aiView.sections : [];
+    const sources = Array.isArray(aiView?.sources) ? aiView.sources : [];
+    if (sections.length) {
+        host.innerHTML = `
+            <div class="stack-list">
+                ${sections.map((section) => `
+                    <div class="stack-item">
+                        <strong>${escapeHtml(section.heading)}</strong>
+                        <p class="mb-0">${escapeHtml(section.body).replace(/\n/g, "<br>")}</p>
+                    </div>
+                `).join("")}
+            </div>
+            ${sources.length ? `<div class="stack-item mt-4"><strong>Referenced Sources</strong><ul>${sources.map((source) => `<li>${escapeHtml(source)}</li>`).join("")}</ul></div>` : ""}
+        `;
+        return;
+    }
+    host.innerHTML = `<div class="glass-panel"><pre>${escapeHtml(aiView?.raw_answer || "No AI output returned.")}</pre></div>`;
+}
+
+function renderCaseDietView(caseId, dietView) {
+    const panel = document.getElementById(`case-diet-panel-${caseId}`);
+    const host = document.getElementById(`case-diet-content-${caseId}`);
+    if (!panel || !host) return;
+    panel.style.display = "";
+    const plan = dietView?.plan || {};
+    const block = (title, items) => `
+        <div class="stack-item">
+            <strong>${title}</strong>
+            <p class="mb-0">${(Array.isArray(items) ? items : [items]).filter(Boolean).map((item) => escapeHtml(item)).join("<br>") || "None"}</p>
+        </div>
+    `;
+    host.innerHTML = `
+        ${plan.summary ? `<div class="stack-item mb-3"><strong>Summary</strong><p class="mb-0">${escapeHtml(plan.summary)}</p></div>` : ""}
+        <div class="content-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
+            ${block("Dosha Assessment", plan.dosha_assessment || "Pending")}
+            ${block("Meal Plan", plan.meal_plan || [])}
+            ${block("Foods To Favor", plan.foods_to_favor || [])}
+            ${block("Foods To Avoid", plan.foods_to_avoid || [])}
+            ${block("Lifestyle Tips", plan.lifestyle_tips || [])}
+            ${block("Precautions", plan.precautions || [])}
+        </div>
+        ${dietView?.whatsapp_link ? `<div class="mt-3"><a href="${escapeHtml(dietView.whatsapp_link)}" class="btn btn-outline-success btn-sm" target="_blank" rel="noopener">Share Via WhatsApp</a></div>` : ""}
+    `;
+}
+
+function showModeSelector() {
+    const selector = document.getElementById("modeSelector");
+    if (selector) selector.style.display = "";
+}
+
+function closeModeSelector() {
+    const selector = document.getElementById("modeSelector");
+    if (selector) selector.style.display = "none";
+}
+
+function setAIMode(mode) {
+    activeAIMode = mode;
+    const label = document.getElementById("activeAIModeLabel");
+    if (label) label.textContent = aiModeLabels[mode] || mode;
+    closeModeSelector();
+}
+
+function showFeedbackSection(caseId) {
+    const section = document.getElementById(`aiFeedbackSection-${caseId}`);
+    if (!section) return;
+    selectedRatings[caseId] = null;
+    document.getElementById(`feedbackStatus-${caseId}`).textContent = "";
+    document.getElementById(`feedbackNotes-${caseId}`).value = "";
+    document.querySelectorAll(`.rating-btn-${caseId}`).forEach((btn) => {
+        btn.style.background = "#fff";
+    });
+    section.style.display = "block";
+}
+
+function selectRating(caseId, rating) {
+    selectedRatings[caseId] = rating;
+    document.querySelectorAll(`.rating-btn-${caseId}`).forEach((btn) => {
+        btn.style.background = parseInt(btn.dataset.rating, 10) <= rating ? "#fde68a" : "#fff";
+    });
+}
+
+async function submitFeedback(caseId, accepted) {
+    const status = document.getElementById(`feedbackStatus-${caseId}`);
+    const notes = document.getElementById(`feedbackNotes-${caseId}`).value.trim();
+    if (!selectedRatings[caseId]) {
+        status.textContent = "Please select a rating first.";
+        return;
+    }
+
+    try {
+        const response = await fetch("/api/ai/prescription-feedback", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": caseCsrfToken,
+            },
+            body: JSON.stringify({
+                case_id: caseId,
+                rating: selectedRatings[caseId],
+                accepted: accepted,
+                doctor_notes: notes,
+            }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            status.textContent = `Error: ${payload.error || payload.detail || "Could not save feedback"}`;
+            return;
+        }
+        status.textContent = "Feedback saved locally.";
+        setTimeout(() => {
+            const section = document.getElementById(`aiFeedbackSection-${caseId}`);
+            if (section) section.style.display = "none";
+        }, 1200);
+    } catch (error) {
+        status.textContent = "Network error. Please try again.";
+    }
+}
+
+async function generateCaseAIPrescription(caseId, mode = activeAIMode) {
+    const host = document.getElementById(`case-ai-content-${caseId}`);
+    const panel = document.getElementById(`case-ai-panel-${caseId}`);
+    if (!host || !panel) return;
+    panel.style.display = "";
+    host.innerHTML = `<div class="glass-panel">Generating ${escapeHtml(aiModeLabels[mode] || mode || "AI")} prescription...</div>`;
+    const query = mode ? `?mode=${encodeURIComponent(mode)}` : "";
+    const response = await fetch(`/api/cases/${caseId}/generate-ai${query}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': caseCsrfToken,
+        },
+        body: JSON.stringify({}),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success) {
+        host.innerHTML = `<div class="alert alert-danger">${escapeHtml(payload.error || payload.detail || "Unable to generate AI prescription.")}</div>`;
+        return;
+    }
+    renderCaseAiView(caseId, payload.ai_view);
+    showFeedbackSection(caseId);
+}
+
+async function generateCaseDietPlan(caseId) {
+    const host = document.getElementById(`case-diet-content-${caseId}`);
+    const panel = document.getElementById(`case-diet-panel-${caseId}`);
+    if (!host || !panel) return;
+    panel.style.display = "";
+    host.innerHTML = '<div class="glass-panel">Generating AI diet plan...</div>';
+    const response = await fetch(`/api/cases/${caseId}/generate-diet`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': caseCsrfToken,
+        },
+        body: JSON.stringify({}),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.success) {
+        host.innerHTML = `<div class="alert alert-danger">${escapeHtml(payload.error || payload.detail || "Unable to generate diet plan.")}</div>`;
+        return;
+    }
+    renderCaseDietView(caseId, payload.diet_view);
+}
+</script>
+{% endblock %}

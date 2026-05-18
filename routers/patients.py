@@ -187,9 +187,6 @@ def dashboard(
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
 ):
-    allowed_admins = {item.strip().lower() for item in settings.admin_usernames if item.strip()}
-    if (doctor.username or "").strip().lower() in allowed_admins:
-        return RedirectResponse(url="/admin", status_code=303)
     today = date.today()
     current_datetime = datetime.now()
     appointment_count_sq = (
@@ -347,6 +344,7 @@ def dashboard(
             "outstanding_payments": outstanding_payments,
             "next_visit_recommendations": next_visit_recommendations,
             "demo_mode_active": demo_mode_active,
+            "ai_dashboard_doctor_id": doctor.id,
             "flash": pop_flash(request),
             "csrf_token": ensure_csrf_token(request),
         },

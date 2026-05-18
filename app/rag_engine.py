@@ -14,6 +14,8 @@ from typing import Any
 
 import numpy as np
 import requests
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 from app.ai_fallback import fallback_handler
 from app.config import settings
@@ -41,6 +43,48 @@ class RetrievalResult:
     text: str
     score: float
     chunk_id: str
+
+
+def extract_relevant_chunks(
+    query: str,
+    samhita_texts: list[str],
+    top_k: int = 5,
+    min_relevance: float = 0.08,
+) -> list[dict[str, Any]]:
+    """
+    Extract the most relevant Samhita text chunks for a given query.
+    Uses TF-IDF cosine similarity locally as a fallback helper.
+    """
+    if not samhita_texts:
+        return []
+
+    try:
+        vectorizer = TfidfVectorizer(
+            ngram_range=(1, 2),
+            max_features=10000,
+            sublinear_tf=True,
+        )
+        all_texts = [query] + samhita_texts
+        vectors = vectorizer.fit_transform(all_texts)
+        query_vector = vectors[0:1]
+        doc_vectors = vectors[1:]
+        similarities = cosine_similarity(query_vector, doc_vectors)[0]
+        top_indices = similarities.argsort()[-top_k:][::-1]
+
+        relevant: list[dict[str, Any]] = []
+        for idx in top_indices:
+            score = float(similarities[idx])
+            if score >= min_relevance:
+                relevant.append(
+                    {
+                        "text": samhita_texts[idx],
+                        "relevance_score": round(score, 4),
+                    }
+                )
+        return relevant
+    except Exception as exc:
+        logger.warning("RAG retrieval error, using unranked fallback: %s", exc)
+        return [{"text": text, "relevance_score": 0.0} for text in samhita_texts[:top_k]]
 
 
 class AyurvedaRAGEngine:
@@ -335,7 +379,9 @@ class AyurvedaRAGEngine:
                 "4. Pathya-Apathya (dietary and lifestyle advice). "
                 "Be concise — under 200 words. "
                 "Do not recommend anything outside classical Ayurvedic scope. "
-                "If the retrieved context is insufficient, say so clearly."
+                "Use the patient's symptoms, diagnosis, and notes actively even when retrieval is partial. "
+                "Give a best-effort Samhita-aligned draft instead of refusing when case details are available. "
+                "If limitations remain, mention them briefly after the draft rather than replacing the whole answer with a refusal."
             ),
             "modern_medicine": (
                 "You are a senior clinician (MD, Internal Medicine) with "
@@ -379,7 +425,7 @@ class AyurvedaRAGEngine:
                 "   symptoms and tooth number provided) "
                 "2. Radiographic Recommendation (what X-ray view is needed "
                 "   and what to look for) "
-                "3. Treatment Plan (step-by-step: immediate pain relief, "
+                "3. Treatment Plan (step-by-step: immediate symptom support, "
                 "   definitive treatment, restoration plan) "
                 "4. Patient Instructions (post-treatment care, warning signs, "
                 "   follow-up timeline). "

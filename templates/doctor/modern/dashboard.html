@@ -1,0 +1,30 @@
+{% extends "layouts/portal_base.html" %}
+{% block title %}Modern Doctor Dashboard | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="doctor-dashboard">
+    <header class="dashboard-header">
+        <div class="dashboard-header__copy">
+            <p class="dashboard-eyebrow">Modern medicine workspace</p>
+            <h1>Modern Medicine Dashboard</h1>
+            <p class="dashboard-subtitle">{{ clinic_name | default("Clinical practice") }} · Evidence-based workflows, prescriptions, labs, and telemedicine.</p>
+        </div>
+        <div class="dashboard-header__actions">
+            <a class="btn-outline" href="/emr/lab-dashboard">Labs</a>
+            <a class="btn-primary" href="/ai-analyzer">Open Medical AI</a>
+        </div>
+    </header>
+
+    <article class="dashboard-card">
+        <div class="card-header">
+            <h2>🏥 Evidence-Based AI</h2>
+        </div>
+        <p>Review symptoms through a modern clinical lens, then move directly into labs, prescriptions, and telemedicine follow-up.</p>
+        <div class="actions-grid">
+            <a class="action-btn" href="/ai-analyzer">Ask Medical AI</a>
+            <a class="action-btn" href="/emr/lab-dashboard">Review Labs</a>
+            <a class="action-btn" href="/emr/patient-registry">View Patients</a>
+            <a class="action-btn" href="/doctor/dashboard#prescription-studio">E-Prescribe</a>
+        </div>
+    </article>
+</section>
+{% endblock %}

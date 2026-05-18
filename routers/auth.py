@@ -36,11 +36,15 @@ from app.portal_auth import (
     create_portal_session,
     create_user,
     dashboard_path_for_role,
+    doctor_dashboard_path,
+    ensure_legacy_doctor_for_portal_user,
     get_portal_user,
+    normalize_doctor_type,
     normalize_identifier,
     normalize_phone,
     parse_float,
     parse_int,
+    resolve_role_slug,
     role_to_slug,
     save_upload,
     serializer_dumps,
@@ -54,9 +58,9 @@ from app.portal_auth import (
     consume_user_otp,
 )
 from services.profile_service import active_profiles_for_user, ensure_default_profile, set_active_profile_session
-from app.security import invalidate_all_sessions_for_doctor, invalidate_current_session, validate_password_complexity
+from app.security import hash_refresh_token, invalidate_all_sessions_for_doctor, invalidate_current_session, issue_session_tokens, validate_password_complexity
 from app.models import Doctor
-from models.user import User, UserRole
+from models.user import DoctorProfile, User, UserRole
 from services.email_service import EmailService
 
 
@@ -138,6 +142,18 @@ PORTAL_CONFIG = {
             "Operate with healthcare-grade delivery checks",
         ],
     },
+    "admin": {
+        "role": UserRole.admin.value,
+        "name": "Admin",
+        "icon": "fa-user-shield",
+        "sample_name": "Kash AI Admin",
+        "benefits": [
+            "Review platform-wide operations in one place",
+            "Monitor users, orders, and service quality",
+            "Access admin-only workflows securely",
+            "Keep operational controls separate from doctor dashboards",
+        ],
+    },
 }
 
 
@@ -149,11 +165,12 @@ def _signup_allowed(db: Session) -> bool:
 
 
 def _portal_context(role_slug: str, request: Request, **extra):
-    config = PORTAL_CONFIG[role_slug]
+    canonical_slug = resolve_role_slug(role_slug)
+    config = PORTAL_CONFIG[canonical_slug]
     context = {
         "request": request,
         "role": config["role"],
-        "role_slug": role_slug,
+        "role_slug": canonical_slug,
         "portal_name": config["name"],
         "portal_icon": config["icon"],
         "portal_benefits": config["benefits"],
@@ -171,7 +188,7 @@ def _portal_context(role_slug: str, request: Request, **extra):
 
 
 def _portal_slug_or_404(role_slug: str) -> dict[str, str]:
-    config = PORTAL_CONFIG.get(role_slug)
+    config = PORTAL_CONFIG.get(resolve_role_slug(role_slug))
     if not config:
         raise HTTPException(status_code=404, detail="Portal not found")
     return config
@@ -363,8 +380,48 @@ def _build_absolute_url(request: Request, path: str) -> str:
     return str(request.base_url).rstrip("/") + path
 
 
+def _logout_redirect_for_role(role: str | None) -> str:
+    role_login_urls = {
+        UserRole.doctor.value: "/auth/login/doctor",
+        UserRole.patient.value: "/auth/login/patient",
+        UserRole.pharmacy_owner.value: "/auth/login/pharmacy",
+        UserRole.lab_owner.value: "/auth/login/lab",
+        UserRole.delivery_partner.value: "/auth/login/partner",
+        UserRole.admin.value: "/auth/login/admin",
+    }
+    return role_login_urls.get(str(role or "").strip(), "/auth/login/patient")
+
+
+def _session_logout_redirect(request: Request) -> str:
+    _portal_role = request.session.get("portal_user_role")
+    if request.session.get("doctor_id"):
+        return "/portal"
+    return "/portal"
+
+
 def _preview_payload(extra: dict[str, str]) -> dict[str, str]:
-    return extra if settings.is_testing else {}
+    return extra if settings.is_testing or not settings.is_production else {}
+
+
+def _activate_linked_workspace_session(request: Request, db: Session, user: User) -> None:
+    if user.role == UserRole.doctor:
+        legacy_doctor = ensure_legacy_doctor_for_portal_user(db, user)
+        if legacy_doctor is not None:
+            issue_session_tokens(request, legacy_doctor.id, legacy_doctor.session_version)
+            legacy_doctor.failed_login_attempts = 0
+            legacy_doctor.locked_until = None
+            legacy_doctor.last_login_at = datetime.now(timezone.utc)
+            legacy_doctor.refresh_token_hash = hash_refresh_token(str(request.session.get("refresh_token", "")))
+            commit_with_retry(db)
+    elif user.role == UserRole.admin:
+        legacy_admin = db.query(Doctor).filter(Doctor.username == normalize_identifier(user.email)).first()
+        if legacy_admin is not None:
+            issue_session_tokens(request, legacy_admin.id, legacy_admin.session_version)
+            legacy_admin.failed_login_attempts = 0
+            legacy_admin.locked_until = None
+            legacy_admin.last_login_at = datetime.now(timezone.utc)
+            legacy_admin.refresh_token_hash = hash_refresh_token(str(request.session.get("refresh_token", "")))
+            commit_with_retry(db)
 
 
 def _find_portal_user(db: Session, identifier: str, role: str) -> User | None:
@@ -404,7 +461,7 @@ def _role_cards(users: list[User]) -> list[dict[str, str]]:
                 "label": role_label,
                 "dashboard_url": dashboard_path_for_role(role_value),
                 "login_url": f"/auth/login/{role_slug}",
-                "register_url": f"/auth/register/{role_slug}",
+                "register_url": "" if role_value == UserRole.admin.value else f"/auth/register/{role_slug}",
                 "description": "Order medicines, upload prescriptions, and track care."
                 if role_value == UserRole.patient.value
                 else f"Open your {role_label.lower()} workspace safely.",
@@ -414,10 +471,9 @@ def _role_cards(users: list[User]) -> list[dict[str, str]]:
 
 
 def _legacy_dashboard_path(doctor: Doctor) -> str:
-    configured_admins = settings.admin_usernames or ["admin@ayurveda.com"]
-    allowed_admins = {item.strip().lower() for item in configured_admins if item.strip()}
-    if doctor.username in allowed_admins:
-        return "/admin"
+    # Legacy Doctor records do not carry an explicit admin role.
+    # Keep them on the doctor dashboard and reserve /admin for portal
+    # users whose role is actually UserRole.admin.
     return "/dashboard"
 
 
@@ -460,9 +516,21 @@ def _complete_portal_login(request: Request, db: Session, user: User, remember_m
     invalidate_current_session(request)
     clear_portal_session(request)
     create_portal_session(request, user, remember_me=remember_me)
+    _activate_linked_workspace_session(request, db, user)
     write_audit_event(audit_name, request, user_id=user.id, role=user.role.value)
     track_event("portal_login", role=user.role.value, user_id=user.id)
     redirect_url = dashboard_path_for_role(user.role.value)
+    if user.role == UserRole.doctor:
+        doctor_profile = getattr(user, "doctor_profile", None) or db.get(DoctorProfile, user.id)
+        doctor_type = normalize_doctor_type(
+            getattr(doctor_profile, "doctor_type", None),
+            getattr(doctor_profile, "specialization", None),
+        )
+        request.session["portal_doctor_type"] = doctor_type
+        request.session["portal_doctor_dashboard"] = doctor_dashboard_path(
+            getattr(doctor_profile, "doctor_type", None),
+            getattr(doctor_profile, "specialization", None),
+        )
     if user.role == UserRole.patient:
         ensure_default_profile(db, user)
         profiles = active_profiles_for_user(db, user.id)
@@ -470,9 +538,6 @@ def _complete_portal_login(request: Request, db: Session, user: User, remember_m
             redirect_url = "/profiles/select"
         elif profiles:
             set_active_profile_session(request, profiles[0])
-            # Preserve the long-standing patient login landing page while
-            # still activating the selected profile for patient features.
-            redirect_url = "/"
     logger.info("portal_login_success email=%s role=%s redirect=%s", user.email, user.role.value, redirect_url)
     return RedirectResponse(url=redirect_url, status_code=303)
 
@@ -501,6 +566,10 @@ def _clear_failed_login(user: User, db: Session) -> None:
 def _role_specific_profile_data(role: str, form_data: dict[str, str]) -> dict[str, object]:
     if role == UserRole.doctor.value:
         return {
+            "doctor_type": normalize_doctor_type(
+                form_data.get("doctor_type", ""),
+                form_data.get("specialization", ""),
+            ),
             "registration_number": form_data.get("registration_number", "").strip() or None,
             "specialization": form_data.get("specialization", "").strip() or None,
             "qualification": form_data.get("qualification", "").strip() or None,
@@ -549,16 +618,15 @@ def _role_specific_profile_data(role: str, form_data: dict[str, str]) -> dict[st
 
 
 @router.get("/login")
-def login_page(request: Request):
+def login_page(request: Request, db: Session = Depends(get_db)):
+    portal_user = get_portal_user(request, db)
+    if portal_user is not None:
+        return RedirectResponse(url=dashboard_path_for_role(portal_user.role.value), status_code=303)
     if request.session.get("doctor_id"):
         doctor = getattr(request.state, "user", None)
         redirect_url = _legacy_dashboard_path(doctor) if isinstance(doctor, Doctor) else "/dashboard"
         return RedirectResponse(url=redirect_url, status_code=303)
-    return templates.TemplateResponse(
-        request,
-        "login.html",
-        {"flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
-    )
+    return RedirectResponse(url="/auth/login/doctor", status_code=301)
 
 
 @router.post("/login")
@@ -687,13 +755,16 @@ def signup(
 
 @router.get("/auth/login/{role_slug}")
 def portal_login_page(request: Request, role_slug: str, db: Session = Depends(get_db)):
-    _portal_slug_or_404(role_slug)
+    canonical_slug = resolve_role_slug(role_slug)
+    _portal_slug_or_404(canonical_slug)
+    if canonical_slug != role_slug:
+        return RedirectResponse(url=f"/auth/login/{canonical_slug}", status_code=303)
     user = get_portal_user(request, db)
     if user is not None:
         return RedirectResponse(url=dashboard_path_for_role(user.role.value), status_code=303)
     return _render_smart_login_page(
         csrf_token=ensure_csrf_token(request),
-        preferred_role=role_slug,
+        preferred_role=canonical_slug,
         flash=pop_flash(request),
     )
 
@@ -812,8 +883,11 @@ def portal_register_query_redirect(role: str = Query(...)):
 
 @router.get("/auth/register/{role_slug}")
 def portal_register_page(request: Request, role_slug: str):
-    _portal_slug_or_404(role_slug)
-    return templates.TemplateResponse(request, "auth/portal_register.html", _portal_context(role_slug, request))
+    canonical_slug = resolve_role_slug(role_slug)
+    _portal_slug_or_404(canonical_slug)
+    if canonical_slug != role_slug:
+        return RedirectResponse(url=f"/auth/register/{canonical_slug}", status_code=303)
+    return templates.TemplateResponse(request, "auth/portal_register.html", _portal_context(canonical_slug, request))
 
 
 @router.post("/api/auth/register")
@@ -824,6 +898,7 @@ async def portal_register(
     phone: str = Form(...),
     password: str = Form(...),
     role: str = Form(...),
+    doctor_type: str | None = Form(default=None),
     registration_number: str | None = Form(default=None),
     specialization: str | None = Form(default=None),
     qualification: str | None = Form(default=None),
@@ -857,7 +932,14 @@ async def portal_register(
     __: None = Depends(verify_csrf),
 ):
     role = slug_to_role(role)
-    if role not in {item["role"] for item in PORTAL_CONFIG.values()}:
+    allowed_registration_roles = {
+        UserRole.patient.value,
+        UserRole.doctor.value,
+        UserRole.pharmacy_owner.value,
+        UserRole.lab_owner.value,
+        UserRole.delivery_partner.value,
+    }
+    if role not in allowed_registration_roles:
         return JSONResponse({"success": False, "error": "Unsupported portal role."}, status_code=400)
 
     password_errors = validate_portal_password(password)
@@ -873,6 +955,7 @@ async def portal_register(
     verification_document_path = save_upload(id_proof, "id-proofs")
     professional_document_path = save_upload(certificate, "certificates")
     form_data = {
+        "doctor_type": doctor_type or "",
         "registration_number": registration_number or "",
         "specialization": specialization or "",
         "qualification": qualification or "",
@@ -1037,6 +1120,7 @@ def verify_otp_login(
     invalidate_current_session(request)
     clear_portal_session(request)
     create_portal_session(request, user, remember_me=False)
+    _activate_linked_workspace_session(request, db, user)
     write_audit_event("portal_otp_login_success", request, user_id=user.id, role=role)
     redirect_url = dashboard_path_for_role(role)
     logger.info("portal_otp_login_success email=%s role=%s redirect=%s", user.email, role, redirect_url)
@@ -1137,10 +1221,11 @@ def privacy_page(request: Request):
 
 @router.get("/logout")
 def logout(request: Request):
+    redirect_url = _session_logout_redirect(request)
     write_audit_event("logout", request)
     clear_portal_session(request)
     invalidate_current_session(request)
-    return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 @router.post("/logout-all-devices")
@@ -1155,15 +1240,17 @@ def logout_all_devices(
     commit_with_retry(db)
     invalidate_all_sessions_for_doctor(doctor.id)
     invalidate_current_session(request)
+    clear_portal_session(request)
     write_audit_event("logout_all_devices", request, doctor_id=doctor.id)
-    return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse(url="/auth/login/doctor", status_code=303)
 
 
 @router.get("/auth/logout")
 def portal_logout(request: Request):
+    redirect_url = _session_logout_redirect(request)
     clear_portal_session(request)
     invalidate_current_session(request)
-    return RedirectResponse(url="/auth/login", status_code=303)
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 
 @router.get("/api/auth/session")

@@ -1,18 +1,23 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    HOST=0.0.0.0 \
-    PORT=8000 \
-    STARTUP_RAG_WARMUP=false \
-    STARTUP_LLM_WARMUP=false
-
 WORKDIR /app
 
-COPY requirements-railway.txt /app/requirements-railway.txt
-RUN pip install --upgrade pip && pip install -r /app/requirements-railway.txt
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY . /app
+# Copy requirements first (for better caching)
+COPY requirements.txt .
 
-CMD ["gunicorn", "app.main:app", "-c", "gunicorn_conf.py"]
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Cloud Run requires port 8080
+ENV PORT=8080
+
+# Run the application
+CMD exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT}

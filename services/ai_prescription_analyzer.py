@@ -15,6 +15,7 @@ from models.ai_features import AIPrescriptionScan, MedicineInfoCache
 from models.medicine import MasterMedicine, PharmacyInventory
 from services.ai_medicine_alternatives import AIMedicineAlternatives
 from services.medicine_management import default_image_for_category
+from services.pure_ai_core import pure_ai
 
 try:  # pragma: no cover
     from PIL import Image
@@ -42,44 +43,8 @@ class AIPrescriptionAnalyzer:
 
     def __init__(self) -> None:
         self.alternatives = AIMedicineAlternatives()
-        self.seed_info: dict[str, dict[str, str]] = {
-            "paracetamol": {
-                "uses": "Fever reduction and mild to moderate pain relief such as headache, body ache, and toothache.",
-                "side_effects": "Usually well tolerated. Rare effects include rash, nausea, or allergic reaction.",
-                "alternatives": "Dolo 650, Crocin, Calpol, or lower-cost generic paracetamol.",
-                "precautions": "Use carefully in liver disease or with regular alcohol consumption.",
-            },
-            "amoxicillin": {
-                "uses": "Common bacterial infections including throat, respiratory, ear, and urinary infections.",
-                "side_effects": "Diarrhea, nausea, rash, vomiting, and allergic reactions can occur.",
-                "alternatives": "Amoxil, Moxikind, or other amoxicillin generics when prescribed.",
-                "precautions": "Avoid if you have penicillin allergy unless your doctor explicitly approves.",
-            },
-            "omeprazole": {
-                "uses": "Acid reflux, heartburn, gastritis, stomach ulcers, and GERD symptom control.",
-                "side_effects": "Headache, abdominal discomfort, nausea, constipation, or diarrhea.",
-                "alternatives": "Omesec, pantoprazole-family options, or generic omeprazole depending on doctor advice.",
-                "precautions": "Long-term use should be monitored by a clinician.",
-            },
-            "metformin": {
-                "uses": "Type 2 diabetes, insulin resistance, and some PCOS-related metabolic support.",
-                "side_effects": "Stomach upset, nausea, diarrhea, and metallic taste are common early effects.",
-                "alternatives": "Glyciphage, Gluformin, Metlong, or generic metformin.",
-                "precautions": "Use carefully in kidney disease and pause when your doctor advises during serious illness.",
-            },
-            "atorvastatin": {
-                "uses": "High cholesterol management and cardiovascular risk reduction.",
-                "side_effects": "Muscle pain, weakness, nausea, diarrhea, and mild liver enzyme changes can occur.",
-                "alternatives": "Lipitor, Storvas, Atorva, or generic atorvastatin.",
-                "precautions": "Avoid in pregnancy and report unexplained muscle pain promptly.",
-            },
-        }
-        self.interaction_pairs = {
-            frozenset({"atorvastatin", "clarithromycin"}): "High severity: risk of muscle injury increases.",
-            frozenset({"warfarin", "ibuprofen"}): "High severity: bleeding risk may increase.",
-            frozenset({"metformin", "prednisolone"}): "Moderate severity: blood sugar control may worsen.",
-            frozenset({"amoxicillin", "methotrexate"}): "Moderate severity: methotrexate exposure may rise.",
-        }
+        self.seed_info: dict[str, dict[str, str]] = {}
+        self.interaction_pairs: dict[frozenset[str], str] = {}
 
     def analyze_image_payload(self, db: Session, image_data: str) -> dict[str, Any]:
         file_type = "image"
@@ -240,15 +205,27 @@ class AIPrescriptionAnalyzer:
 
     def find_medicine_info(self, medicine_name: str) -> dict[str, str]:
         normalized = str(medicine_name or "").strip().lower()
-        if normalized in self.seed_info:
-            return self.seed_info[normalized]
-        for key, value in self.seed_info.items():
-            if key in normalized or normalized in key:
-                return value
+        try:
+            ai_info = pure_ai.get_medicine_info_sync(normalized, {})
+            benefits = ai_info.get("benefits", []) if isinstance(ai_info.get("benefits"), list) else []
+            common_effects = []
+            if isinstance(ai_info.get("side_effects"), dict):
+                common_effects = ai_info["side_effects"].get("common", []) or []
+            alternatives = ai_info.get("alternatives", []) if isinstance(ai_info.get("alternatives"), list) else []
+            alternative_names = [str(item.get("name") or "").strip() for item in alternatives if isinstance(item, dict)]
+            precautions = ai_info.get("interactions", []) if isinstance(ai_info.get("interactions"), list) else []
+            return {
+                "uses": "; ".join(str(item).strip() for item in benefits if str(item).strip()) or "AI-generated uses pending review.",
+                "side_effects": "; ".join(str(item).strip() for item in common_effects if str(item).strip()) or "AI-generated side effects pending review.",
+                "alternatives": ", ".join(item for item in alternative_names if item) or "AI-generated alternatives pending review.",
+                "precautions": "; ".join(str(item).strip() for item in precautions if str(item).strip()) or "Review with clinician before use.",
+            }
+        except Exception:
+            pass
         return {
-            "uses": "Use exactly as prescribed by your doctor or pharmacist.",
-            "side_effects": "Common side effects vary by brand and dose. Ask your doctor if anything unusual happens.",
-            "alternatives": "Lower-cost generic options may be available in the same composition.",
+            "uses": "AI medicine guidance is temporarily unavailable.",
+            "side_effects": "Review medicine risks with a qualified clinician.",
+            "alternatives": "No AI alternatives available right now.",
             "precautions": "Review pregnancy status, allergies, kidney and liver history with your clinician.",
         }
 
@@ -446,15 +423,24 @@ class AIPrescriptionAnalyzer:
         return record
 
     def check_interactions(self, medicines: list[dict[str, Any]]) -> dict[str, Any]:
-        names = [self._normalize_name(str(item.get("name", ""))) for item in medicines if str(item.get("name", "")).strip()]
-        interactions = []
-        for index, name in enumerate(names):
-            for other in names[index + 1 :]:
-                pair = frozenset({name, other})
-                if pair in self.interaction_pairs:
-                    items = sorted(pair)
-                    interactions.append({"medicine1": items[0].title(), "medicine2": items[1].title(), "severity": self.interaction_pairs[pair]})
-        return {"has_interactions": bool(interactions), "interactions": interactions}
+        try:
+            names = [str(item.get("name", "")).strip() for item in medicines if str(item.get("name", "")).strip()]
+            if len(names) < 2:
+                return {"has_interactions": False, "interactions": []}
+            ai_info = pure_ai.get_medicine_info_sync(", ".join(names), {"current_medicines": names})
+            interactions = ai_info.get("interactions", []) if isinstance(ai_info.get("interactions"), list) else []
+            payload = [
+                {
+                    "medicine1": names[0],
+                    "medicine2": names[1] if len(names) > 1 else names[0],
+                    "severity": str(item).strip(),
+                }
+                for item in interactions
+                if str(item).strip()
+            ]
+            return {"has_interactions": bool(payload), "interactions": payload}
+        except Exception:
+            return {"has_interactions": False, "interactions": []}
 
     def _normalize_name(self, name: str) -> str:
         normalized = re.sub(r"[^a-z0-9\s]", " ", name.lower())

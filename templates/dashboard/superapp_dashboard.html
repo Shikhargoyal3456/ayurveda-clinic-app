@@ -9,7 +9,7 @@
                 <span class="section-kicker"><i class="fa-solid fa-heart-pulse"></i> Personal health cockpit</span>
                 <div>
                     <h1>Welcome back, {{ user_name | default('there') }}.</h1>
-                    <p style="font-size:1.05rem;">Track orders, reorder medicines, review your health score, and act on AI-powered health insights from one clean dashboard.</p>
+                    <p style="font-size:1.05rem;">Track orders, reorder medicines, review your care outlook, and act on AI-powered health insights from one clean dashboard.</p>
                 </div>
                 <div class="quick-actions-grid">
                     <a class="action-card" href="/order-medicines"><i class="fas fa-capsules fa-xl"></i><strong>Order Medicines</strong><span>Search and add medicines to your order</span></a>
@@ -25,7 +25,7 @@
     <section class="grid-auto-fit">
         <article class="metric-card"><span>Active Orders</span><strong>{{ recent_orders|length }}</strong><small>Orders currently in progress or recently placed</small></article>
         <article class="metric-card"><span>Medicines Tracked</span><strong>{{ subscriptions|length }}</strong><small>Active repeat medicines and care plans</small></article>
-        <article class="metric-card"><span>Health Score</span><strong>{{ health_score }}</strong><small>{{ health_message }}</small></article>
+        <article class="metric-card"><span>Care Outlook</span><strong>{{ health_score }}</strong><small>{{ health_message }}</small></article>
         <article class="metric-card"><span>AI Insights</span><strong>{{ health_insights|length }}</strong><small>New guidance available for your journey</small></article>
     </section>
 
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const offersHost = document.getElementById("personalizedOffers");
     const offers = {{ personalized_offers | default([]) | tojson }};
     window.setTimeout(() => {
-        scoreCard.innerHTML = `<div class="score-circle"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Health Score</span></div></div><p class="mt-3 mb-0">{{ health_message }}</p>`;
+        scoreCard.innerHTML = `<div class="score-circle"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Care Outlook</span></div></div><p class="mt-3 mb-0">{{ health_message }}</p>`;
         offersHost.innerHTML = offers.length
             ? offers.map((offer) => `<div class="feature-card"><strong>${offer.title || offer.name}</strong><p class="mb-0">${offer.description || offer.subtitle || ''}</p></div>`).join("")
             : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-tags"></i></div><h3 class="empty-state__title">No personalized offers yet</h3><p class="empty-state__message">Fresh savings and refill suggestions will appear here once your activity gives us enough context.</p><a href="/store/wellness-store" class="btn btn-primary btn-sm">Browse Store</a></div>`;

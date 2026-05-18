@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import Counter, deque
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +60,30 @@ def load_events() -> list[dict[str, Any]]:
 
 def load_errors() -> list[dict[str, Any]]:
     return _read_jsonl(settings.logs_dir / "errors.jsonl")
+
+
+def _parse_timestamp(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def filter_errors_by_hours(errors: list[dict[str, Any]], *, hours: int) -> list[dict[str, Any]]:
+    if hours <= 0:
+        return list(errors)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    filtered: list[dict[str, Any]] = []
+    for item in errors:
+        timestamp = _parse_timestamp(item.get("timestamp"))
+        if timestamp and timestamp >= cutoff:
+            filtered.append(item)
+    return filtered
 
 
 def cleanup_logs(max_lines: int = 10000) -> None:
@@ -248,8 +273,10 @@ def get_ai_optimization_insights() -> dict[str, Any]:
         return {"best_specialty": {}, "worst_specialty": {}, "recommendations": []}
 
 
-def get_error_summary() -> dict[str, Any]:
+def get_error_summary(*, recent_hours: int | None = None) -> dict[str, Any]:
     errors = load_errors()
+    if recent_hours:
+        errors = filter_errors_by_hours(errors, hours=recent_hours)
     by_type: Counter[str] = Counter()
     by_route: Counter[str] = Counter()
     for item in errors:
@@ -268,7 +295,7 @@ def get_error_summary() -> dict[str, Any]:
 def get_alerts(error_threshold: int = 50) -> list[dict[str, str]]:
     alerts: list[dict[str, str]] = []
     rates = get_conversion_rates()
-    error_summary = get_error_summary()
+    error_summary = get_error_summary(recent_hours=24)
     if rates["ai_to_cart"] < 0.2:
         alerts.append({"type": "warning", "message": "AI recommendations underperforming"})
     if rates["checkout_to_payment"] < 0.5:

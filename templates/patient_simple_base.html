@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token | default('') }}">
     <title>{% block title %}Kash AI{% endblock %}</title>
     {% block meta %}{% endblock %}
-    <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='images/favicon.svg') }}">
     <link rel="dns-prefetch" href="//fonts.googleapis.com">
     <link rel="dns-prefetch" href="//fonts.gstatic.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,6 +16,9 @@
     <link rel="stylesheet" href="/shared-static/css/variables.css">
     <link rel="stylesheet" href="/shared-static/css/components.css">
     <link rel="stylesheet" href="/shared-static/css/utilities.css">
+    <link rel="stylesheet" href="/shared-static/css/responsive.css">
+    <script defer src="/shared-static/js/tooltips.js"></script>
+    <script defer src="/static/js/onboarding.js?v=20260506-1"></script>
     <style>
         body { margin: 0; background: linear-gradient(180deg, #fcfdff 0%, #f9fafb 100%); color: var(--color-text-primary); font-family: "Inter", sans-serif; }
         .app-shell { max-width: 1240px; margin: 0 auto; padding: 1rem 1rem 7rem; }
@@ -78,6 +82,8 @@
         .skip-link { position: absolute; left: 1rem; top: -3rem; background: var(--color-primary); color: white; padding: 0.6rem 0.9rem; border-radius: 0.75rem; z-index: var(--z-tooltip); }
         .skip-link:focus { top: 1rem; }
         .trust-banner { margin-bottom: 0.5rem; }
+        .floating-support-actions { position: fixed; right: 1rem; bottom: 7rem; display: grid; gap: 0.75rem; z-index: var(--z-popover); }
+        .help-btn, .feedback-btn { min-height: 46px; padding: 0.8rem 1rem; border-radius: 9999px; border: 1px solid var(--color-border); background: white; color: var(--color-text-primary); font-weight: 600; box-shadow: var(--shadow-sm); }
         @media (max-width: 860px) {
             .top-bar { flex-direction: column; align-items: stretch; }
             .metric-row { grid-template-columns: 1fr; }
@@ -100,7 +106,7 @@
         <header class="top-bar">
             <div class="app-brand">
                 <div class="brand-lockup">
-                    <img class="brand-logo" src="/static/images/kash-ai-logo.svg" alt="Kash AI logo" loading="lazy" decoding="async" width="164" height="48">
+                    <img class="brand-logo" src="{{ url_for('static', path='images/kash-ai-logo.svg') }}" alt="Kash AI logo" loading="lazy" decoding="async" width="164" height="48">
                     <div>
                         <strong>Kash AI</strong>
                         <small>{% if portal_session_name %}Signed in as {{ portal_session_name }}{% else %}{{ page_hint | default('Ayurveda, healthcare, delivery, and AI in one superapp') }}{% endif %}</small>
@@ -109,16 +115,14 @@
                 <div class="portal-strip" aria-label="Portal access">
                     {% if portal_session_role == 'patient' %}
                     <a class="portal-link" href="/patient">Home</a>
-                    <a class="portal-link" href="/order-medicines">Medicines</a>
+                    <a class="portal-link" href="/telemedicine/book">Consult</a>
+                    <a class="portal-link" href="/order-medicines">Search Medicines</a>
                     <a class="portal-link" href="/orders">Orders</a>
-                    <a class="portal-link" href="/my-health">My Health</a>
                     <a class="portal-link" href="/auth/logout">Logout</a>
                     {% else %}
                     <a class="portal-link" href="/auth/login/patient">Patient Login</a>
                     <a class="portal-link" href="/auth/login/doctor">Doctor Login</a>
                     <a class="portal-link" href="/auth/login/pharmacy">Pharmacy</a>
-                    <a class="portal-link" href="/auth/login/lab">Labs</a>
-                    <a class="portal-link" href="/auth/login/partner">Delivery</a>
                     {% endif %}
                 </div>
             </div>
@@ -143,13 +147,11 @@
                 {% endif %}
                 <button type="button" class="mini-btn" aria-label="Go back" onclick="history.length > 1 ? history.back() : window.location.href='{{ patient_home_href }}'">Back</button>
                 <a class="mini-btn" href="{{ patient_home_href }}">Home</a>
-                <a class="mini-btn" href="/portal">Business</a>
                 {% if portal_session_role == 'patient' %}
                 <a class="mini-btn" href="/auth/logout">Logout</a>
                 {% else %}
                 <a class="mini-btn" href="/auth/login">Login</a>
                 {% endif %}
-                <button type="button" class="mini-btn" id="helpButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="helpSheet">Help</button>
             </div>
         </header>
         <main class="page-stack" id="mainContent" tabindex="-1">
@@ -179,6 +181,26 @@
                 <a class="secondary-btn" href="tel:+919350397175">Call now</a>
                 <a class="secondary-btn" href="https://wa.me/919350397175">Open WhatsApp</a>
                 <a class="secondary-btn" href="mailto:goyalshikhar67@gmail.com">Send Email</a>
+                <a class="secondary-btn" href="/contact">Share feedback</a>
+            </div>
+        </div>
+    </aside>
+    <div class="floating-support-actions">
+        <button class="help-btn" type="button" id="helpButton" aria-haspopup="dialog" aria-expanded="false" aria-controls="helpSheet">
+            <i class="fas fa-question-circle"></i> Help
+        </button>
+    </div>
+    <aside class="help-sheet" id="feedbackSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="feedbackTitle">
+        <div class="help-sheet-card">
+            <div class="help-sheet-header">
+                <div>
+                    <h2 id="feedbackTitle">Share feedback</h2>
+                    <p>Tell us what felt slow, confusing, or broken.</p>
+                </div>
+                <button type="button" class="mini-btn" id="closeFeedbackButton">Close</button>
+            </div>
+            <div class="help-sheet-actions">
+                <a class="secondary-btn" href="/contact">Open feedback form</a>
             </div>
         </div>
     </aside>
@@ -188,31 +210,7 @@
         <a class="nav-link {% if simple_nav == 'search' %}active{% endif %}" href="/order-medicines">Medicines</a>
         <a class="nav-link {% if simple_nav == 'orders' %}active{% endif %}" href="/orders">Orders</a>
         <a class="nav-link {% if simple_nav == 'contact' %}active{% endif %}" href="/contact">Support</a>
-        <a class="nav-link {% if simple_nav == 'health' %}active{% endif %}" href="/my-health">Health</a>
     </nav>
-
-    <div class="ai-chat-widget" id="aiChatWidget">
-        <button class="ai-chat-toggle" id="aiChatToggle" aria-label="Open KASH AI Assistant">
-            <span class="ai-pulse"></span>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="white" opacity="0.9"/>
-                <path d="M8 10h8M8 14h6" stroke="#0F4C5C" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-        </button>
-        <div class="ai-chat-panel" id="aiChatPanel" style="display:none;">
-            <div class="ai-chat-header">
-                <span>🤖 KASH AI Assistant</span>
-                <button id="closeChat" type="button" aria-label="Close chat">✕</button>
-            </div>
-            <div class="ai-chat-messages" id="aiChatMessages">
-                <div class="ai-chat-bubble ai-chat-bubble--bot">Hi, I can help with medicines, consultations, orders, and reports.</div>
-            </div>
-            <div class="ai-chat-input">
-                <input type="text" placeholder="Ask me anything..." id="aiChatInput">
-                <button id="aiChatSend" class="primary-btn" type="button">Send</button>
-            </div>
-        </div>
-    </div>
 
     <script defer src="/static/js/script.js?v=20260506-1"></script>
     <script src="/static/js/ws-manager.js?v=20260506-1"></script>
@@ -224,14 +222,49 @@
             latestOrderPhone: "kashSimpleLastOrderPhone",
             latestOrderMessage: "kashSimpleLatestOrderMessage"
         };
+        window.kashActiveProfileId = "{{ request.session.get('active_profile_id', '') if request is defined and request.session is defined else '' }}";
+        window.kashScopedStorageKey = function(baseKey) {
+            return window.kashActiveProfileId ? `${baseKey}:${window.kashActiveProfileId}` : baseKey;
+        };
+        window.kashStorageGet = function(baseKey) {
+            return window.localStorage.getItem(window.kashScopedStorageKey(baseKey));
+        };
+        window.kashStorageSet = function(baseKey, value) {
+            window.localStorage.setItem(window.kashScopedStorageKey(baseKey), value);
+        };
+        window.kashStorageRemove = function(baseKey) {
+            window.localStorage.removeItem(window.kashScopedStorageKey(baseKey));
+        };
         window.showSimpleMessage = function(message) {
             window.alert(message);
         };
+        window.showHelpModal = function () {
+            if (window.showToast) {
+                window.showToast('Need help? Call 9350397175 or email goyalshikhar67@gmail.com', 'info');
+                return;
+            }
+            window.alert('Need help? Call 9350397175 or email goyalshikhar67@gmail.com');
+        };
         document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll("form").forEach(function (form) {
+                if ((form.method || "").toLowerCase() !== "post" || form.querySelector('input[name="csrf_token"]')) {
+                    return;
+                }
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+                if (!token) return;
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = "csrf_token";
+                input.value = token;
+                form.prepend(input);
+            });
+
             const helpButton = document.getElementById("helpButton");
             const closeHelpButton = document.getElementById("closeHelpButton");
             const helpSheet = document.getElementById("helpSheet");
+            const feedbackSheet = document.getElementById("feedbackSheet");
             const helpOverlay = document.getElementById("helpOverlay");
+            const closeFeedbackButton = document.getElementById("closeFeedbackButton");
             let lastFocusedElement = null;
 
             const closeHelp = function () {
@@ -241,21 +274,42 @@
                 helpButton?.setAttribute("aria-expanded", "false");
                 lastFocusedElement?.focus?.();
             };
+            const closeFeedback = function () {
+                feedbackSheet.classList.remove("is-open");
+                helpOverlay.classList.remove("is-open");
+                feedbackSheet.setAttribute("aria-hidden", "true");
+                lastFocusedElement?.focus?.();
+            };
 
             const openHelp = function () {
                 lastFocusedElement = document.activeElement;
+                window.showHelpModal();
                 helpSheet.classList.add("is-open");
                 helpOverlay.classList.add("is-open");
                 helpSheet.setAttribute("aria-hidden", "false");
                 helpButton?.setAttribute("aria-expanded", "true");
                 closeHelpButton?.focus();
             };
+            window.showFeedback = function () {
+                lastFocusedElement = document.activeElement;
+                feedbackSheet.classList.add("is-open");
+                helpOverlay.classList.add("is-open");
+                feedbackSheet.setAttribute("aria-hidden", "false");
+                closeFeedbackButton?.focus();
+            };
 
             helpButton?.addEventListener("click", openHelp);
             closeHelpButton?.addEventListener("click", closeHelp);
-            helpOverlay?.addEventListener("click", closeHelp);
+            closeFeedbackButton?.addEventListener("click", closeFeedback);
+            helpOverlay?.addEventListener("click", function () {
+                closeHelp();
+                closeFeedback();
+            });
             document.addEventListener("keydown", function (event) {
-                if (event.key === "Escape") closeHelp();
+                if (event.key === "Escape") {
+                    closeHelp();
+                    closeFeedback();
+                }
             });
 
             const aiChatToggle = document.getElementById("aiChatToggle");

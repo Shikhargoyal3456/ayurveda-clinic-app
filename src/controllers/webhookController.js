@@ -6,6 +6,12 @@ const { sendWhatsAppChunks } = require('../services/twilioService');
 
 const SCANNING_MESSAGE = '🔍 *Kash AI is scanning your prescription...*\nPlease wait a moment while our AI analyzes your medicines. ⏳';
 
+function maskPhoneNumber(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  const lastFour = digits.slice(-4) || 'unknown';
+  return `****${lastFour}`;
+}
+
 async function processPrescriptionImageWebhook({ payload, from, patient }) {
   const mediaUrl = payload.MediaUrl0 || payload.mediaUrl0;
   const mediaType = payload.MediaContentType0 || payload.mediaContentType0 || 'image/jpeg';
@@ -29,7 +35,8 @@ async function processPrescriptionImageWebhook({ payload, from, patient }) {
     });
 
     const replies = await sendWhatsAppChunks({ to: from, body: result.analysis });
-    replies.forEach((reply, index) => {
+    const successfulReplies = replies.filter((reply) => reply.success);
+    successfulReplies.forEach((reply) => {
       logMessage({
         patientId: patient?.id || null,
         direction: 'sent',
@@ -41,7 +48,7 @@ async function processPrescriptionImageWebhook({ payload, from, patient }) {
         metadata: {
           provider: 'twilio',
           messageType: 'prescription_analysis',
-          chunkIndex: index + 1,
+          chunkIndex: reply.chunkIndex,
           chunkCount: replies.length,
           detected: result.detected,
           mimeType: result.mimeType,
@@ -51,19 +58,37 @@ async function processPrescriptionImageWebhook({ payload, from, patient }) {
     });
   } catch (error) {
     console.error('Prescription image analysis failed:', error);
-    const fallbackReplies = await sendWhatsAppChunks({ to: from, body: GEMINI_UNAVAILABLE_MESSAGE });
-    fallbackReplies.forEach((reply) => {
-      logMessage({
-        patientId: patient?.id || null,
-        direction: 'sent',
-        fromNumber: reply.from,
-        toNumber: reply.to,
-        body: GEMINI_UNAVAILABLE_MESSAGE,
-        providerMessageId: reply.sid,
-        status: reply.status,
-        metadata: { provider: 'twilio', messageType: 'prescription_analysis_error' },
+    try {
+      const fallbackReplies = await sendWhatsAppChunks({ to: from, body: GEMINI_UNAVAILABLE_MESSAGE });
+      const successfulFallbackReplies = fallbackReplies.filter((reply) => reply.success);
+      successfulFallbackReplies.forEach((reply) => {
+        logMessage({
+          patientId: patient?.id || null,
+          direction: 'sent',
+          fromNumber: reply.from,
+          toNumber: reply.to,
+          body: GEMINI_UNAVAILABLE_MESSAGE,
+          providerMessageId: reply.sid,
+          status: reply.status,
+          metadata: { provider: 'twilio', messageType: 'prescription_analysis_error' },
+        });
       });
-    });
+
+      const failedFallbackReplies = fallbackReplies.filter((reply) => !reply.success);
+      if (failedFallbackReplies.length > 0) {
+        console.error('Prescription fallback WhatsApp send failed', {
+          timestamp: new Date().toISOString(),
+          phone: maskPhoneNumber(from),
+          error: failedFallbackReplies.map((reply) => reply.error).join('; '),
+        });
+      }
+    } catch (fallbackError) {
+      console.error('Prescription fallback WhatsApp send failed', {
+        timestamp: new Date().toISOString(),
+        phone: maskPhoneNumber(from),
+        error: fallbackError && fallbackError.message ? fallbackError.message : String(fallbackError),
+      });
+    }
   }
 }
 
@@ -107,7 +132,8 @@ async function handleWhatsAppWebhook(req, res, next) {
       answerStatus = 'gemini_unavailable';
     }
     const replies = await sendWhatsAppChunks({ to: from, body: `🤖 *Kash AI:*\n${answer}` });
-    replies.forEach((reply, index) => {
+    const successfulReplies = replies.filter((reply) => reply.success);
+    successfulReplies.forEach((reply) => {
       logMessage({
         patientId: patient?.id || null,
         direction: 'sent',
@@ -120,7 +146,7 @@ async function handleWhatsAppWebhook(req, res, next) {
           provider: 'twilio',
           messageType: 'ai_reply',
           answerStatus,
-          chunkIndex: index + 1,
+          chunkIndex: reply.chunkIndex,
           chunkCount: replies.length,
         },
       });

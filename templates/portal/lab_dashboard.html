@@ -14,7 +14,7 @@
         </div>
     </section>
 
-    <section class="content-grid-2">
+    <section class="content-grid-2" id="overview">
         <article class="card">
             <p class="eyebrow">Today's appointments</p>
             <h2 class="h4">{{ today_appointments_count }} bookings</h2>
@@ -41,7 +41,21 @@
         </article>
     </section>
 
-    <section class="card">
+    <section class="card" id="reports">
+        <p class="eyebrow">Reports queue</p>
+        <div class="stack-list mt-3">
+            {% for item in today_appointments %}
+            <div class="stack-item">
+                <strong>Order #{{ item.id }}</strong>
+                <span>{{ item.lab_name }} · {{ item.status }} · {{ item.ordered_at.strftime('%d %b %H:%M') }}</span>
+            </div>
+            {% else %}
+            <div class="stack-item">No reports are waiting right now.</div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="card" id="ai-report-assistant">
         <p class="eyebrow">AI report assistant</p>
         <div class="upload-area" onclick="uploadReport()">
             <i class="fas fa-cloud-upload-alt"></i>

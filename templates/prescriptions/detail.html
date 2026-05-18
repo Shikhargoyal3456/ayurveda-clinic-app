@@ -48,7 +48,7 @@
                 <div class="stack-item"><strong>Patient</strong><p class="mb-0 text-muted">{{ patient.name }}</p></div>
                 <div class="stack-item"><strong>Doctor</strong><p class="mb-0 text-muted">{{ doctor.full_name or doctor.username }}</p></div>
                 <div class="stack-item"><strong>Phone</strong><p class="mb-0 text-muted">{{ patient.phone or 'Not available' }}</p></div>
-                <div class="stack-item"><strong>Diagnosis</strong><p class="mb-0 text-muted">{{ prescription.diagnosis }}{% if prescription.icd11_code %}<br><small class="text-muted">Diagnosis Code: {{ prescription.icd11_code }}</small>{% endif %}</p></div>
+                <div class="stack-item"><strong>Diagnosis</strong><p class="mb-0 text-muted" id="diagnosis-text">{{ prescription.diagnosis }}{% if prescription.icd11_code %}<br><small class="text-muted">Diagnosis Code: {{ prescription.icd11_code }}</small>{% endif %}</p></div>
             </div>
 
             <section class="table-panel" style="padding:0; background:transparent; border:0; box-shadow:none;">
@@ -62,6 +62,34 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+            </section>
+
+            <section class="mt-4" id="prescription-medicine-details" data-csrf-token="{{ csrf_token }}">
+                <div class="page-header mb-3"><div><p class="eyebrow mb-1">AI Medicine Details</p><h3 class="h4 mb-0">Benefits, side effects, alternatives, and precautions</h3></div></div>
+                <div class="stack-list">
+                    {% for medicine in prescription.medicines %}
+                    <article class="stack-item medicine-detail-card" data-medicine-name="{{ medicine.name }}" data-diagnosis="{{ prescription.diagnosis }}" data-symptoms="{{ prescription.advice or '' }}" data-age="{{ patient.age or '' }}">
+                        <div class="page-header mb-2">
+                            <div>
+                                <h3 class="h5 mb-1">💊 {{ medicine.name }}</h3>
+                                <p class="mb-0 text-muted">{{ medicine.dosage or 'As advised' }} · {{ medicine.duration or 'As advised' }}</p>
+                            </div>
+                        </div>
+
+                        <div class="content-grid mb-3" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+                            <div class="stack-item"><strong>Dosage</strong><p class="mb-0 text-muted">{{ medicine.dosage or '-' }}</p></div>
+                            <div class="stack-item"><strong>Duration</strong><p class="mb-0 text-muted">{{ medicine.duration or 'As advised' }}</p></div>
+                            <div class="stack-item"><strong>When to take</strong><p class="mb-0 text-muted">{{ medicine.timing or medicine.frequency or '-' }}</p></div>
+                        </div>
+
+                        <div class="loading-ai text-muted">
+                            <p class="mb-1">🤖 AI is generating medicine information...</p>
+                            <p class="mb-0"><small>This may take a few seconds.</small></p>
+                        </div>
+                        <div class="medicine-ai-content d-none"></div>
+                    </article>
+                    {% endfor %}
                 </div>
             </section>
 
@@ -87,6 +115,13 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button class="btn btn-outline-success w-100" data-loading-text="Sharing...">Send via WhatsApp</button>
                 </form>
+                <form method="post" action="/prescriptions/{{ prescription.id }}/share/email" data-loading-form>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="btn btn-outline-primary w-100" data-loading-text="Sending email...">Send via Gmail</button>
+                </form>
+                {% if not patient.email %}
+                <p class="text-muted mb-0"><small>Add the patient's email in their profile to enable Gmail delivery.</small></p>
+                {% endif %}
             </div>
         </aside>
     </section>
@@ -94,6 +129,11 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script>
+window.prescriptionDetailConfig = {
+    csrfToken: {{ csrf_token | tojson }}
+};
+</script>
 <script src="{{ url_for('static', path='js/prescription_detail.js') }}"></script>
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 {% endblock %}

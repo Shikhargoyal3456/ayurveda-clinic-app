@@ -1,17 +1,17 @@
 {% extends "patient_simple_base.html" %}
 {% set simple_nav = 'health' %}
-{% block title %}My Health{% endblock %}
+{% block title %}KASH AI - Patient Health{% endblock %}
 {% block page %}
 <section class="simple-card">
-    <h1 class="title">My Health</h1>
+    <h1 class="title page-title">My Health</h1>
     {% if user_name %}
     <p class="subtitle"><strong>{{ user_name }}</strong></p>
     {% endif %}
-    <p class="subtitle">{{ health_message }}</p>
+    <p class="subtitle page-description">Track your care activity, prescriptions, and medicine reminders</p>
     <div class="metric-row" style="margin-top:16px;">
         <div class="pill">
             <strong>{{ health_score }}/100</strong>
-            <span>Health Score</span>
+            <span>Care Outlook</span>
         </div>
         <div class="pill">
             <strong>{{ active_medicines|length }}</strong>
@@ -35,13 +35,24 @@
         <span class="status {{ item.tone }}">{{ item.badge }}</span>
     </div>
     {% else %}
-    <div class="empty-state">Your active medicines will show here.</div>
+    <div class="empty-state">
+        <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+        <h3 class="empty-state__title">No active medicines yet</h3>
+        <p class="empty-state__message">When you place an order or upload a prescription, your active medicines will show here.</p>
+        <a href="/order-medicines" class="btn-primary">Order Medicines</a>
+    </div>
     {% endfor %}
 </section>
 
 <section class="simple-card">
     <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Past Prescriptions</h2>
-    <div id="prescriptionHistory" class="empty-state">Loading your past prescriptions...</div>
+    <div id="prescriptionHistory" class="empty-state">
+        <div class="skeleton-loader">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+        </div>
+    </div>
 </section>
 
 <section class="simple-card">
@@ -75,6 +86,7 @@
 <script>
 async function loadPrescriptionHistory() {
     const host = document.getElementById("prescriptionHistory");
+    if (!host) return;
     try {
         const response = await fetch("/api/prescription/history");
         if (!response.ok) {
@@ -82,7 +94,8 @@ async function loadPrescriptionHistory() {
         }
         const items = await response.json();
         if (!Array.isArray(items) || !items.length) {
-            host.textContent = "No prescriptions yet. Upload one when you need medicine delivery.";
+            host.className = "empty-state";
+            host.innerHTML = '<div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div><h3 class="empty-state__title">No prescriptions yet</h3><p class="empty-state__message">When you upload or receive a prescription, it will appear here for quick reorder.</p><a href="/order-medicines?tab=upload" class="btn-primary">Upload Prescription</a>';
             return;
         }
         host.className = "";
@@ -96,7 +109,8 @@ async function loadPrescriptionHistory() {
             </div>
         `).join("");
     } catch (error) {
-        host.textContent = "Past prescriptions will appear here after you upload one.";
+        host.className = "empty-state";
+        host.innerHTML = '<div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div><h3 class="empty-state__title">Prescription history unavailable</h3><p class="empty-state__message">Please refresh, or upload a prescription to start building your history.</p><a href="/order-medicines?tab=upload" class="btn-primary">Upload Prescription</a>';
     }
 }
 document.addEventListener("DOMContentLoaded", loadPrescriptionHistory);

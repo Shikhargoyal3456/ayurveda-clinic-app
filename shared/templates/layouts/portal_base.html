@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token | default('') }}">
     <style>
       *, *::before, *::after { box-sizing: border-box; }
       html { font-family: 'Inter', system-ui, sans-serif; background: #F9FAFB; }
-      body { margin: 0; opacity: 0; transition: opacity 0.15s ease; }
+      body { margin: 0; opacity: 1; transition: opacity 0.15s ease; }
       body.ready { opacity: 1; }
       .portal-frame { display:grid; grid-template-columns:260px minmax(0,1fr); min-height:100vh; }
       .portal-sidebar { width: 260px; background: #fff; border-right:1px solid #E5E7EB; }
@@ -35,12 +36,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='images/favicon.svg') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/shared-static/css/variables.css">
     <link rel="stylesheet" href="/shared-static/css/components.css">
     <link rel="stylesheet" href="/shared-static/css/layouts.css">
     <link rel="stylesheet" href="/shared-static/css/utilities.css">
+    <link rel="stylesheet" href="/shared-static/css/responsive.css">
+    <script defer src="/shared-static/js/tooltips.js"></script>
+    <script defer src="/static/js/onboarding.js?v=20260506-1"></script>
 </head>
 <body class="portal-shell role-{{ portal_role_key }}">
     <div id="page-progress" aria-hidden="true"></div>
@@ -83,7 +87,37 @@
         <i class="fa-solid fa-{{ quick_actions[0].icon }}"></i>
     </a>
     {% endif %}
+    <div class="floating-support-actions">
+        <button class="help-btn" type="button" onclick="showHelp()">
+            <i class="fas fa-question-circle"></i> Help
+        </button>
+        <button class="feedback-btn" type="button" onclick="showFeedback()">
+            <i class="fas fa-comment"></i> Feedback
+        </button>
+    </div>
     <div class="portal-toast-host" id="portalToastHost" aria-live="polite" aria-atomic="true"></div>
+    <div class="portal-modal-shell" id="portalHelpModal" hidden>
+        <div class="portal-modal-backdrop" onclick="hideHelp()"></div>
+        <div class="portal-modal-card" role="dialog" aria-modal="true">
+            <div class="section-heading"><div><p class="eyebrow">Need help?</p><h2>Support</h2></div></div>
+            <p class="confirm-modal-message">Use the core workspace actions first. If something fails, contact support and mention the page you were on.</p>
+            <div class="confirm-modal-actions">
+                <a class="ghost-button" href="/contact">Open Support</a>
+                <button class="portal-primary-button" type="button" onclick="hideHelp()">Close</button>
+            </div>
+        </div>
+    </div>
+    <div class="portal-modal-shell" id="portalFeedbackModal" hidden>
+        <div class="portal-modal-backdrop" onclick="hideFeedback()"></div>
+        <div class="portal-modal-card" role="dialog" aria-modal="true">
+            <div class="section-heading"><div><p class="eyebrow">Feedback</p><h2>Share product feedback</h2></div></div>
+            <p class="confirm-modal-message">Use the contact page to send feedback. We are prioritizing reliability, speed, and workflow polish.</p>
+            <div class="confirm-modal-actions">
+                <a class="ghost-button" href="/contact">Open Feedback Form</a>
+                <button class="portal-primary-button" type="button" onclick="hideFeedback()">Close</button>
+            </div>
+        </div>
+    </div>
     <script defer src="/static/js/script.js?v=20260506-1"></script>
     <script src="/static/js/ws-manager.js?v=20260506-1"></script>
     <script>
@@ -358,6 +392,32 @@
             host.appendChild(toast);
             window.setTimeout(() => toast.remove(), 4000);
         };
+
+        window.showHelp = function () {
+            document.getElementById("portalHelpModal")?.removeAttribute("hidden");
+        };
+        window.hideHelp = function () {
+            document.getElementById("portalHelpModal")?.setAttribute("hidden", "hidden");
+        };
+        window.showFeedback = function () {
+            document.getElementById("portalFeedbackModal")?.removeAttribute("hidden");
+        };
+        window.hideFeedback = function () {
+            document.getElementById("portalFeedbackModal")?.setAttribute("hidden", "hidden");
+        };
+
+        document.querySelectorAll("form").forEach((form) => {
+            if ((form.method || "").toLowerCase() !== "post" || form.querySelector('input[name="csrf_token"]')) {
+                return;
+            }
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
+            if (!token) return;
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "csrf_token";
+            input.value = token;
+            form.prepend(input);
+        });
     }());
     </script>
 </body>

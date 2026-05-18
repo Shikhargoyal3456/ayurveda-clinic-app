@@ -19,7 +19,7 @@ function buildMedicineRow() {
         <input name="medicine_name" class="form-control medicine-name-input" list="medicine-options" placeholder="Medicine name" required>
         <input name="medicine_dosage" class="form-control" placeholder="Dosage">
         <input name="medicine_frequency" class="form-control" placeholder="Frequency">
-        <input name="medicine_days" class="form-control" placeholder="Days supply">
+        <input name="medicine_days" class="form-control" placeholder="Duration / Days">
         <button type="button" class="btn btn-outline-danger btn-sm" data-remove-medicine>Remove</button>
     `;
     return row;
@@ -30,7 +30,7 @@ function populateMedicines(medicines) {
         return;
     }
     medicineList.innerHTML = "";
-    const entries = Array.isArray(medicines) && medicines.length > 0 ? medicines : [{ name: "", dosage: "", frequency: "" }];
+    const entries = Array.isArray(medicines) && medicines.length > 0 ? medicines : [{ name: "", dosage: "", frequency: "", duration: "" }];
     entries.forEach((medicine) => {
         const row = buildMedicineRow();
         const inputs = row.querySelectorAll("input");
@@ -42,6 +42,9 @@ function populateMedicines(medicines) {
         }
         if (inputs[2] instanceof HTMLInputElement) {
             inputs[2].value = medicine.frequency || "";
+        }
+        if (inputs[3] instanceof HTMLInputElement) {
+            inputs[3].value = medicine.duration || medicine.days || "";
         }
         medicineList.appendChild(row);
     });

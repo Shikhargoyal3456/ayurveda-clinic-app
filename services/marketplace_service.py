@@ -8,6 +8,7 @@ from sqlalchemy import func
 
 from app.database import SessionLocal, commit_with_retry
 from app.models import Appointment, Doctor, Patient
+from models.ai_features import AIPrescriptionScan
 from models.emr import EMRLabOrder
 from models.marketplace import DeliveryPartner, LabStore, OrderDelivery, PharmacyStore
 from models.medicine import Medicine, MedicineOrder, Pharmacy
@@ -100,7 +101,7 @@ def patient_portal_payload(user_id: str = "guest") -> dict[str, Any]:
                 "name": patient.name if patient else "Guest Patient",
                 "id": patient.id if patient else 0,
             },
-            "health_score": base.get("health_score", 78),
+            "health_score": base.get("health_score", 60),
             "active_orders": [
                 {
                     "order_id": item.order_id,
@@ -130,10 +131,10 @@ def patient_portal_payload(user_id: str = "guest") -> dict[str, Any]:
         db.close()
 
 
-def doctor_portal_payload() -> dict[str, Any]:
+def doctor_portal_payload(doctor_id: int | None = None, doctor_user_id: int | None = None) -> dict[str, Any]:
     db = SessionLocal()
     try:
-        doctor = db.query(Doctor).order_by(Doctor.created_at.asc()).first()
+        doctor = db.get(Doctor, doctor_id) if doctor_id else db.query(Doctor).order_by(Doctor.created_at.asc()).first()
         patient_query = db.query(Patient)
         if doctor is not None:
             patient_query = patient_query.filter(Patient.doctor_id == doctor.id)
@@ -143,8 +144,22 @@ def doctor_portal_payload() -> dict[str, Any]:
         if doctor is not None:
             appointment_query = appointment_query.join(Patient).filter(Patient.doctor_id == doctor.id)
         appointments = appointment_query.order_by(Appointment.date.asc(), Appointment.time.asc()).all()
+
+        prescription_query = db.query(AIPrescriptionScan)
+        if doctor_user_id is not None:
+            prescription_query = prescription_query.filter(AIPrescriptionScan.doctor_user_id == doctor_user_id)
+        prescriptions = (
+            prescription_query
+            .order_by(AIPrescriptionScan.created_at.desc(), AIPrescriptionScan.id.desc())
+            .limit(6)
+            .all()
+        )
         return {
-            "doctor": {"name": doctor.full_name if doctor else "Doctor", "specialty": doctor.specialty if doctor else "ayurveda"},
+            "doctor": {
+                "id": doctor.id if doctor else 0,
+                "name": doctor.full_name if doctor else "Doctor",
+                "specialty": doctor.specialty if doctor else "ayurveda",
+            },
             "patients": [
                 {
                     "id": item.id,
@@ -166,6 +181,17 @@ def doctor_portal_payload() -> dict[str, Any]:
                     "patient_name": item.patient.name if item.patient else "Patient",
                 }
                 for item in appointments[:12]
+            ],
+            "prescriptions": [
+                {
+                    "id": item.id,
+                    "title": item.title or f"Prescription #{item.id}",
+                    "status": item.status,
+                    "created_at": item.created_at,
+                    "patient_name": (item.title or "").replace("E-Prescription for ", "").strip() or "Patient",
+                    "medicine": (item.medicines[0].get("name", "Prescription review") if isinstance(item.medicines, list) and item.medicines else "Prescription review"),
+                }
+                for item in prescriptions
             ],
             "all_patients_count": len(patients),
             "all_appointments_count": len(appointments),

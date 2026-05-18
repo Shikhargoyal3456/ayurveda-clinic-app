@@ -1,867 +1,774 @@
 {% extends "layouts/portal_base.html" %}
+{% set quick_actions = [] %}
 {% block title %}Doctor Dashboard | {{ APP_NAME }}{% endblock %}
+
 {% block portal_content %}
-<section class="doctor-dashboard">
-    <header class="dashboard-header">
-        <div class="dashboard-header__copy">
-            <p class="dashboard-eyebrow">Doctor dashboard</p>
-            <h1>Welcome back, Dr. {{ doctor.name | default("Shikhar Goyal") }}</h1>
-            <p class="dashboard-subtitle">{{ today_date | default("Today") }} · {{ clinic_name | default("Clinic Dashboard") }}</p>
+{% set display_doctor_name = doctor_name | default(doctor.name if doctor is defined and doctor and doctor.name is defined else user_name, true) | default("Doctor", true) %}
+{% set display_recent_patients = recent_patients | default([], true) %}
+<div class="doctor-workspace">
+    <section class="ai-hero" id="aiHero">
+        <div class="ai-hero__copy">
+            <p class="workspace-kicker">AI Doctor Workspace</p>
+            <h1>Dr. {{ display_doctor_name }}</h1>
+            <p class="ai-hero__meta">Live insights generated from your clinic data{% if today_date %} • {{ today_date }}{% endif %}</p>
         </div>
-        <div class="dashboard-header__actions">
-            <button class="btn-outline" type="button" onclick="startVideoConsult()">
-                <i class="fa-solid fa-video"></i>
-                <span>Start Video Call</span>
-            </button>
-            <button class="btn-primary" type="button" onclick="addNewPatient()">
-                <i class="fa-solid fa-user-plus"></i>
-                <span>Add Patient</span>
-            </button>
-        </div>
-    </header>
-
-    <section class="stats-row" aria-label="Doctor metrics">
-        {% set safe_appointments_delta = appointments_delta | default(0) %}
-        <article class="stat-card">
-            <div class="stat-icon">📅</div>
-            <strong class="stat-value">{{ today_appointments | default(today_consults | default(0)) }}</strong>
-            <span class="stat-label">Today's Appointments</span>
-            <span class="stat-trend {% if safe_appointments_delta >= 0 %}up{% else %}down{% endif %}">
-                {% if safe_appointments_delta >= 0 %}+{{ safe_appointments_delta }}{% else %}{{ safe_appointments_delta }}{% endif %} from yesterday
-            </span>
-        </article>
-        <article class="stat-card">
-            <div class="stat-icon">👥</div>
-            <strong class="stat-value">{{ total_patients | default(patients | length) }}</strong>
-            <span class="stat-label">Total Patients</span>
-            <span class="stat-trend up">+{{ patients_delta | default(0) }} this month</span>
-        </article>
-        <article class="stat-card">
-            <div class="stat-icon">📋</div>
-            <strong class="stat-value">{{ pending_prescriptions | default(prescription_requests | default(0)) }}</strong>
-            <span class="stat-label">Pending Prescriptions</span>
-            <span class="stat-trend down">Waiting for review</span>
-        </article>
-        <article class="stat-card">
-            <div class="stat-icon">💰</div>
-            <strong class="stat-value">Rs {{ today_earnings | default(0) }}</strong>
-            <span class="stat-label">Today's Earnings</span>
-            <span class="stat-trend up">From consultations</span>
-        </article>
-    </section>
-
-    <section class="dashboard-two-columns">
-        <div class="dashboard-column">
-            <article class="dashboard-card">
-                <div class="card-header">
-                    <h2><i class="fa-solid fa-calendar-days"></i> Upcoming Appointments</h2>
-                    <a href="/appointments" class="link-view">View all →</a>
-                </div>
-                <div class="appointments-list">
-                    {% for apt in upcoming_appointments | default([]) %}
-                    <div class="appointment-row">
-                        <div class="appointment-time">{{ apt.time }}</div>
-                        <div class="appointment-info">
-                            <div class="patient-name">{{ apt.patient_name }}</div>
-                            <div class="appointment-type">
-                                <span class="badge {{ apt.type | lower }}">{{ apt.type }}</span>
-                                <span class="appointment-status">{{ apt.status | replace("_", " ") | title }}</span>
-                            </div>
-                        </div>
-                        <button class="btn-join" type="button" onclick="joinConsultation('{{ apt.id }}')">
-                            {% if apt.type == "Video" %}Join →{% else %}View →{% endif %}
-                        </button>
-                    </div>
-                    {% else %}
-                    <div class="empty-state">
-                        <i class="fa-solid fa-calendar-check"></i>
-                        <p>No appointments scheduled for today</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </article>
-
-            <article class="dashboard-card">
-                <div class="card-header">
-                    <h2><i class="fa-solid fa-prescription-bottle-medical"></i> Pending Prescriptions</h2>
-                    <button class="link-view link-button" type="button" onclick="writePrescription()">View all →</button>
-                </div>
-                <div class="prescriptions-list">
-                    {% for rx in pending_rx | default([]) %}
-                    <div class="prescription-row">
-                        <div class="prescription-info">
-                            <div class="patient-name">{{ rx.patient_name }}</div>
-                            <div class="medicine-name">{{ rx.medicine }}</div>
-                        </div>
-                        <button class="btn-review" type="button" onclick="reviewPrescription('{{ rx.id }}', '{{ rx.patient_name | e }}')">Review →</button>
-                    </div>
-                    {% else %}
-                    <div class="empty-state">
-                        <i class="fa-solid fa-circle-check"></i>
-                        <p>No pending prescriptions</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </article>
-        </div>
-
-        <div class="dashboard-column">
-            <article class="dashboard-card">
-                <div class="card-header">
-                    <h2><i class="fa-solid fa-users"></i> Patient Queue</h2>
-                </div>
-                <div class="queue-section">
-                    <div class="queue-header online">
-                        <span class="queue-dot online"></span>
-                        <span>Online now ({{ online_patients | default([]) | length }})</span>
-                    </div>
-                    {% for patient in online_patients | default([]) %}
-                    <div class="queue-row">
-                        <div class="patient-avatar">{{ patient.name[:1] | upper }}</div>
-                        <div class="patient-details">
-                            <div class="patient-name">{{ patient.name }}</div>
-                            <div class="wait-time">Waiting {{ patient.waiting_time }} min</div>
-                        </div>
-                        <button class="btn-start" type="button" onclick="startConsultation('{{ patient.id }}')">Start</button>
-                    </div>
-                    {% else %}
-                    <div class="empty-state-small">No patients online</div>
-                    {% endfor %}
-                </div>
-                <div class="queue-section">
-                    <div class="queue-header pending">
-                        <span class="queue-dot pending"></span>
-                        <span>Waiting for approval ({{ waiting_patients | default([]) | length }})</span>
-                    </div>
-                    {% for patient in waiting_patients | default([]) %}
-                    <div class="queue-row">
-                        <div class="patient-avatar pending">{{ patient.name[:1] | upper }}</div>
-                        <div class="patient-details">
-                            <div class="patient-name">{{ patient.name }}</div>
-                            <div class="request-time">Requested {{ patient.request_time }} ago</div>
-                        </div>
-                        <button class="btn-approve" type="button" onclick="approvePatient('{{ patient.id }}')">Approve</button>
-                    </div>
-                    {% else %}
-                    <div class="empty-state-small">No pending approvals</div>
-                    {% endfor %}
-                </div>
-            </article>
-
-            <article class="dashboard-card">
-                <div class="card-header">
-                    <h2><i class="fa-solid fa-bolt"></i> Quick Actions</h2>
-                </div>
-                <div class="actions-grid">
-                    <button class="action-btn" type="button" onclick="writePrescription()">
-                        <i class="fa-solid fa-file-prescription"></i>
-                        <span>Write Prescription</span>
-                    </button>
-                    <button class="action-btn" type="button" onclick="addNewPatient()">
-                        <i class="fa-solid fa-user-plus"></i>
-                        <span>Add New Patient</span>
-                    </button>
-                    <button class="action-btn" type="button" onclick="viewReports()">
-                        <i class="fa-solid fa-chart-line"></i>
-                        <span>View Reports</span>
-                    </button>
-                    <button class="action-btn" type="button" onclick="startVideoConsult()">
-                        <i class="fa-solid fa-video"></i>
-                        <span>Start Video Call</span>
-                    </button>
-                </div>
-            </article>
-
-            <article class="dashboard-card">
-                <div class="card-header">
-                    <h2><i class="fa-solid fa-chart-simple"></i> Today's Summary</h2>
-                </div>
-                <div class="summary-list">
-                    <div class="summary-item">
-                        <span>Consultations completed</span>
-                        <strong>{{ completed_consultations | default(0) }}</strong>
-                    </div>
-                    <div class="summary-item">
-                        <span>Prescriptions issued</span>
-                        <strong>{{ prescriptions_issued | default(0) }}</strong>
-                    </div>
-                    <div class="summary-item">
-                        <span>Average wait time</span>
-                        <strong>{{ avg_wait_time | default(0) }} min</strong>
-                    </div>
-                    <div class="summary-item">
-                        <span>Patient satisfaction</span>
-                        <strong>{{ satisfaction_rate | default(0) }}%</strong>
-                    </div>
-                </div>
-            </article>
+        <div class="ai-loading" id="aiLoading">
+            <div class="spinner"></div>
+            <p>AI is analyzing patient outcomes, appointments, labs, and follow-ups...</p>
         </div>
     </section>
 
-    <section class="dashboard-card dashboard-card--wide" id="prescription-studio">
-        <div class="card-header card-header--stacked">
-            <div>
-                <p class="card-eyebrow">Prescription studio</p>
-                <h2>Generate e-prescription</h2>
-                <p class="card-description">Build a structured prescription, check interactions, and hand off the medicine order flow without leaving the dashboard.</p>
+    <section class="ai-grid" id="aiGrid" hidden>
+        <article class="card ai-score-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-icon">AI</span>
+                    <h3>Practice Outlook</h3>
+                </div>
+                <strong class="score-value" id="healthScore">--</strong>
             </div>
+            <div class="score-factors" id="healthFactors"></div>
+        </article>
+
+        <article class="card ai-score-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-icon">AI</span>
+                    <h3>Care Outlook</h3>
+                </div>
+                <strong class="score-value" id="careScore">--</strong>
+            </div>
+            <div class="score-factors" id="careFactors"></div>
+        </article>
+
+        <article class="card ai-section-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-icon">PR</span>
+                    <h3>Priorities</h3>
+                </div>
+            </div>
+            <div class="stack-list" id="prioritiesList"></div>
+        </article>
+
+        <article class="card ai-section-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-icon">AC</span>
+                    <h3>Recommended Actions</h3>
+                </div>
+            </div>
+            <div class="action-stack" id="actionsList"></div>
+        </article>
+    </section>
+
+    <section class="dashboard-grid">
+        <article class="card ai-section-card" id="alertsCard" hidden>
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-icon">AL</span>
+                    <h3>Patient Alerts</h3>
+                </div>
+            </div>
+            <div class="stack-list" id="alertsList"></div>
+        </article>
+
+        <article class="card ai-section-card" id="recommendationCard" hidden>
+            <div class="card-header">
+                <div class="card-title">
+                    <span class="title-icon">RX</span>
+                    <h3>AI Recommendation</h3>
+                </div>
+            </div>
+            <div class="recommendation-box">
+                <p id="recommendationText"></p>
+                <button class="btn-primary" id="recommendedActionButton" type="button">Take Action</button>
+            </div>
+        </article>
+    </section>
+
+    <section class="card recent-card">
+        <div class="card-header">
+            <div class="card-title">
+                <span class="title-icon">RP</span>
+                <h3>Recent Patients</h3>
+            </div>
+            <a href="/emr/patient-registry" class="view-all">View all</a>
         </div>
-        <div class="prescription-grid">
-            <label class="doctor-field">
-                <span>Patient Name</span>
-                <input type="text" id="epatientName" value="{{ patients[0].name if patients else 'Portal Patient' }}">
-            </label>
-            <label class="doctor-field">
-                <span>Quick patient pick</span>
-                <select id="patientSelect">
-                    {% for patient in patients %}
-                    <option value="{{ patient.name }}">{{ patient.name }}</option>
-                    {% else %}
-                    <option value="Portal Patient">Portal Patient</option>
-                    {% endfor %}
-                </select>
-            </label>
-        </div>
-        <div id="eprescriptionRows" class="prescription-rows">
-            <div class="medicine-row">
-                <input placeholder="Medicine name" class="medicine-name">
-                <input placeholder="Dosage" class="medicine-dosage">
-                <input placeholder="Duration" class="medicine-duration">
-                <input placeholder="Instructions" class="medicine-instructions">
-                <button class="icon-action" type="button" onclick="addMedicineRow()" aria-label="Add another medicine row">
-                    <i class="fa-solid fa-plus"></i>
+        <div class="patients-list">
+            {% for patient in display_recent_patients[:5] %}
+            <div class="patient-item">
+                <div class="patient-avatar">
+                    <span>{{ patient.name[0] | upper }}</span>
+                </div>
+                <div class="patient-info">
+                    <div class="patient-name">{{ patient.name }}</div>
+                    <div class="patient-meta">
+                        {% if patient.age %}{{ patient.age }} years • {% endif %}Last visit: {{ patient.last_visit }}
+                    </div>
+                </div>
+                <button onclick="location.href='/emr/patient/{{ patient.id }}'" class="view-patient-btn" type="button">
+                    View
                 </button>
             </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">PT</div>
+                <p>No patients yet.</p>
+                <button onclick="location.href='/emr/patient-registration'" class="btn-outline" type="button">Register a patient</button>
+            </div>
+            {% endfor %}
         </div>
-        <div class="tool-actions">
-            <button class="btn-primary" type="button" onclick="generatePrescription()">Generate PDF</button>
-            <button class="btn-outline" type="button" onclick="sendToPatient()">Send to Patient</button>
-            <button class="btn-outline" type="button" onclick="sendToPharmacy()">Send to Pharmacy</button>
-            <button class="btn-outline" type="button" onclick="aiCheckPrescription()">AI Check</button>
-        </div>
-        <div id="aiCheckResult" class="doctor-feedback"></div>
-        <div id="doctorPrescriptionResult" class="doctor-feedback"></div>
     </section>
-</section>
 
-<script>
-function addMedicineRow() {
-    const host = document.getElementById("eprescriptionRows");
-    const row = document.createElement("div");
-    row.className = "medicine-row";
-    row.innerHTML = '<input placeholder="Medicine name" class="medicine-name"><input placeholder="Dosage" class="medicine-dosage"><input placeholder="Duration" class="medicine-duration"><input placeholder="Instructions" class="medicine-instructions"><button class="icon-action" type="button" aria-label="Remove medicine row" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>';
-    host.appendChild(row);
-}
-
-function getMedicinesFromForm() {
-    return Array.from(document.querySelectorAll(".medicine-row")).map((row) => ({
-        name: row.querySelector(".medicine-name")?.value || "",
-        dosage: row.querySelector(".medicine-dosage")?.value || "",
-        duration: row.querySelector(".medicine-duration")?.value || "",
-        instructions: row.querySelector(".medicine-instructions")?.value || "",
-        suggested_quantity: 10
-    })).filter((item) => item.name.trim());
-}
-
-async function aiCheckPrescription() {
-    const medicines = getMedicinesFromForm();
-    const response = await fetch("/api/prescription/check-interactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ medicines })
-    });
-    const result = await response.json();
-    document.getElementById("aiCheckResult").innerHTML = result.has_interactions ? `
-        <div class="alert alert-warning"><strong>Drug Interaction Alert</strong><ul class="mb-0">${result.interactions.map((item) => `<li>${item.medicine1} + ${item.medicine2}: ${item.severity}</li>`).join("")}</ul></div>
-    ` : '<div class="alert alert-success mb-0">No drug interactions detected.</div>';
-}
-
-async function generatePrescription() {
-    const medicines = getMedicinesFromForm();
-    const patientName = document.getElementById("epatientName").value || document.getElementById("patientSelect").value;
-    const response = await fetch("/api/doctor/e-prescription/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patient_name: patientName, medicines })
-    });
-    const result = await response.json();
-    if (!response.ok) {
-        document.getElementById("doctorPrescriptionResult").innerHTML = `<div class="alert alert-danger">${result.detail || "Unable to generate prescription."}</div>`;
-        return;
-    }
-    document.getElementById("doctorPrescriptionResult").innerHTML = `
-        <div class="alert alert-success">
-            E-prescription created. <a class="alert-link" href="${result.download_url}">Download PDF</a> or <a class="alert-link" href="${result.order_url}">open patient order flow</a>.
+    <section class="card add-patient-card">
+        <div class="card-header clickable" onclick="toggleAddPatient()" role="button" tabindex="0" aria-expanded="false" aria-controls="addPatientForm" onkeydown="handleHeaderToggle(event, toggleAddPatient)">
+            <div class="card-title">
+                <span class="title-icon">NP</span>
+                <h3>Add New Patient</h3>
+            </div>
+            <span class="toggle-icon" id="toggleIcon">▼</span>
         </div>
-    `;
-    window.latestDoctorPrescription = result;
-}
+        <div id="addPatientForm" class="add-patient-form" hidden>
+            <form method="post" action="/emr/patient-registration">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="emergency_contact_name" value="">
+                <input type="hidden" name="emergency_contact_number" value="">
+                <input type="hidden" name="consent_privacy" value="true">
+                <input type="hidden" name="consent_telemedicine" value="false">
+                <input type="hidden" name="agni_type" value="Vishama">
 
-function sendToPatient() {
-    if (window.latestDoctorPrescription?.order_url) {
-        document.getElementById("doctorPrescriptionResult").innerHTML = `<div class="alert alert-info">Share this patient order link: <a class="alert-link" href="${window.latestDoctorPrescription.order_url}">${window.latestDoctorPrescription.order_url}</a></div>`;
-    }
-}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name *</label>
+                        <input type="text" name="first_name" placeholder="Enter first name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" placeholder="Enter last name">
+                    </div>
+                </div>
 
-function sendToPharmacy() {
-    if (window.latestDoctorPrescription?.order_url) {
-        document.getElementById("doctorPrescriptionResult").innerHTML = `<div class="alert alert-info">Pharmacy-ready order link created: <a class="alert-link" href="${window.latestDoctorPrescription.order_url}">${window.latestDoctorPrescription.order_url}</a></div>`;
-    }
-}
+                <div class="form-row form-row--triple">
+                    <div class="form-group">
+                        <label>Age *</label>
+                        <input type="number" name="age" placeholder="Age" min="0" max="120" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gender *</label>
+                        <select name="gender" required>
+                            <option value="">Select</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile *</label>
+                        <input type="tel" name="mobile" placeholder="10-digit mobile number" required>
+                    </div>
+                </div>
 
-function startVideoConsult() {
-    window.location.href = "/telemedicine/book";
-}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email (optional)</label>
+                        <input type="email" name="email" placeholder="patient@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Address (optional)</label>
+                        <input type="text" name="address" placeholder="Patient address">
+                    </div>
+                </div>
 
-function joinConsultation(appointmentId) {
-    window.location.href = `/telemedicine/book?appointment=${appointmentId}`;
-}
+                <div class="optional-section">
+                    <div class="optional-header" onclick="toggleOptional('medical')" role="button" tabindex="0" onkeydown="handleHeaderToggle(event, function(){ toggleOptional('medical'); })">
+                        <span>Medical History</span>
+                        <span class="optional-toggle" id="medicalToggle">▼</span>
+                    </div>
+                    <div id="medicalOptional" class="optional-content" hidden>
+                        <textarea name="medical_conditions" placeholder="Diabetes, hypertension, asthma, etc." rows="2"></textarea>
+                    </div>
+                </div>
 
-function reviewPrescription(prescriptionId, patientName) {
-    const patientInput = document.getElementById("epatientName");
-    if (patientInput && patientName) {
-        patientInput.value = patientName;
-    }
-    writePrescription();
-}
+                <div class="optional-section">
+                    <div class="optional-header" onclick="toggleOptional('ayurveda')" role="button" tabindex="0" onkeydown="handleHeaderToggle(event, function(){ toggleOptional('ayurveda'); })">
+                        <span>Ayurveda Assessment</span>
+                        <span class="optional-toggle" id="ayurvedaToggle">▼</span>
+                    </div>
+                    <div id="ayurvedaOptional" class="optional-content" hidden>
+                        <select name="prakriti_type">
+                            <option value="">Select Prakriti (optional)</option>
+                            <option value="Vata">Vata</option>
+                            <option value="Pitta">Pitta</option>
+                            <option value="Kapha">Kapha</option>
+                            <option value="Vata-Pitta">Vata-Pitta</option>
+                            <option value="Pitta-Kapha">Pitta-Kapha</option>
+                            <option value="Kapha-Vata">Kapha-Vata</option>
+                            <option value="Sama">Sama</option>
+                        </select>
+                    </div>
+                </div>
 
-function writePrescription() {
-    document.getElementById("prescription-studio")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    document.getElementById("epatientName")?.focus();
-}
-
-function addNewPatient() {
-    window.location.href = "/emr/patient-registry";
-}
-
-function startConsultation(patientId) {
-    window.location.href = `/emr/patient-registry?patient=${patientId}`;
-}
-
-function approvePatient(patientId) {
-    window.location.href = `/emr/patient-registry?approve=${patientId}`;
-}
-
-function viewSchedule() {
-    window.location.href = "/appointments";
-}
-
-function viewReports() {
-    window.location.href = "/emr/doctor-dashboard";
-}
-
-document.getElementById("patientSelect")?.addEventListener("change", (event) => {
-    document.getElementById("epatientName").value = event.target.value;
-});
-</script>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Create Patient</button>
+                    <button type="reset" class="btn-secondary">Reset</button>
+                </div>
+            </form>
+        </div>
+    </section>
+</div>
 
 <style>
-.doctor-dashboard {
-    --bg-shell: linear-gradient(180deg, #f6fbfb 0%, #eef5f4 100%);
-    --card-bg: rgba(255, 255, 255, 0.95);
-    --card-border: rgba(148, 163, 184, 0.16);
-    --text-main: #0f2f3d;
-    --text-muted: #667085;
-    --brand: #0f766e;
-    --brand-dark: #115e59;
-    --brand-soft: #e7f6f3;
-    --warning: #d97706;
-    max-width: 1400px;
+:root {
+    --primary-dark: #0f4c5c;
+    --primary: #1a7f6b;
+    --primary-light: #2bae66;
+    --primary-soft: #e6f4f1;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.doctor-workspace {
+    max-width: 1380px;
     margin: 0 auto;
-    padding: 28px;
-    border-radius: 32px;
-    background:
-        radial-gradient(circle at top left, rgba(20, 184, 166, 0.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 24%),
-        var(--bg-shell);
-    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.08);
+    padding: 24px;
 }
 
-.dashboard-header,
-.card-header,
-.tool-actions,
-.dashboard-header__actions {
+.ai-hero {
     display: flex;
-    align-items: center;
-}
-
-.dashboard-header {
     justify-content: space-between;
-    gap: 18px;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-start;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    border-radius: 28px;
+    color: white;
+    background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 24%),
+        linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 58%, var(--primary-light) 100%);
+    box-shadow: var(--shadow-xl);
 }
 
-.dashboard-eyebrow,
-.card-eyebrow {
-    margin: 0 0 6px;
-    color: var(--brand);
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
+.workspace-kicker {
+    margin: 0 0 10px;
     text-transform: uppercase;
-}
-
-.dashboard-header h1,
-.card-header h2 {
-    margin: 0;
-    color: var(--text-main);
-    font-family: "Plus Jakarta Sans", sans-serif;
-}
-
-.dashboard-header h1 {
-    font-size: clamp(2rem, 3vw, 2.6rem);
-}
-
-.dashboard-subtitle,
-.card-description,
-.appointment-status,
-.medicine-name,
-.wait-time,
-.request-time,
-.summary-item span,
-.empty-state-small {
-    color: var(--text-muted);
-}
-
-.dashboard-header__actions,
-.tool-actions {
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.btn-primary,
-.btn-outline,
-.btn-join,
-.btn-review,
-.btn-start,
-.btn-approve,
-.action-btn,
-.icon-action {
-    border: 0;
-    cursor: pointer;
-    font: inherit;
-    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
-}
-
-.btn-primary,
-.btn-outline {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    min-height: 48px;
-    padding: 0 18px;
-    border-radius: 999px;
+    letter-spacing: 0.14em;
+    font-size: 0.72rem;
     font-weight: 700;
+    opacity: 0.8;
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, #0f766e, #14b8a6);
-    color: #fff;
-    box-shadow: 0 16px 32px rgba(15, 118, 110, 0.2);
-}
-
-.btn-outline {
-    background: #fff;
-    color: var(--brand-dark);
-    border: 1px solid rgba(15, 118, 110, 0.18);
-}
-
-.btn-primary:hover,
-.btn-outline:hover,
-.btn-join:hover,
-.btn-review:hover,
-.btn-start:hover,
-.btn-approve:hover,
-.action-btn:hover,
-.icon-action:hover {
-    transform: translateY(-2px);
-}
-
-.stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
-    margin-bottom: 28px;
-}
-
-.stat-card,
-.dashboard-card {
-    background: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: 26px;
-    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.05);
-}
-
-.stat-card {
-    padding: 22px;
-}
-
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    display: grid;
-    place-items: center;
-    margin-bottom: 12px;
-    border-radius: 16px;
-    background: var(--brand-soft);
-    font-size: 1.6rem;
-}
-
-.stat-value {
-    display: block;
-    font-size: clamp(1.9rem, 2.3vw, 2.4rem);
+.ai-hero h1 {
+    margin: 0 0 8px;
+    font-size: clamp(2rem, 3vw, 2.7rem);
     font-weight: 800;
-    color: var(--text-main);
-    line-height: 1;
 }
 
-.stat-label {
-    display: block;
-    margin-top: 6px;
-    color: var(--text-muted);
-    font-weight: 600;
+.ai-hero__meta,
+.ai-summary,
+.ai-insight {
+    margin: 0;
+    opacity: 0.92;
 }
 
-.stat-trend {
-    display: inline-flex;
-    margin-top: 12px;
-    font-size: 0.9rem;
+.ai-summary {
+    margin-top: 16px;
+    font-size: 1.18rem;
     font-weight: 700;
 }
 
-.stat-trend.up { color: #15803d; }
-.stat-trend.down { color: #dc2626; }
+.ai-insight {
+    margin-top: 8px;
+    max-width: 720px;
+}
 
-.dashboard-two-columns {
+.ai-loading {
+    min-width: 280px;
+    padding: 18px 20px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.spinner {
+    width: 34px;
+    height: 34px;
+    border: 3px solid rgba(255, 255, 255, 0.24);
+    border-top-color: white;
+    border-radius: 999px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.ai-grid,
+.dashboard-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-    gap: 22px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
 }
 
-.dashboard-column {
-    display: grid;
-    gap: 22px;
-    align-content: start;
+.ai-grid {
+    margin-bottom: 24px;
 }
 
-.dashboard-card {
-    padding: 22px;
-}
-
-.dashboard-card--wide {
-    margin-top: 6px;
+.card {
+    background: linear-gradient(180deg, #ffffff 0%, #fcfefd 100%);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    margin-bottom: 24px;
 }
 
 .card-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 16px;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.88);
 }
 
-.card-header--stacked {
-    align-items: flex-start;
+.card-header.clickable {
+    cursor: pointer;
 }
 
-.card-header h2 {
+.card-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 1.15rem;
+    gap: 12px;
 }
 
-.link-view {
-    color: var(--brand);
-    text-decoration: none;
-    font-size: 0.92rem;
+.title-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--primary-soft) 0%, #f2fbf7 100%);
+    color: var(--primary-dark);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.card-title h3 {
+    margin: 0;
+    color: var(--gray-800);
+    font-size: 1.08rem;
     font-weight: 700;
 }
 
-.link-button {
-    background: none;
-    padding: 0;
+.score-value {
+    color: var(--primary);
+    font-size: 3rem;
+    line-height: 1;
 }
 
-.appointment-row,
-.prescription-row,
-.queue-row,
-.summary-item {
+.score-factors,
+.stack-list,
+.action-stack {
+    padding: 20px 24px 24px;
+}
+
+.stack-list,
+.action-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stack-item,
+.action-item,
+.alert-item {
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+}
+
+.action-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.action-item a {
+    text-decoration: none;
+}
+
+.action-copy strong,
+.alert-copy strong {
+    display: block;
+    color: var(--gray-800);
+}
+
+.action-copy p,
+.alert-copy p,
+.score-factors p,
+.recommendation-box p {
+    margin: 6px 0 0;
+    color: var(--gray-500);
+}
+
+.alert-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.alert-high { border-left: 4px solid #dc2626; }
+.alert-medium { border-left: 4px solid #d97706; }
+.alert-low { border-left: 4px solid #2563eb; }
+
+.recommendation-box {
+    padding: 24px;
+}
+
+.patients-list {
+    padding: 8px 0;
+}
+
+.patient-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 14px;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--gray-100);
 }
 
-.appointment-row,
-.prescription-row,
-.queue-row {
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(226, 232, 240, 0.72);
+.patient-item:last-child {
+    border-bottom: none;
 }
 
-.appointment-row:last-child,
-.prescription-row:last-child,
-.queue-row:last-child {
-    border-bottom: 0;
+.patient-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
 }
 
-.appointment-time {
-    min-width: 84px;
-    font-weight: 800;
-    color: var(--text-main);
-}
-
-.appointment-info,
-.prescription-info,
-.patient-details {
+.patient-info {
     flex: 1;
 }
 
 .patient-name {
     font-weight: 700;
-    color: var(--text-main);
+    color: var(--gray-800);
 }
 
-.appointment-type {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 6px;
-    font-size: 0.9rem;
+.patient-meta {
+    margin-top: 4px;
+    color: var(--gray-500);
+    font-size: 0.875rem;
 }
 
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 800;
-}
-
-.badge.video {
-    background: rgba(79, 70, 229, 0.12);
-    color: #4338ca;
-}
-
-.badge.clinic {
-    background: rgba(15, 118, 110, 0.12);
-    color: var(--brand-dark);
-}
-
-.btn-join,
-.btn-review,
-.btn-start,
-.btn-approve {
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: rgba(15, 118, 110, 0.1);
-    color: var(--brand-dark);
-    font-weight: 700;
-}
-
-.queue-section + .queue-section {
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(226, 232, 240, 0.72);
-}
-
-.queue-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    font-size: 0.94rem;
-    font-weight: 800;
-    color: var(--text-main);
-}
-
-.queue-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 999px;
-}
-
-.queue-dot.online { background: #22c55e; box-shadow: 0 0 0 5px rgba(34, 197, 94, 0.12); }
-.queue-dot.pending { background: var(--warning); box-shadow: 0 0 0 5px rgba(217, 119, 6, 0.12); }
-
-.patient-avatar {
-    width: 42px;
-    height: 42px;
-    display: grid;
-    place-items: center;
+.view-patient-btn,
+.btn-primary,
+.btn-secondary,
+.btn-outline {
     border-radius: 14px;
-    background: var(--brand-soft);
-    color: var(--brand-dark);
-    font-weight: 800;
-}
-
-.patient-avatar.pending {
-    background: rgba(217, 119, 6, 0.12);
-    color: #b45309;
-}
-
-.actions-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.action-btn {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 15px 16px;
-    border-radius: 16px;
-    background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 0.98));
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    color: var(--text-main);
+    padding: 12px 18px;
     font-weight: 700;
-    text-align: left;
+    cursor: pointer;
+    transition: 0.2s ease;
 }
 
-.summary-list {
-    display: grid;
-    gap: 12px;
+.view-patient-btn,
+.btn-outline {
+    border: 1px solid rgba(43, 174, 102, 0.32);
+    background: white;
+    color: var(--primary);
 }
 
-.summary-item {
-    padding: 14px 16px;
-    border-radius: 18px;
-    background: rgba(248, 250, 252, 0.95);
+.btn-primary {
+    border: none;
+    color: white;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
 }
 
-.summary-item strong {
-    color: var(--text-main);
-    font-size: 1.05rem;
+.btn-secondary {
+    border: 1px solid var(--gray-300);
+    background: var(--gray-100);
+    color: var(--gray-700);
 }
 
 .empty-state {
-    display: grid;
-    justify-items: center;
-    gap: 10px;
-    padding: 34px 18px;
     text-align: center;
-    color: #94a3b8;
+    padding: 48px 24px;
+    color: var(--gray-500);
 }
 
-.empty-state i {
-    font-size: 2rem;
-    opacity: 0.55;
-}
-
-.empty-state-small {
-    padding: 12px 0 4px;
-}
-
-.prescription-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-}
-
-.doctor-field {
-    display: grid;
-    gap: 8px;
-    font-weight: 600;
-    color: var(--text-main);
-}
-
-.doctor-field input,
-.doctor-field select,
-.medicine-row input {
-    width: 100%;
-    min-width: 0;
-    padding: 13px 14px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    border-radius: 16px;
-    background: #fff;
-    color: var(--text-main);
-    font: inherit;
-}
-
-.doctor-field input:focus,
-.doctor-field select:focus,
-.medicine-row input:focus {
-    outline: 2px solid rgba(20, 184, 166, 0.14);
-    border-color: rgba(20, 184, 166, 0.48);
-}
-
-.prescription-rows {
-    display: grid;
-    gap: 12px;
-    margin-top: 18px;
-}
-
-.medicine-row {
-    display: grid;
-    grid-template-columns: 1.7fr 1fr 1fr 1.8fr auto;
-    gap: 10px;
-    align-items: center;
-}
-
-.icon-action {
-    width: 46px;
-    height: 46px;
+.empty-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 12px;
+    border-radius: 24px;
     display: grid;
     place-items: center;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.add-patient-form {
+    padding: 20px 24px 24px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.form-row--triple {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea,
+.optional-content select,
+.optional-content textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--gray-300);
     border-radius: 14px;
-    background: rgba(15, 118, 110, 0.08);
-    color: var(--brand-dark);
+    background: #fff;
 }
 
-.doctor-feedback {
-    margin-top: 14px;
+.optional-section {
+    margin-top: 16px;
+    border: 1px solid var(--gray-200);
+    border-radius: 18px;
+    overflow: hidden;
 }
 
-@media (max-width: 1120px) {
-    .stats-row {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+.optional-header {
+    padding: 14px 16px;
+    background: var(--gray-50);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    cursor: pointer;
+}
 
-    .dashboard-two-columns {
+.optional-content {
+    padding: 16px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.view-all {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+@media (max-width: 1024px) {
+    .ai-grid,
+    .dashboard-grid,
+    .form-row--triple {
         grid-template-columns: 1fr;
     }
 }
 
-@media (max-width: 760px) {
-    .doctor-dashboard {
-        padding: 18px;
-        border-radius: 24px;
+@media (max-width: 768px) {
+    .doctor-workspace {
+        padding: 16px;
     }
 
-    .dashboard-header,
-    .card-header,
-    .card-header--stacked {
+    .ai-hero {
+        flex-direction: column;
+        padding: 22px 20px;
+    }
+
+    .form-row,
+    .form-row--triple {
+        grid-template-columns: 1fr;
+    }
+
+    .action-item,
+    .alert-item,
+    .patient-item,
+    .form-actions {
         flex-direction: column;
         align-items: stretch;
     }
-
-    .stats-row,
-    .actions-grid,
-    .prescription-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .appointment-row,
-    .prescription-row,
-    .queue-row,
-    .summary-item {
-        align-items: flex-start;
-        flex-wrap: wrap;
-    }
-
-    .appointment-time {
-        min-width: auto;
-    }
-
-    .medicine-row {
-        grid-template-columns: 1fr;
-    }
 }
 </style>
+
+<script>
+const doctorDashboardId = {{ ai_dashboard_doctor_id | default(0) | tojson }};
+const portalActionRoutes = {
+    register_patient: "/emr/patient-registration",
+    open_registry: "/emr/patient-registry",
+    review_schedule: "/appointments",
+    open_emr: "/emr/doctor-dashboard",
+    write_prescription: "/emr/patient-registry",
+    review_followups: "/followups",
+    review_payments: "/payments/daily",
+    review_labs: "/emr/lab-dashboard",
+    open_ai_scribe: "/emr/ambient-scribe",
+};
+
+function handleHeaderToggle(event, callback) {
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        callback();
+    }
+}
+
+function toggleAddPatient() {
+    const form = document.getElementById("addPatientForm");
+    const icon = document.getElementById("toggleIcon");
+    const header = document.querySelector(".card-header.clickable");
+    const isHidden = form.hasAttribute("hidden");
+    if (isHidden) {
+        form.removeAttribute("hidden");
+        icon.style.transform = "rotate(180deg)";
+        header.setAttribute("aria-expanded", "true");
+    } else {
+        form.setAttribute("hidden", "");
+        icon.style.transform = "rotate(0deg)";
+        header.setAttribute("aria-expanded", "false");
+    }
+}
+
+function toggleOptional(section) {
+    const content = document.getElementById(`${section}Optional`);
+    const toggle = document.getElementById(`${section}Toggle`);
+    const isHidden = content.hasAttribute("hidden");
+    if (isHidden) {
+        content.removeAttribute("hidden");
+        toggle.style.transform = "rotate(180deg)";
+    } else {
+        content.setAttribute("hidden", "");
+        toggle.style.transform = "rotate(0deg)";
+    }
+}
+
+function openPortalPatient(patientId) {
+    if (!patientId) return;
+    window.location.href = `/emr/patient/${patientId}`;
+}
+
+function takePortalAction(actionKey) {
+    const url = portalActionRoutes[actionKey];
+    if (url) {
+        window.location.href = url;
+    }
+}
+
+function renderList(targetId, items) {
+    const target = document.getElementById(targetId);
+    target.innerHTML = items.map((item) => `<div class="stack-item"><strong>${item}</strong></div>`).join("");
+}
+
+function renderFactors(targetId, items) {
+    const target = document.getElementById(targetId);
+    target.innerHTML = items.map((item) => `<p>${item}</p>`).join("");
+}
+
+function displayPortalAI(insights) {
+    document.getElementById("aiLoading").style.display = "none";
+    document.getElementById("aiGrid").hidden = false;
+    document.getElementById("healthScore").textContent = insights.health_score;
+    document.getElementById("careScore").textContent = insights.care_score;
+    renderFactors("healthFactors", insights.health_score_factors || []);
+    renderFactors("careFactors", insights.care_score_factors || []);
+    renderList("prioritiesList", insights.top_priorities || []);
+
+    const hero = document.getElementById("aiHero");
+    hero.insertAdjacentHTML(
+        "beforeend",
+        `<div class="ai-hero__body"><p class="ai-summary">${insights.daily_message}</p><p class="ai-insight">${insights.insight}</p></div>`
+    );
+
+    const actionsList = document.getElementById("actionsList");
+    actionsList.innerHTML = Object.entries(insights.action_map || {}).map(([key, action]) => `
+        <div class="action-item">
+            <div class="action-copy">
+                <strong>${action.label}</strong>
+                <p>${action.reason}</p>
+            </div>
+            <a class="btn-primary" href="${action.url}">Open</a>
+        </div>
+    `).join("");
+
+    if ((insights.patient_alerts || []).length) {
+        document.getElementById("alertsCard").hidden = false;
+        document.getElementById("alertsList").innerHTML = insights.patient_alerts.map((alert) => `
+            <div class="alert-item alert-${alert.urgency}">
+                <div class="alert-copy">
+                    <strong>${alert.patient_name}</strong>
+                    <p>${alert.alert_type}: ${alert.reason || "Review this case today."}</p>
+                </div>
+                <button class="btn-outline" type="button" onclick="openPortalPatient(${alert.patient_id})">Review</button>
+            </div>
+        `).join("");
+    }
+
+    document.getElementById("recommendationCard").hidden = false;
+    document.getElementById("recommendationText").textContent = insights.recommendation || "";
+    document.getElementById("recommendedActionButton").onclick = () => takePortalAction(insights.recommended_action);
+}
+
+function showPortalAIFallback() {
+    const loading = document.getElementById("aiLoading");
+    if (!loading) return;
+    loading.innerHTML = "<p>AI insight generation is temporarily unavailable. Refresh to retry while live clinic data continues below.</p>";
+}
+
+async function loadPortalAIDashboard() {
+    if (!doctorDashboardId) {
+        showPortalAIFallback();
+        return;
+    }
+    try {
+        const response = await fetch(`/api/ai-dashboard/insights/${doctorDashboardId}`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || payload.error || "Failed to load dashboard insights");
+        }
+        displayPortalAI(payload.data);
+    } catch (error) {
+        console.error("AI dashboard load failed", error);
+        showPortalAIFallback();
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadPortalAIDashboard);
+</script>
 {% endblock %}

@@ -6,65 +6,119 @@
     <section class="page-content">
         <div class="page-header">
             <div>
-                <p class="eyebrow">EMR onboarding</p>
+                <p class="eyebrow">Patient intake</p>
                 <h1 class="h2">Patient Registration</h1>
-                <p>Four-step intake built for integrated care, including emergency details and Ayurveda constitutional screening.</p>
+                <p>Start with the basics. Add medical history and Ayurveda details only if needed.</p>
             </div>
             <span class="badge badge-soft">{{ ur_preview }}</span>
         </div>
 
-        <form class="card form-stack" method="post" action="/emr/patient-registration" enctype="multipart/form-data">
+        <form id="patientRegistrationForm" class="card form-stack simple-registration-card" method="post" action="/emr/patient-registration" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <div class="stepper-grid">
-                <div class="step-pill is-active">1. Personal</div>
-                <div class="step-pill">2. Medical</div>
-                <div class="step-pill">3. Ayurveda</div>
-                <div class="step-pill">4. Consent</div>
-            </div>
-            <div class="form-section-grid mt-4">
-                <div class="card nested-card">
-                    <h2 class="h4">Step 1: Personal details</h2>
-                    <div class="form-grid two-column">
-                        <div class="form-row"><label for="first_name">First name</label><input id="first_name" name="first_name" required placeholder="Aarav"></div>
-                        <div class="form-row"><label for="last_name">Last name</label><input id="last_name" name="last_name" placeholder="Sharma"></div>
-                        <div class="form-row"><label for="gender">Gender</label><select id="gender" name="gender" required><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
-                        <div class="form-row"><label for="age">Age</label><input id="age" type="number" min="0" max="120" name="age" required placeholder="42"></div>
-                        <div class="form-row"><label for="mobile">Mobile</label><input id="mobile" name="mobile" required placeholder="9876543210"></div>
-                        <div class="form-row"><label for="email">Email</label><input id="email" type="email" name="email" placeholder="patient@example.com"></div>
-                        <div class="form-row full-span"><label for="address">Address</label><textarea id="address" name="address" rows="3" placeholder="Full address"></textarea></div>
-                    </div>
-                </div>
-                <div class="card nested-card">
-                    <h2 class="h4">Step 2: Medical history</h2>
-                    <div class="form-grid">
-                        <div class="form-row"><label for="medical_conditions">Past medical history</label><textarea id="medical_conditions" name="medical_conditions" rows="5" placeholder="Diabetes, migraine, reflux"></textarea></div>
-                        <div class="form-row"><label for="photo">Profile photo</label><input id="photo" type="file" name="photo" accept="image/*"></div>
-                        <div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> Use commas to separate chronic conditions for quick registry tagging.</div>
-                    </div>
-                </div>
-                <div class="card nested-card">
-                    <h2 class="h4">Step 3: Ayurveda assessment</h2>
-                    <div class="form-grid two-column">
-                        <div class="form-row"><label for="prakriti_type">Prakriti</label><select id="prakriti_type" name="prakriti_type"><option>Vata-Pitta</option><option>Pitta-Kapha</option><option>Kapha-Vata</option><option>Sama</option></select></div>
-                        <div class="form-row"><label for="agni_type">Agni</label><select id="agni_type" name="agni_type"><option>Vishama</option><option>Sama</option><option>Tikshna</option><option>Manda</option></select></div>
-                        <div class="form-row full-span"><label>Dosha prompts</label><div class="chip-row"><span class="tag">Sleep pattern</span><span class="tag">Appetite</span><span class="tag">Bowel pattern</span><span class="tag">Stress response</span></div></div>
-                    </div>
-                </div>
-                <div class="card nested-card">
-                    <h2 class="h4">Step 4: Emergency & consent</h2>
-                    <div class="form-grid two-column">
-                        <div class="form-row"><label for="emergency_contact_name">Emergency contact</label><input id="emergency_contact_name" name="emergency_contact_name" placeholder="Relative name"></div>
-                        <div class="form-row"><label for="emergency_contact_number">Emergency number</label><input id="emergency_contact_number" name="emergency_contact_number" placeholder="9876543210"></div>
-                        <label class="checkbox-card"><input type="hidden" name="consent_privacy" value="false"><input type="checkbox" name="consent_privacy" value="true" checked> Patient consents to EMR storage and clinical analytics.</label>
-                        <label class="checkbox-card"><input type="hidden" name="consent_telemedicine" value="false"><input type="checkbox" name="consent_telemedicine" value="true"> Patient consents to telemedicine and remote follow-up.</label>
-                    </div>
+            <div class="simple-registration-intro">
+                <div class="intro-badge">Step 1</div>
+                <div>
+                    <h2 class="h4 mb-1">Basic details first</h2>
+                    <p class="mb-0 text-muted">You only need name, age, gender, and mobile to create a patient record.</p>
                 </div>
             </div>
+
+            <div class="form-grid two-column mt-4">
+                <div class="form-row"><label for="first_name">First name *</label><input id="first_name" name="first_name" required placeholder="Aarav"></div>
+                <div class="form-row"><label for="last_name">Last name</label><input id="last_name" name="last_name" placeholder="Sharma"></div>
+                <div class="form-row"><label for="age">Age *</label><input id="age" type="number" min="0" max="120" name="age" required placeholder="42"></div>
+                <div class="form-row"><label for="gender">Gender *</label><select id="gender" name="gender" required><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+                <div class="form-row"><label for="mobile">Mobile *</label><input id="mobile" name="mobile" required placeholder="9876543210"></div>
+                <div class="form-row"><label for="email">Email</label><input id="email" type="email" name="email" placeholder="patient@example.com"></div>
+                <div class="form-row full-span"><label for="address">Address</label><textarea id="address" name="address" rows="3" placeholder="Full address"></textarea></div>
+            </div>
+
+            <div class="optional-panel mt-4">
+                <button type="button" class="btn btn-outline-success btn-pill" onclick="toggleRegistrationOptional()">
+                    <i class="fa-solid fa-sliders"></i> Add Medical History / Ayurveda Details
+                </button>
+                <div id="registrationOptionalFields" class="optional-panel__content" hidden>
+                    <div class="form-section-grid mt-4">
+                        <div class="card nested-card">
+                            <h2 class="h4">Optional medical details</h2>
+                            <div class="form-grid">
+                                <div class="form-row"><label for="medical_conditions">Past medical history</label><textarea id="medical_conditions" name="medical_conditions" rows="4" placeholder="Diabetes, migraine, reflux"></textarea></div>
+                                <div class="form-row"><label for="photo">Profile photo</label><input id="photo" type="file" name="photo" accept="image/*"></div>
+                                <div class="alert alert-info"><i class="fa-solid fa-circle-info"></i> Use commas to separate chronic conditions for quick registry tagging.</div>
+                            </div>
+                        </div>
+                        <div class="card nested-card">
+                            <h2 class="h4">Optional Ayurveda details</h2>
+                            <div class="form-grid two-column">
+                                <div class="form-row"><label for="prakriti_type">Prakriti</label><select id="prakriti_type" name="prakriti_type"><option>Vata-Pitta</option><option>Pitta-Kapha</option><option>Kapha-Vata</option><option>Sama</option></select></div>
+                                <div class="form-row"><label for="agni_type">Agni</label><select id="agni_type" name="agni_type"><option>Vishama</option><option>Sama</option><option>Tikshna</option><option>Manda</option></select></div>
+                            </div>
+                        </div>
+                        <div class="card nested-card">
+                            <h2 class="h4">Optional emergency & consent</h2>
+                            <div class="form-grid two-column">
+                                <div class="form-row"><label for="emergency_contact_name">Emergency contact</label><input id="emergency_contact_name" name="emergency_contact_name" placeholder="Relative name"></div>
+                                <div class="form-row"><label for="emergency_contact_number">Emergency number</label><input id="emergency_contact_number" name="emergency_contact_number" placeholder="9876543210"></div>
+                                <label class="checkbox-card"><input type="hidden" name="consent_privacy" value="false"><input type="checkbox" name="consent_privacy" value="true" checked> Patient consents to EMR storage and clinical analytics.</label>
+                                <label class="checkbox-card"><input type="hidden" name="consent_telemedicine" value="false"><input type="checkbox" name="consent_telemedicine" value="true"> Patient consents to telemedicine and remote follow-up.</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="action-row mt-4">
-                <button class="btn btn-primary btn-pill" type="submit">Create EMR profile</button>
+                <button class="btn btn-primary btn-pill" type="submit">Create Patient</button>
                 <button class="btn btn-outline-success btn-pill" type="reset">Reset form</button>
             </div>
         </form>
     </section>
 </div>
+<style>
+.simple-registration-card {
+    padding: 24px;
+    border-radius: 24px;
+}
+
+.simple-registration-intro {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #eef7f3 0%, #f8fcfb 100%);
+    border: 1px solid #d8e8e0;
+}
+
+.intro-badge {
+    min-width: 72px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: #0f4c5c;
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+}
+
+.optional-panel__content[hidden] {
+    display: none;
+}
+
+.optional-panel__content {
+    display: block;
+}
+
+@media (max-width: 760px) {
+    .simple-registration-intro {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+<script>
+function toggleRegistrationOptional() {
+    const optional = document.getElementById('registrationOptionalFields');
+    optional.toggleAttribute('hidden');
+}
+</script>
 {% endblock %}

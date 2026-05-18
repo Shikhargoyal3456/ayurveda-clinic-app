@@ -6,6 +6,7 @@ from typing import Any
 from core.navigation import NAVIGATION, QUICK_ACTIONS
 from core.notifications import notification_center
 from core.search import search_scopes_for_role
+from services.feature_flags import is_telemedicine_enabled
 from services.marketplace_service import (
     doctor_portal_payload,
     ensure_marketplace_seed_data,
@@ -63,16 +64,17 @@ def pharmacy_dashboard_context(store_id: int | None = None) -> dict[str, Any]:
     payload["stock_alerts"] = payload.get("low_stock_count", 0)
     payload["customer_rating"] = payload.get("rating", 4.5)
     payload["inventory_insights"] = [
-        {"label": "Fast movers", "value": "Digestive care, immunity, pain relief"},
-        {"label": "Restock window", "value": "Before 6 PM rush"},
+        {"label": "Demand focus", "value": "Digestive care, immunity, daily wellness"},
+        {"label": "Restock window", "value": "Before the evening order spike"},
     ]
     return portal_shell_context("pharmacy", **payload)
 
 
-def doctor_dashboard_context() -> dict[str, Any]:
-    payload = doctor_portal_payload()
+def doctor_dashboard_context(doctor_id: int | None = None, doctor_user_id: int | None = None) -> dict[str, Any]:
+    payload = doctor_portal_payload(doctor_id=doctor_id, doctor_user_id=doctor_user_id)
     patients = payload.get("patients", [])
     appointments = payload.get("appointments", [])
+    prescriptions = payload.get("prescriptions", [])
     today = date.today()
     yesterday = today - timedelta(days=1)
     month_start = today.replace(day=1)
@@ -95,6 +97,7 @@ def doctor_dashboard_context() -> dict[str, Any]:
         upcoming_appointments.append({
             **item,
             "type": appointment_type,
+            "action_url": f"/telemedicine/book?appointment={item.get('id')}" if appointment_type == "Video" and is_telemedicine_enabled() else "/appointments",
         })
 
     online_patients = []
@@ -110,7 +113,7 @@ def doctor_dashboard_context() -> dict[str, Any]:
         else:
             waiting_patients.append(queue_entry)
 
-    pending_rx = [
+    pending_rx = prescriptions[:3] if prescriptions else [
         {
             "id": patient.get("id"),
             "patient_name": patient.get("name"),

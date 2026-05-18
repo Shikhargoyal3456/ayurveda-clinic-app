@@ -13,11 +13,38 @@ function getTwilioClient() {
   return client;
 }
 
+function sanitizeWhatsAppNumber(number) {
+  if (!number) return null;
+
+  let cleaned = String(number).trim().replace(/[\s-]/g, '');
+
+  if (!cleaned.startsWith('whatsapp:+')) {
+    if (cleaned.startsWith('+')) {
+      cleaned = `whatsapp:${cleaned}`;
+    } else if (/^\d+$/.test(cleaned)) {
+      cleaned = cleaned.length === 10 ? `whatsapp:+91${cleaned}` : `whatsapp:+${cleaned}`;
+    }
+  }
+
+  const validFormat = /^whatsapp:\+\d{10,15}$/;
+  if (!validFormat.test(cleaned)) {
+    return null;
+  }
+
+  return cleaned;
+}
+
 function normalizeWhatsappNumber(phone) {
   if (!phone) {
     throw new Error('Patient phone number is required.');
   }
-  return phone.startsWith('whatsapp:') ? phone : `whatsapp:${phone}`;
+
+  const normalized = sanitizeWhatsAppNumber(phone);
+  if (!normalized) {
+    console.warn('Invalid WhatsApp number format after normalization');
+    return null;
+  }
+  return normalized;
 }
 
 function formatDoctorName(doctorName) {
@@ -135,6 +162,9 @@ async function sendWhatsAppReply({ to, body }) {
 
 async function sendWhatsAppText({ to, body }) {
   const whatsappTo = normalizeWhatsappNumber(to);
+  if (!whatsappTo) {
+    throw new Error('Patient phone number is invalid.');
+  }
   return getTwilioClient().messages.create({
     from: config.twilioWhatsappNumber,
     to: whatsappTo,
@@ -172,17 +202,44 @@ function splitWhatsAppMessage(body, maxLength = 1600) {
 
 async function sendWhatsAppChunks({ to, body, maxLength = 1600 }) {
   const chunks = splitWhatsAppMessage(body, maxLength);
-  const messages = [];
-  for (const chunk of chunks) {
-    messages.push(await sendWhatsAppText({ to, body: chunk }));
+  const results = [];
+  let successCount = 0;
+
+  for (let index = 0; index < chunks.length; index += 1) {
+    const chunk = chunks[index];
+    try {
+      const message = await sendWhatsAppText({ to, body: chunk });
+      results.push({
+        chunkIndex: index + 1,
+        success: true,
+        error: null,
+        body: chunk,
+        sid: message.sid,
+        status: message.status,
+        from: message.from,
+        to: message.to,
+        message,
+      });
+      successCount += 1;
+    } catch (error) {
+      results.push({
+        chunkIndex: index + 1,
+        success: false,
+        error: error && error.message ? error.message : String(error),
+        body: chunk,
+      });
+    }
   }
-  return messages;
+
+  console.info(`${successCount}/${chunks.length} chunks sent successfully`);
+  return results;
 }
 
 module.exports = {
   buildLogoMediaUrl,
   buildPrescriptionMessage,
   formatDoctorName,
+  sanitizeWhatsAppNumber,
   normalizeWhatsappNumber,
   sendLogoMessage,
   sendPrescriptionNotification,

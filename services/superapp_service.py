@@ -473,22 +473,81 @@ def get_support_response(message: str) -> dict[str, Any]:
     return {"reply": "I can help with medicines, lab tests, orders, subscriptions, offers, and doctor booking.", "action": "general"}
 
 
+def _dynamic_health_score(profile: dict[str, Any], orders: list[dict[str, Any]], subscriptions: list[dict[str, Any]]) -> int:
+    points = int(profile.get("points", 0) or 0)
+    total_spent = float(profile.get("total_spent", 0) or 0)
+    orders_count = len(orders)
+    subscriptions_count = len(subscriptions)
+    recent_orders = len([item for item in orders if item.get("placed_time")])
+    score = 42
+    score += min(18, subscriptions_count * 8)
+    score += min(16, orders_count * 4)
+    score += min(10, recent_orders * 2)
+    score += min(8, points // 250)
+    score += min(6, int(total_spent // 2000))
+    return max(35, min(96, int(score)))
+
+
+def _dynamic_health_message(score: int, subscriptions: list[dict[str, Any]], orders: list[dict[str, Any]]) -> str:
+    if subscriptions and orders:
+        return (
+            f"Your care activity looks organized with {len(subscriptions)} tracked medicine plan(s) "
+            f"and {len(orders)} recent order(s) in your journey."
+        )
+    if subscriptions:
+        return f"You are actively tracking {len(subscriptions)} medicine plan(s), which helps keep refills predictable."
+    if orders:
+        return f"You have {len(orders)} recent order(s) on record, giving Kash AI enough context to guide your next step."
+    return "Your dashboard will become more personalized as you place orders, track medicines, and use care services."
+
+
+def _dynamic_health_insights(score: int, subscriptions: list[dict[str, Any]], orders: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    insights: list[dict[str, Any]] = []
+    if subscriptions:
+        soonest = min(int(item.get("days_left", 0) or 0) for item in subscriptions)
+        insights.append(
+            {
+                "icon": "fa-solid fa-capsules",
+                "title": "Refill timing",
+                "description": (
+                    f"Your next tracked refill window is {'today' if soonest <= 0 else f'in {soonest} day(s)'}."
+                ),
+            }
+        )
+    if orders:
+        insights.append(
+            {
+                "icon": "fa-solid fa-truck",
+                "title": "Order activity",
+                "description": f"You have {len(orders)} recent order(s) shaping your current care timeline.",
+            }
+        )
+    insights.append(
+        {
+            "icon": "fa-solid fa-heart-pulse",
+            "title": "Care momentum",
+            "description": (
+                "Your current activity suggests a strong routine." if score >= 75
+                else "More regular use of refill and follow-up tools will sharpen your care view."
+            ),
+        }
+    )
+    return insights[:3]
+
+
 def get_dashboard_payload(user_id: str = _DEFAULT_USER) -> dict[str, Any]:
     orders = get_orders(user_id)
     subscriptions = deepcopy(_load().get("subscriptions", []))
     profile = get_user_profile(user_id)
-    health_score = 78
+    user_subscriptions = [item for item in subscriptions if str(item.get("user_id", "")) == user_id]
+    health_score = _dynamic_health_score(profile, orders, user_subscriptions)
     return {
         "health_score": health_score,
         "health_score_percent": round(health_score * 3.39, 2),
-        "health_message": "Your care plan is on track with room for stronger adherence and preventive screening.",
-        "subscriptions": [item for item in subscriptions if str(item.get("user_id", "")) == user_id],
+        "health_message": _dynamic_health_message(health_score, user_subscriptions, orders),
+        "subscriptions": user_subscriptions,
         "recent_orders": orders[-3:][::-1],
-        "health_insights": [
-            {"icon": "fa-solid fa-moon", "title": "Sleep routine", "description": "Your profile benefits from steadier sleep and evening wind-down."},
-            {"icon": "fa-solid fa-capsules", "title": "Refill readiness", "description": "Two subscription items are eligible for smart refill reminders."},
-            {"icon": "fa-solid fa-flask", "title": "Suggested screening", "description": "A quarterly preventive package fits your current usage pattern."},
-        ],
+        "health_insights": _dynamic_health_insights(health_score, user_subscriptions, orders),
         "prakriti": profile.get("prakriti", "vata"),
     }
 

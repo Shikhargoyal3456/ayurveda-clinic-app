@@ -12,7 +12,7 @@
 {% block header_actions %}
 <a href="/demo" class="btn btn-outline-success btn-sm">Open demo</a>
 <a href="/emr/clinical-decisions" class="btn btn-outline-success btn-sm">Decision support</a>
-<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+<a href="/doctor/dashboard" class="btn btn-primary btn-sm">Doctor portal</a>
 {% endblock %}
 
 {% block page %}
@@ -66,6 +66,19 @@
             </div>
             <form id="ai-analyzer-form" method="post" action="/api/ai/analyze" class="section-stack">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="mode" id="aiModeInput" value="samhita">
+                <div class="glass-panel">
+                    <h3>AI Mode</h3>
+                    <div class="inline-actions mt-3 mb-3">
+                        <button type="button" class="btn btn-outline-success mode-btn" data-mode="samhita" onclick="setAIMode('samhita')">Samhita-Based</button>
+                        <button type="button" class="btn btn-outline-dark mode-btn" data-mode="modern" onclick="setAIMode('modern')">Modern Medicine</button>
+                        <button type="button" class="btn btn-outline-dark mode-btn" data-mode="integrated" onclick="setAIMode('integrated')">Integrated</button>
+                        <button type="button" class="btn btn-outline-dark mode-btn" data-mode="general" onclick="setAIMode('general')">General AI</button>
+                    </div>
+                    <div class="text-muted small" id="aiModeDescription">
+                        Current: Samhita mode - Answers based on Charak Samhita, Sushruta Samhita, and related Ayurveda classics.
+                    </div>
+                </div>
                 <div>
                     <label class="form-label" for="symptoms">Symptoms</label>
                     <textarea id="symptoms" name="symptoms" class="form-control" rows="6" placeholder="Example: fever, headache, agnimandya, body pain"></textarea>
@@ -134,12 +147,12 @@
             <div id="result" class="glass-panel" style="min-height: 320px;">AI response will appear here.</div>
         </article>
         <article class="table-panel">
-            <p class="eyebrow mb-2">Startup talking points</p>
+            <p class="eyebrow mb-2">Workflow actions</p>
             <div class="stack-list">
-                <div class="stack-item">Position this as the first integrated dual-diagnosis AI for Ayurveda-led care.</div>
-                <div class="stack-item">Lead with explainability, source visibility, and doctor approval.</div>
-                <div class="stack-item">Route patients into prescriptions, diet plans, telemedicine, and outcomes tracking.</div>
-                <div class="stack-item">Use it as the flagship feature in demos, pilots, and investor conversations.</div>
+                <div class="stack-item">Use the result to move into decision support, patient review, or an integrated consultation flow.</div>
+                <div class="stack-item">Check cited reasoning before saving anything into the clinical record.</div>
+                <div class="stack-item">Escalate red flags into follow-up, prescriptions, and outcome tracking from the next workflow step.</div>
+                <div class="stack-item">Keep the doctor in control by reviewing the AI summary before any care decision.</div>
             </div>
             <div class="hero-actions mt-3">
                 <a class="btn btn-primary btn-sm" href="/emr/clinical-decisions">Open decision support</a>
@@ -152,12 +165,72 @@
 
 {% block extra_scripts %}
 <script>
-document.getElementById('generateIntegratedPlan')?.addEventListener('click', function () {
-    const text = document.getElementById('result');
-    if (text) {
-        text.innerHTML = '<div class="stack-list"><div class="stack-item"><strong>Integrated treatment direction</strong><p class="mb-0">Start with immediate safety review, then align diet, routine, medicines, and follow-up cadence around the dominant pattern.</p></div><div class="stack-item"><strong>Doctor next step</strong><p class="mb-0">Confirm assessment in EMR, run interaction check if herbs or chronic drugs are involved, and schedule an outcome review.</p></div></div>';
+let currentAIMode = localStorage.getItem('preferred_ai_mode') || 'samhita';
+
+function setAIMode(mode) {
+    currentAIMode = mode;
+    localStorage.setItem('preferred_ai_mode', mode);
+    const descriptions = {
+        samhita: 'Current: Samhita mode - Answers grounded in Charak, Sushruta, and Ashtanga Hridaya.',
+        modern: 'Current: Modern mode - Evidence-based medicine, clinical reasoning, and structured medical guidance.',
+        integrated: 'Current: Integrated mode - Combines Ayurveda and modern medicine perspectives together.',
+        general: 'Current: General mode - Helpful healthcare AI assistant for broad, safe guidance.'
+    };
+    const modeInput = document.getElementById('aiModeInput');
+    const description = document.getElementById('aiModeDescription');
+    if (modeInput) {
+        modeInput.value = mode;
     }
-    window.showToast?.('Integrated treatment plan drafted.', 'success');
+    if (description) {
+        description.textContent = descriptions[mode] || descriptions.samhita;
+    }
+    document.querySelectorAll('.mode-btn').forEach((btn) => {
+        btn.classList.toggle('btn-outline-success', btn.dataset.mode === mode);
+        btn.classList.toggle('btn-outline-dark', btn.dataset.mode !== mode);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setAIMode(currentAIMode);
+});
+
+document.getElementById('generateIntegratedPlan')?.addEventListener('click', function () {
+    const form = document.getElementById('ai-analyzer-form');
+    const symptomsField = document.getElementById('symptoms');
+    const resultPanel = document.getElementById('result');
+    if (!form || !symptomsField || !symptomsField.value.trim()) {
+        window.showToast?.('Enter symptoms first so Kash AI has context to analyze.', 'warning');
+        symptomsField?.focus();
+        return;
+    }
+
+    setAIMode('integrated');
+    resultPanel.innerHTML = '<div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>';
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+            symptoms: symptomsField.value.trim(),
+            mode: 'integrated'
+        })
+    })
+        .then(async (response) => {
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload.detail || payload.error || 'Unable to generate an integrated plan right now.');
+            }
+            const content = payload.analysis || payload.result || payload.response || 'Integrated plan generated successfully.';
+            resultPanel.innerHTML = `<div class="stack-list"><div class="stack-item">${content}</div></div>`;
+            window.showToast?.('Integrated treatment plan generated.', 'success');
+        })
+        .catch((error) => {
+            resultPanel.textContent = error.message || 'Unable to generate an integrated plan right now.';
+            window.showToast?.(error.message || 'Unable to generate an integrated plan right now.', 'error');
+        });
 });
 </script>
 {% endblock %}

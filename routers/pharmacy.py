@@ -31,6 +31,7 @@ from app.models import Patient
 from models.medicine import MasterMedicine, Medicine, MedicineOrder, MedicineRequest, Pharmacy, utc_now
 from services import whatsapp
 from services.communication import send_patient_message
+from services.cache_service import cache_get_json, cache_set_json
 from services.delivery_service import assign_delivery_safe, update_delivery_status
 from services.email_service import EmailService
 from services.fulfillment_service import track_order, update_status
@@ -451,27 +452,35 @@ def price_comparison_page(request: Request):
 
 @router.get("/api/medicines/search")
 def search_medicines(q: str = "", db: Session = Depends(get_db)):
+    normalized_query = q.strip().lower()
+    cache_key = f"medicine-search:{normalized_query or 'popular'}"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return JSONResponse(cached)
     local = search_master_medicines(db, q, limit=20)
     if local:
-        return JSONResponse(
-            {
-                "medicines": [
-                    {
-                        "id": item.id,
-                        "name": item.name,
-                        "brand": item.brand or "",
-                        "generic_name": item.generic_name or "",
-                        "category": item.category,
-                        "price": float(item.price or item.mrp or 0),
-                        "mrp": float(item.mrp or item.price or 0),
-                        "prescription_required": bool(item.prescription_required),
-                        "description": item.description or "",
-                    }
-                    for item in local
-                ]
-            }
-        )
-    return JSONResponse({"medicines": medicine_api_service.search_external_medicines(q)})
+        payload = {
+            "medicines": [
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "brand": item.brand or "",
+                    "generic_name": item.generic_name or "",
+                    "category": item.category,
+                    "price": float(item.price or item.mrp or 0),
+                    "mrp": float(item.mrp or item.price or 0),
+                    "prescription_required": bool(item.prescription_required),
+                    "description": item.description or "",
+                    "pharmacy_id": 1,
+                }
+                for item in local
+            ]
+        }
+        cache_set_json(cache_key, payload, 300)
+        return JSONResponse(payload)
+    payload = {"medicines": medicine_api_service.search_external_medicines(q)}
+    cache_set_json(cache_key, payload, 180)
+    return JSONResponse(payload)
 
 
 @router.get("/api/ai/medicine-alternatives/{medicine_id}")
@@ -560,18 +569,22 @@ async def patient_ai_suggest(
     try:
         from services import ai_provider
 
-        suggestion, provider = await run_in_threadpool(
-            ai_provider.chat_with_fallback,
-            "You suggest pharmacy medicine options. Return concise JSON only.",
-            f"Suggest medicines for these symptoms:\n{symptoms.strip()}",
-            0.2,
-            "application/json",
+        result = await ai_provider.call_ai_with_retry(
+            system_prompt="You suggest pharmacy medicine options for patient ordering flows. Be concise, practical, and safe.",
+            user_prompt=(
+                f"Patient symptoms:\n{symptoms.strip()}\n\n"
+                "Suggest suitable medicine options, including OTC choices where appropriate, "
+                "and add one short caution about when doctor review is needed."
+            ),
+            simpler_user_prompt=f"Symptoms: {symptoms.strip()}\nGive a brief medicine suggestion and one caution.",
+            temperature=0.2,
+            max_output_tokens=700,
         )
-        return {"suggestion": suggestion, "provider": provider.value}
+        return {"suggestion": result["text"], "provider": result["provider"]}
     except Exception as exc:
         logger.exception("Pharmacy AI suggestion failed: %s", exc)
         track_error_event("ai_failure", "/patient/ai-suggest", str(exc))
-        return {"suggestion": "", "error": "AI suggestions are temporarily unavailable."}
+        return JSONResponse({"suggestion": "", "error": str(exc), "source": "ai_error"}, status_code=503)
 
 
 @router.post("/patient/order/create")
@@ -866,10 +879,14 @@ async def verify_patient_order(
 
 @router.get("/patient/order/{order_id}/status")
 def patient_order_status(order_id: int, db: Session = Depends(get_db)):
+    cache_key = f"patient-order-status:{order_id}"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return cached
     order = db.get(MedicineOrder, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
-    return {
+    payload = {
         "order_id": order.id,
         "status": order.status,
         "order_status": order.status,
@@ -887,6 +904,8 @@ def patient_order_status(order_id: int, db: Session = Depends(get_db)):
         "source": _order_source(order),
         "is_repeat_order": _is_repeat_order(order),
     }
+    cache_set_json(cache_key, payload, 30)
+    return payload
 
 
 @router.get("/order-status/{order_id}")
@@ -1028,6 +1047,12 @@ def confirm_pharmacy_order(
     db.refresh(order)
     update_status(order.id, "packed")
     patient_email = _patient_email_for_order(db, order)
+    send_patient_message(
+        order.patient_phone,
+        patient_email,
+        f"Order #{order.id} has been confirmed by the pharmacy.",
+        subject="Your Kash AI order is confirmed",
+    )
     if patient_email:
         try:
             import asyncio
@@ -1062,6 +1087,12 @@ def dispatch_pharmacy_order(
     update_status(order.id, "shipped")
     update_delivery_status(order.id, "out_for_delivery")
     patient_email = _patient_email_for_order(db, order)
+    send_patient_message(
+        order.patient_phone,
+        patient_email,
+        f"Order #{order.id} has been dispatched and is on the way.",
+        subject="Your Kash AI order is on the way",
+    )
     if patient_email:
         try:
             import asyncio
@@ -1131,6 +1162,21 @@ def run_followups(db: Session = Depends(get_db)):
             message,
             subject="Kash AI follow-up",
         )
+        patient_email = _patient_email_for_order(db, order)
+        if patient_email:
+            try:
+                import asyncio
+
+                asyncio.run(
+                    email_service.send_followup_reminder(
+                        to_email=patient_email,
+                        patient_name=order.patient_name,
+                        followup_date=(anchor + timedelta(days=days_since_delivery)).strftime("%d %b %Y"),
+                        doctor_name=settings.clinic_name,
+                    )
+                )
+            except Exception as exc:
+                logger.warning("Follow-up reminder email failed for order %s: %s", order.id, exc)
         _FOLLOWUP_SENT_KEYS.add(sent_key)
         _mark_followup_sent(order, followup_key)
         commit_with_retry(db)

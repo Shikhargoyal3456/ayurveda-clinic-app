@@ -99,17 +99,20 @@ async def test_nearby_pharmacies_handles_google_error_status_without_crashing(cl
     from services import geocoding
 
     geocoding._CACHE.clear()
+    warnings: list[str] = []
 
     def fake_post(*args, **kwargs):
         raise RuntimeError("REQUEST_DENIED")
 
     monkeypatch.setattr(geocoding, "settings", replace(geocoding.settings, google_maps_api_key="test-google-key"))
     monkeypatch.setattr("requests.post", fake_post)
+    monkeypatch.setattr(geocoding, "logger", type("Logger", (), {"warning": staticmethod(lambda message, exc: warnings.append(str(exc)))})())
 
     response = await client.get("/patient/nearby-pharmacies?lat=28.6&lng=77.2")
 
     assert response.status_code == 200
     assert len(response.json()) == 5
+    assert warnings == ["REQUEST_DENIED"]
 
 
 async def test_nearby_pharmacies_handles_invalid_google_payload_without_crashing(client, monkeypatch):

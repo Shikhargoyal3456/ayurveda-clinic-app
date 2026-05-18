@@ -65,8 +65,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const originalText = modernSaveButton.innerHTML;
             modernSaveButton.disabled = true;
             modernSaveButton.innerHTML = '<span class="fa-solid fa-spinner fa-spin" aria-hidden="true"></span> Processing...';
-            const editor = document.querySelector(".soap-editor");
-            const patientId = Number(editor?.dataset.patientId || 0);
+            const consultationShell = document.querySelector(".consultation-step-shell");
+            const patientId = Number(consultationShell?.dataset.patientId || 0);
             if (!patientId) {
                 modernSaveButton.disabled = false;
                 modernSaveButton.innerHTML = originalText;

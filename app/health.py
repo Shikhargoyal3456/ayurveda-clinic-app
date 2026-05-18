@@ -99,10 +99,16 @@ def analytics_health() -> dict[str, Any]:
         from services.analytics_service import get_error_summary, load_events
 
         load_events()
-        error_summary = get_error_summary()
+        recent_window_hours = 24
+        recent_error_summary = get_error_summary(recent_hours=recent_window_hours)
+        lifetime_error_summary = get_error_summary()
         return {
             "status": "working",
-            "errors_logged": int(error_summary.get("total_errors") or 0),
+            "errors_logged": int(recent_error_summary.get("total_errors") or 0),
+            "errors_logged_window_hours": recent_window_hours,
+            "errors_logged_lifetime": int(lifetime_error_summary.get("total_errors") or 0),
+            "errors_by_type": recent_error_summary.get("errors_by_type") or {},
+            "errors_by_route": recent_error_summary.get("errors_by_route") or {},
         }
     except Exception as exc:
         return {"status": "degraded", "errors_logged": 0, "error": str(exc)}

@@ -1,0 +1,365 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}KASH AI - Lab Report Analyzer{% endblock %}
+{% block page %}
+<div class="lab-analyzer-container">
+    <section class="simple-card">
+        <div class="analyzer-header">
+            <p class="eyebrow">Patient AI tool</p>
+            <h1 class="title"><i class="fas fa-flask"></i> AI Lab Report Analyzer</h1>
+            <p class="subtitle">Upload a PDF or image of your lab report. Kash AI will explain values in simple language and highlight anything that may need follow-up.</p>
+        </div>
+    </section>
+
+    <section class="simple-card upload-section">
+        <div class="upload-area" onclick="document.getElementById('labReport').click()">
+            <i class="fas fa-cloud-upload-alt fa-3x"></i>
+            <p>Click to upload lab report</p>
+            <small>Accepted formats: PDF, JPG, JPEG, PNG</small>
+            <input type="file" id="labReport" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+        </div>
+        <div id="fileName" class="file-name"></div>
+        <button onclick="analyzeReport()" class="primary-btn" id="analyzeBtn" disabled>
+            <i class="fas fa-microscope"></i> Analyze Report
+        </button>
+    </section>
+
+    <section id="loadingSection" style="display:none" class="simple-card loading-section">
+        <div class="spinner"></div>
+        <p><strong>AI is analyzing your report...</strong></p>
+        <p class="subtitle">Reading the report, extracting values, and comparing them with reference ranges.</p>
+    </section>
+
+    <section id="resultsSection" style="display:none" class="results-section">
+        <div class="simple-card">
+            <div class="results-header">
+                <div>
+                    <h2 style="margin:0; font-family:'Plus Jakarta Sans', sans-serif;"><i class="fas fa-chart-line"></i> Analysis Results</h2>
+                    <p class="subtitle" style="margin-top:8px;">A simple explanation of the report values that were detected.</p>
+                </div>
+                <button onclick="downloadReport()" class="secondary-btn">
+                    <i class="fas fa-download"></i> Download Report
+                </button>
+            </div>
+
+            <div id="analysisContent" class="analysis-content"></div>
+
+            <div class="disclaimer">
+                <i class="fas fa-shield-alt"></i>
+                <p>This is an AI-powered explanation, not a diagnosis. Please review medical decisions, urgent symptoms, and abnormal reports with a qualified clinician.</p>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.lab-analyzer-container {
+    display: grid;
+    gap: 1rem;
+}
+.upload-section {
+    display: grid;
+    gap: 1rem;
+}
+.upload-area {
+    border: 2px dashed #0f4c5c;
+    border-radius: 20px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: #f9fafb;
+}
+.upload-area:hover {
+    background: #f4f8fb;
+    border-color: #1a7f6b;
+}
+.file-name {
+    font-weight: 600;
+    color: #0f4c5c;
+}
+.loading-section {
+    text-align: center;
+    padding: 40px 24px;
+}
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e5e7eb;
+    border-top-color: #2bae66;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+.analysis-content {
+    display: grid;
+    gap: 1rem;
+}
+.analysis-block {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 18px;
+}
+.analysis-block h3 {
+    margin-top: 0;
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+.diagnosis-card {
+    border: 1px solid #dbe7ee;
+    border-radius: 14px;
+    padding: 14px;
+    background: linear-gradient(180deg, #f8fbfd 0%, #ffffff 100%);
+}
+.diagnosis-card + .diagnosis-card {
+    margin-top: 12px;
+}
+.diagnosis-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.confidence {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.confidence.high {
+    background: #dcfce7;
+    color: #166534;
+}
+.confidence.medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+.confidence.low {
+    background: #fee2e2;
+    color: #991b1b;
+}
+.diagnosis-evidence,
+.diagnosis-tests,
+.diagnosis-pattern {
+    margin: 8px 0 0;
+    color: #4b5563;
+}
+.finding,
+.normal-item {
+    padding: 12px 0;
+    border-top: 1px solid #edf2f7;
+}
+.finding:first-child,
+.normal-item:first-child {
+    border-top: 0;
+}
+.abnormal {
+    color: #b91c1c;
+    font-weight: 700;
+}
+.meaning,
+.recommendation {
+    margin: 8px 0 0;
+    color: #4b5563;
+}
+.disclaimer {
+    margin-top: 20px;
+    padding: 12px;
+    background: #fef3c7;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #92400e;
+    display: flex;
+    gap: 10px;
+}
+@media (max-width: 640px) {
+    .results-header {
+        flex-direction: column;
+    }
+    .diagnosis-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let uploadedFile = null;
+const csrfToken = "{{ csrf_token }}";
+
+document.getElementById("labReport").addEventListener("change", (event) => {
+    uploadedFile = event.target.files[0];
+    if (uploadedFile) {
+        document.getElementById("fileName").innerText = `Selected: ${uploadedFile.name}`;
+        document.getElementById("analyzeBtn").disabled = false;
+    }
+});
+
+async function analyzeReport() {
+    if (!uploadedFile) return;
+
+    const formData = new FormData();
+    formData.append("report", uploadedFile);
+    formData.append("csrf_token", csrfToken);
+
+    document.getElementById("loadingSection").style.display = "block";
+    document.getElementById("resultsSection").style.display = "none";
+
+    try {
+        const response = await fetch("/api/lab-analyzer/analyze", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-CSRF-Token": csrfToken
+            }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            displayResults(data);
+        } else {
+            window.alert("Analysis failed: " + data.error);
+        }
+    } catch (error) {
+        window.alert("Error uploading report. Please try again.");
+    } finally {
+        document.getElementById("loadingSection").style.display = "none";
+    }
+}
+
+function displayResults(data) {
+    const diagnosis = Array.isArray(data.diagnosis) ? data.diagnosis : [];
+    const abnormalFindings = Array.isArray(data.abnormal_findings) ? data.abnormal_findings : [];
+    const normalFindings = Array.isArray(data.normal_findings) ? data.normal_findings : [];
+    const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+
+    document.getElementById("resultsSection").style.display = "block";
+    document.getElementById("analysisContent").innerHTML = `
+        <div class="analysis-block">
+            <h3>Report Summary</h3>
+            <p>${escapeHtml(data.summary || "No summary available.")}</p>
+        </div>
+        <div class="analysis-block diagnosis-section" id="diagnosisSection">
+            <h3><i class="fas fa-stethoscope"></i> Possible Diagnosis</h3>
+            <div id="diagnosisList">
+                ${displayDiagnosisMarkup(diagnosis)}
+            </div>
+        </div>
+        <div class="analysis-block">
+            <h3>Abnormal Values</h3>
+            ${abnormalFindings.map((finding) => `
+                <div class="finding">
+                    <strong>${escapeHtml(finding.test_name)}</strong>: Your value <span class="abnormal">${escapeHtml(finding.value)}</span>
+                    (Normal: ${escapeHtml(finding.normal_range)})
+                    <p class="meaning">${escapeHtml(finding.meaning)}</p>
+                    <p class="recommendation">Next step: ${escapeHtml(finding.recommendation)}</p>
+                </div>
+            `).join("")}
+            ${abnormalFindings.length === 0 ? "<p>All detected values were within the usual range.</p>" : ""}
+        </div>
+        <div class="analysis-block">
+            <h3>Normal Values</h3>
+            <details>
+                <summary>Show normal values (${normalFindings.length} detected)</summary>
+                ${normalFindings.map((finding) => `
+                    <div class="normal-item">
+                        <strong>${escapeHtml(finding.test_name)}</strong>: ${escapeHtml(finding.value)} (Normal: ${escapeHtml(finding.normal_range)})
+                    </div>
+                `).join("")}
+            </details>
+        </div>
+        <div class="analysis-block">
+            <h3>Recommendations</h3>
+            <ul>
+                ${recommendations.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+            </ul>
+        </div>
+        <div class="disclaimer diagnosis-disclaimer">
+            <i class="fas fa-shield-alt"></i>
+            <p><strong>Medical Disclaimer:</strong> AI diagnosis is for informational purposes only. Always consult a doctor. This is an AI-powered suggestion, not a final diagnosis.</p>
+        </div>
+    `;
+}
+
+function displayDiagnosis(diagnosis) {
+    const container = document.getElementById("diagnosisList");
+    if (!container) return;
+    container.innerHTML = displayDiagnosisMarkup(diagnosis);
+}
+
+function displayDiagnosisMarkup(diagnosis) {
+    if (!diagnosis.length) {
+        return "<p>No strong diagnostic pattern could be suggested from the detected values alone. Please review the report with your doctor.</p>";
+    }
+
+    return diagnosis.map((d) => {
+        const confidence = normalizeConfidence(d.confidence);
+        const evidence = Array.isArray(d.evidence) && d.evidence.length
+            ? d.evidence.map((item) => escapeHtml(item)).join(", ")
+            : "Not enough structured evidence was provided.";
+        const tests = Array.isArray(d.confirmatory_tests) && d.confirmatory_tests.length
+            ? d.confirmatory_tests.map((item) => escapeHtml(item)).join(", ")
+            : "Doctor review and repeat testing if advised.";
+
+        return `
+            <div class="diagnosis-card">
+                <div class="diagnosis-header">
+                    <strong>${escapeHtml(d.condition || "Possible condition")}</strong>
+                    <span class="confidence ${confidence.toLowerCase()}">${confidence} confidence</span>
+                </div>
+                <div class="diagnosis-evidence">
+                    <strong>Evidence:</strong> ${evidence}
+                </div>
+                <div class="diagnosis-tests">
+                    <strong>Recommended confirmatory tests:</strong> ${tests}
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+function downloadReport() {
+    const content = [
+        document.getElementById("analysisContent").innerText,
+        "",
+        "Medical Disclaimer: AI diagnosis is for informational purposes only. Always consult a doctor."
+    ].join("\n");
+    const blob = new Blob([content], { type: "text/plain" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "lab-report-analysis.txt";
+    link.click();
+}
+
+function normalizeConfidence(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "high") return "High";
+    if (normalized === "medium") return "Medium";
+    return "Low";
+}
+
+function escapeHtml(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+</script>
+{% endblock %}

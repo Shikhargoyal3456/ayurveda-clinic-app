@@ -23,6 +23,7 @@ from services.profile_service import (
     set_primary_profile,
     touch_profile,
 )
+from services.cache_service import cache_get_json, cache_set_json
 from shared.template_engine import templates
 
 
@@ -44,7 +45,7 @@ def _profile_page_context(request: Request, db: Session, user: User, **extra):
     return context
 
 
-@router.get("/profiles/select")
+@router.api_route("/profiles/select", methods=["GET", "HEAD"])
 def profile_selector(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
     profiles = active_profiles_for_user(db, user.id)
     if not profiles:
@@ -56,7 +57,7 @@ def profile_selector(request: Request, db: Session = Depends(get_db), user=Depen
     return templates.TemplateResponse(request, "profiles/profile_selector.html", _profile_page_context(request, db, user))
 
 
-@router.get("/profiles/add")
+@router.api_route("/profiles/add", methods=["GET", "HEAD"])
 def add_profile_page(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
     if count_active_profiles(db, user.id) >= MAX_USER_PROFILES:
         return RedirectResponse(url="/profiles/manage", status_code=303)
@@ -67,19 +68,25 @@ def add_profile_page(request: Request, db: Session = Depends(get_db), user=Depen
     )
 
 
-@router.get("/profiles/manage")
+@router.api_route("/profiles/manage", methods=["GET", "HEAD"])
 def manage_profiles_page(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
     return templates.TemplateResponse(request, "profiles/manage_profiles.html", _profile_page_context(request, db, user))
 
 
 @router.get("/api/profiles/list")
 def list_profiles(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
-    profiles = active_profiles_for_user(db, user.id)
     active_profile = resolve_active_profile(request, db, user)
-    return {
+    cache_key = f"profiles-list:{user.id}:{active_profile.id if active_profile is not None else 0}"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return cached
+    profiles = active_profiles_for_user(db, user.id)
+    payload = {
         "profiles": [profile_to_payload(profile) for profile in profiles],
         "active_profile_id": active_profile.id if active_profile is not None else None,
     }
+    cache_set_json(cache_key, payload, 60)
+    return payload
 
 
 @router.post("/api/profiles/add")

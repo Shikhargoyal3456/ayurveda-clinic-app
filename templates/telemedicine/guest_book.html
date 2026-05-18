@@ -1,0 +1,61 @@
+{% extends "patient_simple_base.html" %}
+{% set simple_nav = 'health' %}
+{% block title %}Video Consultation{% endblock %}
+{% block page %}
+<section class="card" style="padding:2rem;">
+    <div class="content-grid-2" style="align-items:center;">
+        <div class="section-stack" style="gap:1rem;">
+            <span class="section-kicker"><i class="fa-solid fa-video"></i> Video Consultation</span>
+            <div>
+                <h1>Find the right doctor before you sign in.</h1>
+                <p style="font-size:1.05rem;">Browse available specialists, compare experience and ratings, then login to confirm your slot and start the consultation.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="primary-btn" href="/auth/login/patient">Login to book</a>
+                <a class="secondary-btn" href="/auth/register/patient">Create patient account</a>
+            </div>
+            <div class="notice blue">
+                <strong>Login required to book</strong>
+                <p style="margin:0.35rem 0 0;">Guests can explore doctors now. Booking and video-room access are unlocked after patient login.</p>
+            </div>
+        </div>
+        <div class="card" style="padding:1.25rem;">
+            <p class="eyebrow">How it works</p>
+            <div class="section-stack" style="gap:0.9rem;">
+                <div class="feature-card surface-muted"><strong>1. Search</strong><p>Review specialties, experience, and ratings.</p></div>
+                <div class="feature-card surface-muted"><strong>2. Login</strong><p>Secure your patient account before booking.</p></div>
+                <div class="feature-card surface-muted"><strong>3. Consult</strong><p>Join the video room at your chosen time.</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="card" style="padding:1.5rem;">
+    <div class="page-header mb-3">
+        <div>
+            <p class="eyebrow">Available doctors</p>
+            <h2 class="h4 mb-0">Preview specialists on Kash AI</h2>
+        </div>
+    </div>
+    <div class="grid-auto-fit">
+        {% for doctor in doctors %}
+        <article class="feature-card">
+            <div class="hero-actions" style="justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h3>Dr. {{ doctor.name }}</h3>
+                    <p>{{ doctor.specialization }}</p>
+                </div>
+                <span class="section-kicker">⭐ {{ doctor.rating }}</span>
+            </div>
+            <p style="margin-top:.75rem;">{{ doctor.experience or '8+' }} years experience</p>
+            <div class="hero-actions" style="margin-top:1rem;">
+                <span class="pill-chip is-active">Video consult</span>
+                <span class="pill-chip">₹{{ doctor.fee or 499 }}</span>
+            </div>
+        </article>
+        {% else %}
+        <div class="empty-state">Doctors will appear here shortly.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

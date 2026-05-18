@@ -1,0 +1,36 @@
+{% macro stat_cards(count=4) %}
+<div class="stats-grid" role="status" aria-live="polite" aria-label="Loading summary cards">
+  {% for i in range(count) %}
+  <div class="metric-card skel-group" aria-hidden="true">
+    <div class="skel skel-text skel-text--short"></div>
+    <div class="skel skel-heading"></div>
+    <div class="skel skel-text skel-text--medium"></div>
+  </div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro table_rows(rows=5, cols=4) %}
+{% for i in range(rows) %}
+<tr aria-hidden="true" role="status">
+  {% for j in range(cols) %}
+  <td><div class="skel {% if j == 0 %}skel-text skel-text--medium{% else %}skel-text skel-text--short{% endif %}"></div></td>
+  {% endfor %}
+</tr>
+{% endfor %}
+{% endmacro %}
+
+{% macro card_list(count=3) %}
+{% for i in range(count) %}
+<div class="card skel-group" aria-hidden="true" role="status">
+  <div class="skel-row">
+    <div class="skel skel-avatar"></div>
+    <div class="skel-group" style="flex:1">
+      <div class="skel skel-text skel-text--medium"></div>
+      <div class="skel skel-text skel-text--short"></div>
+    </div>
+    <div class="skel skel-badge"></div>
+  </div>
+</div>
+{% endfor %}
+{% endmacro %}

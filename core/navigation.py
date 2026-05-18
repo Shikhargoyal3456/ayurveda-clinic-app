@@ -15,24 +15,27 @@ class NavigationItem:
 NAVIGATION: dict[str, list[NavigationItem]] = {
     "patient": [
         NavigationItem("Home", "house", "/patient", "Patient Care", "Your patient dashboard"),
-        NavigationItem("Medicines", "capsules", "/order-medicines", "Patient Care", "Search and reorder medicines"),
+        NavigationItem("Search Medicines", "capsules", "/order-medicines", "Patient Care", "Search and reorder medicines"),
         NavigationItem("Orders", "box", "/orders", "Patient Care", "Track active deliveries"),
         NavigationItem("Health", "heart-pulse", "/my-health", "Patient Care", "Prescriptions and refills"),
-        NavigationItem("Consult", "user-doctor", "/telemedicine/book", "Support", "Book a doctor consult"),
     ],
     "pharmacy": [
         NavigationItem("Dashboard", "chart-line", "/pharmacy", "Pharmacy Ops", "Order and earnings overview"),
         NavigationItem("Orders", "clipboard-list", "/pharmacy#live-orders", "Pharmacy Ops", "Live medicine queue"),
-        NavigationItem("Inventory", "boxes-stacked", "/portal/pharmacy/add-medicine", "Inventory", "Manage medicines and stock"),
-        NavigationItem("Alerts", "triangle-exclamation", "/portal/pharmacy/stock-alerts", "Inventory", "Low-stock issues"),
-        NavigationItem("Expiry", "calendar-xmark", "/portal/pharmacy/expiry-tracker", "Inventory", "Expiry tracking"),
+        NavigationItem("Inventory", "boxes-stacked", "/portal/pharmacy/add-medicine", "Pharmacy Ops", "Manage medicines and stock"),
+        NavigationItem("Earnings", "wallet", "/pharmacy", "Pharmacy Ops", "Daily performance and payout view"),
     ],
     "doctor": [
         NavigationItem("Dashboard", "stethoscope", "/doctor/dashboard", "Patient Care", "Today's clinic overview"),
         NavigationItem("Appointments", "calendar-days", "/appointments", "Patient Care", "Scheduled consultations"),
-        NavigationItem("Patients", "users", "/emr/patient-registry", "Patient Care", "Registry and queue"),
+        NavigationItem("Patients", "users", "/emr/patient-registry", "Patient Care", "Registry and active patient queue"),
+        NavigationItem("AI Scribe", "microphone-lines", "/emr/ambient-scribe", "Clinical Tools", "Listen to the visit and draft the EMR automatically"),
         NavigationItem("Prescriptions", "file-waveform", "/doctor/dashboard#prescription-studio", "Clinical Tools", "Review and issue prescriptions"),
-        NavigationItem("Calls", "video", "/telemedicine/book", "Clinical Tools", "Video consultations"),
+    ],
+    "admin": [
+        NavigationItem("Overview", "chart-pie", "/admin", "Admin Ops", "Admin overview dashboard"),
+        NavigationItem("Users", "users-gear", "/admin/users", "Admin Ops", "User management"),
+        NavigationItem("Orders", "box", "/admin/orders", "Admin Ops", "Recent order oversight"),
     ],
     "lab": [
         NavigationItem("Dashboard", "flask-vial", "/lab", "Lab Ops", "Bookings and backlog overview"),
@@ -54,19 +57,20 @@ NAVIGATION: dict[str, list[NavigationItem]] = {
 
 QUICK_ACTIONS: dict[str, list[dict[str, str]]] = {
     "patient": [
-        {"label": "Quick Reorder", "icon": "rotate-right", "url": "/order-medicines"},
-        {"label": "One-click Refill", "icon": "capsules", "url": "/my-health"},
+        {"label": "Order Medicines", "icon": "capsules", "url": "/order-medicines"},
         {"label": "Upload Rx", "icon": "camera", "url": "/order-medicines?tab=upload"},
+        {"label": "Track Orders", "icon": "box", "url": "/orders"},
     ],
     "pharmacy": [
-        {"label": "Accept Queue", "icon": "clipboard-check", "url": "/portal/pharmacy#live-orders"},
-        {"label": "Add Medicine", "icon": "plus", "url": "/portal/pharmacy/add-medicine"},
-        {"label": "Bulk Upload", "icon": "upload", "url": "/portal/pharmacy/bulk-upload"},
+        {"label": "Orders", "icon": "clipboard-check", "url": "/pharmacy#live-orders"},
+        {"label": "Inventory", "icon": "plus", "url": "/portal/pharmacy/add-medicine"},
+        {"label": "Earnings", "icon": "wallet", "url": "/pharmacy"},
     ],
     "doctor": [
-        {"label": "Start Consult", "icon": "video", "url": "/telemedicine/book"},
+        {"label": "Today's Appointments", "icon": "calendar-days", "url": "/appointments"},
+        {"label": "AI Scribe", "icon": "microphone-lines", "url": "/emr/ambient-scribe"},
         {"label": "Write Rx", "icon": "pen", "url": "/doctor/dashboard#prescription-studio"},
-        {"label": "Patient Queue", "icon": "users-viewfinder", "url": "/doctor/dashboard#patient-queue"},
+        {"label": "Patients", "icon": "users-viewfinder", "url": "/emr/patient-registry"},
     ],
     "lab": [
         {"label": "Add Slot", "icon": "clock", "url": "/lab#today-bookings"},
@@ -79,3 +83,61 @@ QUICK_ACTIONS: dict[str, list[dict[str, str]]] = {
         {"label": "View Payouts", "icon": "wallet", "url": "/delivery#earnings"},
     ],
 }
+
+
+def doctor_dashboard_url(doctor_type: str | None = None) -> str:
+    return {
+        "ayurveda": "/doctor/ayurveda/dashboard",
+        "modern": "/doctor/modern/dashboard",
+        "homeopathy": "/doctor/homeopathy/dashboard",
+        "physiotherapy": "/doctor/physiotherapy/dashboard",
+        "dentistry": "/doctor/dentistry/dashboard",
+        "integrated": "/doctor/integrated/dashboard",
+    }.get((doctor_type or "").strip().lower(), "/doctor/dashboard")
+
+
+def get_navigation_for_doctor(doctor_type: str | None = None) -> list[NavigationItem]:
+    dashboard_url = doctor_dashboard_url(doctor_type)
+    normalized = (doctor_type or "").strip().lower()
+    if normalized == "ayurveda":
+        return [
+            NavigationItem("Dashboard", "leaf", dashboard_url, "Patient Care", "Ayurveda clinic overview"),
+            NavigationItem("Samhita AI", "book-open", "/ai-analyzer", "Clinical Tools", "Ask classical-text grounded questions"),
+            NavigationItem("Patients", "users", "/emr/patient-registry", "Patient Care", "Registry and active patient queue"),
+            NavigationItem("Prescriptions", "file-waveform", "/doctor/dashboard#prescription-studio", "Clinical Tools", "Review and issue prescriptions"),
+            NavigationItem("Panchakarma", "spa", "/emr/clinical-decisions", "Ayurveda Care", "Plan Ayurveda procedures and decisions"),
+            NavigationItem("Telemedicine", "video", "/telemedicine/book", "Patient Care", "Consult remotely"),
+        ]
+    if normalized == "modern":
+        return [
+            NavigationItem("Dashboard", "stethoscope", dashboard_url, "Patient Care", "Modern medicine overview"),
+            NavigationItem("Medical AI", "microscope", "/ai-analyzer", "Clinical Tools", "Evidence-based assistant"),
+            NavigationItem("Patients", "users", "/emr/patient-registry", "Patient Care", "Registry and active patient queue"),
+            NavigationItem("Prescriptions", "file-waveform", "/doctor/dashboard#prescription-studio", "Clinical Tools", "Review and issue prescriptions"),
+            NavigationItem("Labs", "flask", "/emr/lab-dashboard", "Clinical Tools", "Order and review labs"),
+            NavigationItem("Telemedicine", "video", "/telemedicine/book", "Patient Care", "Consult remotely"),
+        ]
+    base_items = list(NAVIGATION.get("doctor", []))
+    if base_items:
+        base_items[0] = NavigationItem(base_items[0].name, base_items[0].icon, dashboard_url, base_items[0].group, base_items[0].description)
+    return base_items
+
+
+def get_quick_actions_for_doctor(doctor_type: str | None = None) -> list[dict[str, str]]:
+    dashboard_url = doctor_dashboard_url(doctor_type)
+    normalized = (doctor_type or "").strip().lower()
+    if normalized == "ayurveda":
+        return [
+            {"label": "Samhita AI", "icon": "book", "url": "/ai-analyzer"},
+            {"label": "AI Scribe", "icon": "microphone-lines", "url": "/emr/ambient-scribe"},
+            {"label": "Write Rx", "icon": "pen", "url": f"{dashboard_url}#prescription-studio"},
+            {"label": "Patients", "icon": "users-viewfinder", "url": "/emr/patient-registry"},
+        ]
+    if normalized == "modern":
+        return [
+            {"label": "Medical AI", "icon": "microscope", "url": "/ai-analyzer"},
+            {"label": "AI Scribe", "icon": "microphone-lines", "url": "/emr/ambient-scribe"},
+            {"label": "Write Rx", "icon": "pen", "url": f"{dashboard_url}#prescription-studio"},
+            {"label": "Labs", "icon": "flask", "url": "/emr/lab-dashboard"},
+        ]
+    return list(QUICK_ACTIONS.get("doctor", []))

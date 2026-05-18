@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 import logging
+from datetime import date, datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
-from app.database import SessionLocal
-from app.models import Doctor
+from app.database import SessionLocal, get_db
+from app.models import Appointment, Doctor, Patient
+from app.portal_auth import dashboard_path_for_role, get_portal_user, normalize_identifier
 from services.ai_order_automation import AIOrderAutomation
 from services.ai_support_automation import AISupportAutomation
 from services.feature_flags import is_ai_automation_enabled, is_telemedicine_enabled
@@ -78,19 +81,59 @@ def symptom_checker_page(request: Request):
 
 
 @router.get("/telemedicine/book")
-def telemedicine_booking_page(request: Request):
+def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
     _ensure_telemedicine_enabled()
-    doctors = telemedicine_service._recommend_doctors()
-    return templates.TemplateResponse(
-        request,
-        "telemedicine/book.html",
-        {
-            "doctors": doctors,
-            "active_page": "appointments",
-            "user_role": "Telemedicine",
-            "avatar_label": "TM",
-        },
-    )
+    portal_user = get_portal_user(request, db)
+    if portal_user is None and getattr(request.state, "user", None) is None:
+        doctors = telemedicine_service._recommend_doctors()
+        return templates.TemplateResponse(
+            request,
+            "telemedicine/guest_book.html",
+            {
+                "doctors": doctors,
+                "requires_login": True,
+                "active_page": "consult",
+                "user_role": "Guest access",
+                "avatar_label": "TM",
+                "is_guest_user": True,
+            },
+        )
+
+    role = _current_session_role(request, portal_user)
+    if role == "patient":
+        doctors = telemedicine_service._recommend_doctors()
+        return templates.TemplateResponse(
+            request,
+            "telemedicine/patient_book.html",
+            {
+                "doctors": doctors,
+                "active_page": "consult",
+                "user_role": "Video consultation",
+                "avatar_label": "TM",
+            },
+        )
+
+    if role == "doctor":
+        legacy_doctor = _resolve_legacy_doctor(request, db, portal_user)
+        if legacy_doctor is None:
+            raise HTTPException(status_code=404, detail="Doctor profile not found")
+        dashboard = _doctor_consultation_dashboard(db, legacy_doctor.id)
+        return templates.TemplateResponse(
+            request,
+            "telemedicine/doctor_consultations.html",
+            {
+                "active_page": "consult",
+                "user_role": "Doctor consultations",
+                "avatar_label": "TM",
+                **dashboard,
+            },
+        )
+
+    if portal_user is not None:
+        role_slug = getattr(portal_user.role, "value", str(portal_user.role))
+        return RedirectResponse(url=dashboard_path_for_role(role_slug), status_code=303)
+
+    return RedirectResponse(url="/auth/login", status_code=303)
 
 
 @router.get("/telemedicine/room/{session_id}")
@@ -188,7 +231,11 @@ async def create_telemedicine_session(
 @router.post("/api/telemedicine/analyze-symptoms")
 async def analyze_symptoms(payload: SymptomAnalysisRequest):
     _ensure_telemedicine_enabled()
-    result = await telemedicine_service.analyze_symptoms(payload.symptoms)
+    try:
+        result = await telemedicine_service.analyze_symptoms(payload.symptoms)
+    except Exception as exc:
+        logger.exception("Telemedicine symptom analysis failed: %s", exc)
+        return JSONResponse({"success": False, "error": str(exc), "source": "ai_error"}, status_code=503)
     return JSONResponse(result)
 
 
@@ -305,3 +352,85 @@ def _doctor_display_name(doctor_id: int) -> str:
         return "Kash AI Doctor"
     finally:
         db.close()
+
+
+def _current_session_role(request: Request, portal_user: Any | None) -> str:
+    if portal_user is not None:
+        return getattr(portal_user.role, "value", str(portal_user.role))
+    if getattr(request.state, "user", None) is not None:
+        return "doctor"
+    return ""
+
+
+def _resolve_legacy_doctor(request: Request, db: Session, portal_user: Any | None) -> Doctor | None:
+    legacy_doctor = getattr(request.state, "user", None)
+    if legacy_doctor is not None:
+        return legacy_doctor
+    if portal_user is None:
+        return None
+    username = normalize_identifier(getattr(portal_user, "email", "") or getattr(portal_user, "phone", "") or f"doctor-{portal_user.id}")
+    return db.query(Doctor).filter(Doctor.username == username).first()
+
+
+def _doctor_consultation_dashboard(db: Session, doctor_id: int) -> dict[str, Any]:
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    appointments = (
+        db.query(Appointment)
+        .join(Patient, Patient.id == Appointment.patient_id)
+        .options(joinedload(Appointment.patient))
+        .filter(Patient.doctor_id == doctor_id, Appointment.date >= today)
+        .order_by(Appointment.date.asc(), Appointment.time.asc())
+        .limit(50)
+        .all()
+    )
+    weekly_appointments = (
+        db.query(Appointment)
+        .join(Patient, Patient.id == Appointment.patient_id)
+        .filter(
+            Patient.doctor_id == doctor_id,
+            Appointment.date >= week_start,
+            Appointment.date <= week_end,
+        )
+        .all()
+    )
+    completed_this_week = sum(1 for item in weekly_appointments if str(item.status or "").strip().lower() in {"completed", "done"})
+    upcoming_appointments: list[dict[str, Any]] = []
+    todays_consultations = 0
+    for item in appointments:
+        patient = item.patient
+        if patient is None:
+            continue
+        if item.date == today:
+            todays_consultations += 1
+        upcoming_appointments.append(
+            {
+                "id": item.id,
+                "patient_id": patient.id,
+                "patient_name": patient.name,
+                "patient_age": patient.age,
+                "date": item.date.strftime("%d %b %Y") if item.date else "",
+                "time": _format_appointment_time(item.time),
+                "reason": item.reason or "General consultation",
+                "status": (item.status or "scheduled").lower(),
+            }
+        )
+    return {
+        "doctor_id": doctor_id,
+        "upcoming_count": todays_consultations,
+        "total_upcoming": len(upcoming_appointments),
+        "completed_this_week": completed_this_week,
+        "upcoming_appointments": upcoming_appointments,
+    }
+
+
+def _format_appointment_time(value: str) -> str:
+    raw = str(value or "").strip()
+    for pattern in ("%H:%M", "%H:%M:%S", "%I:%M %p"):
+        try:
+            parsed = datetime.strptime(raw, pattern)
+            return parsed.strftime("%I:%M %p")
+        except ValueError:
+            continue
+    return raw or "Scheduled"

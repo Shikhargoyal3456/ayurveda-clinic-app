@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block title %}My Consultations{% endblock %}
+{% block page %}
+<section class="doctor-consultations-shell">
+    <div class="consultations-hero">
+        <div>
+            <p class="eyebrow">Telemedicine workspace</p>
+            <h1><i class="fas fa-video"></i> My Consultations</h1>
+            <p class="hero-copy">See today’s queue, review what is coming up, and launch video calls from one focused doctor view.</p>
+        </div>
+        <div class="hero-actions">
+            <a href="/appointments" class="btn btn-outline-dark btn-sm">Open full schedule</a>
+            <a href="/doctor/dashboard" class="btn btn-primary btn-sm">Back to dashboard</a>
+        </div>
+    </div>
+
+    <div class="consultations-stats">
+        <article class="stat-card">
+            <span class="stat-label">Today's Consultations</span>
+            <strong class="stat-value">{{ upcoming_count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Upcoming Queue</span>
+            <strong class="stat-value">{{ total_upcoming }}</strong>
+        </article>
+        <article class="stat-card">
+            <span class="stat-label">Completed This Week</span>
+            <strong class="stat-value">{{ completed_this_week }}</strong>
+        </article>
+    </div>
+
+    <section class="consultations-panel">
+        <div class="panel-header">
+            <div>
+                <p class="eyebrow">Upcoming appointments</p>
+                <h2>Scheduled video consultations</h2>
+            </div>
+        </div>
+
+        <div class="consultations-list">
+            {% for appointment in upcoming_appointments %}
+            <article class="consultation-card">
+                <div class="consultation-time">
+                    <strong>{{ appointment.date }}</strong>
+                    <span>{{ appointment.time }}</span>
+                </div>
+                <div class="consultation-info">
+                    <h3>{{ appointment.patient_name }}</h3>
+                    <p>Age {{ appointment.patient_age }} • {{ appointment.reason }}</p>
+                    <span class="status-pill status-{{ appointment.status | replace(' ', '-') }}">{{ appointment.status | title }}</span>
+                </div>
+                <div class="consultation-actions">
+                    {% if appointment.status == 'in-progress' %}
+                    <button type="button" class="btn btn-primary btn-sm" onclick="startConsultation(this, {{ appointment.patient_id }}, {{ doctor_id }})">
+                        <i class="fas fa-phone-alt"></i> Join
+                    </button>
+                    {% elif appointment.status != 'completed' %}
+                    <button type="button" class="btn btn-primary btn-sm" onclick="startConsultation(this, {{ appointment.patient_id }}, {{ doctor_id }})">
+                        <i class="fas fa-video"></i> Start Call
+                    </button>
+                    {% endif %}
+                    <a href="/appointments" class="btn btn-outline-dark btn-sm">View Schedule</a>
+                </div>
+            </article>
+            {% else %}
+            <div class="empty-state empty-state--doctor">
+                <div class="empty-state__icon"><i class="fa-regular fa-calendar"></i></div>
+                <h3 class="empty-state__title">No upcoming consultations</h3>
+                <p class="empty-state__message">New video appointments will appear here as soon as patients book them.</p>
+                <a href="/appointments" class="btn btn-primary btn-sm">Open appointments</a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</section>
+{% endblock %}
+{% block extra_head %}
+<style>
+.doctor-consultations-shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    gap: 24px;
+}
+
+.consultations-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 20px;
+    padding: 28px 30px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.96), rgba(43, 174, 102, 0.9));
+    color: #fff;
+    box-shadow: 0 16px 40px rgba(15, 76, 92, 0.18);
+}
+
+.consultations-hero h1 {
+    margin: 6px 0 10px;
+    font-size: clamp(2rem, 3vw, 2.6rem);
+}
+
+.hero-copy {
+    margin: 0;
+    max-width: 58ch;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.consultations-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.stat-card,
+.consultations-panel {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.stat-card {
+    padding: 22px 24px;
+}
+
+.stat-label {
+    display: block;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.stat-value {
+    display: block;
+    margin-top: 10px;
+    font-size: 2.2rem;
+    color: #0f4c5c;
+}
+
+.consultations-panel {
+    padding: 24px;
+}
+
+.panel-header h2 {
+    margin: 4px 0 0;
+}
+
+.consultations-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.consultation-card {
+    display: grid;
+    grid-template-columns: 140px 1fr auto;
+    gap: 18px;
+    align-items: center;
+    padding: 18px 20px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfc 100%);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.consultation-time strong,
+.consultation-info h3 {
+    display: block;
+    margin: 0;
+}
+
+.consultation-time span,
+.consultation-info p {
+    color: #64748b;
+}
+
+.consultation-info p {
+    margin: 6px 0 10px;
+}
+
+.consultation-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e6f4f1;
+    color: #0f4c5c;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.status-in-progress {
+    background: #fff3e0;
+    color: #b45309;
+}
+
+.empty-state--doctor {
+    padding: 48px 24px;
+}
+
+@media (max-width: 960px) {
+    .consultations-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .consultation-card {
+        grid-template-columns: 1fr;
+        justify-items: start;
+    }
+
+    .consultation-actions {
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 720px) {
+    .doctor-consultations-shell {
+        padding: 16px;
+    }
+
+    .consultations-hero {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 22px;
+    }
+
+    .hero-actions {
+        width: 100%;
+    }
+
+    .hero-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function startConsultation(button, patientId, doctorId) {
+    const originalText = button ? button.innerHTML : "";
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+    }
+
+    try {
+        const response = await fetch("/api/telemedicine/create-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ patient_id: patientId, doctor_id: doctorId, session_type: "video" })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.room_url) {
+            throw new Error(payload.detail || "Unable to create consultation room.");
+        }
+        window.location.href = payload.room_url;
+    } catch (error) {
+        if (window.showErrorToast) {
+            window.showErrorToast("Unable to start the consultation right now.");
+        } else {
+            window.alert("Unable to start the consultation right now.");
+        }
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = originalText || '<i class="fas fa-video"></i> Start Call';
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from sqlalchemy import MetaData, Table, Column, DateTime, Float, Integer, String, Text, func
+from sqlalchemy import Column, DateTime, Float, Integer, MetaData, String, Table, Text, func
+from sqlalchemy.exc import OperationalError
 
 from app.database import engine
 
@@ -53,4 +54,8 @@ support_tickets_table = Table(
 
 
 def ensure_automation_tables() -> None:
-    metadata.create_all(bind=engine)
+    try:
+        metadata.create_all(bind=engine, checkfirst=True)
+    except OperationalError as exc:
+        if "already exists" not in str(exc).lower():
+            raise

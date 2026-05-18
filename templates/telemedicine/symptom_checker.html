@@ -2,9 +2,21 @@
 {% block title %}AI Symptom Checker | Kash AI{% endblock %}
 {% block page %}
 <div class="site-container section-stack fade-in-up">
-    <div class="symptom-checker">
-        <h2>AI Symptom Checker</h2>
-        <p>Answer one question at a time so we can guide you to the right level of care.</p>
+    <section class="page-header modern-header">
+        <div>
+            <p class="eyebrow">AI triage</p>
+            <h1>AI Symptom Checker</h1>
+            <p>Share symptoms, review urgency, and move into the right next care step without bouncing through an older form flow.</p>
+        </div>
+    </section>
+
+    <div class="symptom-checker modern-card">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow">Guided intake</p>
+                <h2>Tell Kash AI what you are feeling</h2>
+            </div>
+        </div>
 
         <div class="symptom-input conversation-card">
             <p class="eyebrow">Question 1 of 2</p>
@@ -46,14 +58,49 @@
 <script>
 async function analyzeSymptoms() {
     const symptoms = document.getElementById("symptoms").value.trim();
+    const resultPanel = document.getElementById("analysisResult");
+    if (!symptoms) {
+        window.showToast?.("Enter symptoms first so Kash AI has context.", "warning");
+        document.getElementById("symptoms").focus();
+        return;
+    }
+
+    resultPanel.style.display = "block";
+    resultPanel.innerHTML = '<div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>';
     const response = await fetch("/api/telemedicine/analyze-symptoms", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || ""
+        },
         body: JSON.stringify({ symptoms })
     });
     const result = await response.json();
+    if (!response.ok) {
+        resultPanel.innerHTML = `<div class="alert alert-danger">${result.detail || result.error || "Unable to analyze symptoms right now."}</div>`;
+        return;
+    }
 
-    document.getElementById("analysisResult").style.display = "block";
+    resultPanel.innerHTML = `
+        <h3>AI Analysis</h3>
+        <div class="possible-conditions">
+            <h4>Possible Conditions</h4>
+            <div id="conditions"></div>
+        </div>
+        <div class="urgency-level mt-3">
+            <h4>Urgency Level</h4>
+            <div id="urgency"></div>
+        </div>
+        <div class="recommendations mt-3">
+            <h4>AI Recommendations</h4>
+            <div id="recommendations"></div>
+        </div>
+        <div class="doctor-matching mt-3">
+            <h4>Recommended Doctors</h4>
+            <div id="doctors"></div>
+        </div>
+        <button onclick="bookConsultation()" class="btn btn-primary mt-4" type="button">Book Consultation Now</button>
+    `;
     document.getElementById("conditions").innerHTML = (result.conditions || []).map(c =>
         `<div class="condition">${c.name} (${c.probability}% probability)</div>`
     ).join("");
@@ -86,5 +133,13 @@ function bookWithDoctor(doctorId) {
 </script>
 <style>
 .conversation-card{display:grid;gap:12px;padding:18px;border-radius:22px;background:#fff;border:1px solid #d5dfdb}
+.symptom-checker{display:grid;gap:20px}
+.analysis-result{border-top:1px solid #e5e7eb;padding-top:20px}
+.condition,.doctor-card{padding:14px 16px;border:1px solid #e5e7eb;border-radius:16px;background:#fff}
+.possible-conditions,.urgency-level,.recommendations,.doctor-matching{display:grid;gap:12px}
+.urgency-high,.urgency-medium,.urgency-low{padding:14px 16px;border-radius:16px;font-weight:700}
+.urgency-high{background:#fef2f2;color:#b91c1c}
+.urgency-medium{background:#fffbeb;color:#92400e}
+.urgency-low{background:#ecfdf5;color:#166534}
 </style>
 {% endblock %}

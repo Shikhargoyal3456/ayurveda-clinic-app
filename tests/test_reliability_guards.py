@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app
 from app.rag_engine import RetrievalResult, get_rag_engine
+import routers.ai as ai_router
 from routers.ai import rebuild_status
 import scripts.backup_db as backup_db_module
 
@@ -161,6 +162,7 @@ async def test_required_routes_return_valid_responses(authenticated_client, monk
             "medicine_name": ["Triphala"],
             "medicine_dosage": ["1 tsp"],
             "medicine_frequency": ["Nightly"],
+            "medicine_days": ["7 days"],
             "csrf_token": prescription_token,
         },
         follow_redirects=False,
@@ -172,6 +174,7 @@ async def test_required_routes_return_valid_responses(authenticated_client, monk
     prescription_detail = await client.get(prescription_path)
     assert prescription_detail.status_code == 200
     assert "Next visit recommended in 7 days" in prescription_detail.text
+    assert "7 days" in prescription_detail.text
     share_token = extract_csrf_token(prescription_detail.text)
     share_response = await client.post(
         prescription_path.split("?")[0] + "/share",
@@ -228,11 +231,24 @@ async def test_required_routes_return_valid_responses(authenticated_client, monk
 
     monkeypatch.setattr(
         engine,
-        "generate_clinical_response",
-        lambda symptoms, patient_context="": {
+        "retrieve",
+        lambda query, top_k=3: [
+            RetrievalResult(
+                source_file="charaka_samhita.pdf",
+                text="Digestive imbalance references.",
+                score=0.9,
+                chunk_id="chunk-1",
+            )
+        ],
+    )
+    monkeypatch.setattr(
+        ai_router,
+        "get_ai_response",
+        lambda symptoms, mode="samhita", context=None: {
             "answer": "Possible Diagnosis:\nTest\nDosha Imbalance:\nTest\nRelevant Herbs:\nTest\nDiet Recommendations:\nTest\nLifestyle Advice:\nTest\nAyurvedic Explanation:\nTest",
             "sources": ["charaka_samhita.pdf"],
             "context_passages": [{"source_file": "charaka_samhita.pdf", "chunk_id": "chunk-1", "score": 0.9}],
+            "mode": mode,
         },
     )
     analyze_response = await client.post(
@@ -250,7 +266,7 @@ async def test_required_routes_return_valid_responses(authenticated_client, monk
 
 
 @pytest.mark.asyncio
-async def test_ai_analyzer_returns_graceful_response_when_engine_crashes(authenticated_client, monkeypatch):
+async def test_ai_analyzer_returns_503_when_provider_crashes(authenticated_client, monkeypatch):
     client = authenticated_client["client"]
     engine = get_rag_engine()
 
@@ -261,9 +277,9 @@ async def test_ai_analyzer_returns_graceful_response_when_engine_crashes(authent
 
     analyzer_token = extract_csrf_token(analyzer_page.text)
     monkeypatch.setattr(
-        engine,
-        "generate_clinical_response",
-        lambda symptoms, patient_context="": (_ for _ in ()).throw(RuntimeError("engine crash")),
+        ai_router,
+        "get_ai_response",
+        lambda symptoms, mode="samhita", context=None: (_ for _ in ()).throw(RuntimeError("engine crash")),
     )
 
     response = await client.post(
@@ -272,11 +288,9 @@ async def test_ai_analyzer_returns_graceful_response_when_engine_crashes(authent
         headers={"X-CSRF-Token": analyzer_token},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 503
     payload = response.json()
-    assert "temporarily unavailable" in payload["answer"]
-    assert payload["sources"] == []
-    assert payload["context_passages"] == []
+    assert payload["detail"] == "engine crash"
 
 
 @pytest.mark.asyncio

@@ -1,21 +1,21 @@
 {% extends "patient_simple_base.html" %}
 {% set simple_nav = 'search' %}
 {% block meta %}<meta name="csrf-token" content="{{ csrf_token }}">{% endblock %}
-{% block title %}Search Medicines{% endblock %}
+{% block title %}KASH AI - Search Medicines{% endblock %}
 {% block page %}
 <section class="landing-hero card" style="padding:2rem;">
     <div class="content-grid-2" style="align-items:center;">
         <div class="section-stack" style="gap:1rem;">
             <span class="section-kicker"><i class="fa-solid fa-capsules"></i> Medicine ordering</span>
             <div>
-                <h1>Search, compare, and order with confidence.</h1>
-                <p style="font-size:1.05rem;">Find allopathy, Ayurveda, wellness, and device products with AI help, prescription upload, and a cleaner checkout flow.</p>
+                <h1 class="page-title">Search Medicines</h1>
+                <p class="page-description" style="font-size:1.05rem;">Find allopathy, Ayurveda, wellness, and device products with AI help, prescription upload, and a cleaner checkout flow.</p>
             </div>
             <form class="search-bar" onsubmit="event.preventDefault(); renderMedicines();">
                 <span aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <label class="sr-only" for="searchInput">Search for medicines</label>
-                <input id="searchInput" type="search" placeholder="Search for medicines..." value="{{ initial_query | e }}" aria-label="Search for medicines">
-                <button class="primary-btn" type="button" onclick="renderMedicines()">Search</button>
+                <input id="searchInput" class="search-input" type="search" placeholder="Search for medicines..." value="{{ initial_query | e }}" aria-label="Search for medicines">
+                <button id="searchBtn" class="primary-btn" type="button" onclick="renderMedicines()">Search</button>
             </form>
             <div class="hero-actions">
                 <span class="pill-chip is-active">Allopathy</span>
@@ -24,7 +24,7 @@
                 <span class="pill-chip">Devices</span>
             </div>
             <div class="hero-actions">
-                <button class="secondary-btn" type="button" onclick="openUploadArea()">Upload Prescription</button>
+                <button id="uploadRxBtn" class="secondary-btn" type="button" onclick="openUploadArea()">Upload Prescription</button>
                 <button class="secondary-btn" type="button" onclick="document.getElementById('searchInput').focus()">Voice Search Ready</button>
             </div>
         </div>
@@ -84,8 +84,18 @@
                     <h2 class="h4 mb-0">Search Results</h2>
                 </div>
             </div>
-            <div id="medicineList" class="grid-auto-fit" aria-live="polite"></div>
-            <div id="medicineEmpty" class="empty-state" style="display:none; margin-top:12px;">No medicines found. Try another name.</div>
+            <div id="medicineList" class="grid-auto-fit" aria-live="polite">
+                <div class="skeleton-loader">
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                    <div class="skeleton-line"></div>
+                </div>
+            </div>
+            <div id="medicineEmpty" class="empty-state" style="display:none; margin-top:12px;">
+                <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                <h3 class="empty-state__title">No medicines found</h3>
+                <p class="empty-state__message">Try another name, upload a prescription, or search by brand.</p>
+            </div>
         </section>
     </div>
 </section>
@@ -101,7 +111,12 @@
     <div class="content-grid-2" style="align-items:start;">
         <div>
             <div id="cartItems" aria-live="polite"></div>
-            <div id="cartEmpty" class="empty-state">Your cart is empty. Search and add medicines first.</div>
+            <div id="cartEmpty" class="empty-state">
+                <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                <h3 class="empty-state__title">No medicines in cart yet</h3>
+                <p class="empty-state__message">Search for a medicine or upload a prescription to start your order.</p>
+                <button type="button" onclick="document.getElementById('searchInput').focus()" class="btn-primary">Search Medicines</button>
+            </div>
             <div id="cartSummary" style="display:none; margin-top:16px;">
                 <div class="list-row"><div class="list-copy"><strong>Subtotal</strong><span id="subtotalText">₹0</span></div></div>
                 <div class="list-row"><div class="list-copy"><strong>Delivery</strong><span>₹20</span></div></div>
@@ -118,7 +133,7 @@
             <input id="patientName" name="patient_name" type="text" placeholder="Your name" value="{{ (prefill_patient.name if prefill_patient is defined else '') | e }}" required autocomplete="name" aria-label="Your name">
             <input id="patientPhone" name="patient_phone" type="tel" placeholder="10-digit phone number" pattern="[0-9]{10}" value="{{ (prefill_patient.phone if prefill_patient is defined else '') | e }}" required autocomplete="tel" inputmode="numeric" aria-label="10-digit phone number">
             <textarea id="patientAddress" name="patient_address" rows="3" placeholder="Delivery address" required autocomplete="street-address" aria-label="Delivery address">{{ (prefill_patient.address if prefill_patient is defined else '') | e }}</textarea>
-            <button id="checkoutButton" class="primary-btn" type="submit" disabled>Place Order</button>
+            <button id="checkoutBtn" class="primary-btn checkout-btn" type="submit" disabled>Place Order</button>
             <div id="orderMessage" class="empty-state" style="display:none;" aria-live="assertive"></div>
         </form>
     </div>
@@ -136,7 +151,7 @@ const cartEmpty = document.getElementById("cartEmpty");
 const cartSummary = document.getElementById("cartSummary");
 const subtotalText = document.getElementById("subtotalText");
 const totalText = document.getElementById("totalText");
-const checkoutButton = document.getElementById("checkoutButton");
+const checkoutButton = document.getElementById("checkoutBtn");
 const orderForm = document.getElementById("orderForm");
 const medicinesJson = document.getElementById("medicines_json");
 const pharmacyId = document.getElementById("pharmacyId");
@@ -153,10 +168,11 @@ const cartKey = "kashSimpleCart";
 const patientProfileKey = "kashSimplePatientProfile";
 let medicines = [];
 let cart = loadCart();
+let searchTimer = null;
 
 function loadCart() {
     try {
-        const saved = JSON.parse(localStorage.getItem(cartKey) || "[]");
+        const saved = JSON.parse(window.kashStorageGet(cartKey) || "[]");
         return Array.isArray(saved) ? saved : [];
     } catch (error) {
         return [];
@@ -164,12 +180,12 @@ function loadCart() {
 }
 
 function saveCart() {
-    localStorage.setItem(cartKey, JSON.stringify(cart));
+    window.kashStorageSet(cartKey, JSON.stringify(cart));
 }
 
 function loadPatientProfile() {
     try {
-        const saved = JSON.parse(localStorage.getItem(patientProfileKey) || "{}");
+        const saved = JSON.parse(window.kashStorageGet(patientProfileKey) || "{}");
         return typeof saved === "object" && saved ? saved : {};
     } catch (error) {
         return {};
@@ -182,7 +198,7 @@ function savePatientProfile() {
         phone: document.getElementById("patientPhone").value.trim(),
         address: document.getElementById("patientAddress").value.trim()
     };
-    localStorage.setItem(patientProfileKey, JSON.stringify(profile));
+    window.kashStorageSet(patientProfileKey, JSON.stringify(profile));
 }
 
 function applySavedPatientProfile() {
@@ -202,7 +218,7 @@ function renderAiSuggestions(payload) {
     const precautions = Array.isArray(payload.precautions) ? payload.precautions : [];
     aiSuggestResults.innerHTML = "";
     if (!suggestions.length) {
-        aiSuggestStatus.textContent = precautions[0] || "No AI suggestions yet. Describe your symptoms in a bit more detail.";
+        aiSuggestStatus.textContent = payload.error || precautions[0] || "Add a little more symptom detail so Kash AI can respond more precisely.";
         return;
     }
     aiSuggestStatus.textContent = payload.disclaimer || "These AI suggestions are only for guidance.";
@@ -223,6 +239,10 @@ async function requestAiSuggestions() {
     const symptoms = aiInput.value.trim();
     aiSuggestResults.innerHTML = "";
     aiSuggestStatus.textContent = "Kash AI is reviewing your symptoms...";
+    const heroAiButton = document.getElementById("heroAiButton");
+    const originalText = heroAiButton.innerHTML;
+    heroAiButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+    heroAiButton.disabled = true;
     try {
         const formData = new FormData();
         formData.append("symptoms", symptoms);
@@ -231,7 +251,10 @@ async function requestAiSuggestions() {
         const payload = await response.json();
         renderAiSuggestions(payload);
     } catch (error) {
-        aiSuggestStatus.textContent = "AI suggestions are not available right now. Please search manually or upload a prescription.";
+        aiSuggestStatus.textContent = "We could not complete the AI request just now.";
+    } finally {
+        heroAiButton.innerHTML = originalText;
+        heroAiButton.disabled = false;
     }
 }
 
@@ -261,6 +284,7 @@ function addToCart(item, qty = 1) {
     if (existing) existing.qty += qty;
     else cart.push({ medicine_id: item.id, name: item.name, price: Number(item.price || 0), qty: qty, pharmacy_id: item.pharmacy_id || 1 });
     renderCart();
+    window.showToast?.(`${item.name} added to cart`, "success");
 }
 
 function updateQty(id, delta) {
@@ -302,12 +326,9 @@ function renderCart() {
     saveCart();
 }
 
-function renderMedicines() {
-    const q = searchInput.value.trim().toLowerCase();
-    const visible = medicines.filter((item) => `${item.name} ${item.category} ${item.generic_name || ""}`.toLowerCase().includes(q));
+function renderMedicineCards(visible) {
     medicineList.innerHTML = "";
     medicineEmpty.style.display = visible.length ? "none" : "block";
-    searchStatus.textContent = q ? "Searching for medicines..." : "Showing popular medicines near you.";
     visible.forEach((item) => {
         const row = document.createElement("article");
         row.className = "feature-card";
@@ -325,26 +346,51 @@ function renderMedicines() {
                     <strong>${money(item.price)}</strong>
                     <p style="font-size:.9rem;">MRP <s>${money((Number(item.price || 0) * 1.1).toFixed(0))}</s> · Save 10%</p>
                 </div>
-                <button class="primary-btn" type="button">Add to Order</button>
+                <button class="primary-btn add-to-cart-btn" type="button">Add to Cart</button>
             </div>
         `;
-        row.querySelector("button").addEventListener("click", () => addToCart(item, 1));
+        const addButton = row.querySelector("button");
+        if (addButton) {
+            addButton.addEventListener("click", () => addToCart(item, 1));
+        }
         medicineList.appendChild(row);
     });
 }
 
+function renderMedicines() {
+    loadMedicines().catch(() => {
+        medicineEmpty.style.display = "block";
+        medicineEmpty.textContent = "Medicines are not loading right now. Please try again.";
+        searchStatus.textContent = "Network issue. Check your internet.";
+        const searchButton = document.getElementById("searchBtn");
+        searchButton.disabled = false;
+        searchButton.textContent = "Search";
+    });
+}
+
 async function loadMedicines() {
-    searchStatus.textContent = "Searching for medicines...";
-    const response = await fetch("/api/medicines/search?q=");
-    const payload = await response.json();
-    medicines = Array.isArray(payload.medicines) ? payload.medicines : [];
-    if (Array.isArray(prefillMedicines) && prefillMedicines.length) {
-        for (const wanted of prefillMedicines) {
-            const match = medicines.find((item) => String(item.name || "").toLowerCase() === String(wanted.name || "").toLowerCase());
-            if (match) addToCart(match, Number(wanted.qty || 1));
+    const q = searchInput.value.trim();
+    const searchButton = document.getElementById("searchBtn");
+    searchStatus.innerHTML = '<div class="skeleton-loader"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>';
+    medicineList.innerHTML = '<div class="skeleton-loader"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>';
+    searchButton.disabled = true;
+    searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+    try {
+        const response = await fetch(`/api/medicines/search?q=${encodeURIComponent(q)}`);
+        const payload = await response.json();
+        medicines = Array.isArray(payload.medicines) ? payload.medicines : [];
+        if (Array.isArray(prefillMedicines) && prefillMedicines.length) {
+            for (const wanted of prefillMedicines) {
+                const match = medicines.find((item) => String(item.name || "").toLowerCase() === String(wanted.name || "").toLowerCase());
+                if (match) addToCart(match, Number(wanted.qty || 1));
+            }
         }
+        renderMedicineCards(medicines);
+        searchStatus.textContent = q ? `Showing ${medicines.length} result${medicines.length === 1 ? "" : "s"} for "${q}".` : "Popular medicines ready. Search to narrow results.";
+    } finally {
+        searchButton.disabled = false;
+        searchButton.textContent = "Search";
     }
-    renderMedicines();
 }
 
 function validateBeforeSubmit() {
@@ -360,7 +406,8 @@ orderForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateBeforeSubmit()) return;
     checkoutButton.disabled = true;
-    checkoutButton.textContent = "Placing your order...";
+    const originalText = checkoutButton.innerHTML;
+    checkoutButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing order...';
     orderMessage.style.display = "none";
     let response;
     let payload;
@@ -370,22 +417,22 @@ orderForm.addEventListener("submit", async (event) => {
     } catch (error) {
         showOrderMessage("Network issue. Check your internet.");
         checkoutButton.disabled = false;
-        checkoutButton.textContent = "Place Order";
+        checkoutButton.innerHTML = originalText;
         return;
     }
     if (!response.ok || payload.error) {
         showOrderMessage(payload.detail || payload.error || "Something went wrong. Please try again.");
         checkoutButton.disabled = false;
-        checkoutButton.textContent = "Place Order";
+        checkoutButton.innerHTML = originalText;
         return;
     }
-    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderId, String(payload.order_id));
-    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl, payload.order_again_url || "");
-    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderStatusUrl, `/patient/order/${payload.order_id}/status`);
-    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderPhone, document.getElementById("patientPhone").value);
-    localStorage.setItem(window.KASH_SIMPLE_KEYS.latestOrderMessage, `Your order #AYU${String(payload.order_id).padStart(4, "0")} is confirmed! Will arrive soon.`);
+    window.kashStorageSet(window.KASH_SIMPLE_KEYS.latestOrderId, String(payload.order_id));
+    window.kashStorageSet(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl, payload.order_again_url || "");
+    window.kashStorageSet(window.KASH_SIMPLE_KEYS.latestOrderStatusUrl, `/patient/order/${payload.order_id}/status`);
+    window.kashStorageSet(window.KASH_SIMPLE_KEYS.latestOrderPhone, document.getElementById("patientPhone").value);
+    window.kashStorageSet(window.KASH_SIMPLE_KEYS.latestOrderMessage, `Your order #AYU${String(payload.order_id).padStart(4, "0")} is confirmed! Will arrive soon.`);
     savePatientProfile();
-    localStorage.removeItem(cartKey);
+    window.kashStorageRemove(cartKey);
     cart = [];
     renderCart();
     showOrderMessage(`Your order #AYU${String(payload.order_id).padStart(4, "0")} is confirmed! Tracking your order now.`);
@@ -423,10 +470,12 @@ document.addEventListener("DOMContentLoaded", () => {
         field.addEventListener("blur", savePatientProfile);
     });
     renderCart();
-    loadMedicines().catch(() => {
-        medicineEmpty.style.display = "block";
-        medicineEmpty.textContent = "Medicines are not loading right now. Please try again.";
-        searchStatus.textContent = "Network issue. Check your internet.";
+    renderMedicines();
+    searchInput.addEventListener("input", () => {
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => {
+            renderMedicines();
+        }, 250);
     });
 });
 </script>

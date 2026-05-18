@@ -11,7 +11,9 @@ from sqlalchemy import insert, select, update
 
 from app.database import SessionLocal, engine
 from app.models import Appointment, CaseSheet, Doctor, Patient
+from services.ai_provider import call_ai_json_with_retry
 from services.automation_tables import ai_processing_logs_table, ensure_automation_tables, telemedicine_sessions_table
+from services.pure_ai_core import pure_ai
 logger = logging.getLogger(__name__)
 
 
@@ -128,11 +130,12 @@ class TelemedicineService:
 
     async def ai_post_consultation_summary(self, session_id: str) -> dict[str, Any]:
         session = self.active_sessions.get(session_id) or self._load_session(session_id) or {}
+        suggested_prescription = await self._suggest_prescription(session)
         summary = {
             "session_id": session_id,
             "date": datetime.now(timezone.utc).isoformat(),
             "diagnosis": self._generate_diagnosis(session),
-            "prescription": self._suggest_prescription(session),
+            "prescription": suggested_prescription,
             "follow_up_required": True,
             "follow_up_in_days": 15,
             "lifestyle_advice": [
@@ -149,40 +152,74 @@ class TelemedicineService:
     async def auto_schedule_followup(self, session_id: str) -> dict[str, Any]:
         session = self.active_sessions.get(session_id) or self._load_session(session_id) or {}
         condition_severity = self._assess_severity(session)
-        followup_days = {
-            "critical": 2,
-            "high": 7,
-            "medium": 15,
-            "low": 30,
+        patient_data = {
+            "condition": self._generate_diagnosis(session),
+            "severity": condition_severity.title(),
+            "phase": "Post consultation",
+            "preferred_days": session.get("preferred_days", "Any"),
+            "preferred_time": session.get("preferred_time", "Any"),
+            "requested_urgency": "Normal",
         }
-        suggested_date = datetime.now(timezone.utc) + timedelta(days=followup_days.get(condition_severity, 15))
-        return {
+        try:
+            ai_schedule = await pure_ai.schedule_followup(patient_data, treatment_response=json.dumps(session.get("ai_insights", {}), ensure_ascii=True))
+            recommended_date = str(ai_schedule.get("recommended_date") or "")
+            return {
+                "session_id": session_id,
+                "suggested_followup_date": recommended_date,
+                "severity": condition_severity,
+                "auto_scheduled": False,
+                "booking_link": f"/appointments/book?session={session_id}",
+                "source": "ai",
+                "confidence": ai_schedule.get("confidence", 85),
+                "reasoning": ai_schedule.get("reasoning", ""),
+            }
+        except Exception as exc:
+            logger.warning("AI follow-up scheduling fell back for session %s: %s", session_id, exc)
+            suggested_date = datetime.now(timezone.utc) + timedelta(days=15)
+            return {
             "session_id": session_id,
             "suggested_followup_date": suggested_date.isoformat(),
             "severity": condition_severity,
             "auto_scheduled": False,
             "booking_link": f"/appointments/book?session={session_id}",
+            "source": "fallback",
         }
 
     async def analyze_symptoms(self, symptoms: str) -> dict[str, Any]:
-        text = str(symptoms or "").lower()
-        urgency = "low"
-        conditions = [{"name": "General viral syndrome", "probability": 62}]
-        recommendations = ["Hydration", "Rest", "Monitor symptoms"]
-        if any(token in text for token in ["chest pain", "breathless", "faint", "unconscious"]):
-            urgency = "high"
-            conditions = [{"name": "Needs urgent physician review", "probability": 88}]
-            recommendations = ["Seek immediate consultation", "Do not delay emergency assessment"]
-        elif any(token in text for token in ["fever", "headache", "body ache"]):
-            urgency = "medium"
-            conditions = [{"name": "Common Cold", "probability": 75}, {"name": "Viral Fever", "probability": 58}]
-            recommendations = ["Rest", "Hydration", "Monitor temperature", "Book a consultation if symptoms persist"]
-
+        text = str(symptoms or "").strip()
+        parsed, _provider = await call_ai_json_with_retry(
+            system_prompt=(
+                "You are a careful telemedicine triage assistant. "
+                "Return only JSON and avoid claiming certainty."
+            ),
+            user_prompt=(
+                f"Patient symptoms: {text}\n\n"
+                "Analyze these symptoms and return JSON with keys conditions, urgency, recommendations. "
+                "conditions must be an array of objects with name and probability fields. "
+                "urgency must be one of low, medium, high, emergency. "
+                "recommendations must be an array of concise next steps."
+            ),
+            simpler_user_prompt=(
+                f"Symptoms: {text}\n"
+                'Return JSON with conditions, urgency, and recommendations.'
+            ),
+            temperature=0.2,
+            max_output_tokens=900,
+        )
         doctors = self._recommend_doctors()
+        normalized_urgency = str(parsed.get("urgency") or "medium").strip().lower()
+        urgency_aliases = {
+            "moderate": "medium",
+            "urgent": "high",
+            "critical": "emergency",
+        }
+        normalized_urgency = urgency_aliases.get(normalized_urgency, normalized_urgency)
+        if normalized_urgency not in {"low", "medium", "high", "emergency"}:
+            normalized_urgency = "medium"
         result = {
-            "conditions": conditions,
-            "urgency": urgency,
-            "recommendations": recommendations,
+            "conditions": parsed.get("conditions") or [],
+            "urgency": normalized_urgency,
+            "recommendations": parsed.get("recommendations") or [],
             "doctors": doctors,
         }
         self._log_decision("telemedicine_triage", 0, "symptom_analysis", result, 0.73)
@@ -244,15 +281,26 @@ class TelemedicineService:
         insights = session.get("ai_insights", {})
         return str(insights.get("ai_diagnosis_suggestion", "Clinical diagnosis pending doctor confirmation"))
 
-    def _suggest_prescription(self, session: dict[str, Any]) -> list[dict[str, str]]:
-        session_type = str(session.get("session_type", "video"))
-        base = [
-            {"medicine": "Hydration support", "dosage": "As advised", "duration": "5 days"},
-            {"medicine": "Diet regulation", "dosage": "Follow clinician advice", "duration": "14 days"},
-        ]
-        if session_type == "ayurveda":
-            base.append({"medicine": "Ayurveda formulation review", "dosage": "Doctor to finalize", "duration": "14 days"})
-        return base
+    async def _suggest_prescription(self, session: dict[str, Any]) -> list[dict[str, str]]:
+        try:
+            diagnosis = self._generate_diagnosis(session)
+            payload = await pure_ai.generate_personalized_prescription(
+                {"diagnosis": diagnosis, "conditions": diagnosis},
+                doctor_notes=json.dumps(session.get("ai_insights", {}), ensure_ascii=True),
+            )
+            medicines = payload.get("medicines", []) if isinstance(payload.get("medicines"), list) else []
+            return [
+                {
+                    "medicine": str(item.get("name") or "AI recommendation").strip(),
+                    "dosage": str(item.get("dosage") or "As advised").strip(),
+                    "duration": str(item.get("duration") or "As advised").strip(),
+                }
+                for item in medicines
+                if isinstance(item, dict)
+            ]
+        except Exception as exc:
+            logger.warning("AI telemedicine prescription fallback triggered: %s", exc)
+            return []
 
     def _assess_severity(self, session: dict[str, Any]) -> str:
         summary = json.dumps(session, ensure_ascii=True).lower()

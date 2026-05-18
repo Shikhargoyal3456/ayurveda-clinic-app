@@ -52,6 +52,7 @@ async function analyzeSymptoms() {
     const result = document.getElementById("result");
     const form = document.getElementById("ai-analyzer-form");
     const symptoms = document.getElementById("symptoms").value.trim();
+    const mode = document.getElementById("aiModeInput")?.value || "samhita";
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
     const analyzeButton = document.getElementById("analyze-button");
     const loadingIndicator = document.getElementById("analysis-loading");
@@ -79,7 +80,7 @@ async function analyzeSymptoms() {
                 "Accept": "application/json",
                 "X-CSRF-Token": csrfToken
             },
-            body: JSON.stringify({ symptoms })
+            body: JSON.stringify({ symptoms, mode })
         }, 30000);
         const data = await response.json();
         if (!response.ok) {
@@ -114,7 +115,8 @@ function renderAiResult(data) {
 
     const answerLabel = document.createElement("h3");
     answerLabel.className = "result-title";
-    answerLabel.textContent = "AI Clinical Draft";
+    const currentMode = String(data.mode || "samhita").replace(/_/g, " ");
+    answerLabel.textContent = `AI Clinical Draft (${currentMode})`;
 
     const answerText = document.createElement("pre");
     answerText.textContent = data.answer || "No answer returned.";

@@ -47,7 +47,7 @@ async def test_marketplace_dynamic_price(client, db_session):
     assert payload["dynamic_price"] > 0
 
 
-async def test_business_owner_and_lab_endpoints(client):
+async def test_business_owner_and_lab_endpoints(client, admin_client):
     await client.get("/portal")
 
     register_pharmacy = await client.post(
@@ -67,12 +67,13 @@ async def test_business_owner_and_lab_endpoints(client):
     assert live_orders.status_code == 200, live_orders.text
     assert "orders" in live_orders.json()
 
-    register_lab = await client.post(
+    admin = admin_client["client"]
+    register_lab = await admin.post(
         "/api/lab/register",
         json={"lab_name": "Marketplace Diagnostics", "address": "Sector 30, Gurugram"},
     )
     assert register_lab.status_code == 200, register_lab.text
 
-    manage_tests = await client.get("/api/lab/tests/manage")
+    manage_tests = await admin.get("/api/lab/tests/manage")
     assert manage_tests.status_code == 200, manage_tests.text
     assert "tests" in manage_tests.json()

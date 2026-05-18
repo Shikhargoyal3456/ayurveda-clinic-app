@@ -18,6 +18,8 @@ from app.portal_auth import UPLOAD_ROOT, get_portal_user, require_portal_roles, 
 from models.ai_features import AIPrescriptionScan
 from models.medicine import MedicineOrder
 from services.ai_prescription_analyzer import AIPrescriptionAnalyzer
+from services.cache_service import cache_get_json, cache_set_json
+from services.pure_ai_core import add_disclaimer, pure_ai
 
 
 router = APIRouter(tags=["medicine-info"])
@@ -161,7 +163,13 @@ def prescription_history(request: Request, db: Session = Depends(get_db)):
     user = get_portal_user(request, db)
     if user is None:
         return JSONResponse([])
-    return JSONResponse(analyzer.history_for_user(db, user.id))
+    cache_key = f"prescription-history:{user.id}"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return JSONResponse(cached)
+    payload = analyzer.history_for_user(db, user.id)
+    cache_set_json(cache_key, payload, 120)
+    return JSONResponse(payload)
 
 
 @router.get("/api/prescription/{prescription_id}")
@@ -173,8 +181,23 @@ def prescription_detail(prescription_id: int, user=Depends(require_portal_roles(
 
 
 @router.get("/api/medicine/info/{medicine_name}")
-def get_medicine_info(medicine_name: str, db: Session = Depends(get_db)):
-    return JSONResponse(analyzer.get_medicine_info(db, medicine_name))
+async def get_medicine_info(medicine_name: str, db: Session = Depends(get_db)):
+    try:
+        result = await pure_ai.get_medicine_info(medicine_name, {})
+        return JSONResponse(
+            add_disclaimer(
+                {
+                    "success": True,
+                    "source": "ai",
+                    "confidence": result.get("confidence", 85),
+                    "confidence_factors": result.get("confidence_factors", {}),
+                    "requires_doctor_review": result.get("requires_doctor_review", False),
+                    "data": result,
+                }
+            )
+        )
+    except Exception:
+        return JSONResponse(analyzer.get_medicine_info(db, medicine_name))
 
 
 @router.post("/api/prescription/verify")

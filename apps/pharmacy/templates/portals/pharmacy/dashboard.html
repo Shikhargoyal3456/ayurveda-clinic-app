@@ -10,9 +10,9 @@
             <p class="muted">Restaurant-style medicine operations with a real-time order queue, stock alerts, and daily earnings.</p>
         </div>
         <div class="hero-actions">
-            <a class="btn btn-primary btn-sm" href="/portal/pharmacy/add-medicine">Add medicine</a>
-            <a class="btn btn-outline-dark btn-sm" href="/portal/pharmacy/bulk-upload">Bulk upload</a>
-            <a class="btn btn-outline-success btn-sm" href="/portal/pharmacy/stock-alerts">Stock alerts</a>
+            <a class="btn btn-primary btn-sm" href="/pharmacy#live-orders">Orders</a>
+            <a class="btn btn-outline-dark btn-sm" href="/portal/pharmacy/add-medicine">Inventory</a>
+            <a class="btn btn-outline-success btn-sm" href="/pharmacy">Earnings</a>
         </div>
     </div>
     <div class="metric-grid">
@@ -48,4 +48,390 @@
         </div>
     </article>
 </section>
+<section class="portal-card-grid ai-pharmacy-grid">
+    <article class="surface-card ai-card-surface">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">AI pharmacy copilot</p>
+                <h2>Daily business insight</h2>
+            </div>
+            <span class="ai-badge">AI-powered</span>
+        </div>
+        <div id="aiInsightContent" class="ai-loading-state">
+            <div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>
+        </div>
+        <p class="ai-disclaimer">AI-generated guidance based on live pharmacy activity. Review before acting.</p>
+    </article>
+
+    <article class="surface-card ai-card-surface">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Forecasting</p>
+                <h2>Demand forecast for the next 7 days</h2>
+            </div>
+            <span id="forecastConfidence" class="confidence-pill">--%</span>
+        </div>
+        <div id="forecastContent" class="ai-loading-state">
+            <div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line"></span></div>
+        </div>
+    </article>
+</section>
+
+<section class="portal-card-grid ai-pharmacy-grid ai-pharmacy-grid--triple">
+    <article class="surface-card ai-card-surface">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Restock</p>
+                <h2>What to order today</h2>
+            </div>
+        </div>
+        <div id="restockContent" class="ai-loading-state">
+            <div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>
+        </div>
+    </article>
+
+    <article class="surface-card ai-card-surface">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Prioritization</p>
+                <h2>AI order triage</h2>
+            </div>
+        </div>
+        <div id="priorityContent" class="ai-loading-state">
+            <div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>
+        </div>
+    </article>
+
+    <article class="surface-card ai-card-surface">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Customer behavior</p>
+                <h2>Trending medicines and loyal customers</h2>
+            </div>
+        </div>
+        <div id="customerInsightContent" class="ai-loading-state">
+            <div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>
+        </div>
+    </article>
+</section>
+
+<section class="surface-card ai-card-surface">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Pricing</p>
+            <h2>AI price optimization opportunities</h2>
+        </div>
+    </div>
+    <div id="pricingContent" class="ai-loading-state">
+        <div class="skeleton-loader"><span class="skeleton-line"></span><span class="skeleton-line"></span><span class="skeleton-line skel-text--medium"></span></div>
+    </div>
+</section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const pharmacyId = {{ pharmacy.id }};
+
+    const renderError = function (targetId, message) {
+        const node = document.getElementById(targetId);
+        if (!node) return;
+        node.innerHTML = `<div class="alert alert-warning">${message}</div>`;
+    };
+
+    const priorityClass = function (priority) {
+        if (priority === "high") return "is-high";
+        if (priority === "medium") return "is-medium";
+        return "is-low";
+    };
+
+    Promise.all([
+        fetch(`/api/ai-pharmacy/daily-insights/${pharmacyId}`),
+        fetch(`/api/ai-pharmacy/demand-forecast/${pharmacyId}`),
+        fetch(`/api/ai-pharmacy/order-priorities/${pharmacyId}`),
+    ])
+        .then(async ([insightsRes, forecastRes, prioritiesRes]) => {
+            const insightsPayload = await insightsRes.json();
+            const forecastPayload = await forecastRes.json();
+            const prioritiesPayload = await prioritiesRes.json();
+
+            if (insightsPayload.success) {
+                const insights = insightsPayload.insights || {};
+                document.getElementById("aiInsightContent").innerHTML = `
+                    <div class="insight-headline">${insights.message || "AI insight ready."}</div>
+                    <div class="insight-meta-grid">
+                        <div class="insight-meta-item"><strong>Tip</strong><span>${insights.tip || "No tip available."}</span></div>
+                        <div class="insight-meta-item"><strong>Focus</strong><span>${insights.focus_area || "inventory"}</span></div>
+                        <div class="insight-meta-item"><strong>Opportunity</strong><span>${insights.opportunity || "Watch repeat refill demand."}</span></div>
+                    </div>
+                    ${insights.alert ? `<div class="insight-alert">${insights.alert}</div>` : ""}
+                    <div class="ai-disclaimer">Confidence: ${insights.confidence || "--"}% · ${insightsPayload.disclaimer || ""}</div>
+                `;
+
+                const customer = insights.customer_insights || {};
+                const trending = customer.trending_medicines || [];
+                const topCustomers = customer.top_customers || [];
+                document.getElementById("customerInsightContent").innerHTML = `
+                    <div class="insight-block-title">${customer.customer_signal || "Customer trends are loading."}</div>
+                    <div class="stack-list compact-stack">
+                        ${trending.length ? trending.map(item => `
+                            <div class="stack-item">
+                                <div><strong>${item.name}</strong><div class="muted">${item.category} · ${item.weekly_units} units this week</div></div>
+                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                            </div>
+                        `).join("") : `<div class="empty-state"><strong>No clear medicine trend yet.</strong><span class="muted">Order history needs more volume before stronger patterning appears.</span></div>`}
+                    </div>
+                    <div class="subsection-separator"></div>
+                    <div class="insight-block-title">Top repeat customers</div>
+                    <div class="stack-list compact-stack">
+                        ${topCustomers.length ? topCustomers.map(item => `
+                            <div class="stack-item">
+                                <div><strong>${item.customer_name}</strong><div class="muted">${item.orders_count} orders · Rs ${Number(item.total_spend || 0).toFixed(0)}</div></div>
+                            </div>
+                        `).join("") : `<div class="empty-state"><strong>No repeat-customer cluster yet.</strong><span class="muted">Repeat buyers will appear here once order history deepens.</span></div>`}
+                    </div>
+                `;
+
+                const pricing = insights.pricing_opportunities || [];
+                document.getElementById("pricingContent").innerHTML = pricing.length ? `
+                    <div class="stack-list compact-stack">
+                        ${pricing.map(item => `
+                            <div class="stack-item">
+                                <div>
+                                    <strong>${item.medicine_name}</strong>
+                                    <div class="muted">Current Rs ${Number(item.current_price || 0).toFixed(2)} -> Suggested Rs ${Number(item.suggested_price || 0).toFixed(2)}</div>
+                                    <div class="muted">Expected impact: ${item.expected_sales_impact}</div>
+                                </div>
+                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                    <div class="ai-disclaimer">Use AI pricing suggestions with your margin rules and local competition checks.</div>
+                ` : `<div class="empty-state"><strong>No pricing change needed right now.</strong><span class="muted">The AI did not detect a strong pricing opportunity from recent demand.</span></div>`;
+            } else {
+                renderError("aiInsightContent", "AI daily insights could not be loaded right now.");
+                renderError("customerInsightContent", "Customer insights are temporarily unavailable.");
+                renderError("pricingContent", "Pricing suggestions are temporarily unavailable.");
+            }
+
+            if (forecastPayload.success) {
+                const forecast = forecastPayload.forecast || {};
+                document.getElementById("forecastConfidence").textContent = `${forecast.confidence || "--"}%`;
+                document.getElementById("forecastContent").innerHTML = `
+                    <div class="forecast-insight">${forecast.insight || "Forecast ready."}</div>
+                    <div class="trending-row"><strong>Trending categories</strong><span>${(forecast.trending_categories || []).join(", ") || "No category spike yet"}</span></div>
+                    <div class="stack-list compact-stack">
+                        ${(forecast.high_demand_medicines || []).length ? forecast.high_demand_medicines.map(item => `
+                            <div class="stack-item">
+                                <div>
+                                    <strong>${item.name}</strong>
+                                    <div class="muted">Stock ${item.current_stock} · Predicted ${item.predicted_sales} sales · ${item.days_until_out} day(s) left</div>
+                                </div>
+                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                            </div>
+                        `).join("") : `<div class="empty-state"><strong>No high-demand forecast yet.</strong><span class="muted">The model needs more sales signal to highlight upcoming winners.</span></div>`}
+                    </div>
+                `;
+
+                document.getElementById("restockContent").innerHTML = (forecast.restock_urgent || []).length ? `
+                    <div class="stack-list compact-stack">
+                        ${forecast.restock_urgent.map(item => `
+                            <div class="stack-item">
+                                <div>
+                                    <strong>${item.name}</strong>
+                                    <div class="muted">Order ${item.suggested_quantity} unit(s) · Supplier: ${item.supplier || "Preferred supplier"}</div>
+                                </div>
+                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                    ${(forecast.low_demand_medicines || []).length ? `
+                        <div class="subsection-separator"></div>
+                        <div class="insight-block-title">Slow movers</div>
+                        <div class="stack-list compact-stack">
+                            ${forecast.low_demand_medicines.map(item => `
+                                <div class="stack-item">
+                                    <div>
+                                        <strong>${item.name}</strong>
+                                        <div class="muted">Stock ${item.current_stock} · ${item.days_without_sale} day(s) without sale</div>
+                                    </div>
+                                    <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                </div>
+                            `).join("")}
+                        </div>
+                    ` : ""}
+                ` : `<div class="empty-state"><strong>No urgent restock recommendation right now.</strong><span class="muted">Current inventory looks stable against the next 7-day demand window.</span></div>`;
+            } else {
+                renderError("forecastContent", "Demand forecasting is temporarily unavailable.");
+                renderError("restockContent", "Restock recommendations are temporarily unavailable.");
+            }
+
+            if (prioritiesPayload.success) {
+                const priorities = prioritiesPayload.priorities || {};
+                document.getElementById("priorityContent").innerHTML = (priorities.orders || []).length ? `
+                    <div class="ai-disclaimer">Average confidence: ${priorities.confidence || "--"}% · ${prioritiesPayload.disclaimer || ""}</div>
+                    <div class="stack-list compact-stack">
+                        ${priorities.orders.map(item => `
+                            <div class="stack-item priority-row ${priorityClass(item.priority)}">
+                                <div>
+                                    <strong>Order #${item.order_id} · ${item.patient_name}</strong>
+                                    <div class="muted">${item.reason}</div>
+                                    <div class="inline-meta">${(item.items_preview || []).map(label => `<span>${label}</span>`).join("")}</div>
+                                </div>
+                                <div class="priority-side">
+                                    <span class="priority-pill ${priorityClass(item.priority)}">${item.priority}</span>
+                                    <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                </div>
+                            </div>
+                        `).join("")}
+                    </div>
+                ` : `<div class="empty-state"><strong>No live orders to prioritize.</strong><span class="muted">New prescription and medicine requests will be triaged here automatically.</span></div>`;
+            } else {
+                renderError("priorityContent", "AI order triage is temporarily unavailable.");
+            }
+        })
+        .catch(() => {
+            renderError("aiInsightContent", "AI daily insights could not be loaded right now.");
+            renderError("forecastContent", "Demand forecasting could not be loaded right now.");
+            renderError("restockContent", "Restock recommendations could not be loaded right now.");
+            renderError("priorityContent", "AI order triage could not be loaded right now.");
+            renderError("customerInsightContent", "Customer insights could not be loaded right now.");
+            renderError("pricingContent", "Pricing opportunities could not be loaded right now.");
+        });
+});
+</script>
+
+<style>
+.ai-pharmacy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ai-pharmacy-grid--triple {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ai-card-surface {
+    display: grid;
+    gap: 16px;
+}
+
+.ai-badge,
+.confidence-pill,
+.priority-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.ai-badge {
+    background: linear-gradient(135deg, #0f4c5c 0%, #1a7f6b 100%);
+    color: white;
+}
+
+.confidence-pill {
+    background: rgba(15, 76, 92, 0.08);
+    color: #0f4c5c;
+}
+
+.ai-loading-state {
+    min-height: 160px;
+}
+
+.insight-headline {
+    color: #0f4c5c;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.insight-meta-grid {
+    display: grid;
+    gap: 12px;
+}
+
+.insight-meta-item {
+    display: grid;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(248, 250, 252, 0.96);
+    border: 1px solid #e5e7eb;
+}
+
+.insight-alert {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: #fef2f2;
+    color: #b42318;
+    border: 1px solid #fecaca;
+    font-weight: 700;
+}
+
+.forecast-insight,
+.insight-block-title,
+.trending-row {
+    display: grid;
+    gap: 4px;
+}
+
+.trending-row {
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(230, 244, 241, 0.72);
+}
+
+.compact-stack {
+    gap: 12px;
+}
+
+.subsection-separator {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 4px 0;
+}
+
+.priority-row {
+    align-items: flex-start;
+}
+
+.priority-side {
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+}
+
+.priority-pill.is-high,
+.priority-row.is-high .priority-pill {
+    background: #fef2f2;
+    color: #b42318;
+}
+
+.priority-pill.is-medium,
+.priority-row.is-medium .priority-pill {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.priority-pill.is-low,
+.priority-row.is-low .priority-pill {
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.ai-disclaimer {
+    color: var(--color-text-secondary);
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 1100px) {
+    .ai-pharmacy-grid,
+    .ai-pharmacy-grid--triple {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}

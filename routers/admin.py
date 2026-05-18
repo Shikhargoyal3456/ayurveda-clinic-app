@@ -14,7 +14,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, Security, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
@@ -80,6 +80,7 @@ from services.supplier_service import (
     update_supplier,
 )
 from services.feature_flags import is_delivery_enabled, is_pricing_enabled, is_supplier_enabled
+from services.cache_service import cache_get_json, cache_set_json
 from services.pricing_service import get_pricing_preview
 from services.profit_service import get_profit_metrics
 from services.medicine_management import ensure_master_medicine, normalize_category
@@ -163,9 +164,10 @@ async def _supplier_payload(request: Request, body: dict[str, object] | None = N
 
 
 def _require_admin(doctor: Doctor) -> Doctor:
-    allowed_admins = settings.admin_usernames or ["admin@ayurveda.com"]
+    configured = [item.strip().lower() for item in settings.admin_usernames if item.strip()]
+    allowed_admins = configured or ["admin@ayurveda.com"]
     dev_admin_by_id = not settings.is_production and int(getattr(doctor, "id", 0) or 0) == 1
-    if doctor.username not in allowed_admins and not dev_admin_by_id:
+    if (doctor.username or "").strip().lower() not in allowed_admins and not dev_admin_by_id:
         raise HTTPException(status_code=403, detail="Admin access required.")
     return doctor
 
@@ -364,6 +366,36 @@ def _recent_order_payload(order: MedicineOrder) -> dict[str, object]:
         "payment_status": order.payment_status,
         "created_at": order.created_at.isoformat() if order.created_at else None,
         "tracking_url": f"/orders/tracking/{order.id}",
+    }
+
+
+def _recent_user_payload(item: User | Doctor | Patient, role: str) -> dict[str, object]:
+    if isinstance(item, User):
+        name = item.full_name or item.email or item.phone or "User"
+        created_at = item.created_at
+        role_label = str(item.role.value if hasattr(item.role, "value") else item.role).replace("_", " ").title()
+    elif isinstance(item, Doctor):
+        name = item.full_name or item.username or "Doctor"
+        created_at = item.created_at
+        role_label = role
+    else:
+        name = item.name or item.email or item.phone or "Patient"
+        created_at = item.created_at
+        role_label = role
+    return {
+        "name": name,
+        "role": role_label,
+        "time_ago": _time_ago(created_at),
+        "created_at": created_at.isoformat() if created_at else None,
+    }
+
+
+def _admin_new_context(request: Request, doctor: Doctor) -> dict[str, object]:
+    return {
+        "request": request,
+        "doctor": doctor,
+        "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+        "csrf_token": ensure_csrf_token(request),
     }
 
 
@@ -1296,21 +1328,38 @@ def _admin_dashboard_payload(db: Session, order_status: str = "", order_date: st
 
 
 @router.get("/admin")
+@router.get("/admin/dashboard")
 def admin_dashboard(
     request: Request,
-    status: str = Query(default="all"),
-    date: str = Query(default=""),
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
 ):
     doctor = _require_admin(doctor)
-    payload = _admin_dashboard_payload(db, order_status=status, order_date=date)
-    track_event("admin_dashboard_viewed", doctor_id=doctor.id)
-    return templates.TemplateResponse(
-        request,
-        "admin_dashboard.html",
-        {"request": request, "doctor": doctor, **payload},
-    )
+    try:
+        track_event("admin_dashboard_viewed", doctor_id=doctor.id)
+        return templates.TemplateResponse(
+            request,
+            "admin_new.html",
+            _admin_new_context(request, doctor),
+        )
+    except Exception as exc:
+        logger.exception("Simple admin dashboard render failed: %s", exc)
+        return HTMLResponse(
+            status_code=200,
+            content=(
+                "<!DOCTYPE html><html><head><title>Kash AI Admin</title></head>"
+                "<body style=\"font-family: sans-serif; max-width: 960px; margin: 40px auto; padding: 24px;\">"
+                "<h1>Admin Dashboard</h1>"
+                "<p>The full admin view is temporarily unavailable, but the app is still running.</p>"
+                "<ul>"
+                "<li><a href=\"/admin/users\">Open Recent Users</a></li>"
+                "<li><a href=\"/admin/orders\">Open Recent Orders</a></li>"
+                "<li><a href=\"/healthz\">Check System Health</a></li>"
+                "</ul>"
+                "<p><a href=\"/\">Return to Homepage</a></p>"
+                "</body></html>"
+            ),
+        )
 
 
 @router.get("/api/admin/metrics")
@@ -2188,31 +2237,37 @@ def admin_activity_stats(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    today = datetime.now(timezone.utc).date()
-    orders_today = (
-        db.query(func.count(MedicineOrder.id))
-        .filter(func.date(MedicineOrder.created_at) == today.isoformat())
-        .scalar()
-        or 0
-    )
-    revenue_today = int(
-        db.query(func.coalesce(func.sum(MedicineOrder.total_amount), 0))
-        .filter(func.date(MedicineOrder.created_at) == today.isoformat())
-        .scalar()
-        or 0
-    )
-    medicines_sold = 0
-    recent_orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(100).all()
-    for order in recent_orders:
-        medicines_sold += sum(int(item.get("qty", 1) or 1) for item in _load_order_items(order))
-    order_counts = {
-        status: db.query(func.count(MedicineOrder.id)).filter(MedicineOrder.status == status).scalar() or 0
-        for status in ["pending", "confirmed", "packed", "dispatched", "delivered", "cancelled"]
-    }
-    return JSONResponse(
-        {
+    cache_key = "admin:stats"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return JSONResponse(cached)
+    try:
+        today = datetime.now(timezone.utc).date()
+        week_ago = today - timedelta(days=7)
+        orders_today = (
+            db.query(func.count(MedicineOrder.id))
+            .filter(func.date(MedicineOrder.created_at) == today.isoformat())
+            .scalar()
+            or 0
+        )
+        revenue_today = int(
+            db.query(func.coalesce(func.sum(MedicineOrder.total_amount), 0))
+            .filter(func.date(MedicineOrder.created_at) == today.isoformat())
+            .scalar()
+            or 0
+        )
+        medicines_sold = 0
+        recent_orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(100).all()
+        for order in recent_orders:
+            medicines_sold += sum(int(item.get("qty", 1) or 1) for item in _load_order_items(order))
+        order_counts = {
+            status: db.query(func.count(MedicineOrder.id)).filter(MedicineOrder.status == status).scalar() or 0
+            for status in ["pending", "confirmed", "packed", "dispatched", "delivered", "cancelled"]
+        }
+        payload = {
             "active_users": active_session_count(),
             "total_users": int(db.query(func.count(User.id)).scalar() or 0) + int(db.query(func.count(Patient.id)).scalar() or 0) + int(db.query(func.count(Doctor.id)).scalar() or 0),
+            "new_users_week": int(db.query(func.count(User.id)).filter(func.date(User.created_at) >= week_ago.isoformat()).scalar() or 0),
             "orders_today": orders_today,
             "revenue_today": revenue_today,
             "active_prescriptions": int(db.query(func.count(Prescription.id)).scalar() or 0),
@@ -2220,7 +2275,23 @@ def admin_activity_stats(
             "orders": order_counts,
             "computed_at": datetime.now(timezone.utc).isoformat(),
         }
-    )
+        cache_set_json(cache_key, payload, 120)
+        return JSONResponse(payload)
+    except Exception as exc:
+        logger.exception("Admin stats endpoint failed: %s", exc)
+        return JSONResponse(
+            {
+                "active_users": 0,
+                "total_users": 0,
+                "orders_today": 0,
+                "revenue_today": 0,
+                "active_prescriptions": 0,
+                "medicines_sold": 0,
+                "orders": {},
+                "computed_at": datetime.now(timezone.utc).isoformat(),
+                "error": "Stats temporarily unavailable.",
+            }
+        )
 
 
 @router.get("/api/admin/orders/recent")
@@ -2230,8 +2301,142 @@ def admin_recent_orders(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(max(1, min(limit, 100))).all()
-    return JSONResponse([_recent_order_payload(order) for order in orders])
+    safe_limit = max(1, min(limit, 100))
+    cache_key = f"admin:recent-orders:{safe_limit}"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return JSONResponse(cached)
+    try:
+        orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc()).limit(safe_limit).all()
+        payload = [_recent_order_payload(order) for order in orders]
+        cache_set_json(cache_key, payload, 60)
+        return JSONResponse(payload)
+    except Exception as exc:
+        logger.exception("Admin recent orders endpoint failed: %s", exc)
+        return JSONResponse([])
+
+
+@router.get("/api/admin/users/recent")
+def admin_recent_users(
+    limit: int = 5,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _require_admin(doctor)
+    safe_limit = max(1, min(limit, 50))
+    cache_key = f"admin:recent-users:{safe_limit}"
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return JSONResponse(cached)
+    try:
+        rows: list[dict[str, object]] = []
+        combined: list[tuple[datetime, dict[str, object]]] = []
+
+        query_limit = max(1, min(limit, 20))
+        recent_portal_users = db.query(User).order_by(User.created_at.desc(), User.id.desc()).limit(query_limit).all()
+        recent_doctors = db.query(Doctor).order_by(Doctor.created_at.desc(), Doctor.id.desc()).limit(query_limit).all()
+        recent_patients = db.query(Patient).order_by(Patient.created_at.desc(), Patient.id.desc()).limit(query_limit).all()
+
+        fallback_dt = datetime.min.replace(tzinfo=timezone.utc)
+
+        for user in recent_portal_users:
+            payload = _recent_user_payload(user, "User")
+            created_at = _as_aware(user.created_at) or fallback_dt
+            combined.append((created_at, payload))
+        for doctor_item in recent_doctors:
+            payload = _recent_user_payload(doctor_item, "Doctor")
+            created_at = _as_aware(doctor_item.created_at) or fallback_dt
+            combined.append((created_at, payload))
+        for patient in recent_patients:
+            payload = _recent_user_payload(patient, "Patient")
+            created_at = _as_aware(patient.created_at) or fallback_dt
+            combined.append((created_at, payload))
+
+        combined.sort(key=lambda item: item[0], reverse=True)
+        for _, payload in combined[: safe_limit]:
+            rows.append(payload)
+        cache_set_json(cache_key, rows, 60)
+        return JSONResponse(rows)
+    except Exception as exc:
+        logger.exception("Admin recent users endpoint failed: %s", exc)
+        return JSONResponse([])
+
+
+@router.get("/admin/users")
+def admin_users_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    try:
+        portal_users = db.query(User).order_by(User.created_at.desc(), User.id.desc()).limit(50).all()
+        doctors = db.query(Doctor).order_by(Doctor.created_at.desc(), Doctor.id.desc()).limit(25).all()
+        patients = db.query(Patient).order_by(Patient.created_at.desc(), Patient.id.desc()).limit(25).all()
+        rows: list[tuple[datetime, dict[str, object]]] = []
+        fallback_dt = datetime.min.replace(tzinfo=timezone.utc)
+        for item in portal_users:
+            rows.append((_as_aware(item.created_at) or fallback_dt, _recent_user_payload(item, "User")))
+        for item in doctors:
+            rows.append((_as_aware(item.created_at) or fallback_dt, _recent_user_payload(item, "Doctor")))
+        for item in patients:
+            rows.append((_as_aware(item.created_at) or fallback_dt, _recent_user_payload(item, "Patient")))
+        rows.sort(key=lambda pair: pair[0], reverse=True)
+        return templates.TemplateResponse(
+            request,
+            "admin_users.html",
+            {
+                "request": request,
+                "doctor": doctor,
+                "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+                "users": [payload for _, payload in rows[:50]],
+            },
+        )
+    except Exception as exc:
+        logger.exception("Admin users page failed: %s", exc)
+        return templates.TemplateResponse(
+            request,
+            "admin_users.html",
+            {
+                "request": request,
+                "doctor": doctor,
+                "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+                "users": [],
+            },
+        )
+
+
+@router.get("/admin/orders")
+def admin_orders_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    doctor = _require_admin(doctor)
+    try:
+        orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc(), MedicineOrder.id.desc()).limit(50).all()
+        return templates.TemplateResponse(
+            request,
+            "admin_orders.html",
+            {
+                "request": request,
+                "doctor": doctor,
+                "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+                "orders": [_recent_order_payload(order) for order in orders],
+            },
+        )
+    except Exception as exc:
+        logger.exception("Admin orders page failed: %s", exc)
+        return templates.TemplateResponse(
+            request,
+            "admin_orders.html",
+            {
+                "request": request,
+                "doctor": doctor,
+                "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+                "orders": [],
+            },
+        )
 
 
 @router.put("/api/orders/{order_id}/status")

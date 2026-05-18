@@ -2,6 +2,7 @@ import time
 
 import pytest
 
+import routers.ai as ai_router
 from app.rag_engine import RetrievalResult, get_rag_engine
 from tests.conftest import extract_csrf_token
 
@@ -26,6 +27,15 @@ async def test_ai_analyzer_returns_degraded_response_when_ollama_is_unavailable(
             )
         ],
     )
+    monkeypatch.setattr(
+        ai_router,
+        "get_ai_response",
+        lambda symptoms, mode="samhita", context=None: {
+            "answer": "Possible acidity-related digestive imbalance. Review agni, avoid irritants, and monitor severity.",
+            "mode": mode,
+            "provider": "gemini",
+        },
+    )
 
     analyzer_page = await client.get("/ai-analyzer")
     assert analyzer_page.status_code == 200
@@ -44,12 +54,9 @@ async def test_ai_analyzer_returns_degraded_response_when_ollama_is_unavailable(
     assert isinstance(payload["context_passages"], list)
 
 
-async def test_ai_analyzer_uses_live_ollama_when_available(authenticated_client, monkeypatch):
+async def test_ai_analyzer_returns_ai_response_when_context_is_available(authenticated_client, monkeypatch):
     client = authenticated_client["client"]
     engine = get_rag_engine()
-    available, _ = engine.ensure_ollama_available()
-    if not available:
-        pytest.skip("Ollama is not reachable.")
 
     monkeypatch.setattr(
         engine,
@@ -62,6 +69,15 @@ async def test_ai_analyzer_uses_live_ollama_when_available(authenticated_client,
                 chunk_id="chunk-ollama-1",
             )
         ],
+    )
+    monkeypatch.setattr(
+        ai_router,
+        "get_ai_response",
+        lambda symptoms, mode="samhita", context=None: {
+            "answer": "Likely pitta-dominant digestive irritation with supportive dietary and review advice.",
+            "mode": mode,
+            "provider": "gemini",
+        },
     )
 
     analyzer_page = await client.get("/ai-analyzer")

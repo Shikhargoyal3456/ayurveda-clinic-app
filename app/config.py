@@ -1,3 +1,10 @@
+"""Application configuration for the Python stack.
+
+Python app notifications can use Gmail SMTP for email and Fast2SMS/MSG91 for
+SMS delivery. Meta WhatsApp Cloud API settings remain available for existing
+non-SMS notification flows.
+"""
+
 from __future__ import annotations
 
 import os
@@ -121,6 +128,14 @@ class Settings:
     whatsapp_template_language_code: str
     email_user: str
     email_password: str
+    support_phone: str
+    support_email: str
+    sms_provider: str
+    fast2sms_api_key: str
+    fast2sms_sender_id: str
+    msg91_auth_key: str
+    msg91_sender_id: str
+    msg91_route: str
     redis_url: str
     db_pool_size: int
     db_max_overflow: int
@@ -250,8 +265,16 @@ def _build_settings() -> Settings:
         whatsapp_api_version=os.getenv("WHATSAPP_API_VERSION", "v23.0").strip() or "v23.0",
         whatsapp_template_name=os.getenv("WHATSAPP_TEMPLATE_NAME", "").strip(),
         whatsapp_template_language_code=os.getenv("WHATSAPP_TEMPLATE_LANGUAGE_CODE", "en_US").strip() or "en_US",
-        email_user=os.getenv("EMAIL_USER", "").strip(),
-        email_password=os.getenv("EMAIL_PASSWORD", "").strip(),
+        email_user=os.getenv("EMAIL_USER", os.getenv("SENDER_EMAIL", "")).strip(),
+        email_password=os.getenv("EMAIL_PASSWORD", os.getenv("SENDER_PASSWORD", "")).strip(),
+        support_phone=os.getenv("SUPPORT_PHONE", "9350397175").strip() or "9350397175",
+        support_email=os.getenv("SUPPORT_EMAIL", "support@kashai.local").strip() or "support@kashai.local",
+        sms_provider=os.getenv("SMS_PROVIDER", "").strip().lower(),
+        fast2sms_api_key=os.getenv("FAST2SMS_API_KEY", "").strip(),
+        fast2sms_sender_id=os.getenv("FAST2SMS_SENDER_ID", "KASHAI").strip() or "KASHAI",
+        msg91_auth_key=os.getenv("MSG91_AUTH_KEY", "").strip(),
+        msg91_sender_id=os.getenv("MSG91_SENDER_ID", "KASHAI").strip() or "KASHAI",
+        msg91_route=os.getenv("MSG91_ROUTE", "4").strip() or "4",
         redis_url=os.getenv("REDIS_URL", ""),
         db_pool_size=_get_int("DB_POOL_SIZE", 12),
         db_max_overflow=_get_int("DB_MAX_OVERFLOW", 18),

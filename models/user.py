@@ -96,6 +96,7 @@ class DoctorProfile(Base):
     __tablename__ = "doctor_profiles"
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    doctor_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
     specialization: Mapped[str | None] = mapped_column(String(255), nullable=True)
     qualification: Mapped[str | None] = mapped_column(String(500), nullable=True)
     registration_number: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True)

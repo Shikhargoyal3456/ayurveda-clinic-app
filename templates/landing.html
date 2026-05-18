@@ -1,182 +1,110 @@
-{% extends 'base.html' %}
-{% set active_page = 'home' %}
-{% set user_name = 'Visitor' %}
-{% set user_role = 'Integrated care' %}
-{% set avatar_label = 'KA' %}
-{% set seo_title = "Kash AI | Ayurveda + Healthcare Intelligence Superapp" %}
-{% set seo_description = "Kash AI combines Ayurveda care, medicine ordering, labs, consultations, delivery, and AI support into one premium healthcare experience." %}
+{% extends "base.html" %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
 
-{% block title %}Kash AI | Ayurveda + Healthcare Intelligence Superapp{% endblock %}
-
-{% block header_actions %}
-<a href="/trust/verified-practitioners" class="btn btn-outline-dark btn-sm">Trust Center</a>
-<a href="/signup" class="btn btn-primary btn-sm">Get Started</a>
-{% endblock %}
+{% block title %}Kash AI | Healthcare made simple{% endblock %}
 
 {% block page %}
-<div class="site-container section-stack fade-in-up">
-    <section class="landing-hero card" style="padding:clamp(1.5rem, 4vw, 3rem);">
-        <div class="content-grid-2" style="align-items:center;">
-            <div class="section-stack" style="gap:1.25rem;">
-                <span class="section-kicker"><i class="fa-solid fa-sparkles"></i> Trusted like Tata 1mg, intuitive like Practo, intelligent like modern AI</span>
-                <div>
-                    <h1>One superapp for <span class="text-gradient">Ayurveda, medicines, consultations, labs, and AI care guidance.</span></h1>
-                    <p style="font-size:1.05rem; max-width:60ch;">Kash AI helps patients, clinics, pharmacies, and care teams move from symptom to consultation to prescription to delivery with a clean, trustworthy experience.</p>
-                </div>
-                <div class="hero-actions">
-                    <a href="/order-medicines" class="btn btn-primary btn-lg">Order Medicines</a>
-                    <a href="/telemedicine/book" class="btn btn-outline-dark btn-lg">Consult a Doctor</a>
-                    <a href="/demo" class="btn btn-outline-success btn-lg">Watch Demo</a>
-                </div>
-                <div class="trust-banner" style="margin:0;">
-                    <div class="trust-item"><i class="fa-solid fa-users"></i><span>10L+ customers reached</span></div>
-                    <div class="trust-item"><i class="fa-solid fa-store"></i><span>500+ partner pharmacies</span></div>
-                    <div class="trust-item"><i class="fa-solid fa-star"></i><span>4.8 rated care journeys</span></div>
-                </div>
-            </div>
-            <div class="card" style="padding:1rem; background:rgba(255,255,255,.72);">
-                <img src="/static/images/ai-illustration.svg" alt="Kash AI healthcare platform illustration" width="640" height="420" style="width:100%;height:auto;border-radius:1.25rem;">
-                <div class="grid-auto-fit" style="margin-top:1rem;">
-                    <div class="feature-card surface-muted">
-                        <strong>AI Prescription Support</strong>
-                        <p>Read, explain, and order medicines faster.</p>
-                    </div>
-                    <div class="feature-card surface-muted">
-                        <strong>Video Consultations</strong>
-                        <p>Book doctors with transparent slots and ratings.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+<div class="simplified-landing">
+    <a href="/contact" class="landing-help-btn">Help</a>
 
-    <section class="grid-auto-fit">
-        <article class="feature-card">
-            <i class="fa-solid fa-brain fa-xl"></i>
-            <h3>AI-powered symptom and prescription help</h3>
-            <p>Upload prescriptions, ask health questions, and get guided next steps with clear, patient-friendly suggestions.</p>
-        </article>
-        <article class="feature-card">
-            <i class="fa-solid fa-user-doctor fa-xl"></i>
-            <h3>Consult verified doctors</h3>
-            <p>Find Ayurveda and modern medicine specialists, compare availability, and start a video consultation in minutes.</p>
-        </article>
-        <article class="feature-card">
-            <i class="fa-solid fa-capsules fa-xl"></i>
-            <h3>Trusted medicine ordering</h3>
-            <p>Search medicines, compare value, upload prescriptions, and get home delivery from trusted pharmacy partners.</p>
-        </article>
-        <article class="feature-card">
-            <i class="fa-solid fa-flask-vial fa-xl"></i>
-            <h3>Tests & reports in one place</h3>
-            <p>Book health tests, access reports, and keep your care records connected across doctors, labs, and follow-ups.</p>
-        </article>
-    </section>
+    <div class="hero">
+        <img src="/static/images/kash-ai-logo.svg" alt="KASH AI" class="logo">
+        <h1>Healthcare made simple</h1>
+        <p>Choose who you are</p>
+    </div>
 
-    <section class="card" style="padding:2rem;">
-        <div class="page-header mb-3">
-            <div>
-                <p class="eyebrow">How it works</p>
-                <h2>From symptom to recovery in four simple steps</h2>
-            </div>
-        </div>
-        <div class="grid-auto-fit">
-            <div class="feature-card">
-                <span class="section-kicker">01</span>
-                <h3>Search or upload</h3>
-                <p>Start with a medicine search, prescription upload, or doctor booking depending on what you need.</p>
-            </div>
-            <div class="feature-card">
-                <span class="section-kicker">02</span>
-                <h3>Get AI-guided support</h3>
-                <p>Use Kash AI to understand your prescription, compare options, and choose the right care path.</p>
-            </div>
-            <div class="feature-card">
-                <span class="section-kicker">03</span>
-                <h3>Consult, test, or order</h3>
-                <p>Book a doctor, place an order, or schedule a test without jumping across multiple apps.</p>
-            </div>
-            <div class="feature-card">
-                <span class="section-kicker">04</span>
-                <h3>Track and follow up</h3>
-                <p>Stay on top of delivery, reports, prescriptions, and follow-up reminders from one dashboard.</p>
-            </div>
-        </div>
-    </section>
+    <div class="role-cards">
+        <a href="/auth/login/patient" class="role-card">
+            <div class="role-emoji">👤</div>
+            <div class="role-name">I'M A PATIENT</div>
+            <div class="role-desc">Order medicines, upload prescription</div>
+        </a>
 
-    <section class="content-grid-2">
-        <article class="card" style="padding:2rem;">
-            <p class="eyebrow">Testimonials</p>
-            <h2>People trust clarity, speed, and a care experience that feels human.</h2>
-            <div class="section-stack" style="margin-top:1rem;">
-                <div class="feature-card surface-muted"><strong>“Ordering medicines and understanding my prescription finally felt simple.”</strong><p>Patient review • Delhi NCR</p></div>
-                <div class="feature-card surface-muted"><strong>“The consultation flow feels premium and practical for real clinic work.”</strong><p>Doctor review • Ayurveda Clinic</p></div>
-                <div class="feature-card surface-muted"><strong>“We got pharmacy visibility, delivery flow, and patient trust in one system.”</strong><p>Pharmacy partner review</p></div>
-            </div>
-        </article>
-        <article class="card" style="padding:2rem;">
-            <p class="eyebrow">Impact at scale</p>
-            <h2>Built for growth, trust, and operational depth.</h2>
-            <div class="grid-auto-fit" style="margin-top:1rem;">
-                <div class="metric-card"><span>Orders delivered</span><strong>2.4M+</strong><small>Across medicines, wellness, and repeat care</small></div>
-                <div class="metric-card"><span>Active users</span><strong>10L+</strong><small>Patients and care teams across journeys</small></div>
-                <div class="metric-card"><span>Cities covered</span><strong>120+</strong><small>Growing healthcare and pharmacy network</small></div>
-                <div class="metric-card"><span>Average rating</span><strong>4.8/5</strong><small>Trusted care and delivery experience</small></div>
-            </div>
-        </article>
-    </section>
+        <a href="/auth/login/doctor" class="role-card">
+            <div class="role-emoji">👨‍⚕️</div>
+            <div class="role-name">I'M A DOCTOR</div>
+            <div class="role-desc">Manage patients, write prescriptions</div>
+        </a>
 
-    <section class="card" style="padding:2rem;">
-        <div class="content-grid-2" style="align-items:center;">
-            <div>
-                <p class="eyebrow">Get the app experience</p>
-                <h2>Scan, sign in, and manage your health anywhere.</h2>
-                <p>Use Kash AI for medicines, consultations, tests & reports, and order tracking on the go.</p>
-                <div class="hero-actions" style="margin-top:1rem;">
-                    <a href="/superapp/dashboard" class="btn btn-primary">Open Superapp</a>
-                    <a href="/contact" class="btn btn-outline-dark">Talk to Support</a>
-                </div>
-            </div>
-            <div class="grid-auto-fit">
-                <div class="feature-card surface-muted" style="text-align:center;">
-                    <div style="width:120px;height:120px;margin:0 auto 1rem;border-radius:1rem;background:repeating-linear-gradient(45deg,#111827 0 6px,#fff 6px 12px);"></div>
-                    <strong>Scan QR to continue</strong>
-                </div>
-                <div class="feature-card surface-muted">
-                    <strong>Download options</strong>
-                    <p>App Store badge area</p>
-                    <p>Google Play badge area</p>
-                    <p>Mobile web works beautifully too</p>
-                </div>
-            </div>
-        </div>
-    </section>
+        <a href="/auth/login/pharmacy" class="role-card">
+            <div class="role-emoji">🏪</div>
+            <div class="role-name">I'M A PHARMACY</div>
+            <div class="role-desc">Manage orders, update inventory</div>
+        </a>
 
-    <section class="card" style="padding:2rem;">
-        <div class="grid-auto-fit">
-            <div>
-                <img src="/static/images/logo-white.svg" alt="Kash AI white logo" width="200" height="60" style="background:linear-gradient(135deg,#0f4c5c,#1a7f6b);padding:1rem;border-radius:1rem;">
-                <p style="margin-top:1rem;">Ayurveda • Healthcare • Intelligence</p>
-            </div>
-            <div>
-                <strong>Explore</strong>
-                <p><a href="/order-medicines">Medicines</a></p>
-                <p><a href="/telemedicine/book">Consult</a></p>
-                <p><a href="/diagnostics/lab-booking">Tests & Reports</a></p>
-            </div>
-            <div>
-                <strong>For business</strong>
-                <p><a href="/portal">Clinic operations</a></p>
-                <p><a href="/auth/login/pharmacy">Pharmacy portal</a></p>
-                <p><a href="/admin">Admin workspace</a></p>
-            </div>
-            <div>
-                <strong>Contact</strong>
-                <p><a href="/contact">Support center</a></p>
-                <p><a href="/privacy">Privacy</a></p>
-                <p><a href="/launch/press-kit">Press kit</a></p>
-            </div>
-        </div>
-    </section>
+        <a href="/auth/login/lab" class="role-card">
+            <div class="role-emoji">🔬</div>
+            <div class="role-name">I'M A LAB</div>
+            <div class="role-desc">Upload reports, manage tests</div>
+        </a>
+    </div>
+
+    <div class="guest-section">
+        <p>Want to try first? <a href="/order-medicines">Search medicines as guest →</a></p>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.simplified-landing {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0F4C5C 0%, #1A7F6B 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+}
+.landing-help-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.14);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 10px 16px;
+    text-decoration: none;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+}
+.hero { text-align: center; margin-bottom: 48px; }
+.hero .logo { height: 60px; margin-bottom: 20px; }
+.hero h1 { color: white; font-size: 36px; margin: 0; font-family: "Plus Jakarta Sans", sans-serif; }
+.hero p { color: rgba(255,255,255,0.8); font-size: 18px; margin-top: 8px; }
+.role-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+.role-card {
+    background: white;
+    border-radius: 20px;
+    padding: 32px 24px;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    color: inherit;
+    box-shadow: 0 20px 40px rgba(8, 38, 46, 0.12);
+}
+.role-card:hover { transform: translateY(-5px); box-shadow: 0 24px 48px rgba(8, 38, 46, 0.18); }
+.role-emoji { font-size: 48px; margin-bottom: 16px; }
+.role-name { font-size: 18px; font-weight: 700; color: #0F4C5C; margin-bottom: 8px; }
+.role-desc { font-size: 13px; color: #6B7280; }
+.guest-section { margin-top: 48px; color: white; text-align: center; }
+.guest-section a { color: #FFD700; text-decoration: none; }
+@media (max-width: 768px) {
+    .role-cards { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+}
+@media (max-width: 480px) {
+    .role-cards { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 30px; }
+    .landing-help-btn { top: 16px; right: 16px; }
+}
+</style>
 {% endblock %}

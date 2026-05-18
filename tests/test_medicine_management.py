@@ -47,7 +47,7 @@ async def _register_and_login_portal_pharmacy(client):
         follow_redirects=False,
     )
     assert login_response.status_code == 303
-    assert login_response.headers["location"] == "/portal/pharmacy"
+    assert login_response.headers["location"] == "/pharmacy"
 
 
 async def test_admin_master_medicine_add_and_list(admin_client):

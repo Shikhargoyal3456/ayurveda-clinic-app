@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -24,7 +24,27 @@ class Prescription(Base):
     medicines: Mapped[list[dict[str, str]]] = mapped_column(JSON, default=list)
     advice: Mapped[str] = mapped_column(Text, default="")
     follow_up_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ai_rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ai_accepted: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    ai_feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
+    feedback_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
 
     patient = relationship("Patient")
     doctor = relationship("Doctor")
+    feedback_entries = relationship("AIFeedback", back_populates="prescription")
+
+
+class AIFeedback(Base):
+    __tablename__ = "ai_feedback"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    prescription_id: Mapped[int | None] = mapped_column(ForeignKey("prescriptions.id"), nullable=True, index=True)
+    case_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    rating: Mapped[int] = mapped_column(Integer)
+    accepted: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    prescription = relationship("Prescription", back_populates="feedback_entries")

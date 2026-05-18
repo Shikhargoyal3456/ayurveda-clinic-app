@@ -131,7 +131,40 @@ class CacheService:
             _LOCAL_CACHE_EXPIRY.pop(key, None)
 
 
+class IntelligentCache:
+    """
+    Smart caching for AI responses with normalized semantic-style keys.
+    Uses the shared cache service with Redis/local fallback.
+    """
+
+    def __init__(self, base_cache: CacheService) -> None:
+        self.base_cache = base_cache
+
+    def ai_cache_key(self, query: str, context: dict[str, Any] | None = None) -> str:
+        normalized_query = str(query or "").strip().lower()
+        safe_context = context or {}
+        key_data = f"{normalized_query}:{json.dumps(safe_context, sort_keys=True, default=str)}"
+        return f"ai_cache:{md5(key_data.encode('utf-8')).hexdigest()}"
+
+    async def get_or_generate(
+        self,
+        query: str,
+        context: dict[str, Any] | None,
+        generator_func,
+        ttl: int = 3600,
+    ) -> Any:
+        cache_key = self.ai_cache_key(query, context)
+        cached = await self.base_cache.get_json_async(cache_key)
+        if cached is not None:
+            return cached
+        result = await generator_func()
+        await self.base_cache.set_json_async(cache_key, result, ttl)
+        return result
+
+
 cache = CacheService()
+intelligent_cache = IntelligentCache(cache)
+redis_client = cache._sync_client
 
 
 def redis_health_status() -> dict[str, Any]:
@@ -188,3 +221,8 @@ def cache_get_json(key: str) -> Any | None:
 
 def cache_set_json(key: str, value: Any, ttl_seconds: int = 900) -> None:
     cache.set_json(key, value, ttl_seconds)
+
+
+def cache_result(ttl: int = 300):
+    """Compatibility decorator for async routes/services with Redis + local fallback."""
+    return cache.cached(ttl=ttl)

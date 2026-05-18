@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+{% set user_name = doctor.full_name or doctor.username or "Admin" %}
+{% set user_role = "System oversight" %}
+{% set avatar_label = "AD" %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
+
+{% block title %}Kash AI | Admin Orders{% endblock %}
+
+{% block page %}
+<div class="simple-admin-page">
+  <div class="page-top">
+    <div>
+      <p class="eyebrow">Kash AI Admin</p>
+      <h1>Recent Orders</h1>
+      <p class="subtitle">{{ today_date }} · Latest medicine orders</p>
+    </div>
+    <div class="actions">
+      <a href="/admin" class="btn btn-outline-success btn-sm">Back to Admin</a>
+    </div>
+  </div>
+
+  <div class="list-card">
+    {% for order in orders %}
+    <div class="list-row">
+      <strong>#{{ order.id }}</strong>
+      <span>{{ order.customer_name or 'Customer' }}</span>
+      <span>₹{{ order.total }}</span>
+      <span class="pill {{ order.status }}">{{ order.status }}</span>
+    </div>
+    {% else %}
+    <div class="empty-state">No orders yet</div>
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+.simple-admin-page{max-width:1100px;margin:0 auto;padding:24px}
+.page-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.eyebrow{margin:0 0 8px;color:#2BAE66;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.page-top h1{margin:0 0 6px;color:#0F4C5C}
+.subtitle{margin:0;color:#6B7280}
+.list-card{background:#fff;border:1px solid rgba(15,76,92,.08);border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden}
+.list-row{display:grid;grid-template-columns:90px 1fr auto auto;gap:12px;padding:16px 20px;border-bottom:1px solid #F3F4F6;align-items:center}
+.list-row:last-child{border-bottom:0}
+.pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.delivered{background:#E6F4F1;color:#0F4C5C}
+.pill.pending,.pill.confirmed{background:#FEF3C7;color:#D97706}
+.pill.dispatched{background:#E0E7FF;color:#4338CA}
+.pill.cancelled{background:#FEE2E2;color:#B91C1C}
+.empty-state{text-align:center;padding:40px;color:#9CA3AF}
+@media (max-width:640px){.simple-admin-page{padding:16px}.list-row{grid-template-columns:1fr}}
+</style>
+{% endblock %}

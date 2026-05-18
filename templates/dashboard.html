@@ -43,13 +43,13 @@
                     <span>Home</span>
                     <span>Dashboard</span>
                 </div>
-                <p class="eyebrow">Clinic command center</p>
-                <h1>Good day, {{ doctor.full_name or doctor.username }}</h1>
-                <p class="mb-0">Monitor health metrics, upcoming consultations, prescriptions, and new registrations from one modern workspace.</p>
+                <p class="eyebrow">AI clinic overview</p>
+                <h1>{{ doctor.full_name or doctor.username }}</h1>
+                <p class="mb-0">AI-generated clinic intelligence grounded in your live patient and appointment data.</p>
             </div>
             <div class="inline-actions">
                 <span class="badge text-bg-light">{{ clinic_name }}</span>
-                <a href="/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                <a href="/auth/logout" class="btn btn-outline-danger btn-sm">Logout</a>
             </div>
         </section>
 
@@ -67,102 +67,94 @@
         <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
         {% endif %}
 
-        <section class="dashboard-grid">
-            <article class="hero-card">
-                <p class="eyebrow">Health score</p>
-                <div class="dashboard-grid" style="grid-template-columns: 200px minmax(0, 1fr); align-items:center;">
-                    <div class="health-ring">
-                        <div class="health-ring-inner">
-                            <strong class="stat-number">78</strong>
-                            <small>care score</small>
-                        </div>
-                    </div>
-                    <div>
-                        <h2>Balanced patient flow for the day</h2>
-                        <p>Your clinic is set up for steady consultations, clear payment follow-through, and timely follow-up reminders.</p>
-                        <div class="hero-actions">
-                            <a href="#add-patient" class="btn btn-primary">Register patient</a>
-                            <a href="/appointments" class="btn btn-outline-dark">View calendar</a>
-                            <a href="/emr/doctor-dashboard" class="btn btn-outline-success">Open EMR</a>
-                            {% if patients %}
-                            <a href="/patients/{{ patients[0].id }}/prescriptions/new" class="btn btn-outline-success">New prescription</a>
-                            {% endif %}
-                        </div>
-                    </div>
+        <section class="hero-card ai-dashboard-shell" id="legacyAiHero">
+            <div class="ai-shell__header">
+                <div>
+                    <p class="eyebrow">AI Dashboard</p>
+                    <h2 class="mb-2">Generating today&apos;s clinical picture</h2>
+                    <p class="mb-0" id="legacyAiMessage">Reviewing appointments, outcomes, follow-ups, labs, and payment blockers.</p>
                 </div>
-            </article>
-            <article class="hero-visual">
-                <p class="eyebrow">Open work</p>
-                <h3>{{ todays_appointments + pending_payments + followups_due }} active care tasks</h3>
-                <div class="timeline-list mt-4">
-                    <div class="timeline-item">
-                        <strong>{{ todays_appointments }}</strong>
-                        <p class="mb-0">Appointments to close today</p>
-                    </div>
-                    <div class="timeline-item">
-                        <strong>{{ pending_payments }}</strong>
-                        <p class="mb-0">Collections awaiting follow-up</p>
-                    </div>
-                    <div class="timeline-item">
-                        <strong>{{ followups_due }}</strong>
-                        <p class="mb-0">Patients due for their next touchpoint</p>
-                    </div>
+                <div class="ai-shell__loading" id="legacyAiLoading">
+                    <div class="ai-spinner"></div>
+                    <span>Analyzing live clinic data...</span>
                 </div>
-            </article>
+            </div>
+            <div class="stats-grid mt-4" id="legacyAiScores" hidden>
+                <article class="metric-card">
+                    <span>AI practice outlook</span>
+                    <strong id="legacyHealthScore">--</strong>
+                    <p class="mb-0" id="legacyHealthFactors"></p>
+                </article>
+                <article class="metric-card">
+                    <span>AI care outlook</span>
+                    <strong id="legacyCareScore">--</strong>
+                    <p class="mb-0" id="legacyCareFactors"></p>
+                </article>
+                <article class="metric-card">
+                    <span>AI insight</span>
+                    <strong>Today</strong>
+                    <p class="mb-0" id="legacyAiInsight"></p>
+                </article>
+                <article class="metric-card">
+                    <span>Recommended next step</span>
+                    <strong>Action</strong>
+                    <p class="mb-0" id="legacyAiRecommendation"></p>
+                </article>
+            </div>
         </section>
 
         <section class="content-grid mt-4">
-            <article class="card emr-quick-access">
+            <article class="card">
                 <div class="page-header mb-3">
                     <div>
-                        <p class="eyebrow">EMR quick actions</p>
-                        <h2 class="h4 mb-0">Move straight into clinical work</h2>
+                        <p class="eyebrow">AI priorities</p>
+                        <h2 class="h4 mb-0">What needs attention now</h2>
                     </div>
                 </div>
-                <div class="hero-actions">
-                    <a href="/emr/patient-registry" class="btn btn-primary">
-                        <i class="fa-solid fa-users"></i> Patient Registry
-                    </a>
-                    <a href="/emr/doctor-dashboard" class="btn btn-primary">
-                        <i class="fa-solid fa-chart-line"></i> Clinical Dashboard
-                    </a>
-                    <a href="/emr/modern-consultation/new" class="btn btn-outline-success">
-                        <i class="fa-solid fa-stethoscope"></i> New Consultation
-                    </a>
+                <div class="stack-list" id="legacyPrioritiesList">
+                    <div class="stack-item"><p class="mb-0">AI priorities will appear here after analysis completes.</p></div>
                 </div>
             </article>
-            <article class="card surface-tint">
+            <article class="card">
                 <div class="page-header mb-3">
                     <div>
-                        <p class="eyebrow">Startup advantage</p>
-                        <h2 class="h4 mb-0">Your strongest product moats</h2>
+                        <p class="eyebrow">AI actions</p>
+                        <h2 class="h4 mb-0">Suggested workflow entry points</h2>
                     </div>
                 </div>
-                <div class="stack-list">
-                    <div class="stack-item">Dual AI diagnosis with source-grounded Ayurveda reasoning</div>
-                    <div class="stack-item">Panchakarma scheduling plus marketplace expansion path</div>
-                    <div class="stack-item">Personalized kits, refills, and outcomes-led retention</div>
-                </div>
-                <div class="hero-actions mt-3">
-                    <a href="/trust/verified-practitioners" class="btn btn-outline-dark btn-sm">Trust center</a>
-                    <a href="/admin/growth-dashboard" class="btn btn-outline-success btn-sm">Growth metrics</a>
-                    <a href="/superapp/dashboard" class="btn btn-primary btn-sm">Superapp view</a>
+                <div class="stack-list" id="legacyActionsList">
+                    <div class="stack-item"><p class="mb-0">Actions will update from the AI dashboard response.</p></div>
                 </div>
             </article>
         </section>
 
-        <section id="dashboard-skeleton" class="stats-grid no-print">
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-            <div class="skeleton skeleton-card"></div>
-        </section>
+        <section class="dashboard-grid mt-4">
+            <article class="table-panel" id="legacyAlertsPanel">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">AI patient alerts</p>
+                        <h2>Cases to review</h2>
+                    </div>
+                </div>
+                <div class="stack-list" id="legacyAlertsList">
+                    <div class="stack-item"><p class="mb-0">AI is checking for follow-up, outcome, lab, and medication risks.</p></div>
+                </div>
+            </article>
 
-        <section class="stats-grid reveal-stagger" id="dashboard-live-content" style="display:none;">
-            <article class="metric-card"><span>Today's earnings</span><strong>Rs {{ '%.2f'|format(todays_earnings) }}</strong><p class="mb-0">Paid visits only</p></article>
-            <article class="metric-card"><span>Patients today</span><strong>{{ todays_patients }}</strong><p class="mb-0">{{ total_patients }} total patients</p></article>
-            <article class="metric-card"><span>Appointments</span><strong>{{ todays_appointments }}</strong><p class="mb-0">Scheduled for today</p></article>
-            <article class="metric-card"><span>Pending payments</span><strong>{{ pending_payments }}</strong><p class="mb-0">Needs collection</p></article>
+            <article class="table-panel">
+                <div class="page-header mb-3">
+                    <div>
+                        <p class="eyebrow">Live operational metrics</p>
+                        <h2>Database-backed activity</h2>
+                    </div>
+                </div>
+                <section class="stats-grid reveal-stagger" id="dashboard-live-content">
+                    <article class="metric-card"><span>Today's earnings</span><strong>Rs {{ '%.2f'|format(todays_earnings) }}</strong><p class="mb-0">Paid visits only</p></article>
+                    <article class="metric-card"><span>Patients today</span><strong>{{ todays_patients }}</strong><p class="mb-0">{{ total_patients }} total patients</p></article>
+                    <article class="metric-card"><span>Appointments</span><strong>{{ todays_appointments }}</strong><p class="mb-0">Scheduled for today</p></article>
+                    <article class="metric-card"><span>Pending payments</span><strong>{{ pending_payments }}</strong><p class="mb-0">Needs collection</p></article>
+                </section>
+            </article>
         </section>
 
         <section class="dashboard-grid">
@@ -345,16 +337,130 @@
 {% block extra_scripts %}
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 <script>
-window.addEventListener("DOMContentLoaded", function () {
-    const skeleton = document.getElementById("dashboard-skeleton");
-    const live = document.getElementById("dashboard-live-content");
-    if (skeleton && live) {
-        window.setTimeout(function () {
-            skeleton.style.display = "none";
-            live.style.display = "grid";
-        }, 180);
-    }
-});
-</script>
-{% endblock %}
+const legacyDoctorId = {{ ai_dashboard_doctor_id | default(doctor.id) | tojson }};
+const legacyActionRoutes = {
+    register_patient: "/emr/patient-registration",
+    open_registry: "/emr/patient-registry",
+    review_schedule: "/appointments",
+    open_emr: "/emr/doctor-dashboard",
+    write_prescription: "/emr/patient-registry",
+    review_followups: "/followups",
+    review_payments: "/payments/daily",
+    review_labs: "/emr/lab-dashboard",
+    open_ai_scribe: "/emr/ambient-scribe",
+};
 
+function openLegacyAction(actionKey) {
+    const url = legacyActionRoutes[actionKey];
+    if (url) {
+        window.location.href = url;
+    }
+}
+
+function renderLegacyPriorities(items) {
+    const target = document.getElementById("legacyPrioritiesList");
+    target.innerHTML = (items || []).map((item) => `<div class="stack-item"><strong>${item}</strong></div>`).join("");
+}
+
+function renderLegacyActions(actionMap) {
+    const target = document.getElementById("legacyActionsList");
+    const rows = Object.entries(actionMap || {}).map(([key, action]) => `
+        <div class="stack-item d-flex justify-content-between align-items-start gap-3">
+            <div>
+                <strong>${action.label}</strong>
+                <p class="mb-0">${action.reason}</p>
+            </div>
+            <button class="btn btn-primary btn-sm" type="button" onclick="openLegacyAction('${key}')">Open</button>
+        </div>
+    `);
+    target.innerHTML = rows.length ? rows.join("") : `<div class="stack-item"><p class="mb-0">No AI action suggestion is available right now.</p></div>`;
+}
+
+function renderLegacyAlerts(alerts) {
+    const target = document.getElementById("legacyAlertsList");
+    const rows = (alerts || []).map((alert) => `
+        <div class="stack-item d-flex justify-content-between align-items-start gap-3">
+            <div>
+                <strong>${alert.patient_name}</strong>
+                <p class="mb-0">${alert.alert_type}: ${alert.reason || "Review this patient today."}</p>
+            </div>
+            <a class="btn btn-outline-success btn-sm" href="/patients/${alert.patient_id}/cases">Review</a>
+        </div>
+    `);
+    target.innerHTML = rows.length ? rows.join("") : `<div class="stack-item"><p class="mb-0">No urgent patient alerts were generated from current data.</p></div>`;
+}
+
+function showLegacyFallback() {
+    document.getElementById("legacyAiLoading").innerHTML = "<span>AI insight generation is temporarily unavailable. The live database metrics below are still current.</span>";
+}
+
+async function loadLegacyAIDashboard() {
+    try {
+        const response = await fetch(`/api/ai-dashboard/insights/${legacyDoctorId}`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || payload.error || "Failed to load AI dashboard");
+        }
+        const insights = payload.data;
+        document.getElementById("legacyAiLoading").style.display = "none";
+        document.getElementById("legacyAiScores").hidden = false;
+        document.getElementById("legacyAiMessage").textContent = insights.daily_message || "";
+        document.getElementById("legacyHealthScore").textContent = insights.health_score;
+        document.getElementById("legacyCareScore").textContent = insights.care_score;
+        document.getElementById("legacyHealthFactors").textContent = (insights.health_score_factors || []).join(" ");
+        document.getElementById("legacyCareFactors").textContent = (insights.care_score_factors || []).join(" ");
+        document.getElementById("legacyAiInsight").textContent = insights.insight || "";
+        document.getElementById("legacyAiRecommendation").textContent = insights.recommendation || "";
+        renderLegacyPriorities(insights.top_priorities);
+        renderLegacyActions(insights.action_map);
+        renderLegacyAlerts(insights.patient_alerts);
+    } catch (error) {
+        console.error("Legacy AI dashboard failed", error);
+        showLegacyFallback();
+    }
+}
+
+window.addEventListener("DOMContentLoaded", loadLegacyAIDashboard);
+</script>
+<style>
+.ai-dashboard-shell {
+    background: linear-gradient(135deg, #0f4c5c 0%, #1a7f6b 58%, #2bae66 100%);
+    color: white;
+}
+
+.ai-shell__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.ai-shell__loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.ai-spinner {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    animation: ai-spin 1s linear infinite;
+}
+
+@keyframes ai-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .ai-shell__header {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

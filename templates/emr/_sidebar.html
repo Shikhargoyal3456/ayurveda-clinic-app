@@ -1,23 +1,128 @@
-<section class="side-panel sidebar-card emr-sidebar-card">
-    <div>
-        <p class="eyebrow">EMR Suite</p>
-        <h3 class="h4 mb-1">Clinical Workspace</h3>
-        <p class="text-muted mb-0">Modern, Ayurveda, and integrated records in one workflow.</p>
+<nav class="emr-sidebar" aria-label="EMR navigation">
+    <div class="emr-sidebar__top">
+        <p class="emr-sidebar__eyebrow">Doctor EMR</p>
+        <h3 class="emr-sidebar__title">Clinical Workspace</h3>
+        <p class="emr-sidebar__copy">Focused navigation for the daily doctor workflow.</p>
     </div>
-    <nav class="sidebar-nav mt-4" aria-label="EMR navigation">
-        {% for key, href, label, icon in emr_section_links %}
-        <a href="{{ href }}" class="{% if emr_active == key %}is-active{% endif %}">
-            <span><i class="fa-solid {{ icon }}"></i></span>
-            <span>{{ label }}</span>
-        </a>
-        {% endfor %}
-    </nav>
-    <div class="card surface-tint mt-4">
-        <p class="eyebrow mb-1">Quick Links</p>
-        <div class="stack-xs">
-            <a href="/emr/patient-registration" class="btn btn-primary btn-pill"><i class="fa-solid fa-user-plus"></i> Register Patient</a>
-            <a href="/emr/prescription-viewer" class="btn btn-outline-success btn-pill"><i class="fa-solid fa-prescription-bottle-medical"></i> Prescriptions</a>
-            <a href="/emr/mobile-emr" class="btn btn-ghost btn-pill"><i class="fa-solid fa-mobile-screen-button"></i> Mobile View</a>
-        </div>
-    </div>
-</section>
+
+    <ul>
+        <li>
+            <a href="/doctor/dashboard" class="{% if request.url.path == '/doctor/dashboard' or request.url.path == '/portal/doctor' %}active{% endif %}">
+                <i class="fa-solid fa-house"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="/emr/patient-registry" class="{% if request.url.path.startswith('/emr/patient') %}active{% endif %}">
+                <i class="fa-solid fa-users"></i>
+                <span>Patients</span>
+            </a>
+        </li>
+        <li>
+            <a href="/emr/ambient-scribe" class="{% if request.url.path == '/emr/ambient-scribe' %}active{% endif %}">
+                <i class="fa-solid fa-microphone-lines"></i>
+                <span>AI Scribe</span>
+            </a>
+        </li>
+        <li>
+            <a href="/emr/prescription-viewer" class="{% if request.url.path == '/emr/prescription-viewer' %}active{% endif %}">
+                <i class="fa-solid fa-prescription-bottle-medical"></i>
+                <span>Prescriptions</span>
+            </a>
+        </li>
+        <li>
+            <a href="/emr/clinical-reporting" class="{% if request.url.path == '/emr/clinical-reporting' %}active{% endif %}">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>Reports</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+<style>
+.emr-sidebar {
+    background:
+        radial-gradient(circle at top right, rgba(43, 174, 102, 0.08), transparent 32%),
+        linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: var(--shadow-lg);
+}
+
+.emr-sidebar__top {
+    margin-bottom: 14px;
+    padding: 10px 8px 16px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.emr-sidebar__eyebrow {
+    margin: 0 0 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.emr-sidebar__title {
+    margin: 0 0 6px;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: 1.05rem;
+    color: var(--gray-800);
+}
+
+.emr-sidebar__copy {
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 0.88rem;
+    line-height: 1.45;
+}
+
+.emr-sidebar ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.emr-sidebar li {
+    margin-bottom: 6px;
+}
+
+.emr-sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    border-radius: 16px;
+    color: var(--gray-700);
+    text-decoration: none;
+    font-weight: 700;
+    transition: var(--transition);
+}
+
+.emr-sidebar a i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.emr-sidebar a:hover {
+    background: linear-gradient(90deg, var(--primary-soft) 0%, rgba(255, 255, 255, 0.92) 100%);
+    color: var(--primary-dark);
+    transform: translateX(2px);
+}
+
+.emr-sidebar a.active {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    box-shadow: 0 16px 22px -18px rgba(26, 127, 107, 0.95);
+}
+
+@media (max-width: 768px) {
+    .emr-sidebar {
+        margin-bottom: 16px;
+        border-radius: 20px;
+    }
+}
+</style>

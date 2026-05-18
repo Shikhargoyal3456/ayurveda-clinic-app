@@ -78,7 +78,10 @@ from apps.patient.routes import router as patient_portal_router
 from apps.pharmacy.routes import router as pharmacy_portal_router
 from routers.admin import router as admin_router
 from routers.ai import router as ai_router
+from routers.ai_dashboard import router as ai_dashboard_router
+from routers.ai_pharmacy import router as ai_pharmacy_router
 from routers.ai_features import router as ai_features_router
+from routers.ambient_emr import router as ambient_emr_router
 from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
 from routers.cases import router as cases_router
@@ -87,6 +90,7 @@ from routers.emr import router as emr_router
 from routers.ecommerce import router as ecommerce_router
 from routers.health import router as health_router
 from routers.lab_owner import router as lab_owner_router
+from routers.lab_analyzer import router as lab_analyzer_router
 from routers.marketplace import router as marketplace_router
 from routers.medicine_info import router as medicine_info_router
 from routers.patients import router as patients_router
@@ -94,6 +98,7 @@ from routers.order_medicines import router as order_medicines_router
 from routers.pharmacy_owner import router as pharmacy_owner_router
 from routers.pharmacy import router as pharmacy_router
 from routers.profiles import router as profiles_router
+from routers.pure_ai import router as pure_ai_router
 from routers.public_clinic import router as public_clinic_router
 from routers.startup import router as startup_router
 from routers.subscriptions import router as subscriptions_router
@@ -184,7 +189,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net; "
             "img-src 'self' data: https://checkout.razorpay.com; "
             "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-            "connect-src 'self' https://checkout.razorpay.com https://lumberjack.razorpay.com; "
+            "connect-src 'self' ws: wss: https://checkout.razorpay.com https://lumberjack.razorpay.com; "
             "frame-src https://api.razorpay.com https://checkout.razorpay.com; "
             "frame-ancestors 'none';"
         )
@@ -366,6 +371,8 @@ def create_app() -> FastAPI:
     application.include_router(contact_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
+    application.include_router(ai_dashboard_router)
+    application.include_router(ai_pharmacy_router)
     application.include_router(ai_features_router)
     application.include_router(api_v1_router)
     application.include_router(marketplace_router)
@@ -379,13 +386,16 @@ def create_app() -> FastAPI:
     application.include_router(debug_router)
     application.include_router(pharmacy_owner_router)
     application.include_router(lab_owner_router)
+    application.include_router(lab_analyzer_router)
     application.include_router(pharmacy_router)
     application.include_router(profiles_router)
+    application.include_router(pure_ai_router)
     application.include_router(ecommerce_router)
     application.include_router(order_medicines_router)
     application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(emr_router)
+    application.include_router(ambient_emr_router)
     application.include_router(telemedicine_router)
     application.include_router(prescription_router)
     application.include_router(payment_router)
@@ -396,3 +406,11 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
+
+
+if __name__ == "__main__":
+    import os
+    import uvicorn
+
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port)

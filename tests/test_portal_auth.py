@@ -40,9 +40,9 @@ async def test_patient_portal_registration_and_smart_login(client):
         follow_redirects=False,
     )
     assert login_response.status_code == 303
-    assert login_response.headers["location"] == "/"
+    assert login_response.headers["location"] == "/patient"
 
-    dashboard_response = await client.get("/")
+    dashboard_response = await client.get("/patient")
     assert dashboard_response.status_code == 200
     assert "Kash AI" in dashboard_response.text
 
@@ -81,7 +81,7 @@ async def test_portal_dashboard_redirects_without_matching_role(client):
 
     denied = await client.get("/portal/pharmacy", follow_redirects=False)
     assert denied.status_code == 303
-    assert denied.headers["location"] == "/"
+    assert denied.headers["location"] == "/patient"
 
 
 async def test_smart_login_accepts_legacy_admin_workspace_credentials(admin_client):

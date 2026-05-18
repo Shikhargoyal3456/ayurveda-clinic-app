@@ -5,8 +5,8 @@ import time
 from typing import Any
 
 import requests
+import logging
 
-from app.analytics import track_error_event
 from app.config import settings
 from services.cache_service import cache_get_json, cache_set_json
 
@@ -14,6 +14,7 @@ from services.cache_service import cache_get_json, cache_set_json
 # GRAND-UNIFIED-1: Cached Google Places lookup with static fallback keeps checkout usable during API denial/outage.
 _CACHE_TTL_SECONDS = 900
 _CACHE: dict[str, tuple[float, list[dict[str, Any]]]] = {}
+logger = logging.getLogger(__name__)
 
 GURUGRAM_CENTER = {"lat": 28.4595, "lng": 77.0266}
 DELHI_CENTER = {"lat": 28.6139, "lng": 77.2090}
@@ -157,7 +158,7 @@ def get_nearby_pharmacies(lat: float, lng: float) -> list[dict[str, Any]]:
         cache_set_json(redis_key, pharmacies, _CACHE_TTL_SECONDS)
         return [dict(item) for item in pharmacies]
     except Exception as exc:
-        track_error_event("pharmacy_lookup_failure", "/patient/nearby-pharmacies", f"places_new_fallback: {exc}")
+        logger.warning("Nearby pharmacy lookup fell back to static results: %s", exc)
         fallback = _sorted_static_fallback(lat, lng)
         _CACHE[key] = (now, fallback)
         cache_set_json(redis_key, fallback, _CACHE_TTL_SECONDS)

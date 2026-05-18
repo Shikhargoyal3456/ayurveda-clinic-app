@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+{% set active_page = "profile" %}
+{% set user_name = doctor.full_name or doctor.username or "Admin" %}
+{% set user_role = "System oversight" %}
+{% set avatar_label = "AD" %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
+{% set show_sidebar = false %}
+
+{% block title %}Kash AI | Admin{% endblock %}
+
+{% block header_actions %}
+<a href="/dashboard" class="btn btn-outline-dark btn-sm">Clinic Dashboard</a>
+<a href="/auth/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+{% endblock %}
+
+{% block page %}
+<div class="new-admin-dashboard">
+  <div class="admin-shell-header">
+    <div>
+      <p class="admin-eyebrow">Kash AI Admin</p>
+      <h1>Admin Dashboard</h1>
+      <p class="date">{{ today_date }} · Platform Overview</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-refresh" type="button" onclick="refreshData()">
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-value" id="totalUsers">--</div>
+      <div class="stat-label">Total Users</div>
+      <div class="stat-context" id="totalUsersContext">Loading growth context...</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">🛒</div>
+      <div class="stat-value" id="ordersToday">--</div>
+      <div class="stat-label">Orders Today</div>
+      <div class="stat-context">Live order activity for today</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-value" id="revenueToday">--</div>
+      <div class="stat-label">Revenue Today</div>
+      <div class="stat-context">Gross medicine revenue booked today</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-value" id="activePrescriptions">--</div>
+      <div class="stat-label">Active Prescriptions</div>
+      <div class="stat-context">Current prescription volume in the system</div>
+    </div>
+  </div>
+
+  <div class="two-columns">
+    <div class="left-col">
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 Recent Orders</h3>
+        </div>
+        <div class="card-body" id="recentOrders">
+          <div class="skeleton-loader"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>👥 Recent Registrations</h3>
+        </div>
+        <div class="card-body" id="recentUsers">
+          <div class="skeleton-loader"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card">
+        <div class="card-header">
+          <h3>⚡ Quick Actions</h3>
+        </div>
+        <div class="card-body">
+          <div class="actions-grid">
+            <button class="action-btn" type="button" onclick="window.location.href='/admin/users'">
+              User Management
+            </button>
+            <button class="action-btn" type="button" onclick="window.location.href='/admin/orders'">
+              Order Overview
+            </button>
+            <button class="action-btn" type="button" onclick="window.location.href='/admin/master-medicines'">
+              Medicine Inventory
+            </button>
+            <button class="action-btn" type="button" onclick="refreshData()">
+              Refresh Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>🟢 System Status</h3>
+        </div>
+        <div class="card-body">
+          <div class="status-list" id="systemStatus">
+            <div class="status-item">
+              <span>Database</span>
+              <span class="status-badge checking">Checking...</span>
+            </div>
+            <div class="status-item">
+              <span>Server</span>
+              <span class="status-badge checking">Checking...</span>
+            </div>
+            <div class="status-item">
+              <span>API</span>
+              <span class="status-badge checking">Checking...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.new-admin-dashboard {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.admin-shell-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.admin-eyebrow {
+  color: #2BAE66;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.admin-shell-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0F4C5C;
+  margin: 0 0 4px 0;
+}
+
+.date {
+  color: #6B7280;
+  margin: 0;
+}
+
+.btn-refresh {
+  background: #2BAE66;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 30px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid rgba(15, 76, 92, 0.08);
+}
+
+.stat-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #0F4C5C;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6B7280;
+  margin-top: 4px;
+}
+
+.stat-context {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #4B5563;
+}
+
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.card {
+  background: white;
+  border-radius: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid rgba(15, 76, 92, 0.08);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.card-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.card-body {
+  padding: 20px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  color: #0F4C5C;
+}
+
+.action-btn:hover {
+  background: #E6F4F1;
+  border-color: #2BAE66;
+}
+
+.status-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  gap: 12px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.healthy { background: #E6F4F1; color: #0F4C5C; }
+.status-badge.checking { background: #FEF3C7; color: #D97706; }
+.status-badge.unhealthy { background: #FEF2F2; color: #EF4444; }
+
+.loading-placeholder {
+  color: #9CA3AF;
+  text-align: center;
+  padding: 20px;
+}
+
+.order-row, .user-row {
+  display: grid;
+  grid-template-columns: 90px 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.user-row {
+  grid-template-columns: 1fr auto auto;
+}
+
+.order-row:last-child, .user-row:last-child {
+  border-bottom: 0;
+}
+
+.order-id {
+  font-weight: 700;
+  color: #0F4C5C;
+}
+
+.order-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.order-status.delivered { background: #E6F4F1; color: #0F4C5C; }
+.order-status.pending, .order-status.confirmed { background: #FEF3C7; color: #D97706; }
+.order-status.dispatched { background: #E0E7FF; color: #4338CA; }
+.order-status.cancelled { background: #FEE2E2; color: #B91C1C; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #9CA3AF;
+}
+
+@media (max-width: 1024px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .two-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .new-admin-dashboard { padding: 16px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .actions-grid { grid-template-columns: 1fr; }
+  .order-row, .user-row { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let adminNewRefreshTimer = null;
+
+function safeSetText(id, value) {
+  const node = document.getElementById(id);
+  if (node) node.innerText = value;
+}
+
+async function safeFetchJson(url) {
+  const response = await fetch(url, { credentials: 'same-origin' });
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('Unexpected response');
+  }
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload.detail || payload.error || payload.message || 'Request failed');
+  }
+  return payload;
+}
+
+async function refreshData() {
+  await Promise.allSettled([
+    loadStats(),
+    loadRecentOrders(),
+    loadRecentUsers(),
+    checkSystemStatus()
+  ]);
+}
+
+async function loadStats() {
+  try {
+    const data = await window.safeFetchJson('/api/admin/stats');
+    safeSetText('totalUsers', data.total_users || 0);
+    safeSetText('ordersToday', data.orders_today || 0);
+    safeSetText('revenueToday', '₹' + (data.revenue_today || 0));
+    safeSetText('activePrescriptions', data.active_prescriptions || 0);
+    document.getElementById('totalUsersContext').textContent =
+      (data.total_users || 0) > 100
+        ? `Great growth! +${data.new_users_week || 0} this week`
+        : 'New app. Help us grow by sharing!';
+  } catch (error) {
+    safeSetText('totalUsers', 'Error');
+    safeSetText('ordersToday', 'Error');
+    safeSetText('revenueToday', 'Error');
+    safeSetText('activePrescriptions', 'Error');
+    document.getElementById('totalUsersContext').textContent = 'Stats are temporarily unavailable.';
+  }
+}
+
+async function loadRecentOrders() {
+  const container = document.getElementById('recentOrders');
+  if (!container) return;
+  try {
+    const orders = await window.safeFetchJson('/api/admin/orders/recent?limit=5');
+    if (!Array.isArray(orders) || orders.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fas fa-box-open"></i><p>No orders yet</p><p class="text-muted">Orders will appear here when customers start ordering.</p></div>';
+      return;
+    }
+    container.innerHTML = orders.map(order => `
+      <div class="order-row">
+        <div class="order-id">#${order.id}</div>
+        <div>${order.customer_name || 'Customer'}</div>
+        <div>₹${order.total || 0}</div>
+        <div><span class="order-status ${order.status || 'pending'}">${order.status || 'pending'}</span></div>
+      </div>
+    `).join('');
+  } catch (error) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-circle-exclamation"></i><p>Failed to load orders</p><p class="text-muted">Please refresh to try again.</p></div>';
+  }
+}
+
+async function loadRecentUsers() {
+  const container = document.getElementById('recentUsers');
+  if (!container) return;
+  try {
+    const users = await window.safeFetchJson('/api/admin/users/recent?limit=5');
+    if (!Array.isArray(users) || users.length === 0) {
+      container.innerHTML = '<div class="empty-state"><i class="fas fa-user-plus"></i><p>No recent users</p><p class="text-muted">New users will appear here after they sign up.</p></div>';
+      return;
+    }
+    container.innerHTML = users.map(user => `
+      <div class="user-row">
+        <div><strong>${user.name || 'User'}</strong></div>
+        <div>${user.role || 'User'}</div>
+        <div>${user.time_ago || 'just now'}</div>
+      </div>
+    `).join('');
+  } catch (error) {
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-circle-exclamation"></i><p>Failed to load users</p><p class="text-muted">Please refresh to try again.</p></div>';
+  }
+}
+
+async function checkSystemStatus() {
+  const statusContainer = document.getElementById('systemStatus');
+  if (!statusContainer) return;
+  try {
+    const health = await window.safeFetchJson('/health');
+    const healthy = health.status === 'healthy';
+    statusContainer.innerHTML = `
+      <div class="status-item">
+        <span>Database</span>
+        <span class="status-badge ${healthy ? 'healthy' : 'checking'}">${healthy ? '🟢 Connected' : '⚠️ Checking'}</span>
+      </div>
+      <div class="status-item">
+        <span>Server</span>
+        <span class="status-badge healthy">🟢 Running</span>
+      </div>
+      <div class="status-item">
+        <span>API</span>
+        <span class="status-badge ${healthy ? 'healthy' : 'checking'}">${healthy ? '🟢 Working' : '⚠️ Slow'}</span>
+      </div>
+    `;
+  } catch (error) {
+    statusContainer.innerHTML = `
+      <div class="status-item">
+        <span>System Status</span>
+        <span class="status-badge unhealthy">⚠️ Some services may be slow</span>
+      </div>
+    `;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  refreshData();
+  if (adminNewRefreshTimer) {
+    window.clearInterval(adminNewRefreshTimer);
+  }
+  adminNewRefreshTimer = window.setInterval(refreshData, 60000);
+});
+
+window.addEventListener('beforeunload', () => {
+  if (adminNewRefreshTimer) {
+    window.clearInterval(adminNewRefreshTimer);
+    adminNewRefreshTimer = null;
+  }
+});
+</script>
+{% endblock %}

@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from app.auth import hash_password, verify_password
 from app.config import settings
 from app.database import commit_with_retry, get_db
+from app.models import Doctor
 from app.security import sanitize_text, validate_password_complexity
 from models.user import DeliveryProfile, DoctorProfile, LabProfile, PatientProfile, PharmacyProfile, User, UserProfile, UserRole, VehicleType
 from services.profile_service import clear_active_profile_session, profile_avatar_for_relationship
@@ -37,13 +38,47 @@ PORTAL_SLUG_TO_ROLE: dict[str, str] = {
     "admin": UserRole.admin.value,
 }
 
+ROLE_SLUG_ALIASES: dict[str, str] = {
+    "delivery": "partner",
+    "delivery_partner": "partner",
+}
+
 PORTAL_DASHBOARD_PATHS: dict[str, str] = {
-    UserRole.patient.value: "/",
-    UserRole.doctor.value: "/portal/doctor",
-    UserRole.pharmacy_owner.value: "/portal/pharmacy",
-    UserRole.lab_owner.value: "/portal/lab",
-    UserRole.delivery_partner.value: "/portal/partner",
+    UserRole.patient.value: "/patient",
+    UserRole.doctor.value: "/doctor/dashboard",
+    UserRole.pharmacy_owner.value: "/pharmacy",
+    UserRole.lab_owner.value: "/lab",
+    UserRole.delivery_partner.value: "/delivery",
     UserRole.admin.value: "/admin",
+}
+
+DOCTOR_DASHBOARD_PATHS: dict[str, str] = {
+    "ayurveda": "/doctor/ayurveda/dashboard",
+    "modern": "/doctor/modern/dashboard",
+    "homeopathy": "/doctor/homeopathy/dashboard",
+    "physiotherapy": "/doctor/physiotherapy/dashboard",
+    "dentistry": "/doctor/dentistry/dashboard",
+    "integrated": "/doctor/integrated/dashboard",
+}
+
+DOCTOR_TYPE_TO_SPECIALTY: dict[str, str] = {
+    "ayurveda": "ayurveda",
+    "modern": "modern_medicine",
+    "homeopathy": "homeopathy",
+    "physiotherapy": "physiotherapy",
+    "dentistry": "dental",
+    "integrated": "ayurveda",
+}
+
+SPECIALTY_TO_DOCTOR_TYPE: dict[str, str] = {
+    "ayurveda": "ayurveda",
+    "modern": "modern",
+    "modern_medicine": "modern",
+    "homeopathy": "homeopathy",
+    "physiotherapy": "physiotherapy",
+    "dental": "dentistry",
+    "dentistry": "dentistry",
+    "integrated": "integrated",
 }
 
 UPLOAD_ROOT = Path(__import__("os").getenv("TEST_UPLOADS_DIR", str(settings.base_dir / "temp" / "portal-uploads"))).resolve()
@@ -66,16 +101,40 @@ def normalize_phone(value: str) -> str:
     return digits[-10:]
 
 
+def resolve_role_slug(role: str) -> str:
+    normalized = str(role or "").strip().lower()
+    return ROLE_SLUG_ALIASES.get(normalized, normalized)
+
+
 def role_to_slug(role: str) -> str:
-    return PORTAL_ROLE_TO_SLUG.get(role, "patient")
+    normalized = resolve_role_slug(role)
+    if normalized in PORTAL_SLUG_TO_ROLE:
+        return normalized
+    return PORTAL_ROLE_TO_SLUG.get(normalized, "patient")
 
 
 def slug_to_role(slug: str) -> str:
-    return PORTAL_SLUG_TO_ROLE.get(slug, slug)
+    normalized = resolve_role_slug(slug)
+    return PORTAL_SLUG_TO_ROLE.get(normalized, normalized)
 
 
 def dashboard_path_for_role(role: str) -> str:
     return PORTAL_DASHBOARD_PATHS.get(role, "/patient")
+
+
+def normalize_doctor_type(doctor_type: str | None, specialization: str | None = None) -> str:
+    for raw_value in [doctor_type, specialization]:
+        value = str(raw_value or "").strip().lower().replace("-", "_").replace(" ", "_")
+        if value in SPECIALTY_TO_DOCTOR_TYPE:
+            return SPECIALTY_TO_DOCTOR_TYPE[value]
+        if value in DOCTOR_DASHBOARD_PATHS:
+            return value
+    return "ayurveda"
+
+
+def doctor_dashboard_path(doctor_type: str | None, specialization: str | None = None) -> str:
+    normalized = normalize_doctor_type(doctor_type, specialization)
+    return DOCTOR_DASHBOARD_PATHS.get(normalized, "/doctor/dashboard")
 
 
 def serializer_dumps(payload: dict[str, Any]) -> str:
@@ -121,6 +180,8 @@ def clear_portal_session(request) -> None:
         "portal_session_started_at",
         "portal_last_seen_at",
         "portal_expires_at",
+        "portal_doctor_dashboard",
+        "portal_doctor_type",
     ]:
         request.session.pop(key, None)
     clear_active_profile_session(request)
@@ -243,6 +304,7 @@ def create_user(
         db.add(
             DoctorProfile(
                 user_id=user.id,
+                doctor_type=profile_data.get("doctor_type"),
                 specialization=profile_data.get("specialization"),
                 qualification=profile_data.get("qualification"),
                 registration_number=profile_data.get("registration_number"),
@@ -294,6 +356,43 @@ def create_user(
     commit_with_retry(db)
     db.refresh(user)
     return user
+
+
+def ensure_legacy_doctor_for_portal_user(db: Session, user: User) -> Doctor | None:
+    role = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    if role != UserRole.doctor.value:
+        return None
+
+    normalized_username = normalize_identifier(user.email or user.phone or f"doctor-{user.id}")
+    doctor = db.query(Doctor).filter(Doctor.username == normalized_username).first()
+    doctor_profile = db.get(DoctorProfile, user.id)
+    doctor_type = normalize_doctor_type(
+        getattr(doctor_profile, "doctor_type", None),
+        getattr(doctor_profile, "specialization", None),
+    )
+    specialty = DOCTOR_TYPE_TO_SPECIALTY.get(doctor_type, "ayurveda")
+
+    if doctor is None:
+        # Portal doctors authenticate through the portal session, but the EMR,
+        # patients, appointments, and prescription flows still depend on the
+        # legacy Doctor workspace record.
+        doctor = Doctor(
+            username=normalized_username,
+            full_name=sanitize_text(user.full_name or "Doctor", max_length=160),
+            specialty=specialty,
+            password_hash=user.password_hash,
+        )
+        db.add(doctor)
+        db.flush()
+    else:
+        doctor.full_name = sanitize_text(user.full_name or doctor.full_name or "Doctor", max_length=160)
+        doctor.specialty = specialty
+        if user.password_hash and doctor.password_hash != user.password_hash:
+            doctor.password_hash = user.password_hash
+
+    commit_with_retry(db)
+    db.refresh(doctor)
+    return doctor
 
 
 def verify_user_password(user: User, password: str) -> bool:
@@ -371,6 +470,10 @@ def user_public_context(user: User) -> dict[str, str]:
         "avatar_label": initials[:2],
         "portal_role": role,
         "portal_slug": role_to_slug(role),
+        "doctor_type": normalize_doctor_type(
+            getattr(getattr(user, "doctor_profile", None), "doctor_type", None),
+            getattr(getattr(user, "doctor_profile", None), "specialization", None),
+        ),
     }
 
 

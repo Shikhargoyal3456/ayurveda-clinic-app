@@ -1,0 +1,51 @@
+button,
+.btn,
+a.btn,
+.primary-btn,
+.secondary-btn,
+.mini-btn,
+.ghost-button,
+.portal-primary-button,
+.action-btn,
+.btn-outline-dark,
+.btn-outline-success {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* Mobile first hardening for production usability */
+@media (max-width: 768px) {
+    .stats-grid,
+    .two-columns,
+    .dashboard-grid,
+    .content-grid-2,
+    .split-grid,
+    .metric-grid,
+    .dashboard-two-columns,
+    .tile-grid,
+    .quick-actions-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .card,
+    .simple-card,
+    .feature-card,
+    .action-card,
+    .surface-card,
+    .table-panel,
+    .dashboard-card,
+    .stat-card {
+        margin: 10px 0;
+    }
+
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}

@@ -1,4 +1,5 @@
 from datetime import datetime
+import ast
 import logging
 import os
 import re
@@ -6,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 import requests
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -19,6 +20,7 @@ from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash
 from app.config import settings
 from app.database import commit_with_retry, get_db
 from app.models import CaseSheet, Doctor, Patient
+from app.portal_auth import normalize_doctor_type
 try:
     from app.rag_engine import get_rag_engine
 except Exception as exc:
@@ -27,6 +29,7 @@ except Exception as exc:
     def get_rag_engine():
         raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
 from models.prescription import Prescription
+from services.ai_provider import generate_role_based_prescription_sync
 from services.diet_ai import generate_diet_plan, generate_whatsapp_message
 from services.voice_ai import structure_case_sheet, transcribe_audio
 from services.whatsapp import build_whatsapp_link
@@ -222,6 +225,193 @@ def _extract_scanned_medicines(analysis: str) -> list[str]:
             if cleaned and "MEDICINES DETECTED" not in cleaned.upper():
                 medicines.append(cleaned)
     return medicines[:12]
+
+
+def _compact_case_value(value: object, fallback: str = "") -> str:
+    text = str(value or "").strip()
+    return text or fallback
+
+
+def _normalized_ai_mode(value: str | None) -> str:
+    cleaned = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if cleaned in {"ayurveda", "modern", "homeopathy", "physiotherapy", "dentistry", "integrated", "general"}:
+        return cleaned
+    return ""
+
+
+def _structured_case_value(value: object) -> str:
+    if value is None:
+        return ""
+
+    parsed = value
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or text == "None":
+            return ""
+        try:
+            parsed = ast.literal_eval(text)
+        except Exception:
+            parsed = text
+
+    if isinstance(parsed, dict):
+        preferred_keys = [
+            "complaint",
+            "value",
+            "name",
+            "chief_complaint",
+            "symptoms",
+            "notes",
+            "diagnosis",
+            "duration",
+            "severity",
+        ]
+        for key in preferred_keys:
+            if key not in parsed:
+                continue
+            extracted = _structured_case_value(parsed.get(key))
+            if extracted:
+                return extracted
+        for raw_item in parsed.values():
+            extracted = _structured_case_value(raw_item)
+            if extracted:
+                return extracted
+        return ""
+
+    if isinstance(parsed, list):
+        values = [_structured_case_value(item) for item in parsed]
+        return ", ".join(item for item in values if item)
+
+    # Remove empty structured-note noise like "field: None" or "medicines: []".
+    cleaned = str(parsed).strip()
+    if not cleaned or cleaned in {"None", "[]", "{}"}:
+        return ""
+    cleaned = re.sub(r"\b[\w_]+:\s*(None|\[\]|\{\})\b", "", cleaned)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    return cleaned.strip()
+
+
+def _case_query_text(case: CaseSheet) -> str:
+    parts = [
+        f"Chief complaints and symptoms: {_compact_case_value(_structured_case_value(case.symptoms), 'Not clearly recorded.')}",
+        f"Working diagnosis: {_compact_case_value(_structured_case_value(case.diagnosis), 'Not recorded.')}",
+        f"Clinical notes: {_compact_case_value(_structured_case_value(case.notes), 'No additional notes.')}",
+    ]
+    if case.followup_notes:
+        parts.append(f"Follow-up considerations: {_compact_case_value(_structured_case_value(case.followup_notes))}")
+    return "\n".join(parts)
+
+
+def _case_ai_payload(case: CaseSheet) -> dict[str, object]:
+    patient = case.patient
+    doctor = getattr(patient, "doctor", None)
+    return {
+        "case_id": case.id,
+        "patient_name": _compact_case_value(getattr(patient, "name", ""), "Unknown"),
+        "age": _compact_case_value(getattr(patient, "age", ""), "Not recorded"),
+        "gender": _compact_case_value(getattr(patient, "gender", ""), "Not recorded"),
+        "phone": _compact_case_value(getattr(patient, "phone", "")),
+        "doctor_name": _compact_case_value(getattr(doctor, "full_name", ""), getattr(doctor, "username", "Doctor")),
+        "doctor_specialty": _compact_case_value(getattr(doctor, "specialty", ""), "ayurveda"),
+        "prakriti": _structured_case_value(case.prakriti),
+        "diagnosis": _structured_case_value(case.diagnosis),
+        "symptoms": _structured_case_value(case.symptoms),
+        "notes": _structured_case_value(case.notes),
+        "followup_notes": _structured_case_value(case.followup_notes),
+        "patient_context": _patient_context_text(case),
+        "query_text": _case_query_text(case),
+    }
+
+
+def _patient_context_text(case: CaseSheet) -> str:
+    patient = case.patient
+    return (
+        f"Patient name: {_compact_case_value(getattr(patient, 'name', ''), 'Unknown')}.\n"
+        f"Age: {_compact_case_value(getattr(patient, 'age', ''), 'Not recorded')}.\n"
+        f"Gender: {_compact_case_value(getattr(patient, 'gender', ''), 'Not recorded')}.\n"
+        f"Prakriti / constitution: {_compact_case_value(_structured_case_value(case.prakriti), 'Not recorded')}.\n"
+        f"Current diagnosis: {_compact_case_value(_structured_case_value(case.diagnosis), 'Not recorded')}.\n"
+        f"Symptoms: {_compact_case_value(_structured_case_value(case.symptoms), 'Not clearly recorded')}.\n"
+        f"Clinical notes: {_compact_case_value(_structured_case_value(case.notes), 'None')}.\n"
+        f"Follow-up plan: {_compact_case_value(_structured_case_value(case.followup_notes), 'None')}."
+    )
+
+
+def _doctor_prescription_mode(request: Request | None, doctor: Doctor | None, override_mode: str | None = None) -> str:
+    override = _normalized_ai_mode(override_mode)
+    if override:
+        return override
+    if request is not None:
+        session_mode = _normalized_ai_mode(request.session.get("portal_doctor_type"))
+        if session_mode:
+            return session_mode
+    specialty = getattr(doctor, "specialty", None) if doctor is not None else None
+    return normalize_doctor_type(None, specialty)
+
+
+def _answer_needs_retry(answer: object) -> bool:
+    text = str(answer or "").strip().lower()
+    low_signal_markers = (
+        "retrieved context is insufficient",
+        "presenting complaints are not provided",
+        "patient's current disease",
+        "impossible to determine nidana",
+        "no clinical reasoning can be applied",
+        "symptoms are required before ai analysis can run",
+    )
+    return any(marker in text for marker in low_signal_markers)
+
+
+def _build_case_ai_answer(case: CaseSheet, request: Request | None = None, override_mode: str | None = None) -> dict[str, object]:
+    doctor = getattr(case.patient, "doctor", None)
+    effective_mode = _doctor_prescription_mode(request, doctor, override_mode=override_mode)
+    payload = _case_ai_payload(case)
+    result = generate_role_based_prescription_sync(payload, effective_mode)
+    rendered = str(result.get("rendered_prescription") or "").strip()
+    prescription_payload = result.get("prescription")
+    if rendered:
+        prescription = rendered
+    elif isinstance(prescription_payload, dict):
+        prescription = json.dumps(prescription_payload, ensure_ascii=False, indent=2)
+    else:
+        prescription = str(prescription_payload or "").strip()
+    references = list(result.get("references", []) or [])
+    if not prescription:
+        raise RuntimeError("AI prescription response was empty.")
+    return {
+        "answer": prescription,
+        "sources": references,
+        "context_passages": list(result.get("context_passages", []) or []),
+        "source": str(result.get("provider") or "gemini"),
+        "mode": str(result.get("mode") or effective_mode),
+        "warning": result.get("warning"),
+    }
+
+
+async def _build_case_diet_payload(case: CaseSheet) -> dict[str, object]:
+    patient = case.patient
+    diet_plan = await generate_diet_plan(
+        {
+            "patient_name": patient.name,
+            "age": patient.age,
+            "gender": patient.gender,
+            "phone": patient.phone,
+            "prakriti": _structured_case_value(case.prakriti),
+            "diagnosis": _structured_case_value(case.diagnosis),
+            "symptoms": _structured_case_value(case.symptoms),
+            "notes": _structured_case_value(case.notes),
+            "followup_notes": _structured_case_value(case.followup_notes),
+            "doctor_name": _compact_case_value(getattr(case.patient.doctor, "full_name", ""), getattr(case.patient.doctor, "username", "Doctor")),
+        }
+    )
+    whatsapp_message = generate_whatsapp_message(patient.name, diet_plan)
+    return {
+        "case_id": case.id,
+        "diet_plan": diet_plan,
+        "diet_view": {
+            "plan": _format_diet_plan_view(diet_plan),
+            "whatsapp_link": build_whatsapp_link(patient.phone, whatsapp_message),
+        },
+    }
 
 
 def _set_case_ai_result(request: Request, key: str, payload: dict[str, object]) -> None:
@@ -619,6 +809,7 @@ def view_cases(
         {
             "patient": patient,
             "cases": cases_with_ai,
+            "current_doctor_type": _doctor_prescription_mode(request, doctor),
             "flash": pop_flash(request),
             "csrf_token": ensure_csrf_token(request),
         },
@@ -629,6 +820,7 @@ def view_cases(
 def generate_ai_prescription(
     case_id: int,
     request: Request,
+    mode: str | None = Query(default=None),
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
     _: None = Depends(verify_csrf),
@@ -642,21 +834,13 @@ def generate_ai_prescription(
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    patient_context = (
-        f"Patient prakriti: {case.prakriti}. Current diagnosis: {case.diagnosis}. Notes: {case.notes or 'None'}."
-    )
     try:
-        specialty = getattr(case.patient.doctor, "specialty", "ayurveda")
-        rag_result = get_rag_engine().generate_clinical_response(
-            case.symptoms,
-            patient_context=patient_context,
-            specialty=specialty,
-        )
+        rag_result = _build_case_ai_answer(case, request=request, override_mode=mode)
     except Exception as exc:
         logger.exception("AI prescription generation failed for case_id=%s: %s", case.id, exc)
         set_flash(
             request,
-            "AI prescription generation is temporarily unavailable. The case was kept safely without AI output.",
+            f"AI prescription generation failed: {exc}",
             "danger",
         )
         return RedirectResponse(url=f"/patients/{case.patient_id}/cases", status_code=303)
@@ -671,7 +855,7 @@ def generate_ai_prescription(
 
 
 @router.post("/cases/{case_id}/generate-diet")
-def generate_case_diet_plan(
+async def generate_case_diet_plan(
     case_id: int,
     request: Request,
     db: Session = Depends(get_db),
@@ -687,34 +871,68 @@ def generate_case_diet_plan(
     if case is None:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    patient = case.patient
-    patient_data = {
-        "patient_name": patient.name,
-        "age": patient.age,
-        "gender": patient.gender,
-        "phone": patient.phone,
-        "prakriti": case.prakriti,
-        "diagnosis": case.diagnosis,
-        "symptoms": case.symptoms,
-        "notes": case.notes,
-        "followup_notes": case.followup_notes,
-    }
     try:
-        diet_plan = generate_diet_plan(patient_data)
-        whatsapp_message = generate_whatsapp_message(patient.name, diet_plan)
-        _set_case_ai_result(
-            request,
-            "_diet_plan_result",
-            {
-                "case_id": case.id,
-                "diet_plan": diet_plan,
-                "whatsapp_link": build_whatsapp_link(patient.phone, whatsapp_message),
-            },
-        )
+        payload = await _build_case_diet_payload(case)
+        diet_plan = payload["diet_plan"]
+        _set_case_ai_result(request, "_diet_plan_result", payload)
         set_flash(request, "AI diet plan generated.", "success")
     except Exception as exc:
         logger.exception("Diet plan generation failed for case_id=%s: %s", case.id, exc)
-        set_flash(request, "Diet AI is temporarily unavailable for this case.", "danger")
+        set_flash(request, f"Diet AI request failed: {exc}", "danger")
     else:
         track_event("diet_plan_generated", doctor_id=doctor.id, patient_id=case.patient_id, case_id=case.id)
     return RedirectResponse(url=f"/patients/{case.patient_id}/cases", status_code=303)
+
+
+@router.post("/api/cases/{case_id}/generate-ai")
+def generate_ai_prescription_json(
+    case_id: int,
+    request: Request,
+    mode: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    case = (
+        db.query(CaseSheet)
+        .join(Patient)
+        .filter(CaseSheet.id == case_id, Patient.doctor_id == doctor.id)
+        .first()
+    )
+    if case is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    try:
+        rag_result = _build_case_ai_answer(case, request=request, override_mode=mode)
+    except Exception as exc:
+        logger.exception("AI prescription generation failed for case_id=%s: %s", case.id, exc)
+        return JSONResponse({"success": False, "error": str(exc), "source": "ai_error"}, status_code=503)
+    sources = rag_result.get("sources", [])
+    source_block = "\n\nSources:\n" + "\n".join(f"- {source}" for source in sources) if sources else ""
+    case.ai_prescription = f"{rag_result['answer']}{source_block}"
+    commit_with_retry(db)
+    ai_view = _format_ai_prescription(case.ai_prescription)
+    return JSONResponse({"success": True, "ai_view": ai_view})
+
+
+@router.post("/api/cases/{case_id}/generate-diet")
+async def generate_case_diet_plan_json(
+    case_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    case = (
+        db.query(CaseSheet)
+        .join(Patient)
+        .filter(CaseSheet.id == case_id, Patient.doctor_id == doctor.id)
+        .first()
+    )
+    if case is None:
+        raise HTTPException(status_code=404, detail="Case not found")
+    try:
+        payload = await _build_case_diet_payload(case)
+    except Exception as exc:
+        logger.exception("Diet plan generation failed for case_id=%s: %s", case.id, exc)
+        return JSONResponse({"success": False, "error": str(exc), "source": "ai_error"}, status_code=503)
+    return JSONResponse({"success": True, "diet_view": payload["diet_view"]})

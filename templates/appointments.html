@@ -4,12 +4,12 @@
 {% set user_role = 'Schedule center' %}
 {% set avatar_label = 'AP' %}
 
-{% block title %}Kash AI | Appointments{% endblock %}
+{% block title %}KASH AI - Appointments{% endblock %}
 
 {% block header_actions %}
 <a href="/followups" class="btn btn-outline-success btn-sm">Open Follow-ups</a>
 <a href="/emr/doctor-dashboard" class="btn btn-outline-success btn-sm">Open EMR</a>
-<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+<a href="/doctor/dashboard" class="btn btn-primary btn-sm">Doctor portal</a>
 {% endblock %}
 
 {% block page %}
@@ -18,8 +18,8 @@
         <div>
             <div class="breadcrumbs mb-2"><span>Home</span><span>Appointments</span></div>
             <p class="eyebrow">Appointment command center</p>
-            <h1>Calendar-led care operations</h1>
-            <p class="mb-0">Track daily demand, upcoming visits, and patient readiness in a schedule view designed for clarity.</p>
+            <h1 class="page-title">Appointments</h1>
+            <p class="mb-0 page-description">Track daily demand, upcoming visits, and patient readiness in a schedule view designed for clarity.</p>
         </div>
     </section>
 
@@ -52,7 +52,16 @@
                             <td><span class="status-badge text-bg-success">{{ appointment.status }}</span></td>
                         </tr>
                         {% else %}
-                        <tr><td colspan="4">No appointments scheduled for today.</td></tr>
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                                    <h3 class="empty-state__title">No appointments scheduled for today</h3>
+                                    <p class="empty-state__message">When new consultations are booked, they will appear here for quick review.</p>
+                                    <a href="/emr/patient-registry" class="btn btn-primary btn-sm">Open Patients</a>
+                                </div>
+                            </td>
+                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -70,12 +79,17 @@
                     <span class="status-badge text-bg-light">{{ appointment.date }} · {{ appointment.time }}</span>
                 </div>
                 {% else %}
-                <div class="stack-item"><p class="mb-0">No upcoming appointments.</p></div>
+                <div class="empty-state">
+                    <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                    <h3 class="empty-state__title">No upcoming appointments</h3>
+                    <p class="empty-state__message">When patients book future visits, they will show up here.</p>
+                    <a href="/emr/patient-registry" class="btn btn-primary btn-sm">Open Patients</a>
+                </div>
                 {% endfor %}
             </div>
             <div class="hero-actions mt-3">
                 {% if appointments %}
-                <a class="btn btn-primary btn-sm" href="/emr/modern-consultation/{{ appointments[0].patient_id }}">Start consultation</a>
+                <a class="btn btn-primary btn-sm" href="/emr/consultation/{{ appointments[0].patient_id }}">Start consultation</a>
                 {% endif %}
                 <a class="btn btn-outline-dark btn-sm" href="/emr/patient-registry">Open patient registry</a>
             </div>

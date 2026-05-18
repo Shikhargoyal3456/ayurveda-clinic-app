@@ -1,3 +1,10 @@
+"""Meta WhatsApp Cloud API routing.
+
+This Python module owns Meta-backed WhatsApp sends for app-side notifications
+and health reporting. Twilio WhatsApp prescription, reminder, and inbound
+webhook flows are handled separately by the Node service under src/.
+"""
+
 from __future__ import annotations
 
 import logging

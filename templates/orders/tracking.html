@@ -1,10 +1,10 @@
 {% extends "patient_simple_base.html" %}
 {% set simple_nav = 'orders' %}
-{% block title %}Track Orders{% endblock %}
+{% block title %}KASH AI - Track Orders{% endblock %}
 {% block page %}
 <section class="simple-card">
-    <h1 class="title">Track Orders</h1>
-    <p class="subtitle">See where your order is and when it will arrive.</p>
+    <h1 class="title page-title">Track Orders</h1>
+    <p class="subtitle page-description">See where your order is and when it will arrive.</p>
     {% if active_profile_name %}
     <p class="subtitle" style="margin-top:10px;">Showing orders for {{ active_profile_name }}</p>
     {% endif %}
@@ -17,7 +17,7 @@
         <h3 class="empty-state__title">No orders to track yet</h3>
         <p class="empty-state__message">Your latest order will appear here after you place it.</p>
         <div style="display:grid; gap:12px; margin-top:14px;">
-            <a class="secondary-btn" href="/order-medicines">Add Medicines to Order</a>
+            <a class="secondary-btn" id="trackOrderBtn" href="/order-medicines">Add Medicines to Order</a>
             <a class="secondary-btn" href="/order-medicines?tab=upload">Upload Prescription</a>
         </div>
     </div>
@@ -69,7 +69,7 @@ let trackingSocket = null;
 
 function getLatestOrderId() {
     const fromQuery = new URLSearchParams(window.location.search).get("order_id");
-    return fromQuery || localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderId) || "";
+    return fromQuery || window.kashStorageGet(window.KASH_SIMPLE_KEYS.latestOrderId) || "";
 }
 
 function setText(id, value) {
@@ -79,11 +79,11 @@ function setText(id, value) {
 
 function showTrackingFlash() {
     const host = document.getElementById("trackingFlash");
-    const message = localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderMessage) || "";
+    const message = window.kashStorageGet(window.KASH_SIMPLE_KEYS.latestOrderMessage) || "";
     if (!message) return;
     host.style.display = "block";
     host.textContent = message;
-    localStorage.removeItem(window.KASH_SIMPLE_KEYS.latestOrderMessage);
+    window.kashStorageRemove(window.KASH_SIMPLE_KEYS.latestOrderMessage);
 }
 
 function statusTone(status) {
@@ -95,7 +95,7 @@ function statusTone(status) {
 }
 
 function reorderSameItems() {
-    const url = localStorage.getItem(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl);
+    const url = window.kashStorageGet(window.KASH_SIMPLE_KEYS.latestOrderAgainUrl);
     if (url) {
         window.location.href = url;
         return;
@@ -169,10 +169,15 @@ async function loadTracking() {
         });
         trackingSocket.connect();
     } catch (error) {
-        document.getElementById("trackingEmpty").style.display = "block";
-        document.getElementById("trackingEmpty").innerHTML = `<div class="empty-state__icon">📦</div><h3 class="empty-state__title">We could not load your order</h3><p class="empty-state__message">Please try again in a moment.</p>`;
-        document.getElementById("trackingSkeleton").style.display = "none";
-        document.getElementById("trackingContent").style.display = "none";
+        const emptyNode = document.getElementById("trackingEmpty");
+        const skeletonNode = document.getElementById("trackingSkeleton");
+        const contentNode = document.getElementById("trackingContent");
+        if (emptyNode) {
+            emptyNode.style.display = "block";
+            emptyNode.innerHTML = `<div class="empty-state__icon">📦</div><h3 class="empty-state__title">We could not load your order</h3><p class="empty-state__message">Please try again in a moment.</p><a class="btn-primary" href="/order-medicines">Order Medicines</a>`;
+        }
+        if (skeletonNode) skeletonNode.style.display = "none";
+        if (contentNode) contentNode.style.display = "none";
     }
 }
 

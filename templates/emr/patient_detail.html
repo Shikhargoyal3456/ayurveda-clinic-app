@@ -12,7 +12,8 @@
                 <p>{{ patient.gender }} • {{ patient.age }} years • {{ patient.phone or 'No phone on file' }}</p>
             </div>
             <div class="page-header-actions">
-                <a class="btn btn-primary btn-pill" href="/emr/modern-consultation/{{ patient.id }}">New consultation</a>
+                <a class="btn btn-primary btn-pill" href="{{ consultation_href }}">New consultation</a>
+                <a class="btn btn-outline-dark btn-pill" href="/emr/ambient-scribe?patient_id={{ patient.id }}">AI Scribe</a>
                 <a class="btn btn-outline-success btn-pill" href="/patients/{{ patient.id }}/appointments/new">Book appointment</a>
                 <a class="btn btn-ghost btn-pill" href="/emr/patient-portal/{{ patient.id }}">Patient portal</a>
             </div>
@@ -24,6 +25,25 @@
             <span class="tab-pill">Ayurveda history</span>
             <span class="tab-pill">Timeline</span>
         </div>
+
+        <article class="card mb-4">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <p class="eyebrow mb-1">AI Prescription Mode</p>
+                    <strong id="activeAIMode">
+                        {% if current_doctor_type == 'ayurveda' %}🌿 Ayurveda (Samhita-based)
+                        {% elif current_doctor_type == 'modern' %}🏥 Modern Medicine
+                        {% elif current_doctor_type == 'integrated' %}🔄 Integrated
+                        {% elif current_doctor_type == 'homeopathy' %}💊 Homeopathy
+                        {% elif current_doctor_type == 'physiotherapy' %}🦵 Physiotherapy
+                        {% elif current_doctor_type == 'dentistry' %}🦷 Dentistry
+                        {% else %}🤖 {{ current_doctor_type }}
+                        {% endif %}
+                    </strong>
+                </div>
+                <a class="btn btn-outline-dark btn-pill btn-sm" href="/patients/{{ patient.id }}/cases">Open case history</a>
+            </div>
+        </article>
 
         <div class="content-grid-2">
             <article class="card">
@@ -82,9 +102,93 @@
                 </div>
             </article>
         </div>
+
+        <div class="content-grid-2 mt-4">
+            <article class="card">
+                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <div>
+                        <h2 class="h4 mb-1">AI diet planner</h2>
+                        <p class="mb-0 text-muted">Generate a personalized diet plan from this patient's EMR snapshot.</p>
+                    </div>
+                    <button type="button" class="btn btn-outline-success btn-pill" onclick="generateAIDietPlan()">Generate AI Diet Plan</button>
+                </div>
+                <input type="hidden" id="patientId" value="{{ patient.id }}">
+                <div id="aiDietPlanResult" class="mt-3" aria-live="polite"></div>
+            </article>
+        </div>
     </section>
 </div>
 <script>
+function getPatientIdFromUrl() {
+    const match = window.location.pathname.match(/\/emr\/patient\/(\d+)/);
+    return match ? match[1] : "";
+}
+
+async function generateAIDietPlan() {
+    const patientId = document.getElementById('patientId')?.value || getPatientIdFromUrl();
+    const resultDiv = document.getElementById('aiDietPlanResult');
+    if (!patientId || !resultDiv) {
+        return;
+    }
+
+    resultDiv.innerHTML = '<div class="loading">Generating personalized diet plan...</div>';
+
+    try {
+        const response = await fetch(`/api/ai/diet-plan/${patientId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token }}',
+            },
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            const safePlan = String(data.diet_plan || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            resultDiv.innerHTML = `
+                <div class="diet-plan">
+                    <h4>Personalized Diet Plan</h4>
+                    <pre style="white-space: pre-wrap;">${safePlan}</pre>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveDietPlan()">Save to Patient Record</button>
+                </div>
+            `;
+            resultDiv.dataset.generatedDietPlan = data.diet_plan || '';
+        } else {
+            resultDiv.innerHTML = `<div class="error">${data.error || data.detail || 'Unable to generate diet plan'}</div>`;
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div class="error">Network error. Please try again.</div>';
+    }
+}
+
+async function saveDietPlan() {
+    const patientId = document.getElementById('patientId')?.value || getPatientIdFromUrl();
+    const resultDiv = document.getElementById('aiDietPlanResult');
+    const dietPlan = resultDiv?.dataset.generatedDietPlan || '';
+    if (!patientId || !dietPlan || !resultDiv) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/ai/diet-plan/${patientId}/save`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ diet_plan: dietPlan }),
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+            window.showToast?.('Diet plan saved to patient record.', 'success');
+        } else {
+            window.showToast?.(data.error || data.detail || 'Unable to save diet plan.', 'error');
+        }
+    } catch (error) {
+        window.showToast?.('Unable to save diet plan right now.', 'error');
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const timelineContainer = document.getElementById("patientTimeline");
     const historyContainer = document.getElementById("patientHistory");
@@ -104,7 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <small class="text-muted">${item.date || "Pending date"} • ${item.meta || "No metadata"}</small>
                     </div>
                 </div>
-            `).join("") : '<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-notes-medical"></i></div><h3 class="empty-state__title">No timeline entries yet</h3><p class="empty-state__message">Consultations, prescriptions, and appointment updates will appear here over time.</p><a href="/emr/modern-consultation/{{ patient.id }}" class="btn btn-primary btn-sm">Add Consultation</a></div>';
+            `).join("") : '<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-notes-medical"></i></div><h3 class="empty-state__title">No timeline entries yet</h3><p class="empty-state__message">Consultations, prescriptions, and appointment updates will appear here over time.</p><a href="{{ consultation_href }}" class="btn btn-primary btn-sm">Add Consultation</a></div>';
         }, 250);
     }
 

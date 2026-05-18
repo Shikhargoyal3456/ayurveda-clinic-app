@@ -1,11 +1,13 @@
 import logging
+import json
 from datetime import datetime, timezone
 from threading import Lock
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
 from app.analytics import track_event
 from app.audit import write_audit_event
@@ -19,7 +21,10 @@ from app.auth import (
     verify_csrf,
 )
 from app.config import settings
-from app.models import Doctor
+from app.database import commit_with_retry, get_db
+from app.models import CaseSheet, Doctor, Patient
+from models.prescription import AIFeedback, Prescription
+from app.portal_auth import get_portal_user, normalize_doctor_type
 try:
     from app.rag_engine import get_rag_engine
 except Exception as exc:
@@ -29,18 +34,30 @@ except Exception as exc:
         raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
 
 try:
-    from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, GROQ_API_KEY, GROQ_MODEL
+    from services.ai_provider import (
+        GEMINI_API_KEY,
+        GEMINI_MODEL,
+        GROQ_API_KEY,
+        GROQ_MODEL,
+        generate_role_based_prescription,
+        get_ai_response,
+    )
 except Exception as exc:
     _ai_provider_import_error = str(exc)
     GEMINI_API_KEY = ""
     GEMINI_MODEL = settings.gemini_model
     GROQ_API_KEY = ""
     GROQ_MODEL = ""
+    def get_ai_response(prompt: str, mode: str = "samhita", context: dict | None = None):
+        raise RuntimeError(f"AI provider unavailable: {_ai_provider_import_error}")
+    async def generate_role_based_prescription(case_data: dict[str, object], mode: str):
+        raise RuntimeError(f"AI provider unavailable: {_ai_provider_import_error}")
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
     increment_subscription_usage as increment_usage,
 )
+from routers.cases import _case_ai_payload, _case_query_text, _patient_context_text
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -58,6 +75,28 @@ _AI_RATE_LIMIT_BUCKETS = _RATE_LIMIT_BUCKETS
 _AI_EMERGENCY_KEYWORDS = ["chest pain", "bleeding", "unconscious"]
 
 
+def _coerce_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+    return bool(value)
+
+
+def _ensure_ai_feature_access(request: Request, db: Session) -> dict[str, object]:
+    portal_user = get_portal_user(request, db)
+    if portal_user is not None:
+        return {"source": "portal", "user": portal_user}
+
+    doctor_id = request.session.get("doctor_id")
+    if doctor_id:
+        doctor = db.get(Doctor, int(doctor_id))
+        if doctor is not None:
+            return {"source": "doctor", "user": doctor}
+
+    raise HTTPException(status_code=303, headers={"Location": "/login"})
+
+
 def _wrap_ai_safety_response(symptoms: str, result: dict[str, object]) -> dict[str, object]:
     try:
         answer = str(result.get("answer", "") or "")
@@ -71,7 +110,21 @@ def _wrap_ai_safety_response(symptoms: str, result: dict[str, object]) -> dict[s
     return result
 
 
-async def _extract_symptoms(request: Request) -> str:
+def _extract_case_text_safely(case: CaseSheet) -> str:
+    return f"{_patient_context_text(case)}\n\n{_case_query_text(case)}".strip()
+
+
+def _active_doctor_mode(request: Request, doctor: Doctor, override_mode: str | None = None) -> str:
+    cleaned = str(override_mode or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if cleaned in {"ayurveda", "modern", "homeopathy", "physiotherapy", "dentistry", "integrated", "general"}:
+        return cleaned
+    session_mode = str(request.session.get("portal_doctor_type") or "").strip()
+    if session_mode:
+        return normalize_doctor_type(session_mode)
+    return normalize_doctor_type(None, getattr(doctor, "specialty", None))
+
+
+async def _extract_analysis_payload(request: Request) -> dict[str, str]:
     content_type = request.headers.get("content-type", "").lower()
 
     if "application/json" in content_type:
@@ -79,10 +132,16 @@ async def _extract_symptoms(request: Request) -> str:
             payload = await request.json()
         except ValueError as exc:
             raise HTTPException(status_code=400, detail="Invalid JSON payload.") from exc
-        return str((payload or {}).get("symptoms", "")).strip()
+        return {
+            "symptoms": str((payload or {}).get("symptoms", "")).strip(),
+            "mode": str((payload or {}).get("mode", "samhita")).strip().lower() or "samhita",
+        }
 
     form = await request.form()
-    return str(form.get("symptoms", "")).strip()
+    return {
+        "symptoms": str(form.get("symptoms", "")).strip(),
+        "mode": str(form.get("mode", "samhita")).strip().lower() or "samhita",
+    }
 
 
 async def _ai_rate_limit(request: Request, doctor: Doctor = Depends(get_current_doctor)) -> None:
@@ -117,7 +176,9 @@ async def analyze_symptoms(
     logger.info("Subscription check: user=%s, feature=ai_call, allowed=%s", doctor.id, access["allowed"])
     if not access["allowed"]:
         return JSONResponse(build_paywall_response(doctor, "ai_call"), status_code=403)
-    symptoms = await _extract_symptoms(request)
+    payload = await _extract_analysis_payload(request)
+    symptoms = payload.get("symptoms", "")
+    mode = payload.get("mode", "samhita")
     if not symptoms:
         raise HTTPException(status_code=400, detail="Symptoms are required.")
     if len(symptoms) > 2000:
@@ -125,25 +186,213 @@ async def analyze_symptoms(
 
     logger.info("AI analyzer request received: symptom_length=%s", len(symptoms))
     try:
-        result = await run_in_threadpool(get_rag_engine().generate_clinical_response, symptoms)
-    except Exception as exc:  # pragma: no cover
+        sources: list[str] = []
+        context_passages: list[str] = []
+        if mode == "samhita":
+            try:
+                passages = await run_in_threadpool(get_rag_engine().retrieve, symptoms, 3)
+            except Exception as retrieval_exc:
+                logger.warning("Samhita retrieval degraded for AI analyzer: %s", retrieval_exc)
+                passages = []
+            sources = [str(item.source_file) for item in passages]
+            context_passages = [str(item.text).strip() for item in passages]
+            result = await run_in_threadpool(
+                get_ai_response,
+                symptoms,
+                "samhita",
+                {
+                    "doctor_id": getattr(doctor, "id", None),
+                    "specialty": getattr(doctor, "specialty", ""),
+                    "sources": sources,
+                    "context_passages": context_passages,
+                },
+            )
+        else:
+            result = await run_in_threadpool(
+                get_ai_response,
+                symptoms,
+                mode,
+                {"doctor_id": getattr(doctor, "id", None), "specialty": getattr(doctor, "specialty", "")},
+            )
+        result.setdefault("sources", sources)
+        result.setdefault("context_passages", context_passages)
+    except Exception as exc:
         logger.exception("AI analyzer failed unexpectedly: %s", exc)
-        result = {
-            "answer": (
-            "AI analysis is temporarily unavailable right now. "
-            "Please retry in a moment or continue the consultation without AI assistance."
-            ),
-            "sources": [],
-            "context_passages": [],
-            "mode": "fallback",
-            "warning": "Primary AI pipeline failed unexpectedly. A fallback response was returned.",
-        }
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     write_audit_event("ai_analyzer_used", request, symptom_length=len(symptoms), source_count=len(result.get("sources", [])))
+    result["mode"] = str(result.get("mode") or mode)
     track_event("ai_analyzer_used", doctor_id=request.session.get("doctor_id"), mode=result.get("mode", "unknown"))
-    if result.get("mode") not in {"error", "fallback", "validation"}:
-        increment_usage(doctor, "ai_call")
+    increment_usage(doctor, "ai_call")
     result = _wrap_ai_safety_response(symptoms, result)
     return JSONResponse(result)
+
+
+@router.post("/api/ai/medicine-info")
+async def get_medicine_info(
+    request: Request,
+    payload: dict[str, object] = Body(...),
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_csrf),
+):
+    _ensure_ai_feature_access(request, db)
+    medicine_name = str(payload.get("medicine_name") or "").strip()
+    if not medicine_name:
+        raise HTTPException(status_code=400, detail="medicine_name is required.")
+
+    from services.medicine_info_ai import get_medicine_info_pure_ai
+
+    try:
+        info = await get_medicine_info_pure_ai(
+            medicine_name,
+            {
+                "diagnosis": str(payload.get("diagnosis") or "").strip(),
+                "symptoms": str(payload.get("symptoms") or "").strip(),
+                "age": payload.get("age"),
+            },
+        )
+    except Exception as exc:
+        logger.exception("AI medicine info failed for %s: %s", medicine_name, exc)
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "AI service temporarily unavailable",
+                "message": "Unable to generate medicine information. Please try again.",
+                "source": "ai_unavailable",
+            },
+        ) from exc
+    return JSONResponse({"success": True, "source": "ai", "data": info})
+
+
+@router.post("/api/ai/medicine-info/pure")
+async def get_medicine_info_pure(
+    request: Request,
+    payload: dict[str, object] = Body(...),
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_csrf),
+):
+    _ensure_ai_feature_access(request, db)
+    medicine_name = str(payload.get("medicine_name") or "").strip()
+    if not medicine_name:
+        raise HTTPException(status_code=400, detail="medicine_name is required.")
+
+    from services.medicine_info_ai import get_medicine_info_pure_ai
+
+    try:
+        info = await get_medicine_info_pure_ai(
+            medicine_name,
+            {
+                "diagnosis": str(payload.get("diagnosis") or "").strip(),
+                "symptoms": str(payload.get("symptoms") or "").strip(),
+                "age": payload.get("age"),
+            },
+        )
+        return JSONResponse({"success": True, "source": "ai", "data": info})
+    except Exception as exc:
+        logger.exception("Pure AI medicine info failed for %s: %s", medicine_name, exc)
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "AI service temporarily unavailable",
+                "message": "Unable to generate medicine information. Please try again.",
+                "source": "ai_unavailable",
+            },
+        ) from exc
+
+
+@router.post("/api/ai/prescription/enhance")
+async def enhance_prescription_with_details(
+    request: Request,
+    payload: dict[str, object] = Body(...),
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_csrf),
+):
+    _ensure_ai_feature_access(request, db)
+
+    from services.medicine_info_ai import get_prescription_with_details
+
+    try:
+        enhanced = await get_prescription_with_details(payload)
+    except Exception as exc:
+        logger.exception("AI prescription enhancement failed: %s", exc)
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "AI service temporarily unavailable",
+                "message": "Unable to enhance prescription details. Please try again.",
+                "source": "ai_unavailable",
+            },
+        ) from exc
+    return JSONResponse(enhanced)
+
+
+@router.post("/api/ai/prescription/{case_id}")
+async def generate_ai_prescription(
+    case_id: int,
+    request: Request,
+    mode: str | None = None,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    ____: None = Depends(_ai_rate_limit),
+    __: None = Depends(rate_limit_dependency("ai-prescription", limit=12, window_seconds=60)),
+    ___: None = Depends(verify_csrf),
+):
+    access = check_subscription_access(doctor, "ai_call")
+    if not access["allowed"]:
+        return JSONResponse(build_paywall_response(doctor, "ai_call"), status_code=403)
+
+    case = (
+        db.query(CaseSheet)
+        .join(Patient)
+        .filter(CaseSheet.id == case_id, Patient.doctor_id == doctor.id)
+        .first()
+    )
+    if case is None:
+        return JSONResponse({"success": False, "error": "Case not found"}, status_code=404)
+
+    try:
+        effective_mode = _active_doctor_mode(request, doctor, override_mode=mode)
+        case_data = _case_ai_payload(case)
+        case_data["requested_mode"] = effective_mode
+        result = await generate_role_based_prescription(case_data, effective_mode)
+        write_audit_event("ai_case_prescription_generated", request, case_id=case.id, patient_id=case.patient_id)
+        track_event("ai_case_prescription_generated", doctor_id=doctor.id, patient_id=case.patient_id, case_id=case.id)
+        increment_usage(doctor, "ai_call")
+        return JSONResponse(result)
+    except Exception as exc:
+        logger.exception("AI prescription endpoint failed for case_id=%s: %s", case_id, exc)
+        return JSONResponse(
+            {"success": False, "error": str(exc), "source": "ai_error"},
+            status_code=503,
+        )
+
+
+@router.post("/api/ai/stream")
+async def stream_ai_response(
+    payload: dict[str, object] = Body(...),
+    doctor: Doctor = Depends(get_current_doctor),
+    __: None = Depends(rate_limit_dependency("ai-stream", limit=20, window_seconds=60)),
+):
+    del doctor
+    prompt = str(payload.get("prompt", "") or "").strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Prompt is required.")
+
+    from services.ai_provider import stream_with_gemini
+
+    def generate():
+        try:
+            for chunk in stream_with_gemini(
+                "You are a careful healthcare AI assistant. Be concise, practical, and safe.",
+                prompt,
+                temperature=0.2,
+                max_output_tokens=1600,
+            ):
+                yield f"data: {chunk}\n\n"
+        except Exception as exc:
+            yield f"data: {json.dumps({'error': str(exc)})}\n\n"
+        yield "data: [DONE]\n\n"
+
+    return StreamingResponse(generate(), media_type="text/event-stream")
 
 
 def _background_rebuild_knowledge() -> None:
@@ -277,3 +526,72 @@ def ai_status():
             "active_strategy": active_strategy,
         }
     )
+
+
+@router.post("/api/ai/prescription-feedback")
+def prescription_feedback(
+    request: Request,
+    payload: dict[str, object] = Body(...),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    """
+    Collect doctor feedback on AI prescriptions.
+    Stored only in the local database.
+    """
+    rating = int(payload.get("rating", 0) or 0)
+    accepted = _coerce_bool(payload.get("accepted"))
+    doctor_notes = str(payload.get("doctor_notes") or "").strip() or None
+    prescription_id = payload.get("prescription_id")
+    case_id = payload.get("case_id")
+
+    if not (1 <= rating <= 5):
+        return JSONResponse({"success": False, "error": "Rating must be between 1 and 5"}, status_code=400)
+    if prescription_id is None and case_id is None:
+        return JSONResponse({"success": False, "error": "prescription_id or case_id is required"}, status_code=400)
+
+    if prescription_id is not None:
+        prescription = (
+            db.query(Prescription)
+            .filter(Prescription.id == int(prescription_id), Prescription.doctor_id == doctor.id)
+            .first()
+        )
+        if prescription is None:
+            return JSONResponse({"success": False, "error": "Prescription not found"}, status_code=404)
+        prescription.ai_rating = rating
+        prescription.ai_accepted = accepted
+        prescription.ai_feedback = doctor_notes
+        prescription.feedback_updated_at = datetime.now(timezone.utc)
+
+    if case_id is not None:
+        case = (
+            db.query(CaseSheet)
+            .join(Patient)
+            .filter(CaseSheet.id == int(case_id), Patient.doctor_id == doctor.id)
+            .first()
+        )
+        if case is None:
+            return JSONResponse({"success": False, "error": "Case not found"}, status_code=404)
+
+    db.add(
+        AIFeedback(
+            prescription_id=int(prescription_id) if prescription_id is not None else None,
+            case_id=int(case_id) if case_id is not None else None,
+            doctor_id=doctor.id,
+            rating=rating,
+            accepted=accepted,
+            notes=doctor_notes,
+        )
+    )
+    commit_with_retry(db)
+    write_audit_event(
+        "ai_prescription_feedback_saved",
+        request,
+        doctor_id=doctor.id,
+        prescription_id=int(prescription_id) if prescription_id is not None else None,
+        case_id=int(case_id) if case_id is not None else None,
+        rating=rating,
+        accepted=accepted,
+    )
+    return {"success": True, "message": "Feedback saved"}

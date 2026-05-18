@@ -24,6 +24,8 @@ def portal_selector(request: Request, db=Depends(get_db)):
     user = get_portal_user(request, db)
     if user is not None:
         return RedirectResponse(url=dashboard_path_for_role(user.role.value), status_code=303)
+    if request.session.get("doctor_id"):
+        return RedirectResponse(url="/doctor/dashboard", status_code=303)
     context = selector_payload()
     context.update({"request": request})
     return templates.TemplateResponse(request, "auth/smart_entry.html", context)

@@ -7,12 +7,14 @@ from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, Reques
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash, verify_csrf
 from app.config import settings
 from app.database import commit_with_retry, get_db
 from app.models import Appointment, Doctor, Patient
+from app.portal_auth import normalize_doctor_type
 from models.emr import (
     EMRAssessment,
     EMRAuditLog,
@@ -44,6 +46,7 @@ from services.emr_service import (
     serialize_prescription,
     write_emr_audit_log,
 )
+from services.diet_ai import generate_diet_plan
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["emr"])
@@ -72,6 +75,7 @@ HELP_TERMS = {
 SECTION_LINKS = [
     ("doctor_dashboard", "/emr/doctor-dashboard", "Doctor Dashboard", "fa-house-medical"),
     ("patient_registry", "/emr/patient-registry", "Patient Registry", "fa-id-card-clip"),
+    ("ambient_scribe", "/emr/ambient-scribe", "AI Scribe", "fa-microphone-lines"),
     ("clinical_reporting", "/emr/clinical-reporting", "Clinical Reports", "fa-chart-line"),
     ("lab_dashboard", "/emr/lab-dashboard", "Lab Dashboard", "fa-flask-vial"),
     ("clinical_decisions", "/emr/clinical-decisions", "Decision Support", "fa-staff-snake"),
@@ -81,8 +85,8 @@ SECTION_LINKS = [
 
 
 def _is_admin(doctor: Doctor) -> bool:
-    allowed_admins = settings.admin_usernames or ["admin@ayurveda.com"]
-    return doctor.username in allowed_admins or (not settings.is_production and int(getattr(doctor, "id", 0) or 0) == 1)
+    allowed_admins = [item.strip().lower() for item in settings.admin_usernames if item.strip()]
+    return (doctor.username or "").strip().lower() in allowed_admins or (not settings.is_production and int(getattr(doctor, "id", 0) or 0) == 1)
 
 
 def require_doctor_role(doctor: Doctor = Depends(get_current_doctor)) -> Doctor:
@@ -110,6 +114,24 @@ def require_integrated_access(doctor: Doctor = Depends(get_current_doctor)) -> D
     if specialty not in {"ayurveda", "modern_medicine", "homeopathy", "dental", "physiotherapy"} and not _is_admin(doctor):
         raise HTTPException(status_code=403, detail="Clinical access required.")
     return doctor
+
+
+def _consultation_entry_url_for_doctor(doctor: Doctor) -> str:
+    specialty = (doctor.specialty or "ayurveda").strip().lower()
+    if specialty in {"modern_medicine", "dental", "physiotherapy"}:
+        return "/emr/patient-registry?system=modern"
+    if specialty == "ayurveda":
+        return "/emr/patient-registry?system=ayurveda"
+    return "/emr/patient-registry"
+
+
+def _consultation_url_for_doctor(doctor: Doctor, patient_id: int) -> str:
+    specialty = (doctor.specialty or "ayurveda").strip().lower()
+    if specialty in {"modern_medicine", "dental", "physiotherapy"}:
+        return f"/emr/modern-consultation/{patient_id}"
+    if specialty == "ayurveda":
+        return f"/emr/ayurveda-consultation/{patient_id}"
+    return f"/emr/integrated-consultation/{patient_id}"
 
 
 def _seed_if_needed(db: Session) -> None:
@@ -144,6 +166,7 @@ def _base_context(request: Request, doctor: Doctor, active: str, extra: dict[str
         "flash": pop_flash(request),
         "help_terms": HELP_TERMS,
         "current_date": date.today(),
+        "consultation_entry_href": _consultation_entry_url_for_doctor(doctor),
     }
     if extra:
         context.update(extra)
@@ -164,6 +187,34 @@ def _profile_for_patient(db: Session, patient: Patient) -> EMRPatientProfile:
         create_default_assessments(db, patient.id, patient.doctor_id)
         commit_with_retry(db)
     return profile
+
+
+def _assessment_value(assessment_map: dict[str, Any], key: str, nested_key: str, fallback: str = "Pending") -> str:
+    payload = assessment_map.get(key, {}) if isinstance(assessment_map, dict) else {}
+    if isinstance(payload, dict):
+        return str(payload.get(nested_key) or fallback)
+    return fallback
+
+
+def _diet_plan_text(plan: dict[str, Any]) -> str:
+    sections: list[str] = []
+    if plan.get("diagnosis_summary"):
+        sections.append(f"Diagnosis Summary: {plan['diagnosis_summary']}")
+    if plan.get("dosha_assessment"):
+        sections.append(f"Dosha Assessment: {plan['dosha_assessment']}")
+    for heading, key in [
+        ("Meal Plan", "meal_plan"),
+        ("Foods to Favor", "foods_to_favor"),
+        ("Foods to Avoid", "foods_to_avoid"),
+        ("Lifestyle Tips", "lifestyle_tips"),
+        ("Precautions", "precautions"),
+    ]:
+        values = plan.get(key) or []
+        if values:
+            rendered = "\n".join(f"- {str(item).strip()}" for item in values if str(item).strip())
+            if rendered:
+                sections.append(f"{heading}:\n{rendered}")
+    return "\n\n".join(sections).strip() or "Diet plan generated."
 
 
 def _consultation_payload_to_model(consultation: EMRConsultation, payload: dict[str, Any]) -> None:
@@ -256,17 +307,56 @@ def emr_patient_registration_submit(
     _: None = Depends(verify_csrf),
 ):
     full_name = f"{first_name.strip()} {last_name.strip()}".strip()
+    normalized_email = email.strip()
+    existing_patient = None
+    if normalized_email:
+        existing_patient = (
+            db.query(Patient)
+            .filter(Patient.doctor_id == doctor.id, Patient.email == normalized_email)
+            .first()
+        )
+    if existing_patient is None and mobile.strip():
+        existing_patient = (
+            db.query(Patient)
+            .filter(Patient.doctor_id == doctor.id, Patient.phone == mobile.strip(), Patient.name == full_name)
+            .first()
+        )
+    if existing_patient is not None:
+        set_flash(request, f"{existing_patient.name} is already registered in your EMR. Opening the existing record instead.", "info")
+        return RedirectResponse(url=f"/emr/patient/{existing_patient.id}", status_code=303)
+
     patient = Patient(
         doctor_id=doctor.id,
         name=full_name,
         age=age,
         gender=gender.strip(),
         phone=mobile.strip(),
-        email=email.strip(),
+        email=normalized_email,
         address=address.strip(),
     )
     db.add(patient)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        existing_patient = None
+        if normalized_email:
+            existing_patient = (
+                db.query(Patient)
+                .filter(Patient.doctor_id == doctor.id, Patient.email == normalized_email)
+                .first()
+            )
+        if existing_patient is None and mobile.strip():
+            existing_patient = (
+                db.query(Patient)
+                .filter(Patient.doctor_id == doctor.id, Patient.phone == mobile.strip(), Patient.name == full_name)
+                .first()
+            )
+        if existing_patient is not None:
+            set_flash(request, f"{existing_patient.name} is already registered in your EMR. Opening the existing record instead.", "info")
+            return RedirectResponse(url=f"/emr/patient/{existing_patient.id}", status_code=303)
+        set_flash(request, "This patient could not be registered because of a data conflict.", "danger")
+        return RedirectResponse(url="/emr/patient-registration", status_code=303)
     profile = EMRPatientProfile(
         patient_id=patient.id,
         ur_number=generate_ur_number(patient.id),
@@ -331,15 +421,103 @@ def emr_patient_detail(patient_id: int, request: Request, db: Session = Depends(
                 "prescriptions": prescriptions,
                 "vitals": vitals,
                 "timeline": timeline,
+                "current_doctor_type": normalize_doctor_type(request.session.get("portal_doctor_type"), doctor.specialty),
+                "consultation_href": _consultation_url_for_doctor(doctor, patient.id),
             },
         ),
     )
+
+
+@router.post("/api/ai/diet-plan/{patient_id}")
+async def generate_patient_diet_plan(
+    patient_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(require_doctor_role),
+):
+    patient = _patient_for_doctor(db, doctor.id, patient_id)
+    profile = _profile_for_patient(db, patient)
+    consultations = (
+        db.query(EMRConsultation)
+        .filter(EMRConsultation.patient_id == patient.id)
+        .order_by(EMRConsultation.created_at.desc())
+        .all()
+    )
+    assessments = db.query(EMRAssessment).filter(EMRAssessment.patient_id == patient.id).all()
+    assessment_map = {assessment.assessment_type: assessment.payload for assessment in assessments}
+    latest_consultation = consultations[0] if consultations else None
+    patient_data = {
+        "patient_name": patient.name,
+        "diagnosis": getattr(latest_consultation, "title", "") or "Ayurveda follow-up",
+        "symptoms": getattr(latest_consultation, "chief_complaint", "") or "",
+        "notes": getattr(latest_consultation, "treatment_plan", "") or getattr(latest_consultation, "history_of_present_illness", "") or "",
+        "prakriti": _assessment_value(assessment_map, "prakriti", "label", (profile.ayurveda_profile or {}).get("prakriti", "Pending")),
+        "vikriti": _assessment_value(assessment_map, "vikriti", "label", (profile.ayurveda_profile or {}).get("vikriti", "Pending")),
+        "agni": _assessment_value(assessment_map, "agni", "type", (profile.ayurveda_profile or {}).get("agni", "Pending")),
+    }
+    plan = await generate_diet_plan(patient_data)
+    diet_plan = _diet_plan_text(plan)
+    write_emr_audit_log(
+        db,
+        doctor.id,
+        "ai_diet_plan_generated",
+        "patient",
+        patient.id,
+        patient.id,
+        {"patient_name": patient.name},
+        request.client.host if request.client else "",
+        request.headers.get("user-agent", ""),
+    )
+    commit_with_retry(db)
+    return JSONResponse({"success": True, "diet_plan": diet_plan, "structured_plan": plan})
+
+
+@router.post("/api/ai/diet-plan/{patient_id}/save")
+def save_patient_diet_plan(
+    patient_id: int,
+    request: Request,
+    payload: dict[str, str] = Body(...),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(require_doctor_role),
+):
+    patient = _patient_for_doctor(db, doctor.id, patient_id)
+    profile = _profile_for_patient(db, patient)
+    diet_plan = str(payload.get("diet_plan", "")).strip()
+    if not diet_plan:
+        return JSONResponse({"success": False, "error": "Diet plan is required."}, status_code=400)
+    ayurveda_profile = dict(profile.ayurveda_profile or {})
+    ayurveda_profile["latest_ai_diet_plan"] = diet_plan
+    profile.ayurveda_profile = ayurveda_profile
+    write_emr_audit_log(
+        db,
+        doctor.id,
+        "ai_diet_plan_saved",
+        "patient",
+        patient.id,
+        patient.id,
+        {"saved_length": len(diet_plan)},
+        request.client.host if request.client else "",
+        request.headers.get("user-agent", ""),
+    )
+    commit_with_retry(db)
+    return JSONResponse({"success": True})
 
 
 @router.get("/emr/modern-consultation/new")
 def emr_modern_consultation_entry(request: Request, doctor: Doctor = Depends(require_doctor_role)):
     set_flash(request, "Choose a patient before starting a modern consultation.", "info")
     return RedirectResponse(url="/emr/patient-registry?system=modern", status_code=303)
+
+
+@router.get("/emr/consultation/new")
+def emr_consultation_entry(doctor: Doctor = Depends(require_doctor_role)):
+    return RedirectResponse(url=_consultation_entry_url_for_doctor(doctor), status_code=303)
+
+
+@router.get("/emr/consultation/{patient_id}")
+def emr_consultation_router(patient_id: int, db: Session = Depends(get_db), doctor: Doctor = Depends(require_doctor_role)):
+    _patient_for_doctor(db, doctor.id, patient_id)
+    return RedirectResponse(url=_consultation_url_for_doctor(doctor, patient_id), status_code=303)
 
 
 @router.get("/emr/modern-consultation/{patient_id}")
@@ -486,13 +664,59 @@ def emr_billing_integration(request: Request, db: Session = Depends(get_db), doc
 @router.get("/emr/mobile-emr")
 def emr_mobile_emr(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     recent_patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).order_by(Patient.created_at.desc()).limit(6).all()
-    return templates.TemplateResponse(request, "emr/mobile_emr.html", _base_context(request, doctor, "mobile_emr", {"recent_patients": recent_patients}))
+    return templates.TemplateResponse(
+        request,
+        "emr/mobile_emr.html",
+        _base_context(
+            request,
+            doctor,
+            "mobile_emr",
+            {
+                "recent_patients": recent_patients,
+                "consultation_links": {patient.id: _consultation_url_for_doctor(doctor, patient.id) for patient in recent_patients},
+            },
+        ),
+    )
 
 
 @router.get("/emr/test-emr")
 def emr_test_page(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).limit(5).all()
     return templates.TemplateResponse(request, "emr/test_emr.html", _base_context(request, doctor, "test_emr", {"patients": patients, "question_count": len(PRAKRITI_QUESTION_BANK)}))
+
+
+@router.get("/emr/test-emr/{action}")
+def emr_test_redirect(action: str, request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
+    normalized_action = action.strip().lower()
+    if normalized_action == "registration":
+        return RedirectResponse(url="/emr/patient-registration", status_code=303)
+
+    patient = (
+        db.query(Patient)
+        .filter(Patient.doctor_id == doctor.id)
+        .order_by(Patient.created_at.desc())
+        .first()
+    )
+    if patient is None:
+        set_flash(request, "Add a patient first before testing consultation workflows.", "info")
+        return RedirectResponse(url="/emr/patient-registration", status_code=303)
+
+    specialty = (doctor.specialty or "ayurveda").strip().lower()
+    modern_specialties = {"modern_medicine", "dental", "physiotherapy"}
+
+    if normalized_action == "soap":
+        if specialty in modern_specialties:
+            return RedirectResponse(url=f"/emr/modern-consultation/{patient.id}", status_code=303)
+        set_flash(request, "SOAP note testing is optimized for modern specialties. Opening integrated consultation for this doctor.", "info")
+        return RedirectResponse(url=f"/emr/integrated-consultation/{patient.id}", status_code=303)
+
+    if normalized_action == "prakriti":
+        if specialty == "ayurveda":
+            return RedirectResponse(url=f"/emr/ayurveda-consultation/{patient.id}", status_code=303)
+        set_flash(request, "Prakriti assessment is optimized for Ayurveda doctors. Opening integrated consultation for this doctor.", "info")
+        return RedirectResponse(url=f"/emr/integrated-consultation/{patient.id}", status_code=303)
+
+    raise HTTPException(status_code=404, detail="Unknown EMR test action.")
 
 
 @router.get("/api/patients/search")

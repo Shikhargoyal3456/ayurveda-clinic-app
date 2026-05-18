@@ -61,7 +61,7 @@ class CaseSheet(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
-    prakriti: Mapped[str] = mapped_column(String(80))
+    prakriti: Mapped[str | None] = mapped_column(String(80), nullable=True)
     diagnosis: Mapped[str] = mapped_column(String(255))
     symptoms: Mapped[str] = mapped_column(Text)
     notes: Mapped[str] = mapped_column(Text, default="")

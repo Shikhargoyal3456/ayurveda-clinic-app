@@ -426,6 +426,48 @@
         }
       ],
       "prescription_name": "Ashwagandha Tablets"
+    },
+    {
+      "id": 5,
+      "user_id": "guest",
+      "items": [
+        {
+          "product_id": 4,
+          "name": "Paracetamol 650",
+          "price": 35,
+          "mrp": 45,
+          "quantity": 1,
+          "category": "pain_relief"
+        }
+      ],
+      "total_amount": 26.25,
+      "status": "packed",
+      "tracking_id": "TRK10005",
+      "delivery_partner": "Blink Health",
+      "estimated_delivery": "2026-05-14T13:13:44.024671+00:00",
+      "placed_time": "2026-05-14T12:28:44.024706+00:00",
+      "timeline": [
+        {
+          "status": "Order Placed",
+          "timestamp": "2026-05-14T12:28:44.024714+00:00",
+          "completed": true
+        },
+        {
+          "status": "Packed & Ready",
+          "timestamp": "2026-05-14T12:28:44.024720+00:00",
+          "completed": true
+        },
+        {
+          "status": "Out for Delivery",
+          "timestamp": "",
+          "completed": false
+        },
+        {
+          "status": "Delivered",
+          "timestamp": "",
+          "completed": false
+        }
+      ]
     }
   ],
   "lab_bookings": [
@@ -458,8 +500,8 @@
     "guest": {
       "points": 360,
       "tier": "bronze",
-      "total_spent": 4985.25,
-      "orders": 5,
+      "total_spent": 5011.5,
+      "orders": 6,
       "abandoned_carts": 1,
       "frequent_category": "ayurveda",
       "subscription_eligible": true,

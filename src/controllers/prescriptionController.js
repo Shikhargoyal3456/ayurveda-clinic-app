@@ -191,7 +191,8 @@ async function scanPrescriptionImage(req, res, next) {
     if (phone) {
       const patient = findPatientByPhone(phone) || findPatientByPhone(`whatsapp:${phone}`);
       const messages = await sendWhatsAppChunks({ to: phone, body: result.analysis });
-      messages.forEach((message, index) => {
+      const successfulMessages = messages.filter((message) => message.success);
+      successfulMessages.forEach((message) => {
         logMessage({
           patientId: patient?.id || null,
           direction: 'sent',
@@ -203,7 +204,7 @@ async function scanPrescriptionImage(req, res, next) {
           metadata: {
             provider: 'twilio',
             messageType: 'dashboard_prescription_analysis',
-            chunkIndex: index + 1,
+            chunkIndex: message.chunkIndex,
             chunkCount: messages.length,
             detected: result.detected,
             sourceFile: file.originalname,
@@ -211,9 +212,10 @@ async function scanPrescriptionImage(req, res, next) {
         });
       });
       whatsapp = {
-        sent: true,
-        chunks: messages.length,
-        messageSids: messages.map((message) => message.sid),
+        sent: successfulMessages.length > 0,
+        chunks: successfulMessages.length,
+        failedChunks: messages.filter((message) => !message.success).length,
+        messageSids: successfulMessages.map((message) => message.sid),
       };
     }
 

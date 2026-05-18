@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% set active_page = "profile" %}
 
 {% block title %}Complete Admin Panel | Kash AI{% endblock %}
 
@@ -68,12 +69,93 @@
 {% endblock %}
 
 {% block extra_head %}
+<style>
+.admin-panel-shell{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;align-items:start}
+.admin-sidebar{position:sticky;top:96px;padding:18px;display:grid;gap:10px}
+.admin-sidebar a{display:block;padding:12px 14px;border-radius:14px;text-decoration:none;color:#0f2f3d;font-weight:700;background:#f8fafc;border:1px solid #e2e8f0}
+.admin-sidebar a:hover{background:#ecfeff;border-color:#99f6e4;color:#115e59}
+.admin-content{min-width:0}
+.admin-section{padding:22px}
+.medicines-grid,.order-cards-grid,.activity-feed-list{display:grid;gap:16px}
+.medicines-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.medicine-card,.order-card-admin,.status-card{padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(148,163,184,.18);box-shadow:0 12px 24px rgba(15,23,42,.06)}
+.medicine-card-top,.order-card-head,.order-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.badge,.status-badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:.78rem;font-weight:700}
+.badge{background:#ecfeff;color:#115e59}
+.price-row{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:12px}
+.activity-item{display:grid;gap:6px;padding:14px 16px;border-radius:16px;background:#f8fafc;border:1px solid #e2e8f0}
+.activity-item .time{font-size:.78rem;color:#64748b;font-weight:700}
+.activity-item .message{color:#0f2f3d}
+.order-status-checker{display:grid;gap:16px}
+.status-result{min-height:32px}
+.alert-error{padding:12px 14px;border-radius:14px;background:#fee2e2;color:#991b1b;font-weight:600}
+.empty-state{text-align:center;padding:24px;color:#64748b}
+@media (max-width:980px){.admin-panel-shell{grid-template-columns:1fr}.admin-sidebar{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.admin-sidebar{grid-template-columns:1fr}.header-actions-row{flex-direction:column;align-items:stretch}.header-actions-row input,.header-actions-row button,.header-actions-row a{width:100%}}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
 let orderSocket;
+let refreshTimer;
+let redirectingToLogin = false;
+
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || {{ csrf_token | tojson }};
+}
+
+function apiHeaders(extra = {}) {
+    return {
+        'Accept': 'application/json',
+        'X-CSRF-Token': getCsrfToken(),
+        ...extra,
+    };
+}
+
+function redirectToLogin(message = 'Your admin session expired. Please sign in again.') {
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    if (window.showToast) {
+        showToast(message, 'error');
+    }
+    window.setTimeout(() => {
+        window.location.href = '/login';
+    }, 500);
+}
+
+async function readJson(response) {
+    const contentType = response.headers.get('content-type') || '';
+    if (response.redirected && response.url.includes('/login')) {
+        redirectToLogin();
+        throw new Error('Session expired.');
+    }
+    if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        if (response.url.includes('/login') || text.includes('name="csrf_token"') || text.includes('Doctor / Admin Workspace')) {
+            redirectToLogin();
+            throw new Error('Session expired.');
+        }
+        throw new Error('Unexpected server response.');
+    }
+    const payload = await response.json();
+    if (!response.ok || payload?.success === false) {
+        const message = payload?.detail || payload?.error || payload?.message || 'Request failed.';
+        throw new Error(message);
+    }
+    return payload;
+}
+
+function renderEmpty(containerId, message) {
+    const target = document.getElementById(containerId);
+    if (!target) return;
+    target.innerHTML = `<div class="empty-state">${message}</div>`;
+}
 
 function renderActivity(activity) {
     const feed = document.getElementById('liveFeed');
-    const card = document.createElement('div');
+    if (!feed) return;
+    const card = document.createElement('article');
     card.className = 'activity-item';
     card.innerHTML = `<span class="time">${new Date(activity.timestamp).toLocaleTimeString()}</span><span class="message">${activity.message}</span>`;
     feed.prepend(card);
@@ -82,9 +164,20 @@ function renderActivity(activity) {
 
 async function loadMedicines() {
     const search = document.getElementById('searchMedicine').value || '';
-    const response = await fetch(`/api/admin/medicines?q=${encodeURIComponent(search)}`);
-    const medicines = await response.json();
-    document.getElementById('medicinesList').innerHTML = medicines.map(med => `
+    const target = document.getElementById('medicinesList');
+    if (!target) return;
+    target.innerHTML = '<div class="empty-state">Loading medicines...</div>';
+    try {
+        const response = await fetch(`/api/admin/medicines?q=${encodeURIComponent(search)}`, {
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+        });
+        const medicines = await readJson(response);
+        if (!Array.isArray(medicines) || medicines.length === 0) {
+            renderEmpty('medicinesList', 'No medicines match this search yet.');
+            return;
+        }
+        target.innerHTML = medicines.map(med => `
         <article class="card medicine-card">
             <div class="medicine-card-top">
                 <h3>${med.name}</h3>
@@ -96,17 +189,32 @@ async function loadMedicines() {
                 <span class="text-muted">MRP Rs ${med.mrp}</span>
             </div>
             <div class="header-actions-row">
-                <a class="btn btn-outline-success btn-xs" href="/admin/add-medicine">Edit</a>
-                <button class="btn btn-ghost btn-xs" onclick="showToast('Update stock flow can be added next.', 'info')">Update Stock</button>
+                <a class="btn btn-outline-success btn-xs" href="/admin/master-medicines">Manage</a>
+                <a class="btn btn-ghost btn-xs" href="/admin/add-medicine">Add New</a>
             </div>
         </article>
     `).join('');
+    } catch (error) {
+        renderEmpty('medicinesList', error.message || 'Unable to load medicines right now.');
+        showToast(error.message || 'Unable to load medicines right now.', 'error');
+    }
 }
 
 async function loadOrders() {
-    const response = await fetch('/api/admin/orders/recent');
-    const orders = await response.json();
-    document.getElementById('ordersList').innerHTML = orders.map(order => `
+    const target = document.getElementById('ordersList');
+    if (!target) return;
+    target.innerHTML = '<div class="empty-state">Loading orders...</div>';
+    try {
+        const response = await fetch('/api/admin/orders/recent', {
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+        });
+        const orders = await readJson(response);
+        if (!Array.isArray(orders) || orders.length === 0) {
+            renderEmpty('ordersList', 'No recent orders yet.');
+            return;
+        }
+        target.innerHTML = orders.map(order => `
         <article class="card order-card-admin">
             <div class="order-card-head">
                 <strong>Order #${order.id}</strong>
@@ -121,42 +229,64 @@ async function loadOrders() {
             </div>
         </article>
     `).join('');
+    } catch (error) {
+        renderEmpty('ordersList', error.message || 'Unable to load orders right now.');
+        showToast(error.message || 'Unable to load orders right now.', 'error');
+    }
 }
 
 async function updateOrderStatus(orderId, newStatus) {
-    const response = await fetch(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({status: newStatus})
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        showToast(result.detail || 'Order update failed.', 'error');
-        return;
+    try {
+        const response = await fetch(`/api/orders/${orderId}/status`, {
+            method: 'PUT',
+            headers: apiHeaders({'Content-Type': 'application/json'}),
+            credentials: 'same-origin',
+            body: JSON.stringify({status: newStatus})
+        });
+        const result = await readJson(response);
+        if (!result.success) {
+            throw new Error(result.detail || 'Order update failed.');
+        }
+        showToast(`Order #${orderId} updated to ${result.order.status}.`, 'success');
+        loadOrders();
+    } catch (error) {
+        showToast(error.message || 'Order update failed.', 'error');
     }
-    showToast(`Order #${orderId} updated to ${result.order.status}.`, 'success');
-    loadOrders();
 }
 
 async function notifyCustomer(orderId, status) {
-    const response = await fetch(`/api/orders/${orderId}/notify`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({status})
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        showToast('Notification failed.', 'error');
-        return;
+    try {
+        const response = await fetch(`/api/orders/${orderId}/notify`, {
+            method: 'POST',
+            headers: apiHeaders({'Content-Type': 'application/json'}),
+            credentials: 'same-origin',
+            body: JSON.stringify({status})
+        });
+        const result = await readJson(response);
+        if (!result.success) {
+            throw new Error(result.detail || 'Notification failed.');
+        }
+        showToast(`Customer notified for order #${orderId}.`, 'success');
+    } catch (error) {
+        showToast(error.message || 'Notification failed.', 'error');
     }
-    showToast(`Customer notified for order #${orderId}.`, 'success');
 }
 
 async function checkOrderStatus() {
-    const orderId = document.getElementById('orderCheckId').value;
-    const response = await fetch(`/api/orders/check/${orderId}`);
-    const result = await response.json();
-    document.getElementById('orderStatusResult').innerHTML = result.exists ? `
+    const orderId = (document.getElementById('orderCheckId').value || '').trim();
+    const target = document.getElementById('orderStatusResult');
+    if (!target) return;
+    if (!orderId) {
+        target.innerHTML = '<div class="alert-error">Enter an order ID first.</div>';
+        return;
+    }
+    try {
+        const response = await fetch(`/api/orders/check/${encodeURIComponent(orderId)}`, {
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+        });
+        const result = await readJson(response);
+        target.innerHTML = result.exists ? `
         <div class="status-card">
             <div class="order-header">
                 <strong>Order #${result.order_id}</strong>
@@ -168,20 +298,65 @@ async function checkOrderStatus() {
             <a href="${result.tracking_url}" class="btn btn-outline-success btn-xs">Track Order</a>
         </div>
     ` : `<div class="alert-error">Order not found.</div>`;
+    } catch (error) {
+        target.innerHTML = `<div class="alert-error">${error.message || 'Unable to check order right now.'}</div>`;
+    }
+}
+
+async function loadActivityFeed() {
+    const feed = document.getElementById('liveFeed');
+    if (!feed) return;
+    feed.innerHTML = '<div class="empty-state">Loading activity...</div>';
+    try {
+        const response = await fetch('/api/admin/activity/feed?limit=20', {
+            headers: apiHeaders(),
+            credentials: 'same-origin',
+        });
+        const payload = await readJson(response);
+        const activities = Array.isArray(payload.activities) ? payload.activities : [];
+        if (activities.length === 0) {
+            renderEmpty('liveFeed', 'No live activity yet.');
+            return;
+        }
+        feed.innerHTML = '';
+        activities.slice().reverse().forEach(renderActivity);
+    } catch (error) {
+        renderEmpty('liveFeed', error.message || 'Unable to load activity right now.');
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     loadMedicines();
     loadOrders();
+    loadActivityFeed();
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    orderSocket = new WebSocket(`${protocol}//${window.location.host}/ws/activity`);
-    orderSocket.onmessage = event => renderActivity(JSON.parse(event.data));
-    setInterval(() => {
+    try {
+        orderSocket = new WebSocket(`${protocol}//${window.location.host}/ws/admin/activity`);
+        orderSocket.onmessage = event => {
+            try {
+                renderActivity(JSON.parse(event.data));
+            } catch (error) {}
+        };
+        orderSocket.onclose = event => {
+            if (event.code === 1008 || event.code === 1011) {
+                redirectToLogin();
+            }
+        };
+        orderSocket.onerror = () => {};
+    } catch (error) {}
+    refreshTimer = setInterval(() => {
         if (orderSocket && orderSocket.readyState === WebSocket.OPEN) {
             orderSocket.send('ping');
         }
         loadOrders();
     }, 10000);
+});
+
+window.addEventListener('beforeunload', () => {
+    if (refreshTimer) clearInterval(refreshTimer);
+    if (orderSocket && orderSocket.readyState === WebSocket.OPEN) {
+        orderSocket.close();
+    }
 });
 </script>
 {% endblock %}

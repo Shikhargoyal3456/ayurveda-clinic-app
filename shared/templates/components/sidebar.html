@@ -8,9 +8,15 @@
 <aside class="portal-sidebar">
     <div class="portal-sidebar-main">
         {% for group_name in grouped_navigation.items %}
+        {% set section = namespace(items=[]) %}
+        {% for item in portal_navigation | default([]) %}
+            {% if item.group | default('Workspace') == group_name and section.items | length < 3 %}
+                {% set _ = section.items.append(item) %}
+            {% endif %}
+        {% endfor %}
         <div class="sidebar-section">
             <p class="sidebar-label">{{ group_name }}</p>
-            {% for item in portal_navigation | default([]) if item.group | default('Workspace') == group_name %}
+            {% for item in section.items %}
             <a href="{{ item.url }}" class="sidebar-link {% if active_page == item.name | lower %}is-active{% endif %}">
                 <i class="fa-solid fa-{{ item.icon }}"></i>
                 <span class="sidebar-link-copy">
@@ -21,21 +27,6 @@
             {% endfor %}
         </div>
         {% endfor %}
-
-        {% if quick_actions %}
-        <div class="sidebar-section">
-            <p class="sidebar-label">Quick Actions</p>
-            {% for action in quick_actions %}
-            <a href="{{ action.url }}" class="quick-link">
-                <i class="fa-solid fa-{{ action.icon }}"></i>
-                <span class="quick-link-copy">
-                    <span>{{ action.label }}</span>
-                    {% if action.description %}<small>{{ action.description }}</small>{% endif %}
-                </span>
-            </a>
-            {% endfor %}
-        </div>
-        {% endif %}
     </div>
 
     <div class="portal-sidebar-footer">
@@ -50,7 +41,7 @@
 </aside>
 
 <nav class="portal-bottom-nav" aria-label="Mobile workspace navigation">
-    {% for item in (portal_navigation | default([]))[:5] %}
+    {% for item in (portal_navigation | default([]))[:3] %}
     <a href="{{ item.url }}" class="mobile-nav-item {% if active_page == item.name | lower %}is-active{% endif %}">
         <i class="fa-solid fa-{{ item.icon }}"></i>
         <span>{{ item.name }}</span>

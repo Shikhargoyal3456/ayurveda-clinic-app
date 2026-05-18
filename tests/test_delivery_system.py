@@ -9,14 +9,9 @@ pytestmark = pytest.mark.asyncio
 async def test_simple_patient_pages_are_easy_to_use(client):
     home = await client.get("/")
     assert home.status_code == 200
-    assert "Search for medicines..." in home.text
-    assert "Upload Prescription" in home.text
-    assert "Track Orders" in home.text
-    assert "Refill Last Order" in home.text
-    assert "Consult Doctor" in home.text
-    assert "❓ Help" in home.text
-    assert "Reorder now" in home.text
-    assert "See refill reminder" in home.text
+    assert "ORDER MEDICINES" in home.text or "Order medicines" in home.text
+    assert "UPLOAD PRESCRIPTION" in home.text or "Upload Prescription" in home.text
+    assert "TRACK ORDER" in home.text or "Track Orders" in home.text
 
     search = await client.get("/order-medicines")
     assert search.status_code == 200
@@ -90,7 +85,7 @@ async def test_marketplace_portals_load(client):
         assert "/auth/login" in pharmacy.headers.get("location", "")
 
 
-async def test_delivery_find_assign_and_track(client):
+async def test_delivery_find_assign_and_track(client, admin_client):
     await client.get("/portal")
 
     find_response = await client.post(
@@ -102,7 +97,8 @@ async def test_delivery_find_assign_and_track(client):
     assert find_payload["pharmacy"] is not None
     assert find_payload["eta_minutes"] is not None
 
-    assign_response = await client.post(
+    admin = admin_client["client"]
+    assign_response = await admin.post(
         "/api/delivery/assign/9991",
         json={
             "pharmacy_location": {"lat": 28.4595, "lng": 77.0266},
@@ -121,10 +117,11 @@ async def test_delivery_find_assign_and_track(client):
     assert "partner_location" in track_payload
 
 
-async def test_delivery_prediction_and_batch_optimization(client):
+async def test_delivery_prediction_and_batch_optimization(client, admin_client):
     await client.get("/portal")
 
-    optimize_response = await client.post(
+    admin = admin_client["client"]
+    optimize_response = await admin.post(
         "/api/delivery/optimize-batch",
         json=[
             {"id": 1, "delivery_pincode": "122001"},
@@ -142,3 +139,24 @@ async def test_delivery_prediction_and_batch_optimization(client):
     predict_payload = predict_response.json()
     assert predict_payload["predicted_minutes"] > 0
     assert "factors" in predict_payload
+
+
+async def test_delivery_assignment_redirects_to_partner_login_and_legacy_slug_alias_works(client):
+    assign_response = await client.post(
+        "/api/delivery/assign/9991",
+        json={
+            "pharmacy_location": {"lat": 28.4595, "lng": 77.0266},
+            "customer_location": {"lat": 28.4710, "lng": 77.0440},
+        },
+        follow_redirects=False,
+    )
+    assert assign_response.status_code == 303
+    assert assign_response.headers["location"] == "/auth/login/partner"
+
+    partner_login = await client.get("/auth/login/partner")
+    assert partner_login.status_code == 200
+    assert "Delivery partner login" in partner_login.text
+
+    legacy_slug = await client.get("/auth/login/delivery", follow_redirects=False)
+    assert legacy_slug.status_code == 303
+    assert legacy_slug.headers["location"] == "/auth/login/partner"

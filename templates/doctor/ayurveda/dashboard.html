@@ -1,0 +1,30 @@
+{% extends "layouts/portal_base.html" %}
+{% block title %}Ayurveda Doctor Dashboard | {{ APP_NAME }}{% endblock %}
+{% block portal_content %}
+<section class="doctor-dashboard">
+    <header class="dashboard-header">
+        <div class="dashboard-header__copy">
+            <p class="dashboard-eyebrow">Ayurveda workspace</p>
+            <h1>Ayurveda Doctor Dashboard</h1>
+            <p class="dashboard-subtitle">{{ clinic_name | default("Ayurveda practice") }} · Samhita-grounded care, prescriptions, and follow-up planning.</p>
+        </div>
+        <div class="dashboard-header__actions">
+            <a class="btn-outline" href="/emr/patient-registry">Patients</a>
+            <a class="btn-primary" href="/ai-analyzer">Open Samhita AI</a>
+        </div>
+    </header>
+
+    <article class="dashboard-card">
+        <div class="card-header">
+            <h2>📜 Samhita AI Assistant</h2>
+        </div>
+        <p>Ask about a disease pattern, herb, or chikitsa approach and compare it with the rest of your EMR workflow.</p>
+        <div class="actions-grid">
+            <a class="action-btn" href="/ai-analyzer">Ask Samhita AI</a>
+            <a class="action-btn" href="/emr/ambient-scribe">Open AI Scribe</a>
+            <a class="action-btn" href="/emr/patient-registry">View Patients</a>
+            <a class="action-btn" href="/doctor/dashboard#prescription-studio">Write Prescription</a>
+        </div>
+    </article>
+</section>
+{% endblock %}

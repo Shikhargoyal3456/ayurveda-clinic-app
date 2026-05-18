@@ -36,7 +36,7 @@
                     <label class="form-group"><span>Email Address *</span><input type="email" name="email" required></label>
                 </div>
                 <div class="form-row">
-                    <label class="form-group"><span>Phone Number *</span><input type="tel" name="phone" pattern="[0-9]{10}" required></label>
+                    <label class="form-group"><span>Phone Number *</span><input type="tel" name="phone" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210" required></label>
                     <label class="form-group"><span>Password *</span><input type="password" name="password" id="regPassword" required></label>
                 </div>
                 <div class="password-strength" id="passwordStrength"></div>
@@ -45,16 +45,29 @@
             <div class="form-step" id="step2" hidden>
                 {% if role == 'doctor' %}
                 <div class="form-row">
+                    <label class="form-group"><span>Doctor Type *</span>
+                        <select name="doctor_type" required>
+                            <option value="ayurveda">🌿 Ayurveda (BAMS)</option>
+                            <option value="modern">🏥 Modern Medicine (MBBS/MD)</option>
+                            <option value="homeopathy">💊 Homeopathy (BHMS)</option>
+                            <option value="physiotherapy">🦵 Physiotherapy (BPT)</option>
+                            <option value="dentistry">🦷 Dentistry (BDS)</option>
+                            <option value="integrated">🔄 Integrated (Both)</option>
+                        </select>
+                    </label>
                     <label class="form-group"><span>Registration Number *</span><input type="text" name="registration_number" required></label>
+                </div>
+                <div class="form-row">
                     <label class="form-group"><span>Specialization *</span><input type="text" name="specialization" required></label>
-                </div>
-                <div class="form-row">
                     <label class="form-group"><span>Qualification</span><input type="text" name="qualification"></label>
-                    <label class="form-group"><span>Experience (Years) *</span><input type="number" min="0" name="experience_years" required></label>
                 </div>
                 <div class="form-row">
+                    <label class="form-group"><span>Experience (Years) *</span><input type="number" min="0" name="experience_years" required></label>
                     <label class="form-group"><span>Consultation Fee (Rs) *</span><input type="number" min="0" name="consultation_fee" required></label>
+                </div>
+                <div class="form-row">
                     <label class="form-group"><span>Available Days</span><input type="text" name="available_days" placeholder="Mon-Fri"></label>
+                    <div></div>
                 </div>
                 <label class="form-group"><span>Professional Summary</span><textarea name="about" rows="4"></textarea></label>
                 {% elif role == 'pharmacy_owner' %}
@@ -148,6 +161,18 @@ let currentStep = 1;
 const totalSteps = 4;
 const steps = Array.from(document.querySelectorAll('.step'));
 
+function normalizePhoneValue(value) {
+    return String(value || '').replace(/\D/g, '');
+}
+
+function isValidPhoneValue(value, { required = false } = {}) {
+    const digits = normalizePhoneValue(value);
+    if (!digits) return !required;
+    if (digits.length === 10) return true;
+    if (digits.length === 12 && digits.startsWith('91')) return true;
+    return false;
+}
+
 function showStep(stepNumber) {
     document.querySelectorAll('.form-step').forEach((step) => step.hidden = true);
     document.getElementById(`step${stepNumber}`).hidden = false;
@@ -160,6 +185,22 @@ function showStep(stepNumber) {
 function validateStep(stepNumber) {
     const step = document.getElementById(`step${stepNumber}`);
     const fields = Array.from(step.querySelectorAll('input, select, textarea')).filter((field) => field.willValidate);
+    fields.forEach((field) => {
+        if (field.name === 'phone') {
+            field.setCustomValidity(
+                isValidPhoneValue(field.value, { required: true })
+                    ? ''
+                    : 'Enter a valid phone number like 9350397175 or +91 93503 97175.'
+            );
+        }
+        if (field.name === 'emergency_contact_phone') {
+            field.setCustomValidity(
+                isValidPhoneValue(field.value)
+                    ? ''
+                    : 'Enter a valid emergency contact number.'
+            );
+        }
+    });
     return fields.every((field) => field.reportValidity());
 }
 
@@ -182,6 +223,14 @@ function prevStep() {
 async function submitRegistration() {
     const form = document.getElementById('registerForm');
     const formData = new FormData(form);
+    const normalizedPhone = normalizePhoneValue(formData.get('phone'));
+    const normalizedEmergencyPhone = normalizePhoneValue(formData.get('emergency_contact_phone'));
+    if (normalizedPhone) {
+        formData.set('phone', normalizedPhone);
+    }
+    if (normalizedEmergencyPhone) {
+        formData.set('emergency_contact_phone', normalizedEmergencyPhone);
+    }
     const response = await fetch('/api/auth/register', {method: 'POST', body: formData, headers: {'X-CSRF-Token': formData.get('csrf_token')}});
     const result = await response.json();
     if (!response.ok || !result.success) {
@@ -189,6 +238,13 @@ async function submitRegistration() {
         return;
     }
     showToast(result.message || 'Registration successful.', 'success');
+    const role = formData.get('role');
+    if (result.verification_token && role && role !== 'patient') {
+        setTimeout(() => {
+            window.location.href = `/auth/verify-email?token=${encodeURIComponent(result.verification_token)}`;
+        }, 1200);
+        return;
+    }
     setTimeout(() => window.location.href = (result.redirect_url || '/auth/login'), 1800);
 }
 
@@ -203,6 +259,14 @@ document.getElementById('regPassword').addEventListener('input', function (event
     if (/[^A-Za-z0-9]/.test(value)) score += 1;
     const labels = ['Weak', 'Weak', 'Moderate', 'Good', 'Strong', 'Excellent'];
     strength.textContent = value ? `Password strength: ${labels[score]}` : '';
+});
+
+document.querySelector('input[name="phone"]')?.addEventListener('input', function (event) {
+    event.target.setCustomValidity('');
+});
+
+document.querySelector('input[name="emergency_contact_phone"]')?.addEventListener('input', function (event) {
+    event.target.setCustomValidity('');
 });
 
 showStep(currentStep);

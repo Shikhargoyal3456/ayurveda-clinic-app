@@ -1,0 +1,635 @@
+{% extends 'base.html' %}
+{% block title %}KASH AI - Ambient EMR Scribe{% endblock %}
+{% block page %}
+<div class="site-container page-shell emr-shell">
+    <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
+    <section class="page-content">
+        <div class="page-header">
+            <div>
+                <p class="eyebrow">Ambient clinical intelligence</p>
+                <h1 class="h2 page-title">Ambient EMR Scribe</h1>
+                <p class="page-description">Start listening, let Kash AI draft the consultation live, then review and save without manual typing.</p>
+            </div>
+            <div class="page-header-actions">
+                <span class="badge badge-soft">Hands-free workflow</span>
+                {% if selected_patient %}
+                <span class="badge badge-soft">{{ selected_patient.name }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if flash %}
+        <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
+        {% endif %}
+
+        <section class="card ambient-shell" data-ambient-root>
+            <div class="ambient-toolbar">
+                <div>
+                    <p class="eyebrow mb-1">Patient context</p>
+                    <div class="ambient-toolbar__row">
+                        <select id="ambientPatientSelect" class="form-control ambient-patient-select">
+                            <option value="">Select a patient for this session</option>
+                            {% for patient in patients %}
+                            <option
+                                value="{{ patient.id }}"
+                                data-name="{{ patient.name }}"
+                                data-age="{{ patient.age }}"
+                                data-gender="{{ patient.gender }}"
+                                {% if selected_patient and selected_patient.id == patient.id %}selected{% endif %}
+                            >
+                                {{ patient.name }}{% if patient.phone %} · {{ patient.phone }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-outline-dark btn-pill" type="button" id="ambientOpenPatient">Open patient</button>
+                    </div>
+                </div>
+                <div class="ambient-status" id="scribeStatus">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <div>
+                        <strong id="statusText">Ready to start</strong>
+                        <p class="text-muted mb-0">Microphone is idle. Keep the phone on the desk and tap start when the consultation begins.</p>
+                    </div>
+                    <div class="audio-wave" id="audioWave" hidden>
+                        <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ambient-controls">
+                <button id="startScribeBtn" class="btn btn-primary btn-pill" type="button">
+                    <i class="fa-solid fa-microphone-lines"></i> Start Listening
+                </button>
+                <button id="stopBtn" class="btn btn-outline-dark btn-pill" type="button" disabled>
+                    <i class="fa-solid fa-stop"></i> Stop Review
+                </button>
+                <button id="clearBtn" class="btn btn-ghost btn-pill" type="button">
+                    <i class="fa-solid fa-trash"></i> Clear
+                </button>
+                <button id="saveEMRBtn" class="btn btn-outline-success btn-pill" type="button" disabled>
+                    <i class="fa-solid fa-floppy-disk"></i> Save to EMR
+                </button>
+                <button id="generatePrescriptionBtn" class="btn btn-ghost btn-pill" type="button">
+                    <i class="fa-solid fa-prescription-bottle-medical"></i> Generate Prescription Draft
+                </button>
+                <button id="downloadPrescriptionBtn" class="btn btn-outline-primary btn-pill" type="button">
+                    <i class="fa-solid fa-file-arrow-down"></i> Download Prescription PDF
+                </button>
+            </div>
+
+            <div class="ambient-grid">
+                <article class="card ambient-panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow mb-1">Live transcript</p>
+                            <h3 class="h4 mb-0">Conversation stream</h3>
+                        </div>
+                        <span class="scope-pill">Auto speaker mode</span>
+                    </div>
+                    <div class="transcript-container" id="transcriptContainer">
+                        <div class="empty-state">
+                            <div class="empty-state__icon"><i class="fa-solid fa-wave-square"></i></div>
+                            <h3 class="empty-state__title">Ready for ambient capture</h3>
+                            <p class="empty-state__message">Tap start, allow microphone access, and speak naturally. Kash AI will keep updating the transcript and EMR panel on the right.</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card ambient-panel">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow mb-1">AI extracted EMR</p>
+                            <h3 class="h4 mb-0">Review before saving</h3>
+                        </div>
+                        <button id="editBtn" class="btn btn-ghost btn-pill" type="button">Edit Manually</button>
+                    </div>
+                    <div class="emr-form" id="ambientEmrForm">
+                        <div class="form-row">
+                            <label class="form-group">
+                                <span>Patient name</span>
+                                <input type="text" id="patientName" value="{{ selected_patient.name if selected_patient else '' }}" readonly>
+                            </label>
+                            <label class="form-group">
+                                <span>Gender</span>
+                                <input type="text" id="patientGender" value="{{ selected_patient.gender if selected_patient else '' }}" readonly>
+                            </label>
+                        </div>
+                        <div class="form-row">
+                            <label class="form-group">
+                                <span>Age</span>
+                                <input type="text" id="patientAge" value="{{ selected_patient.age if selected_patient else '' }}" readonly>
+                            </label>
+                            <label class="form-group">
+                                <span>System type</span>
+                                <input type="text" id="systemType" value="{{ 'Ayurveda' if user_role == 'Doctor - Ayurveda' else 'Integrated' }}" readonly>
+                            </label>
+                        </div>
+                        <label class="form-group">
+                            <span>Chief complaint</span>
+                            <textarea id="chiefComplaint" rows="2" readonly></textarea>
+                        </label>
+                        <label class="form-group">
+                            <span>History of present illness</span>
+                            <textarea id="historyPresentIllness" rows="3" readonly></textarea>
+                        </label>
+                        <label class="form-group">
+                            <span>Past medical history</span>
+                            <textarea id="medicalHistory" rows="2" readonly>{% if selected_profile and selected_profile.medical_history %}{{ selected_profile.medical_history.get('past_conditions', []) | join(', ') }}{% endif %}</textarea>
+                        </label>
+                        <div class="form-row">
+                            <label class="form-group">
+                                <span>Medications</span>
+                                <input type="text" id="medications" readonly>
+                            </label>
+                            <label class="form-group">
+                                <span>Allergies</span>
+                                <input type="text" id="allergies" readonly>
+                            </label>
+                        </div>
+                        <label class="form-group">
+                            <span>Examination findings</span>
+                            <textarea id="examinationFindings" rows="2" readonly></textarea>
+                        </label>
+                        <label class="form-group">
+                            <span>AI suggested diagnosis</span>
+                            <textarea id="diagnosis" rows="2" readonly></textarea>
+                        </label>
+                        <label class="form-group">
+                            <span>Treatment plan</span>
+                            <textarea id="treatmentPlan" rows="3" readonly></textarea>
+                        </label>
+                        <label class="form-group">
+                            <span>Prescription draft</span>
+                            <textarea id="prescriptionDraft" rows="4" readonly placeholder="Suggested medicines from the conversation will appear here"></textarea>
+                        </label>
+                    </div>
+                </article>
+            </div>
+        </section>
+    </section>
+</div>
+
+<script>
+(() => {
+    const root = document.querySelector('[data-ambient-root]');
+    if (!root) return;
+
+    const patientSelect = document.getElementById('ambientPatientSelect');
+    const openPatientButton = document.getElementById('ambientOpenPatient');
+    const startBtn = document.getElementById('startScribeBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const saveBtn = document.getElementById('saveEMRBtn');
+    const editBtn = document.getElementById('editBtn');
+    const generatePrescriptionBtn = document.getElementById('generatePrescriptionBtn');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    const audioWave = document.getElementById('audioWave');
+    const transcriptContainer = document.getElementById('transcriptContainer');
+    const fieldIds = [
+        'patientName',
+        'patientAge',
+        'patientGender',
+        'chiefComplaint',
+        'historyPresentIllness',
+        'medicalHistory',
+        'medications',
+        'allergies',
+        'examinationFindings',
+        'diagnosis',
+        'treatmentPlan',
+        'prescriptionDraft',
+    ];
+
+    const state = {
+        sessionId: null,
+        recorder: null,
+        stream: null,
+        recording: false,
+        editable: false,
+        selectedPatientId: patientSelect.value || '',
+        stopPromiseResolver: null,
+        lastUploadPromise: Promise.resolve(),
+        lastPrescriptionItems: [],
+    };
+
+    function csrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+    }
+
+    function selectedSystemType() {
+        const label = (document.getElementById('systemType').value || '').toLowerCase();
+        if (label.includes('modern')) return 'modern';
+        if (label.includes('integrated')) return 'integrated';
+        return 'ayurveda';
+    }
+
+    function setStatus(kind, title, description) {
+        statusIndicator.classList.remove('recording', 'ready', 'stopped');
+        statusIndicator.classList.add(kind);
+        statusText.textContent = title;
+        const descriptionNode = statusText.parentElement?.querySelector('p');
+        if (descriptionNode) descriptionNode.textContent = description;
+        audioWave.hidden = kind !== 'recording';
+    }
+
+    function transcriptEmptyState() {
+        transcriptContainer.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state__icon"><i class="fa-solid fa-wave-square"></i></div>
+                <h3 class="empty-state__title">Ready for ambient capture</h3>
+                <p class="empty-state__message">Tap start, allow microphone access, and speak naturally. Kash AI will keep updating the transcript and EMR panel on the right.</p>
+            </div>
+        `;
+    }
+
+    function setEditable(enabled) {
+        state.editable = enabled;
+        fieldIds.forEach((id) => {
+            const field = document.getElementById(id);
+            if (!field) return;
+            if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') {
+                field.readOnly = !enabled;
+            }
+        });
+    }
+
+    function appendTranscriptLine(text, speaker) {
+        if (!text) return;
+        const empty = transcriptContainer.querySelector('.empty-state');
+        if (empty) transcriptContainer.innerHTML = '';
+        const line = document.createElement('div');
+        line.className = `conversation-line ${speaker}`;
+        line.innerHTML = `
+            <div class="speaker ${speaker}">${speaker === 'doctor' ? 'Doctor' : 'Patient'}</div>
+            <div class="message-text">${text}</div>
+            <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+        `;
+        transcriptContainer.appendChild(line);
+        transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
+    }
+
+    function setFieldValue(id, value) {
+        const node = document.getElementById(id);
+        if (!node) return;
+        node.value = value || '';
+    }
+
+    function syncPatientContextFromSelection() {
+        const option = patientSelect.options[patientSelect.selectedIndex];
+        state.selectedPatientId = patientSelect.value || '';
+        if (!option) return;
+        setFieldValue('patientName', option.dataset.name || '');
+        setFieldValue('patientAge', option.dataset.age || '');
+        setFieldValue('patientGender', option.dataset.gender || '');
+    }
+
+    function updateEMRFields(data) {
+        state.lastPrescriptionItems = Array.isArray(data.prescription)
+            ? data.prescription.filter((item) => item && (typeof item === 'string' || typeof item === 'object'))
+            : state.lastPrescriptionItems;
+        setFieldValue('patientName', data.patient_name || document.getElementById('patientName').value);
+        setFieldValue('patientAge', data.age || document.getElementById('patientAge').value);
+        setFieldValue('patientGender', data.gender || document.getElementById('patientGender').value);
+        setFieldValue('chiefComplaint', data.chief_complaint || '');
+        setFieldValue('historyPresentIllness', data.history_present_illness || '');
+        setFieldValue('medicalHistory', data.past_medical_history || document.getElementById('medicalHistory').value);
+        setFieldValue('medications', Array.isArray(data.medications) ? data.medications.join(', ') : (data.medications || ''));
+        setFieldValue('allergies', Array.isArray(data.allergies) ? data.allergies.join(', ') : (data.allergies || ''));
+        setFieldValue('examinationFindings', data.examination_findings || '');
+        setFieldValue('diagnosis', data.diagnosis || '');
+        setFieldValue('treatmentPlan', data.treatment_plan || '');
+        const prescriptionText = Array.isArray(data.prescription)
+            ? data.prescription.map((item) => {
+                if (typeof item === 'string') return item;
+                return `${item.name || 'Medicine'} | ${item.dosage || 'As directed'} | ${item.frequency || 'As directed'} | ${item.duration || 'As directed'}`;
+            }).join('\n')
+            : (data.prescription || '');
+        setFieldValue('prescriptionDraft', prescriptionText);
+        saveBtn.disabled = !state.sessionId;
+    }
+
+    async function startSession() {
+        const response = await fetch('/api/ambient-emr/session/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken(),
+            },
+            body: JSON.stringify({ patient_id: patientSelect.value || null }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || payload.error || 'Unable to start ambient session.');
+        }
+        state.sessionId = payload.session_id;
+    }
+
+    async function sendAudioSegment(audioBlob) {
+        if (!audioBlob || !state.sessionId) return;
+        const formData = new FormData();
+        formData.append('session_id', state.sessionId);
+        formData.append('speaker', 'auto');
+        formData.append('audio', audioBlob, 'ambient-segment.webm');
+        const response = await fetch('/api/ambient-emr/process-segment', {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': csrfToken() },
+            body: formData,
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+            throw new Error(payload.detail || payload.error || 'Ambient transcription failed.');
+        }
+        appendTranscriptLine(payload.transcript, payload.speaker || 'patient');
+        updateEMRFields(payload.extracted_data || {});
+    }
+
+    async function startAmbientScribe() {
+        if (!patientSelect.value) {
+            window.alert('Select a patient before starting the ambient scribe.');
+            return;
+        }
+        try {
+            await startSession();
+            state.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            state.recorder = new MediaRecorder(state.stream);
+            state.recording = true;
+            state.lastUploadPromise = Promise.resolve();
+            state.recorder.ondataavailable = async (event) => {
+                if (!state.recording || !event.data || event.data.size === 0) return;
+                state.lastUploadPromise = sendAudioSegment(event.data).catch((error) => {
+                    console.error(error);
+                    setStatus('stopped', 'Needs attention', 'Ambient transcription hit a problem. You can stop, review, and try again.');
+                });
+                await state.lastUploadPromise;
+            };
+            state.recorder.onstop = () => {
+                if (typeof state.stopPromiseResolver === 'function') {
+                    state.stopPromiseResolver();
+                    state.stopPromiseResolver = null;
+                }
+            };
+            state.recorder.start(4000);
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            saveBtn.disabled = true;
+            setStatus('recording', 'Listening live', 'Kash AI is capturing the visit in live chunks and updating the EMR fields automatically.');
+        } catch (error) {
+            console.error(error);
+            state.sessionId = null;
+            window.alert(error.message || 'Microphone access is required to start ambient capture.');
+        }
+    }
+
+    async function stopAmbientScribe() {
+        if (!state.recording) return;
+        state.recording = false;
+        if (state.recorder && state.recorder.state !== 'inactive') {
+            const stopPromise = new Promise((resolve) => {
+                state.stopPromiseResolver = resolve;
+            });
+            state.recorder.stop();
+            await stopPromise;
+        }
+        if (state.stream) {
+            state.stream.getTracks().forEach((track) => track.stop());
+        }
+        await state.lastUploadPromise;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        try {
+            const response = await fetch(`/api/ambient-emr/session/${state.sessionId}/finalize`, {
+                method: 'POST',
+                headers: { 'X-CSRF-Token': csrfToken() },
+            });
+            const payload = await response.json();
+            updateEMRFields(payload.emr_data || {});
+            saveBtn.disabled = false;
+            setStatus('stopped', 'Review ready', 'Ambient capture is paused. Review the draft on the right, edit anything needed, then save to EMR.');
+        } catch (error) {
+            console.error(error);
+            setStatus('stopped', 'Stopped', 'Ambient capture stopped, but final extraction could not complete. You can still review the transcript.');
+        }
+    }
+
+    async function saveToEMR() {
+        if (!state.sessionId || !patientSelect.value) {
+            window.alert('Select a patient and start a session before saving.');
+            return;
+        }
+        const response = await fetch('/api/ambient-emr/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken(),
+            },
+            body: JSON.stringify({
+                session_id: state.sessionId,
+                patient_id: patientSelect.value,
+                system_type: selectedSystemType(),
+                emr_data: {
+                    patient_name: document.getElementById('patientName').value,
+                    age: document.getElementById('patientAge').value,
+                    gender: document.getElementById('patientGender').value,
+                    chief_complaint: document.getElementById('chiefComplaint').value,
+                    history_present_illness: document.getElementById('historyPresentIllness').value,
+                    past_medical_history: document.getElementById('medicalHistory').value,
+                    medications: document.getElementById('medications').value,
+                    allergies: document.getElementById('allergies').value,
+                    examination_findings: document.getElementById('examinationFindings').value,
+                    diagnosis: document.getElementById('diagnosis').value,
+                    treatment_plan: document.getElementById('treatmentPlan').value,
+                    prescription: document.getElementById('prescriptionDraft').value.split('\n').map((line) => line.trim()).filter(Boolean),
+                },
+            }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            window.alert(payload.detail || payload.error || 'Unable to save the ambient consultation.');
+            return;
+        }
+        window.location.href = payload.redirect_url || `/emr/patient/${patientSelect.value}`;
+    }
+
+    function resetScribe() {
+        if (state.recorder && state.recorder.state !== 'inactive') {
+            state.recorder.stop();
+        }
+        if (state.stream) {
+            state.stream.getTracks().forEach((track) => track.stop());
+        }
+        state.sessionId = null;
+        state.recording = false;
+        state.lastUploadPromise = Promise.resolve();
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        saveBtn.disabled = true;
+        fieldIds.forEach((id) => {
+            if (['patientName', 'patientAge', 'patientGender'].includes(id)) return;
+            setFieldValue(id, '');
+        });
+        transcriptEmptyState();
+        setEditable(false);
+        setStatus('ready', 'Ready to start', 'Microphone is idle. Keep the phone on the desk and tap start when the consultation begins.');
+    }
+
+    function editManually() {
+        setEditable(!state.editable);
+        editBtn.textContent = state.editable ? 'Lock Fields' : 'Edit Manually';
+    }
+
+    function generatePrescription() {
+        const diagnosis = document.getElementById('diagnosis').value.trim();
+        const plan = document.getElementById('treatmentPlan').value.trim();
+        const meds = document.getElementById('medications').value.trim();
+        const lines = [];
+        if (diagnosis) lines.push(`Diagnosis focus: ${diagnosis}`);
+        if (meds) lines.push(`Continue / review: ${meds}`);
+        if (plan) lines.push(`Plan: ${plan}`);
+        if (!lines.length) {
+            window.alert('Capture some conversation first so Kash AI has enough context for the prescription draft.');
+            return;
+        }
+        document.getElementById('prescriptionDraft').value = lines.join('\n');
+    }
+
+    function buildPrescriptionItemsForDownload() {
+        if (Array.isArray(state.lastPrescriptionItems) && state.lastPrescriptionItems.length > 0) {
+            return state.lastPrescriptionItems.map((item) => {
+                if (typeof item === 'string') {
+                    return {
+                        name: item,
+                        dosage: 'As directed',
+                        frequency: 'As directed',
+                        duration: 'As directed',
+                        instructions: 'Take as directed',
+                    };
+                }
+                return {
+                    name: item.name || 'Medicine',
+                    dosage: item.dosage || 'As directed',
+                    frequency: item.frequency || 'As directed',
+                    duration: item.duration || 'As directed',
+                    instructions: item.instructions || 'Take as directed',
+                };
+            }).filter((item) => item.name);
+        }
+
+        const medicationsText = document.getElementById('medications').value.trim();
+        if (!medicationsText) {
+            return [];
+        }
+        return medicationsText
+            .split(',')
+            .map((entry) => entry.trim())
+            .filter(Boolean)
+            .map((entry) => ({
+                name: entry,
+                dosage: 'As directed',
+                frequency: 'As directed',
+                duration: 'As directed',
+                instructions: 'Take as directed',
+            }));
+    }
+
+    async function downloadPrescriptionPdf() {
+        const patientName = document.getElementById('patientName').value.trim();
+        const medicines = buildPrescriptionItemsForDownload();
+        if (!patientName) {
+            window.alert('Select a patient before downloading the prescription.');
+            return;
+        }
+        if (!medicines.length) {
+            window.alert('Generate or review a prescription draft first so there is something to download.');
+            return;
+        }
+        const response = await fetch('/api/doctor/e-prescription/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken(),
+            },
+            body: JSON.stringify({
+                patient_name: patientName,
+                notes: document.getElementById('treatmentPlan').value.trim(),
+                medicines,
+            }),
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.download_url) {
+            window.alert(payload.detail || payload.error || 'Unable to generate a downloadable prescription right now.');
+            return;
+        }
+        window.location.href = payload.download_url;
+    }
+
+    openPatientButton?.addEventListener('click', () => {
+        const patientId = patientSelect.value;
+        if (!patientId) return;
+        window.location.href = `/emr/ambient-scribe?patient_id=${patientId}`;
+    });
+    patientSelect?.addEventListener('change', syncPatientContextFromSelection);
+    startBtn?.addEventListener('click', startAmbientScribe);
+    stopBtn?.addEventListener('click', stopAmbientScribe);
+    clearBtn?.addEventListener('click', resetScribe);
+    saveBtn?.addEventListener('click', saveToEMR);
+    editBtn?.addEventListener('click', editManually);
+    generatePrescriptionBtn?.addEventListener('click', generatePrescription);
+    document.getElementById('downloadPrescriptionBtn')?.addEventListener('click', downloadPrescriptionPdf);
+    document.getElementById('prescriptionDraft')?.addEventListener('focus', () => {
+        if (!document.getElementById('prescriptionDraft').value.trim()) {
+            generatePrescription();
+        }
+    });
+
+    syncPatientContextFromSelection();
+    setStatus('ready', 'Ready to start', 'Microphone is idle. Keep the phone on the desk and tap start when the consultation begins.');
+})();
+</script>
+
+<style>
+.ambient-shell { display:grid; gap:24px; padding:24px; }
+.ambient-toolbar { display:grid; grid-template-columns:minmax(320px, 420px) minmax(0, 1fr); gap:20px; align-items:start; }
+.ambient-toolbar__row { display:flex; gap:12px; align-items:center; }
+.ambient-patient-select { min-height:48px; }
+.ambient-status { display:flex; gap:14px; align-items:center; padding:16px 18px; border-radius:20px; background:linear-gradient(135deg,#f7fbff,#eff7f4); border:1px solid rgba(15,118,110,.12); }
+.status-indicator { width:14px; height:14px; border-radius:50%; background:#94a3b8; flex:0 0 auto; }
+.status-indicator.ready { background:#64748b; }
+.status-indicator.recording { background:#ef4444; box-shadow:0 0 0 0 rgba(239,68,68,.4); animation:pulse 1.2s infinite; }
+.status-indicator.stopped { background:#f59e0b; }
+@keyframes pulse { 0% { box-shadow:0 0 0 0 rgba(239,68,68,.45);} 70% { box-shadow:0 0 0 10px rgba(239,68,68,0);} 100% { box-shadow:0 0 0 0 rgba(239,68,68,0);} }
+.audio-wave { display:flex; gap:4px; align-items:flex-end; height:28px; margin-left:auto; }
+.audio-wave span { width:4px; border-radius:999px; background:linear-gradient(180deg,#14b8a6,#0f766e); animation:wave 0.65s ease-in-out infinite alternate; }
+.audio-wave span:nth-child(1) { height:10px; }
+.audio-wave span:nth-child(2) { height:18px; animation-delay:.1s; }
+.audio-wave span:nth-child(3) { height:24px; animation-delay:.2s; }
+.audio-wave span:nth-child(4) { height:18px; animation-delay:.3s; }
+.audio-wave span:nth-child(5) { height:10px; animation-delay:.4s; }
+@keyframes wave { from { transform:scaleY(.72); opacity:.75; } to { transform:scaleY(1.08); opacity:1; } }
+.ambient-controls { display:flex; gap:12px; flex-wrap:wrap; }
+.ambient-grid { display:grid; grid-template-columns:1.1fr .9fr; gap:24px; }
+.ambient-panel { min-height:640px; overflow:hidden; }
+.panel-header { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 20px; border-bottom:1px solid #e5e7eb; }
+.transcript-container { padding:20px; max-height:580px; overflow:auto; display:grid; gap:14px; }
+.conversation-line { padding:12px 14px; border-radius:16px; box-shadow:0 8px 24px rgba(15,23,42,.04); }
+.conversation-line.doctor { background:#e8f7f3; margin-left:36px; }
+.conversation-line.patient { background:#f8fafc; margin-right:36px; }
+.speaker { font-size:.78rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+.speaker.doctor { color:#0f766e; }
+.speaker.patient { color:#475569; }
+.message-text { color:#0f172a; line-height:1.6; }
+.timestamp { margin-top:6px; font-size:.76rem; color:#94a3b8; }
+.emr-form { padding:20px; max-height:580px; overflow:auto; display:grid; gap:16px; }
+.emr-form .form-group span { display:block; margin-bottom:6px; font-weight:700; color:#334155; }
+.emr-form input, .emr-form textarea { width:100%; padding:12px 14px; border-radius:14px; border:1px solid #d7dde7; background:#f8fafc; font:inherit; }
+.emr-form textarea { resize:vertical; }
+.emr-form input[readonly], .emr-form textarea[readonly] { color:#0f172a; }
+@media (max-width:1100px) {
+    .ambient-toolbar, .ambient-grid { grid-template-columns:1fr; }
+}
+@media (max-width:640px) {
+    .ambient-toolbar__row, .ambient-controls { flex-direction:column; align-items:stretch; }
+    .conversation-line.doctor, .conversation-line.patient { margin-left:0; margin-right:0; }
+}
+</style>
+{% endblock %}

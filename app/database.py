@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.pool import QueuePool
 
 from app.config import settings
 
@@ -26,20 +28,19 @@ def _engine_is_sqlite() -> bool:
 def _create_engine(database_url: str | None = None):
     database_url = database_url or settings.database_url
     connect_args = {}
-    engine_kwargs = {"future": True, "pool_pre_ping": True}
+    engine_kwargs = {
+        "future": True,
+        "pool_pre_ping": True,
+        "poolclass": QueuePool,
+        "pool_size": max(1, settings.db_pool_size or 10),
+        "max_overflow": max(0, settings.db_max_overflow or 20),
+        "pool_timeout": max(1, settings.db_pool_timeout_seconds),
+        "pool_recycle": max(30, settings.db_pool_recycle_seconds),
+    }
     if _is_sqlite_url(database_url):
         # PROD-FIX-6: SQLite concurrent safety for local/small-launch mode.
         connect_args["check_same_thread"] = False
         connect_args["timeout"] = 30
-    else:
-        engine_kwargs.update(
-            {
-                "pool_size": max(1, settings.db_pool_size),
-                "max_overflow": max(0, settings.db_max_overflow),
-                "pool_timeout": max(1, settings.db_pool_timeout_seconds),
-                "pool_recycle": max(30, settings.db_pool_recycle_seconds),
-            }
-        )
     return create_engine(database_url, connect_args=connect_args, **engine_kwargs)
 
 
@@ -185,7 +186,7 @@ def init_db() -> None:
     from models.marketplace import DeliveryPartner, LabStore, OrderDelivery, PharmacyStore  # noqa: F401
     from models.payment import Payment  # noqa: F401
     from models.medicine import MasterMedicine, Medicine, MedicineOrder, MedicineRequest, Pharmacy, PharmacyInventory, StockAdjustment, StockAlert  # noqa: F401
-    from models.prescription import Prescription  # noqa: F401
+    from models.prescription import AIFeedback, Prescription  # noqa: F401
     from models.subscription import ClinicSubscription, SubscriptionUsage  # noqa: F401
     from models.supplier import Supplier  # noqa: F401
     from models.user import DeliveryProfile, DoctorProfile, LabProfile, PatientProfile, PharmacyProfile, User, UserProfile  # noqa: F401
@@ -248,6 +249,31 @@ def _ensure_feature_schema() -> None:
                     connection.execute(text("ALTER TABLE prescriptions ADD COLUMN profile_id INTEGER"))
                 if "profile_name" not in columns:
                     connection.execute(text("ALTER TABLE prescriptions ADD COLUMN profile_name VARCHAR(100)"))
+                if "ai_rating" not in columns:
+                    connection.execute(text("ALTER TABLE prescriptions ADD COLUMN ai_rating INTEGER"))
+                if "ai_accepted" not in columns:
+                    connection.execute(text("ALTER TABLE prescriptions ADD COLUMN ai_accepted BOOLEAN"))
+                if "ai_feedback" not in columns:
+                    connection.execute(text("ALTER TABLE prescriptions ADD COLUMN ai_feedback TEXT"))
+                if "feedback_updated_at" not in columns:
+                    connection.execute(text("ALTER TABLE prescriptions ADD COLUMN feedback_updated_at DATETIME"))
+        if "ai_feedback" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS ai_feedback ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "prescription_id INTEGER, "
+                        "case_id INTEGER, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "rating INTEGER CHECK (rating >= 1 AND rating <= 5), "
+                        "accepted BOOLEAN, "
+                        "notes TEXT, "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (prescription_id) REFERENCES prescriptions(id), "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
+                    )
+                )
         if "medicine_orders" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("medicine_orders")}
             with engine.begin() as connection:
@@ -346,6 +372,11 @@ def _ensure_feature_schema() -> None:
                     connection.execute(text("ALTER TABLE ai_prescriptions_scanned ADD COLUMN verified_by_user_id INTEGER"))
                 if "doctor_user_id" not in columns:
                     connection.execute(text("ALTER TABLE ai_prescriptions_scanned ADD COLUMN doctor_user_id INTEGER"))
+        if "doctor_profiles" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("doctor_profiles")}
+            with engine.begin() as connection:
+                if "doctor_type" not in columns:
+                    connection.execute(text("ALTER TABLE doctor_profiles ADD COLUMN doctor_type VARCHAR(50)"))
     except Exception as exc:  # pragma: no cover
         logger.warning("Feature schema compatibility check failed: %s", exc)
 
@@ -361,13 +392,8 @@ def _ensure_supplier_seed_data() -> None:
 
 
 def _ensure_medicine_seed_data() -> None:
-    # GRAND-UNIFIED-1: Keep local/fresh deployments useful with a 20+ medicine catalog, without overwriting data.
-    try:
-        from services.medicine_catalog import seed_default_medicine_catalog
-
-        seed_default_medicine_catalog()
-    except Exception as exc:  # pragma: no cover
-        logger.warning("Medicine seed data could not be ensured: %s", exc)
+    # PURE-AI: Explicitly disable static medicine seeding at startup.
+    logger.info("Pure AI mode active: static medicine seed data is disabled.")
 
 
 def _ensure_admin_seed_data() -> None:
@@ -380,6 +406,7 @@ def _ensure_admin_seed_data() -> None:
     try:
         from app.auth import hash_password
         from app.models import Doctor
+        from models.user import User, UserRole
 
         session = SessionLocal()
         try:
@@ -397,6 +424,31 @@ def _ensure_admin_seed_data() -> None:
                     doctor.password_hash = hash_password(bootstrap_password)
                     if not (doctor.full_name or "").strip():
                         doctor.full_name = settings.admin_bootstrap_full_name
+
+                # Keep an explicit portal admin account available for role-based
+                # routing when the configured admin username is an email address.
+                if "@" in username:
+                    portal_user = session.query(User).filter(User.email == username).first()
+                    if portal_user is None:
+                        phone_seed = str(int(hashlib.sha256(username.encode("utf-8")).hexdigest(), 16) % 10_000_000_000).zfill(10)
+                        while session.query(User).filter(User.phone == phone_seed).first() is not None:
+                            phone_seed = str((int(phone_seed) + 1) % 10_000_000_000).zfill(10)
+                        portal_user = User(
+                            email=username,
+                            phone=phone_seed,
+                            password_hash=hash_password(bootstrap_password),
+                            full_name=settings.admin_bootstrap_full_name,
+                            role=UserRole.admin,
+                            is_verified=True,
+                            is_active=True,
+                        )
+                        session.add(portal_user)
+                    else:
+                        portal_user.password_hash = hash_password(bootstrap_password)
+                        portal_user.full_name = portal_user.full_name or settings.admin_bootstrap_full_name
+                        portal_user.role = UserRole.admin
+                        portal_user.is_active = True
+                        portal_user.is_verified = True
             commit_with_retry(session)
         finally:
             session.close()

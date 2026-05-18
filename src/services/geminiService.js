@@ -55,7 +55,7 @@ IMPORTANT: Always end with this disclaimer:
 "⚕️ IMPORTANT DISCLAIMER: This is AI-generated health information 
 provided by Kash AI Smart Clinic Platform for educational purposes only. 
 This is NOT a substitute for professional medical advice. 
-Please consult your doctor or a qualified healthcare professional 
+Please review this with a qualified healthcare professional 
 before making any changes to your medication or treatment plan. 
 Your health is important to us! 🌿 - Kash AI Team"`;
 
