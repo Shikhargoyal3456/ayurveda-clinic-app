@@ -6,10 +6,12 @@ passlib==1.7.4
 bcrypt==4.1.0
 python-jose==3.3.0
 httpx==0.25.1
+requests==2.32.3
 email-validator==2.1.0
 google-generativeai==0.3.2
 python-dotenv==1.0.0
 redis==5.0.1
+psycopg2-binary==2.9.10
 pdfplumber==0.11.4
 pytesseract==0.3.13
 Pillow==10.4.0
