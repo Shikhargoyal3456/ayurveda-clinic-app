@@ -38,7 +38,12 @@ from services.fulfillment_service import track_order, update_status
 from services.geocoding import get_nearby_pharmacies
 from services.inventory_service import reduce_stock
 from services.medicine_catalog import get_default_medicines
-from services.medicine_management import medicine_request_payload, search_master_medicines
+from services.medicine_management import (
+    default_image_for_category,
+    ensure_master_medicine,
+    medicine_request_payload,
+    search_master_medicines,
+)
 from services.profile_service import profile_avatar_for_relationship, resolve_active_profile
 from services.telegram_bot import TelegramOrderNotifier
 from services.medicine_api_service import MedicineAPIService
@@ -65,6 +70,20 @@ medicine_api_service = MedicineAPIService()
 ai_medicine_alternatives = AIMedicineAlternatives()
 price_comparison_service = PriceComparisonService()
 prescription_analyzer = AIPrescriptionAnalyzer()
+SAMPLE_AYURVEDIC_MEDICINES = [
+    {"name": "Ashwagandha Capsules", "price": 349, "description": "Adaptogenic support for stress balance, stamina, and sleep quality.", "category": "ayurveda"},
+    {"name": "Triphala Tablets", "price": 199, "description": "Classic digestive support blend for gentle bowel regularity and gut comfort.", "category": "ayurveda"},
+    {"name": "Brahmi Syrup", "price": 229, "description": "Traditional cognitive wellness tonic for focus, calmness, and memory support.", "category": "ayurveda"},
+    {"name": "Giloy Immunity Juice", "price": 275, "description": "Herbal immunity support with guduchi for seasonal wellness routines.", "category": "ayurveda"},
+    {"name": "Shatavari Granules", "price": 310, "description": "Women's wellness support traditionally used for nourishment and hormonal balance.", "category": "ayurveda"},
+    {"name": "Neem Tulsi Tablets", "price": 185, "description": "Skin and detox support with neem and tulsi in a daily tablet format.", "category": "ayurveda"},
+    {"name": "Sitopaladi Churna", "price": 145, "description": "Respiratory support powder traditionally used for cough and throat irritation.", "category": "ayurveda"},
+    {"name": "Amla Rasayan", "price": 260, "description": "Vitamin C rich rejuvenative tonic for immunity and antioxidant support.", "category": "ayurveda"},
+    {"name": "Dashmool Kwath", "price": 240, "description": "Herbal decoction blend used for inflammation support and recovery routines.", "category": "ayurveda"},
+    {"name": "Arjun Heart Tonic", "price": 330, "description": "Ayurvedic cardiovascular support built around arjuna bark extract.", "category": "ayurveda"},
+    {"name": "Punarnava Tablets", "price": 210, "description": "Traditional fluid balance and kidney support supplement.", "category": "ayurveda"},
+    {"name": "Livwell Bhumyamalaki", "price": 190, "description": "Liver wellness support with bhumyamalaki and complementary herbs.", "category": "ayurveda"},
+]
 
 
 def _run_ai_order_processing(order_id: int) -> None:
@@ -102,6 +121,86 @@ def can_transition(current: str, target: str) -> bool:
 
 def _is_ten_digit_phone(phone: str) -> bool:
     return bool(re.fullmatch(r"\d{10}", phone.strip()))
+
+
+def _ensure_sample_catalog(db: Session) -> list[Medicine]:
+    medicines = (
+        db.query(Medicine)
+        .filter(Medicine.is_available.is_(True))
+        .order_by(Medicine.name.asc())
+        .all()
+    )
+    if medicines:
+        return medicines
+
+    pharmacy = (
+        db.query(Pharmacy)
+        .filter(func.lower(Pharmacy.name) == "kash ai demo pharmacy")
+        .first()
+    )
+    if pharmacy is None:
+        pharmacy = Pharmacy(
+            name="Kash AI Demo Pharmacy",
+            address="123 Wellness Market, Bengaluru",
+            city="Bengaluru",
+            pincode="560001",
+            phone="9999999998",
+            whatsapp_number="9999999998",
+            drug_licence_number="KASH-AI-DEMO-LIC",
+            is_active=True,
+        )
+        db.add(pharmacy)
+        db.flush()
+
+    seeded: list[Medicine] = []
+    for item in SAMPLE_AYURVEDIC_MEDICINES:
+        master = ensure_master_medicine(
+            db,
+            name=item["name"],
+            category=item["category"],
+            generic_name=item["name"],
+            mrp=float(item["price"]),
+            price=float(item["price"]),
+            prescription_required=False,
+            description=item["description"],
+            image_url=default_image_for_category(item["category"]),
+            manufacturer="Kash AI Ayurveda",
+        )
+        medicine = (
+            db.query(Medicine)
+            .filter(
+                Medicine.pharmacy_id == pharmacy.id,
+                func.lower(Medicine.name) == item["name"].lower(),
+            )
+            .first()
+        )
+        if medicine is None:
+            medicine = Medicine(
+                name=item["name"],
+                generic_name=item["name"],
+                category=item["category"],
+                price=int(item["price"]),
+                mrp=int(item["price"]),
+                brand="Kash AI Ayurveda",
+                description=item["description"],
+                image_url=default_image_for_category(item["category"]),
+                stock=100,
+                unit="bottle",
+                requires_prescription=False,
+                is_available=True,
+                pharmacy_id=pharmacy.id,
+                master_medicine_id=master.id,
+            )
+            db.add(medicine)
+        seeded.append(medicine)
+
+    commit_with_retry(db)
+    return (
+        db.query(Medicine)
+        .filter(Medicine.is_available.is_(True))
+        .order_by(Medicine.name.asc())
+        .all()
+    )
 
 
 def _fallback_razorpay_order_id(order: MedicineOrder) -> str:
@@ -388,12 +487,7 @@ def order_again_page(order_token: str, request: Request, db: Session = Depends(g
 
 @router.get("/patient/medicines")
 def patient_medicines(db: Session = Depends(get_db)):
-    medicines = (
-        db.query(Medicine)
-        .filter(Medicine.is_available.is_(True))
-        .order_by(Medicine.name.asc())
-        .all()
-    )
+    medicines = _ensure_sample_catalog(db)
     if not medicines:
         try:
             return [
@@ -455,9 +549,12 @@ def search_medicines(q: str = "", db: Session = Depends(get_db)):
     normalized_query = q.strip().lower()
     cache_key = f"medicine-search:{normalized_query or 'popular'}"
     cached = cache_get_json(cache_key)
-    if cached is not None:
+    if cached is not None and cached.get("medicines"):
         return JSONResponse(cached)
     local = search_master_medicines(db, q, limit=20)
+    if not local:
+        _ensure_sample_catalog(db)
+        local = search_master_medicines(db, q, limit=20)
     if local:
         payload = {
             "medicines": [

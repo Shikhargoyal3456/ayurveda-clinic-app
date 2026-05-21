@@ -592,3 +592,55 @@ def create_patient(
     track_event("patient_created", doctor_id=doctor.id, patient_id=patient.id)
     set_flash(request, f"Patient {patient.name} added successfully.", "success")
     return RedirectResponse(url="/dashboard", status_code=303)
+
+
+@router.get("/patients/{patient_id}/edit")
+def edit_patient_page(
+    patient_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    patient = db.get(Patient, patient_id)
+    if patient is None or patient.doctor_id != doctor.id:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return templates.TemplateResponse(
+        request,
+        "edit_patient.html",
+        {
+            "request": request,
+            "patient": patient,
+            "csrf_token": ensure_csrf_token(request),
+        },
+    )
+
+
+@router.post("/patients/{patient_id}")
+@router.patch("/patients/{patient_id}")
+def update_patient(
+    patient_id: int,
+    request: Request,
+    name: str = Form(...),
+    age: int = Form(...),
+    gender: str = Form(...),
+    phone: str = Form(""),
+    email: str = Form(""),
+    address: str = Form(""),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    patient = db.get(Patient, patient_id)
+    if patient is None or patient.doctor_id != doctor.id:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    patient.name = name.strip()
+    patient.age = age
+    patient.gender = gender.strip()
+    patient.phone = phone.strip()
+    patient.email = email.strip()
+    patient.address = address.strip()
+    commit_with_retry(db)
+    set_flash(request, f"Patient {patient.name} updated successfully.", "success")
+    write_audit_event("patient_updated", request, patient_id=patient.id, patient_name=patient.name)
+    track_event("patient_updated", doctor_id=doctor.id, patient_id=patient.id)
+    return RedirectResponse(url="/dashboard", status_code=303)

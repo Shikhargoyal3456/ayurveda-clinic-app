@@ -35,7 +35,14 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
     fitz = None
 
-from services.ai_provider import call_ai_json_with_retry
+try:  # pragma: no cover
+    from google import genai
+    from google.genai import types
+except Exception:  # pragma: no cover
+    genai = None
+    types = None
+
+from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, AI_TIMEOUT, call_ai_json_with_retry
 
 
 logger = logging.getLogger(__name__)
@@ -288,20 +295,33 @@ class LabReportAnalyzer:
             text = self._extract_text_from_pdf(file_bytes)
             if text:
                 return text
+            logger.warning("No readable text extracted from PDF report using built-in OCR pipelines.")
             return ""
 
         decoded = self._decode_text_bytes(file_bytes)
         if decoded:
             return decoded
 
-        if self._looks_like_image(file_bytes) and Image is not None and pytesseract is not None:  # pragma: no cover
-            try:
-                image = self._prepare_image_for_ocr(Image.open(BytesIO(file_bytes)))
-                text = self._run_tesseract(image)
-                if text.strip():
-                    return self._normalize_extracted_text(text)
-            except Exception as exc:
-                logger.debug("Image OCR failed: %s", exc)
+        if self._looks_like_image(file_bytes):  # pragma: no cover
+            if Image is None:
+                logger.warning("Pillow is unavailable, skipping local OCR and trying Gemini OCR fallback.")
+            elif not self._tesseract_is_ready():
+                logger.warning("pytesseract or the Tesseract binary is unavailable, trying Gemini OCR fallback.")
+            else:
+                try:
+                    image = self._prepare_image_for_ocr(Image.open(BytesIO(file_bytes)))
+                    text = self._run_tesseract(image)
+                    cleaned = self._normalize_extracted_text(text)
+                    if cleaned:
+                        return cleaned
+                    logger.warning("Tesseract OCR returned no readable text, trying Gemini OCR fallback.")
+                except Exception as exc:
+                    logger.warning("Image OCR failed locally, trying Gemini OCR fallback: %s", exc)
+
+            fallback_text = self._extract_text_with_gemini_vision(file_bytes, normalized_type or "image/png")
+            if fallback_text:
+                return fallback_text
+            logger.error("No readable text extracted from image report after local and Gemini OCR attempts.")
 
         return ""
 
@@ -370,6 +390,46 @@ class LabReportAnalyzer:
     def _run_tesseract(self, image: Any) -> str:
         config = "--oem 3 --psm 6 -c preserve_interword_spaces=1"
         return pytesseract.image_to_string(image, lang="eng", config=config)
+
+    def _tesseract_is_ready(self) -> bool:
+        if pytesseract is None:
+            return False
+        configured_path = getattr(getattr(pytesseract, "pytesseract", None), "tesseract_cmd", "") or ""
+        if configured_path and Path(configured_path).exists():
+            return True
+        return bool(shutil.which("tesseract"))
+
+    def _extract_text_with_gemini_vision(self, file_bytes: bytes, file_type: str = "") -> str:
+        if genai is None or types is None:
+            logger.warning("Gemini OCR fallback unavailable because google-genai is not importable.")
+            return ""
+        if not GEMINI_API_KEY:
+            logger.warning("Gemini OCR fallback unavailable because GEMINI_API_KEY is not configured.")
+            return ""
+        mime_type = file_type.strip() or "image/png"
+        if "/" not in mime_type:
+            mime_type = "image/png"
+        try:
+            client = genai.Client(api_key=GEMINI_API_KEY)
+            response = client.models.generate_content(
+                model=GEMINI_MODEL,
+                contents=[
+                    "Extract all readable text from this lab report image. Preserve line breaks and test/value pairs. Return only the extracted text.",
+                    types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                ],
+                config=types.GenerateContentConfig(
+                    http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
+                    temperature=0.0,
+                    max_output_tokens=4096,
+                ),
+            )
+            cleaned = self._normalize_extracted_text(response.text or "")
+            if not cleaned:
+                logger.warning("Gemini OCR fallback returned no readable text.")
+            return cleaned
+        except Exception as exc:
+            logger.warning("Gemini OCR fallback failed: %s", exc)
+            return ""
 
     def _decode_text_bytes(self, file_bytes: bytes) -> str:
         decoded = file_bytes.decode("utf-8", errors="ignore")
