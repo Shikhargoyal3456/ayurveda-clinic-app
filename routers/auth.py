@@ -697,7 +697,7 @@ def signup_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "signup.html",
-        {"flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+        {"request": request, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
     )
 
 
@@ -887,7 +887,7 @@ def portal_register_page(request: Request, role_slug: str):
     _portal_slug_or_404(canonical_slug)
     if canonical_slug != role_slug:
         return RedirectResponse(url=f"/auth/register/{canonical_slug}", status_code=303)
-    return templates.TemplateResponse(request, "auth/portal_register.html", _portal_context(canonical_slug, request))
+    return templates.TemplateResponse(request, "auth/portal_register.html", {"request": request, **_portal_context(canonical_slug, request)})
 
 
 @router.post("/api/auth/register")
@@ -1131,7 +1131,7 @@ def verify_otp_login(
 def forgot_password_page(request: Request, role: str | None = Query(default=None)):
     role_slug = role_to_slug(slug_to_role(role)) if role else "patient"
     _portal_slug_or_404(role_slug)
-    return templates.TemplateResponse(request, "auth/forgot_password.html", _portal_context(role_slug, request))
+    return templates.TemplateResponse(request, "auth/forgot_password.html", {"request": request, **_portal_context(role_slug, request)})
 
 
 @router.post("/api/auth/forgot-password")
@@ -1177,7 +1177,7 @@ def reset_password_page(request: Request, token: str):
         finally:
             db.close()
     context = _portal_context(role_slug, request, reset_token=token)
-    return templates.TemplateResponse(request, "auth/reset_password.html", context)
+    return templates.TemplateResponse(request, "auth/reset_password.html", {"request": request, **context})
 
 
 @router.post("/api/auth/reset-password")
@@ -1216,7 +1216,7 @@ def reset_password(
 
 @router.get("/privacy")
 def privacy_page(request: Request):
-    return templates.TemplateResponse(request, "privacy.html", {})
+    return templates.TemplateResponse(request, "privacy.html", {"request": request})
 
 
 @router.get("/logout")

@@ -34,7 +34,7 @@ def schedule_page(
     return templates.TemplateResponse(
         request,
         "schedule.html",
-        {"patient": patient, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+        {"request": request, "patient": patient, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
     )
 
 
@@ -105,6 +105,7 @@ def appointments_page(
         request,
         "appointments.html",
         {
+            "request": request,
             "appointments": todays_appointments,
             "upcoming_appointments": upcoming_appointments,
             "total_appointments": total_appointments,
@@ -152,6 +153,7 @@ def followups_page(
         request,
         "followups.html",
         {
+            "request": request,
             "cases": due_cases,
             "pending_cases": pending_cases,
             "overdue_cases": overdue_cases,
