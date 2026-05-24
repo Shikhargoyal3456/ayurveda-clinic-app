@@ -73,6 +73,7 @@ def symptom_checker_page(request: Request):
         request,
         "telemedicine/symptom_checker.html",
         {
+            "request": request,
             "active_page": "consult",
             "user_role": "AI triage",
             "avatar_label": "AI",
@@ -90,6 +91,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
             request,
             "telemedicine/guest_book.html",
             {
+                "request": request,
                 "doctors": doctors,
                 "requires_login": True,
                 "active_page": "consult",
@@ -106,6 +108,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
             request,
             "telemedicine/patient_book.html",
             {
+                "request": request,
                 "doctors": doctors,
                 "active_page": "consult",
                 "user_role": "Video consultation",
@@ -122,6 +125,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
             request,
             "telemedicine/doctor_consultations.html",
             {
+                "request": request,
                 "active_page": "consult",
                 "user_role": "Doctor consultations",
                 "avatar_label": "TM",
@@ -147,6 +151,7 @@ def telemedicine_room_page(request: Request, session_id: str):
         request,
         "telemedicine/video_consult.html",
         {
+            "request": request,
             "session_id": session_id,
             "doctor_name": doctor_name,
             "start_time": session.get("start_time", ""),
@@ -167,6 +172,7 @@ async def telemedicine_summary_page(request: Request, session_id: str):
         request,
         "telemedicine/summary.html",
         {
+            "request": request,
             "summary": summary,
             "followup": followup,
             "active_page": "consult",
@@ -189,6 +195,7 @@ async def ai_order_automation_page(request: Request):
         request,
         "ai/order_automation.html",
         {
+            "request": request,
             "sample": sample,
             "active_page": "profile",
             "user_role": "AI operations",
@@ -204,6 +211,7 @@ def ai_support_page(request: Request):
         request,
         "support/ai_assistant.html",
         {
+            "request": request,
             "active_page": "consult",
             "user_role": "AI support",
             "avatar_label": "AS",

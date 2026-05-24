@@ -47,6 +47,7 @@ def contact_page(request: Request):
         request,
         "contact.html",
         {
+            "request": request,
             "support_phone": SUPPORT_PHONE,
             "support_email": SUPPORT_EMAIL,
             "support_whatsapp": SUPPORT_WHATSAPP,

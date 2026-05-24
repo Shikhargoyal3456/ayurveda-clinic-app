@@ -160,7 +160,7 @@ def ai_analyzer_page(request: Request, _: Doctor = Depends(get_current_doctor)):
     return templates.TemplateResponse(
         request,
         "ai_analyzer.html",
-        {"flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+        {"request": request, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
     )
 
 

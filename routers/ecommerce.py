@@ -46,14 +46,22 @@ marketing = MarketingAutomation()
 @router.get("/superapp/dashboard")
 def superapp_dashboard_page(request: Request):
     bootstrap_superapp(force=False)
-    return templates.TemplateResponse(request, "dashboard/superapp_dashboard.html", get_dashboard_payload())
+    return templates.TemplateResponse(
+        request,
+        "dashboard/superapp_dashboard.html",
+        {"request": request, **get_dashboard_payload()},
+    )
 
 
 @router.get("/subscription/smart-subscriptions")
 def smart_subscriptions_page(request: Request):
     payload = get_dashboard_payload()
     payload["offers"] = get_offers()
-    return templates.TemplateResponse(request, "subscription/smart_subscriptions.html", payload)
+    return templates.TemplateResponse(
+        request,
+        "subscription/smart_subscriptions.html",
+        {"request": request, **payload},
+    )
 
 
 @router.get("/diagnostics/lab-booking")
@@ -62,6 +70,7 @@ def lab_booking_page(request: Request):
         request,
         "diagnostics/lab_booking.html",
         {
+            "request": request,
             "packages": get_lab_packages(),
             "labs": bootstrap_superapp(force=False).get("lab_partners", []),
             "tests": get_lab_tests(),
@@ -75,6 +84,7 @@ def health_articles_page(request: Request):
         request,
         "health/articles.html",
         {
+            "request": request,
             "articles": get_health_articles(),
             "trending_topics": get_trending_topics(),
         },
@@ -87,6 +97,7 @@ def wellness_store_page(request: Request):
         request,
         "store/wellness_store.html",
         {
+            "request": request,
             "store_categories": get_store_categories(),
             "ai_recommendations": get_ai_recommendations(),
             "products": get_products(),
@@ -96,7 +107,7 @@ def wellness_store_page(request: Request):
 
 @router.get("/support/ai-assistant")
 def ai_support_page(request: Request):
-    return templates.TemplateResponse(request, "support/ai_assistant.html", {})
+    return templates.TemplateResponse(request, "support/ai_assistant.html", {"request": request})
 
 
 @router.get("/orders/tracking/{order_id}")
@@ -119,7 +130,7 @@ def order_tracking_page(request: Request, order_id: int):
             "location": {"eta": "Pending"},
         }
     tracking.update({"request": request, "simple_nav": "orders", "page_hint": "See where your medicine is"})
-    return templates.TemplateResponse(request, "orders/tracking.html", tracking)
+    return templates.TemplateResponse(request, "orders/tracking.html", {"request": request, **tracking})
 
 
 @router.get("/loyalty/rewards-program")
@@ -128,6 +139,7 @@ def rewards_program_page(request: Request):
         request,
         "loyalty/rewards_program.html",
         {
+            "request": request,
             "user": get_loyalty(),
             "rewards": get_rewards(),
         },

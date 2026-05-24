@@ -34,6 +34,7 @@ def panchakarma_booking_page(request: Request):
         request,
         "marketplace/panchakarma_booking.html",
         {
+            "request": request,
             "centers": centers,
             "center_count": len(centers),
             "comparison_rows": get_competitor_matrix(),
@@ -47,6 +48,7 @@ def verified_practitioners_page(request: Request):
         request,
         "trust/verified_practitioners.html",
         {
+            "request": request,
             "practitioners": get_verified_practitioners(),
             "testimonials": get_verified_testimonials(),
             "comparison_rows": get_competitor_matrix(),
@@ -60,6 +62,7 @@ def community_feed_page(request: Request):
         request,
         "community/wellness_feed.html",
         {
+            "request": request,
             "feed": get_wellness_feed(),
             "challenge": {
                 "name": "30-day Ayurveda morning routine challenge",
@@ -75,7 +78,7 @@ def referral_system_page(request: Request):
     return templates.TemplateResponse(
         request,
         "growth/referral_system.html",
-        get_referral_snapshot(),
+        {"request": request, **get_referral_snapshot()},
     )
 
 
@@ -84,7 +87,7 @@ def waitlist_page(request: Request):
     return templates.TemplateResponse(
         request,
         "growth/waitlist.html",
-        get_waitlist_snapshot(),
+        {"request": request, **get_waitlist_snapshot()},
     )
 
 
@@ -94,7 +97,7 @@ def investor_demo_page(request: Request):
     return templates.TemplateResponse(
         request,
         "investor_demo.html",
-        payload,
+        {"request": request, **payload},
     )
 
 
@@ -103,7 +106,7 @@ def press_kit_page(request: Request):
     return templates.TemplateResponse(
         request,
         "launch/press_kit.html",
-        {"comparison_rows": get_competitor_matrix()},
+        {"request": request, "comparison_rows": get_competitor_matrix()},
     )
 
 
@@ -114,7 +117,7 @@ def growth_dashboard_page(request: Request):
     return templates.TemplateResponse(
         request,
         "admin/growth_dashboard.html",
-        payload,
+        {"request": request, **payload},
     )
 
 
