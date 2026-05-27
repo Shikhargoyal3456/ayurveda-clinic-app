@@ -2,57 +2,59 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     {% set seo_title = seo_title | default('Kash AI | Integrated Ayurveda + Modern Medicine Platform') %}
     {% set seo_description = seo_description | default("India's integrated healthcare platform for Ayurveda, modern medicine, teleconsultation, outcomes, and medicine fulfillment.") %}
     {% set seo_keywords = seo_keywords | default('ayurveda, telemedicine, integrated healthcare, online doctor, ayurvedic treatment, panchakarma, EMR') %}
     {% set seo_image = seo_image | default('/static/images/kash-ai-logo.svg') %}
     {% block meta %}{% endblock %}
     <title>{% block title %}{{ seo_title }}{% endblock %}</title>
-    <meta name="description" content="{{ seo_description }}" />
-    <meta name="keywords" content="{{ seo_keywords }}" />
-    <meta name="csrf-token" content="{{ csrf_token | default('') }}" />
-    <meta property="og:title" content="{{ seo_title }}" />
-    <meta property="og:description" content="{{ seo_description }}" />
-    <meta property="og:site_name" content="Kash AI" />
-    <meta property="og:image" content="{{ seo_image }}" />
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='images/favicon.svg') }}" />
-    <link rel="dns-prefetch" href="//fonts.googleapis.com">
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link rel="dns-prefetch" href="//maps.googleapis.com">
+    <meta name="description" content="{{ seo_description }}">
+    <meta name="keywords" content="{{ seo_keywords }}">
+    <meta name="csrf-token" content="{{ csrf_token | default('') }}">
+    <meta property="og:title" content="{{ seo_title }}">
+    <meta property="og:description" content="{{ seo_description }}">
+    <meta property="og:site_name" content="Kash AI">
+    <meta property="og:image" content="{{ seo_image }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='images/favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8cgY0f4L1pG8A0YyY1wYx04dBf7N7hA==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="/shared-static/css/variables.css">
     <link rel="stylesheet" href="/shared-static/css/components.css">
     <link rel="stylesheet" href="/shared-static/css/utilities.css">
     <link rel="stylesheet" href="/shared-static/css/layouts.css">
+    <link rel="stylesheet" href="/shared-static/css/modern.css">
     <link rel="stylesheet" href="/shared-static/css/responsive.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.min.css') }}">
     <script defer src="/shared-static/js/tooltips.js"></script>
+    <script defer src="/shared-static/js/modern.js"></script>
     <script defer src="/static/js/onboarding.js?v=20260506-1"></script>
     <style>
-      body { margin: 0; font-family: 'Inter', sans-serif; background: var(--color-bg); color: var(--color-text); }
-      .site-header { position: sticky; top: 0; background: rgba(255,255,255,0.86); backdrop-filter: blur(16px); z-index: 50; border-bottom: 1px solid rgba(229,231,235,.9); }
-      .skip-link { position: absolute; left: 16px; top: -48px; background: var(--color-primary); color: #fff; padding: 10px 14px; border-radius: 12px; z-index: 1200; text-decoration: none; }
+      * { box-sizing: border-box; }
+      html { font-size: 16px; }
+      body { margin: 0; font-family: 'Inter', sans-serif; }
+      a { color: inherit; text-decoration: none; }
+      button, input, textarea, select { font: inherit; }
+      h1, h2, h3, h4, h5, h6 { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; letter-spacing: -0.03em; }
+      .skip-link { position: absolute; left: 16px; top: -48px; background: var(--primary); color: #fff; padding: 10px 14px; border-radius: 12px; z-index: 1200; }
       .skip-link:focus { top: 16px; }
-      .guest-mode-badge { display:inline-flex; align-items:center; justify-content:center; min-height:38px; padding:8px 14px; border-radius:999px; background:#eef6ff; color:#1d6fd8; font-weight:700; font-size:.92rem; border:1px solid #d5e4fb; }
       .field-error { display:block; margin-top:6px; color: var(--color-danger); font-size: .84rem; }
       .form-legend { margin: 0 0 14px; color: var(--color-text-muted); font-size: .9rem; }
-      .is-invalid input,
-      .is-invalid select,
-      .is-invalid textarea,
-      input.is-invalid,
-      select.is-invalid,
-      textarea.is-invalid { border-color: var(--color-danger) !important; box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12); }
+      .is-invalid input, .is-invalid select, .is-invalid textarea, input.is-invalid, select.is-invalid, textarea.is-invalid { border-color: var(--color-danger) !important; box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12); }
       .tooltip-trigger { position: relative; display: inline-flex; align-items: center; gap: 6px; border-bottom: 1px dotted rgba(26, 35, 50, 0.3); cursor: help; }
-      .tooltip-trigger svg { width: 14px; height: 14px; color: var(--color-primary); flex: 0 0 auto; }
       .tooltip-bubble { position: fixed; max-width: 280px; padding: 10px 12px; border-radius: var(--radius-md); background: #1a2332; color: #fff; font-size: .84rem; line-height: 1.5; box-shadow: var(--shadow-dropdown); z-index: var(--z-tooltip, 1200); pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity var(--transition-fast), transform var(--transition-fast); }
       .tooltip-bubble.is-visible { opacity: 1; transform: translateY(0); }
+      #toast-container { position: fixed; top: 24px; right: 24px; z-index: 1500; display: grid; gap: 12px; }
+      .toast { display:flex; align-items:center; gap:10px; min-width: 280px; max-width: 360px; padding: 14px 16px; border-radius: 18px; background: rgba(17, 24, 39, 0.92); color: #fff; box-shadow: 0 20px 50px rgba(17, 24, 39, 0.22); opacity: 0; transform: translateY(-8px); transition: opacity .2s ease, transform .2s ease; }
+      .toast--visible { opacity: 1; transform: translateY(0); }
+      .toast__close { margin-left: auto; background: transparent; border: 0; color: inherit; font-size: 1.1rem; cursor: pointer; }
+      .toast--success { background: rgba(16, 185, 129, 0.95); }
+      .toast--error { background: rgba(239, 68, 68, 0.95); }
+      .toast--warning { background: rgba(245, 158, 11, 0.96); color: #111827; }
     </style>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.min.css') }}">
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -69,7 +71,6 @@
     {% block extra_head %}{% endblock %}
 </head>
 {% set active_page = active_page | default('') %}
-{% set show_sidebar = show_sidebar | default(false) %}
 {% set hide_footer = hide_footer | default(false) %}
 {% set hide_header = hide_header | default(false) %}
 {% set portal_session_role = request.session.get('portal_user_role') if request is defined and request.session is defined else '' %}
@@ -79,7 +80,7 @@
 {% set legacy_session_role = 'doctor' if legacy_doctor else '' %}
 {% set resolved_session_role = portal_session_role or legacy_session_role %}
 {% set resolved_session_name = portal_session_name or ((legacy_doctor.full_name or legacy_doctor.username) if legacy_doctor else '') %}
-{% set logout_href = '/auth/logout' if (portal_session_role or legacy_doctor) else '/auth/login' %}
+{% set show_logout = portal_session_role or legacy_doctor %}
 {% if resolved_session_role == 'patient' %}
     {% set portal_profile_href = '/patient' %}
 {% elif resolved_session_role == 'doctor' %}
@@ -97,401 +98,174 @@
 {% endif %}
 {% set avatar_label = avatar_label | default('KA') %}
 {% set user_name = user_name | default(resolved_session_name or 'Guest user') %}
-{% set user_role = user_role | default((resolved_session_role | replace('_', ' ') | title) if resolved_session_role else 'Ayurveda care') %}
+{% set user_role = user_role | default((resolved_session_role | replace('_', ' ') | title) if resolved_session_role else 'AI-powered healthcare') %}
 {% set is_guest_user = is_guest_user | default(not resolved_session_role and user_name in ['Guest user', 'Visitor']) %}
-{% if resolved_session_role == 'patient' %}
-    {% set nav_consult_default = '/telemedicine/book' %}
-    {% set nav_consult_label = 'Consult' %}
-    {% set nav_appointments_default = '/orders' %}
-    {% set nav_appointments_label = 'Orders' %}
-    {% set nav_business_label = 'My health services' %}
-    {% set nav_profile_label = 'My Home' %}
-{% elif resolved_session_role == 'doctor' %}
-    {% set nav_consult_default = '/telemedicine/book' %}
-    {% set nav_consult_label = 'Consultations' %}
-    {% set nav_appointments_default = '/appointments' %}
-    {% set nav_appointments_label = 'Appointments' %}
-    {% set nav_business_label = 'Doctor workspace' %}
-    {% set nav_profile_label = 'Dashboard' %}
-{% elif resolved_session_role == 'pharmacy_owner' %}
-    {% set nav_consult_default = '/pharmacy' %}
-    {% set nav_consult_label = 'Workspace' %}
-    {% set nav_appointments_default = '/pharmacy' %}
-    {% set nav_appointments_label = 'Orders' %}
-    {% set nav_business_label = 'Pharmacy workspace' %}
-    {% set nav_profile_label = 'Dashboard' %}
-{% elif resolved_session_role == 'lab_owner' %}
-    {% set nav_consult_default = '/lab' %}
-    {% set nav_consult_label = 'Workspace' %}
-    {% set nav_appointments_default = '/lab' %}
-    {% set nav_appointments_label = 'Bookings' %}
-    {% set nav_business_label = 'Lab workspace' %}
-    {% set nav_profile_label = 'Dashboard' %}
-{% elif resolved_session_role == 'delivery_partner' %}
-    {% set nav_consult_default = '/delivery' %}
-    {% set nav_consult_label = 'Workspace' %}
-    {% set nav_appointments_default = '/delivery' %}
-    {% set nav_appointments_label = 'Deliveries' %}
-    {% set nav_business_label = 'Delivery workspace' %}
-    {% set nav_profile_label = 'Dashboard' %}
-{% elif resolved_session_role == 'admin' %}
-    {% set nav_consult_default = '/ai-analyzer' %}
-    {% set nav_consult_label = 'AI Tools' %}
-    {% set nav_appointments_default = '/appointments' %}
-    {% set nav_appointments_label = 'Clinic Ops' %}
-    {% set nav_business_label = 'Admin workspace' %}
-    {% set nav_profile_label = 'Overview' %}
-{% else %}
-    {% set nav_consult_default = '/telemedicine/book' if is_guest_user else '/ai-analyzer' %}
-    {% set nav_consult_label = 'Consult' if is_guest_user else 'AI Tools' %}
-    {% set nav_appointments_default = '/orders' if is_guest_user else '/appointments' %}
-    {% set nav_appointments_label = 'Orders' if is_guest_user else 'Appointments' %}
-    {% set nav_business_label = 'Open business hub' %}
-    {% set nav_profile_label = 'Login' if is_guest_user else 'Profile' %}
-{% endif %}
-{% set nav_consult_href = nav_consult_href | default(nav_consult_default) %}
-{% set nav_appointments_href = nav_appointments_href | default(nav_appointments_default) %}
-{% set nav_business_href = nav_business_href | default('/portal') %}
-{% set nav_profile_href = nav_profile_href | default(portal_profile_href if not is_guest_user else '/auth/login') %}
 {% if resolved_session_role == 'doctor' %}
-    {% set role_quick_links = [
-        {'href': portal_doctor_dashboard or '/doctor/dashboard', 'label': 'Dashboard'},
-        {'href': '/appointments', 'label': "Today's Appointments"},
-        {'href': '/emr/patient-registry', 'label': 'Patients'},
-        {'href': '/emr/ambient-scribe', 'label': 'AI Scribe'},
-        {'href': '/doctor/dashboard#prescription-studio', 'label': 'Prescriptions'}
-    ] %}
-{% elif resolved_session_role == 'pharmacy_owner' %}
-    {% set role_quick_links = [
-        {'href': '/pharmacy#live-orders', 'label': 'Live Orders'},
-        {'href': '/portal/pharmacy/add-medicine', 'label': 'Inventory'},
-        {'href': '/pharmacy', 'label': 'Earnings'}
-    ] %}
-{% elif resolved_session_role == 'lab_owner' %}
-    {% set role_quick_links = [
-        {'href': '/lab', 'label': 'My Dashboard'},
-        {'href': '/lab#today-bookings', 'label': 'Today Bookings'},
-        {'href': '/lab#reports', 'label': 'Reports'},
-        {'href': '/lab#collections', 'label': 'Home Collections'}
-    ] %}
-{% elif resolved_session_role == 'delivery_partner' %}
-    {% set role_quick_links = [
-        {'href': '/delivery', 'label': 'My Dashboard'},
-        {'href': '/delivery#assignments', 'label': 'Assignments'},
-        {'href': '/delivery#tracking', 'label': 'Live Map'},
-        {'href': '/delivery#earnings', 'label': 'Earnings'},
-        {'href': '/contact', 'label': 'Support'}
-    ] %}
-{% elif resolved_session_role == 'admin' %}
-    {% set role_quick_links = [
-        {'href': '/admin', 'label': 'Overview'},
-        {'href': '/admin/users', 'label': 'Users'},
-        {'href': '/admin/orders', 'label': 'Orders'}
-    ] %}
+    {% set nav_consult_href = '/telemedicine/book' %}
+    {% set nav_dashboard_href = portal_doctor_dashboard or '/doctor/dashboard' %}
 {% elif resolved_session_role == 'patient' %}
-    {% set role_quick_links = [
-        {'href': '/patient', 'label': 'My Home'},
-        {'href': '/orders', 'label': 'Orders'},
-        {'href': '/my-health', 'label': 'Health'},
-        {'href': '/order-medicines', 'label': 'Search Medicines'}
-    ] %}
+    {% set nav_consult_href = '/telemedicine/book' %}
+    {% set nav_dashboard_href = '/patient' %}
+{% elif resolved_session_role == 'pharmacy_owner' %}
+    {% set nav_consult_href = '/pharmacy' %}
+    {% set nav_dashboard_href = '/pharmacy' %}
+{% elif resolved_session_role == 'lab_owner' %}
+    {% set nav_consult_href = '/lab' %}
+    {% set nav_dashboard_href = '/lab' %}
+{% elif resolved_session_role == 'delivery_partner' %}
+    {% set nav_consult_href = '/delivery' %}
+    {% set nav_dashboard_href = '/delivery' %}
+{% elif resolved_session_role == 'admin' %}
+    {% set nav_consult_href = '/ai-analyzer' %}
+    {% set nav_dashboard_href = '/admin' %}
 {% else %}
-    {% set role_quick_links = [] %}
+    {% set nav_consult_href = '/telemedicine/book' %}
+    {% set nav_dashboard_href = '/auth/login' %}
 {% endif %}
-<body class="{% block body_class %}{% endblock %}">
+<body class="modern-body {% block body_class %}{% endblock %}">
     <a class="skip-link" href="#main-content">Skip to content</a>
-    <div class="site-body">
+    <div class="modern-shell">
         {% if not hide_header %}
-        <header class="site-header">
-            <div class="site-container site-header-inner">
-                <a href="/" class="brand-link" aria-label="Kash AI home">
-                    <span class="brand-logo brand-logo--full">
-                        <img src="{{ url_for('static', path='images/kash-ai-logo.svg') }}" alt="Kash AI" loading="lazy" decoding="async" width="164" height="48">
-                    </span>
-                    <span class="brand-copy">
-                        <strong>Kash AI</strong>
-                        <span>Integrated healthcare marketplace</span>
+        <nav class="modern-navbar">
+            <div class="nav-container">
+                <a href="/" class="nav-logo" aria-label="Kash AI home">
+                    <img src="{{ url_for('static', path='images/kash-ai-logo.svg') }}" alt="Kash AI" loading="lazy" decoding="async">
+                    <span class="nav-logo-copy">
+                        <strong>KASH AI</strong>
+                        <span>Healthcare intelligence</span>
                     </span>
                 </a>
 
-                <nav class="site-nav" aria-label="Primary navigation">
-                    <a href="/" class="{% if active_page == 'home' %}is-active{% endif %}">Home</a>
-                    <a href="/medicines" class="{% if active_page == 'medicines' %}is-active{% endif %}">Medicines</a>
-                    <a href="{{ nav_consult_href }}" class="{% if active_page == 'consult' %}is-active{% endif %}">{{ nav_consult_label }}</a>
-                    <a href="{{ nav_appointments_href }}" class="{% if active_page == 'appointments' %}is-active{% endif %}">{{ nav_appointments_label }}</a>
-                    <div class="nav-services-dropdown">
-                        <button class="nav-services-toggle" type="button" aria-haspopup="true" aria-expanded="false" data-business-toggle>
-                            For Business
+                <div class="nav-links" aria-label="Primary navigation">
+                    <a href="/order-medicines" class="nav-link {% if active_page == 'medicines' %}is-active{% endif %}">Medicines</a>
+                    <a href="/telemedicine/book" class="nav-link {% if active_page == 'consult' %}is-active{% endif %}">Consult</a>
+                    <a href="/diagnostics/lab-booking" class="nav-link">Labs</a>
+                    {% if not is_guest_user %}
+                    <a href="{{ nav_dashboard_href }}" class="nav-link {% if active_page == 'profile' %}is-active{% endif %}">Dashboard</a>
+                    {% endif %}
+                </div>
+
+                <div class="nav-actions">
+                    {% block header_actions %}{% endblock %}
+                    {% if not is_guest_user %}
+                    <div class="user-menu">
+                        <button class="modern-user-avatar" type="button" data-modern-user-toggle aria-expanded="false" aria-label="Open user menu">
+                            <span>{{ (user_name or avatar_label)[0] | upper }}</span>
                         </button>
-                        <div class="nav-services-menu" data-business-menu>
-                            {% if is_guest_user %}
-                            <a href="{{ nav_business_href }}">Open business hub</a>
-                            <a href="/auth/login/doctor">Doctor Portal</a>
-                            <a href="/auth/login/pharmacy">Pharmacy Portal</a>
-                            <a href="/auth/login/lab">Lab Portal</a>
-                            <a href="/auth/login/partner">Delivery Partner Portal</a>
-                            <a href="/login">Doctor/Admin Workspace</a>
-                            {% else %}
-                            <a href="{{ nav_profile_href }}">{{ nav_business_label }}</a>
-                            {% for link in role_quick_links[:3] %}
-                            <a href="{{ link.href }}">{{ link.label }}</a>
-                            {% endfor %}
-                            <a href="/contact">Support</a>
+                        <div class="modern-user-panel" data-modern-user-panel>
+                            <div class="modern-user-summary">
+                                <strong>{{ user_name }}</strong>
+                                <span>{{ user_role }}</span>
+                            </div>
+                            <a href="{{ nav_dashboard_href }}"><i class="fa-solid fa-grid-2"></i> Dashboard</a>
+                            {% if resolved_session_role == 'patient' %}
+                            <a href="/orders"><i class="fa-solid fa-bag-shopping"></i> Orders</a>
+                            <a href="/my-health"><i class="fa-solid fa-heart-pulse"></i> Health Records</a>
+                            {% elif resolved_session_role == 'doctor' %}
+                            <a href="/emr/patient-registry"><i class="fa-solid fa-user-group"></i> Patients</a>
+                            <a href="/emr/ambient-scribe"><i class="fa-solid fa-wave-square"></i> AI Scribe</a>
+                            {% elif resolved_session_role == 'pharmacy_owner' %}
+                            <a href="/portal/pharmacy/add-medicine"><i class="fa-solid fa-capsules"></i> Inventory</a>
+                            {% elif resolved_session_role == 'lab_owner' %}
+                            <a href="/lab#reports"><i class="fa-solid fa-vial"></i> Reports</a>
+                            {% elif resolved_session_role == 'delivery_partner' %}
+                            <a href="/delivery#assignments"><i class="fa-solid fa-route"></i> Assignments</a>
+                            {% elif resolved_session_role == 'admin' %}
+                            <a href="/admin/orders"><i class="fa-solid fa-chart-line"></i> Operations</a>
+                            {% endif %}
+                            {% if show_logout %}
+                            <form method="post" action="/auth/logout" class="logout-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                                <button type="submit"><i class="fa-solid fa-arrow-right-from-bracket"></i> Logout</button>
+                            </form>
                             {% endif %}
                         </div>
                     </div>
-                    <a href="{{ nav_profile_href }}" class="{% if active_page == 'profile' %}is-active{% endif %}">{{ nav_profile_label }}</a>
-                </nav>
-
-                <div class="header-actions">
-                    {% block header_actions %}
-                    {% if is_guest_user %}
-                    <span class="guest-mode-badge">Guest mode</span>
                     {% else %}
-                    <a href="/signup" class="btn btn-outline-success btn-sm">Start Pilot</a>
+                    <a href="/auth/login" class="btn-outline">Login</a>
+                    <a href="/auth/register/patient" class="btn-primary">Sign Up</a>
                     {% endif %}
-                    {% endblock %}
-                    {% if not is_guest_user %}
-                    <div class="profile-dropdown">
-                    <button class="profile-chip profile-dropdown-toggle" type="button" aria-haspopup="true" aria-expanded="false" data-profile-toggle>
-                        <span class="avatar-badge">{{ avatar_label }}</span>
-                        <span class="profile-copy">
-                            <small>{{ user_role }}</small>
-                            <strong>{{ user_name }}</strong>
-                        </span>
-                    </button>
-                    <div class="profile-dropdown-menu" data-profile-menu>
-                        {% if is_guest_user %}
-                        <a href="/auth/login">Login to your account</a>
-                        <a href="/portal">Open business hub</a>
-                        <a href="/auth/login/patient">Patient login</a>
-                        <a href="/auth/login/doctor">Doctor login</a>
-                        <a href="/login">Doctor/Admin workspace</a>
-                        <a href="/auth/login/pharmacy">Pharmacy Portal</a>
-                        <a href="/auth/login/lab">Lab Portal</a>
-                        <a href="/auth/login/partner">Delivery Partner Portal</a>
-                        {% else %}
-                        {% for link in role_quick_links %}
-                        <a href="{{ link.href }}">{{ link.label }}</a>
-                        {% endfor %}
-                        <a href="{{ logout_href }}">Logout</a>
-                        {% endif %}
-                    </div>
-                    </div>
-                    {% endif %}
-                    <button class="mobile-nav-toggle mobile-menu-btn" type="button" aria-label="Open navigation" data-mobile-nav-toggle>
+                    <button class="modern-mobile-toggle" type="button" data-modern-mobile-toggle aria-expanded="false" aria-label="Open menu">
                         <i class="fa-solid fa-bars"></i>
                     </button>
                 </div>
             </div>
-            <div class="mobile-drawer" data-mobile-nav-panel aria-hidden="true">
-                <div class="mobile-drawer-card">
-                    <div class="page-header mb-3">
-                        <div>
-                            <p class="eyebrow mb-1">Navigation</p>
-                            <h2 class="h4 mb-0">Kash AI</h2>
-                        </div>
-                        <button class="mobile-nav-toggle close-drawer" type="button" aria-label="Close navigation" data-mobile-nav-close>
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-                    </div>
-                    <nav class="site-nav mobile-nav-links" aria-label="Mobile navigation">
-                        <a href="/" class="{% if active_page == 'home' %}is-active{% endif %}">Home</a>
-                        <a href="/medicines" class="{% if active_page == 'medicines' %}is-active{% endif %}">Medicines</a>
-                        <a href="{{ nav_consult_href }}" class="{% if active_page == 'consult' %}is-active{% endif %}">{{ nav_consult_label }}</a>
-                        <a href="{{ nav_appointments_href }}" class="{% if active_page == 'appointments' %}is-active{% endif %}">{{ nav_appointments_label }}</a>
-                        {% if is_guest_user %}
-                        <a href="{{ nav_business_href }}">Open business hub</a>
-                        <a href="/auth/login/doctor">Doctor Portal</a>
-                        <a href="/auth/login/pharmacy">Pharmacy Portal</a>
-                        <a href="/auth/login/lab">Lab Portal</a>
-                        <a href="/auth/login/partner">Delivery Partner Portal</a>
-                        <a href="/login">Doctor/Admin workspace</a>
-                        {% else %}
-                        <a href="{{ nav_profile_href }}">{{ nav_business_label }}</a>
-                        {% for link in role_quick_links %}
-                        <a href="{{ link.href }}">{{ link.label }}</a>
-                        {% endfor %}
-                        <a href="/contact">Support</a>
-                        {% endif %}
-                        <a href="{{ nav_profile_href }}" class="{% if active_page == 'profile' %}is-active{% endif %}">{{ nav_profile_label }}</a>
-                    </nav>
-                </div>
+
+            <div class="modern-mobile-panel" data-modern-mobile-panel>
+                <a href="/order-medicines">Medicines <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/telemedicine/book">Consult <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/diagnostics/lab-booking">Labs <i class="fa-solid fa-arrow-right"></i></a>
+                {% if is_guest_user %}
+                <a href="/auth/login/patient">Patient Login <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/auth/login/doctor">Doctor Login <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/auth/login/pharmacy">Pharmacy Portal <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/auth/login/lab">Lab Portal <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/login">Doctor/Admin Workspace <i class="fa-solid fa-arrow-right"></i></a>
+                {% else %}
+                <a href="{{ nav_dashboard_href }}">Dashboard <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/contact">Support <i class="fa-solid fa-arrow-right"></i></a>
+                {% if show_logout %}
+                <form method="post" action="/auth/logout" class="logout-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                    <button type="submit">Logout <i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+                </form>
+                {% endif %}
+                {% endif %}
             </div>
-        </header>
+        </nav>
         {% endif %}
 
-        <main class="page-main" id="main-content" tabindex="-1">
+        <main class="modern-main page-main" id="main-content" tabindex="-1">
             {% block page %}{% endblock %}
         </main>
 
         {% if not hide_footer %}
-        <footer class="site-footer">
-            <div class="site-container footer-panel">
-                <div>
-                    <strong>Kash AI</strong>
-                    <p class="mb-0 text-muted">Warm digital infrastructure for modern Ayurveda healthcare.</p>
+        <footer class="modern-footer">
+            <div class="modern-footer-card">
+                <div class="modern-footer-inner">
+                    <div class="modern-footer-brand">
+                        <img src="{{ url_for('static', path='images/logo-white.svg') }}" alt="Kash AI">
+                        <p>AI-powered healthcare intelligence for modern India. Medicines, consultations, records, and diagnostics in one trusted experience.</p>
+                    </div>
+                    <div class="modern-footer-column">
+                        <h4>Platform</h4>
+                        <a href="/order-medicines">Medicines</a>
+                        <a href="/telemedicine/book">Consult Doctors</a>
+                        <a href="/diagnostics/lab-booking">Lab Tests</a>
+                    </div>
+                    <div class="modern-footer-column">
+                        <h4>Company</h4>
+                        <a href="/portal">Business Hub</a>
+                        <a href="/trust/verified-practitioners">Trust Center</a>
+                        <a href="/community/wellness-feed">Community</a>
+                    </div>
+                    <div class="modern-footer-column">
+                        <h4>Support</h4>
+                        <a href="/contact">Help Center</a>
+                        <a href="/privacy">Privacy Policy</a>
+                        <a href="/pricing">Pricing</a>
+                    </div>
                 </div>
-                <div class="footer-links">
-                    <a href="/privacy">Privacy</a>
-                    <a href="/pricing">Pricing</a>
-                    <a href="/diagnostics/lab-booking">Diagnostics</a>
-                    <a href="/store/wellness-store">Store</a>
-                    <a href="/trust/verified-practitioners">Trust Center</a>
-                    <a href="/community/wellness-feed">Community</a>
-                    <a href="/demo">Demo</a>
-                </div>
-                <div class="social-links">
-                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
-                    <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                <div class="modern-footer-bottom">
+                    <span>&copy; 2026 KASH AI. All rights reserved.</span>
+                    <div class="footer-social">
+                        <a href="#" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="#" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                    </div>
                 </div>
             </div>
         </footer>
         {% endif %}
     </div>
-    <div class="floating-support-actions">
-        <button class="help-btn" type="button" onclick="showHelpModal(); showHelp()">
-            <i class="fas fa-question-circle"></i> Help
-        </button>
-        <button class="feedback-btn" type="button" onclick="showFeedback()">
-            <i class="fas fa-comment"></i> Feedback
-        </button>
-    </div>
-    <div class="referral-banner" id="referralBanner">
-        <span>Invite friends, get Rs 500 each.</span>
-        <a href="/growth/referral-system" class="btn btn-primary btn-sm">Claim Now</a>
-    </div>
+
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-    <div id="socialProof" class="social-proof-toast" aria-live="polite" aria-atomic="true"></div>
-    <section class="portal-modal-shell" id="global-base-confirm-modal" data-confirm-modal hidden>
-        <div class="portal-modal-backdrop" data-confirm-close></div>
-        <div class="portal-modal-card modal-box confirm-modal-card" role="dialog" aria-modal="true" aria-labelledby="baseConfirmModalTitle" tabindex="-1">
-            <div class="section-heading">
-                <div>
-                    <p class="eyebrow">Please confirm</p>
-                    <h2 id="baseConfirmModalTitle">Confirm action</h2>
-                </div>
-            </div>
-            <p class="confirm-modal-message" id="baseConfirmModalMessage">Are you sure you want to continue?</p>
-            <div class="confirm-modal-actions">
-                <button class="ghost-button" type="button" data-confirm-close>Go Back</button>
-                <button class="portal-primary-button confirm-button" type="button" id="baseConfirmModalSubmit">Confirm</button>
-            </div>
-        </div>
-    </section>
     <div class="tooltip-bubble" id="globalTooltip" role="tooltip" hidden></div>
-    <div class="portal-modal-shell" id="global-help-modal" hidden>
-        <div class="portal-modal-backdrop" onclick="hideHelp()"></div>
-        <div class="portal-modal-card modal-box" role="dialog" aria-modal="true" aria-labelledby="globalHelpTitle">
-            <div class="section-heading">
-                <div>
-                    <p class="eyebrow">Need help?</p>
-                    <h2 id="globalHelpTitle">Support</h2>
-                </div>
-            </div>
-            <p class="confirm-modal-message">Use `Order Medicines`, `Upload Prescription`, `Track Orders`, or contact support if something looks wrong.</p>
-            <div class="confirm-modal-actions">
-                <a class="ghost-button" href="/contact">Open Support Page</a>
-                <button class="portal-primary-button" type="button" onclick="hideHelp()">Close</button>
-            </div>
-        </div>
-    </div>
-    <div class="portal-modal-shell" id="global-feedback-modal" hidden>
-        <div class="portal-modal-backdrop" onclick="hideFeedback()"></div>
-        <div class="portal-modal-card modal-box" role="dialog" aria-modal="true" aria-labelledby="globalFeedbackTitle">
-            <div class="section-heading">
-                <div>
-                    <p class="eyebrow">Feedback</p>
-                    <h2 id="globalFeedbackTitle">Tell us what needs work</h2>
-                </div>
-            </div>
-            <p class="confirm-modal-message">You can send product feedback from the contact page. We’re prioritizing fixes and polish for real users.</p>
-            <div class="confirm-modal-actions">
-                <a class="ghost-button" href="/contact">Open Feedback Form</a>
-                <button class="portal-primary-button" type="button" onclick="hideFeedback()">Close</button>
-            </div>
-        </div>
-    </div>
+
     <script defer src="/static/js/script.js?v=20260506-1"></script>
     <script src="/static/js/ws-manager.js?v=20260506-1"></script>
-
     <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const mobileMenuBtn = document.querySelector(".mobile-menu-btn");
-        const mobileDrawer = document.querySelector(".mobile-drawer");
-        const closeDrawer = document.querySelector(".close-drawer");
-        const profileToggle = document.querySelector("[data-profile-toggle]");
-        const profileMenu = document.querySelector("[data-profile-menu]");
-        const businessToggle = document.querySelector("[data-business-toggle]");
-        const businessMenu = document.querySelector("[data-business-menu]");
-
-        const closeMobileDrawer = function () {
-            if (!mobileDrawer) return;
-            mobileDrawer.classList.remove("active");
-            mobileDrawer.setAttribute("aria-hidden", "true");
-        };
-
-        if (mobileMenuBtn && mobileDrawer) {
-            mobileMenuBtn.addEventListener("click", () => {
-                mobileDrawer.classList.add("active");
-                mobileDrawer.setAttribute("aria-hidden", "false");
-            });
-        }
-
-        if (closeDrawer) {
-            closeDrawer.addEventListener("click", closeMobileDrawer);
-        }
-
-        if (mobileDrawer) {
-            mobileDrawer.addEventListener("click", function (event) {
-                if (event.target === mobileDrawer) {
-                    closeMobileDrawer();
-                }
-            });
-        }
-
-        if (profileToggle && profileMenu) {
-            profileToggle.addEventListener("click", function (event) {
-                event.stopPropagation();
-                const isOpen = profileMenu.classList.toggle("is-open");
-                profileToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-            });
-        }
-
-        if (businessToggle && businessMenu) {
-            businessToggle.addEventListener("click", function (event) {
-                event.stopPropagation();
-                const isOpen = businessMenu.classList.toggle("is-open");
-                businessToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-            });
-        }
-
-        document.addEventListener("click", function (event) {
-            if (profileMenu && profileToggle && !profileMenu.contains(event.target) && !profileToggle.contains(event.target)) {
-                profileMenu.classList.remove("is-open");
-                profileToggle.setAttribute("aria-expanded", "false");
-            }
-            if (businessMenu && businessToggle && !businessMenu.contains(event.target) && !businessToggle.contains(event.target)) {
-                businessMenu.classList.remove("is-open");
-                businessToggle.setAttribute("aria-expanded", "false");
-            }
-        });
-
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape") {
-                closeMobileDrawer();
-                if (profileMenu && profileToggle) {
-                    profileMenu.classList.remove("is-open");
-                    profileToggle.setAttribute("aria-expanded", "false");
-                }
-                if (businessMenu && businessToggle) {
-                    businessMenu.classList.remove("is-open");
-                    businessToggle.setAttribute("aria-expanded", "false");
-                }
-            }
-        });
-
         class ToastQueue {
             constructor(maxVisible = 3) {
                 this.maxVisible = maxVisible;
@@ -503,112 +277,43 @@
             show(message, type = "info", duration = 4000) {
                 const item = { message, type, duration, id: Date.now() + Math.random() };
                 if (this.visible.length < this.maxVisible) {
-                    this._render(item);
+                    this.render(item);
                 } else {
                     this.queue.push(item);
                 }
             }
 
-            _render(item) {
+            render(item) {
                 if (!this.container) return;
                 const toast = document.createElement("div");
                 toast.className = `toast toast--${item.type}`;
-                toast.setAttribute("role", "alert");
                 toast.innerHTML = `
-                  <span class="toast__icon">${this._icon(item.type)}</span>
-                  <span class="toast__message">${item.message}</span>
-                  <button class="toast__close" aria-label="Dismiss" type="button">×</button>
+                    <span class="toast__message">${item.message}</span>
+                    <button class="toast__close" type="button" aria-label="Dismiss">&times;</button>
                 `;
                 this.container.appendChild(toast);
                 this.visible.push(item.id);
                 requestAnimationFrame(() => toast.classList.add("toast--visible"));
-                let dismissed = false;
-                let startX = 0;
-                let currentX = 0;
-
                 const dismiss = () => {
-                    if (dismissed) return;
-                    dismissed = true;
-                    window.clearTimeout(autoDismiss);
-                    toast.classList.add("is-dismissing");
                     toast.classList.remove("toast--visible");
-                    toast.addEventListener("transitionend", () => {
+                    window.setTimeout(() => {
                         toast.remove();
                         this.visible = this.visible.filter((id) => id !== item.id);
-                        this._next();
-                    }, { once: true });
+                        if (this.queue.length && this.visible.length < this.maxVisible) {
+                            this.render(this.queue.shift());
+                        }
+                    }, 180);
                 };
-
-                toast.querySelector(".toast__close").onclick = dismiss;
-                toast.addEventListener("touchstart", (event) => {
-                    startX = event.touches[0]?.clientX || 0;
-                }, { passive: true });
-
-                toast.addEventListener("touchmove", (event) => {
-                    currentX = event.touches[0]?.clientX || 0;
-                    const delta = currentX - startX;
-                    if (Math.abs(delta) > 6) {
-                        toast.style.transform = `translateX(${delta}px)`;
-                        toast.style.opacity = String(Math.max(0.25, 1 - Math.abs(delta) / 180));
-                    }
-                }, { passive: true });
-
-                toast.addEventListener("touchend", () => {
-                    const delta = currentX - startX;
-                    if (Math.abs(delta) > 72) {
-                        dismiss();
-                    } else {
-                        toast.style.transform = "";
-                        toast.style.opacity = "";
-                    }
-                    startX = 0;
-                    currentX = 0;
-                }, { passive: true });
-
-                const autoDismiss = window.setTimeout(dismiss, item.duration);
-            }
-
-            _next() {
-                if (this.queue.length > 0 && this.visible.length < this.maxVisible) {
-                    this._render(this.queue.shift());
-                }
-            }
-
-            _icon(type) {
-                const icons = {
-                    success: "✓",
-                    error: "✕",
-                    warning: "⚠",
-                    info: "ℹ",
-                };
-                return icons[type] ?? icons.info;
+                toast.querySelector(".toast__close")?.addEventListener("click", dismiss);
+                window.setTimeout(dismiss, item.duration);
             }
         }
 
-        window.kashToast = new ToastQueue(3);
-        window.showToast = (msg, type) => window.kashToast.show(msg, type);
-        window.showErrorToast = (msg) => window.kashToast.show(msg || "Something went wrong.", "error");
-        window.showRetryButton = () => window.kashToast.show("Please try that again in a moment.", "warning");
-        window.showHelp = () => document.getElementById("global-help-modal")?.removeAttribute("hidden");
-        window.showHelpModal = () => window.showToast('Need help? Call 9350397175 or email goyalshikhar67@gmail.com', 'info');
-        window.hideHelp = () => document.getElementById("global-help-modal")?.setAttribute("hidden", "hidden");
-        window.showFeedback = () => document.getElementById("global-feedback-modal")?.removeAttribute("hidden");
-        window.hideFeedback = () => document.getElementById("global-feedback-modal")?.setAttribute("hidden", "hidden");
-
-        window.safeFetchJson = async function(url, options = {}) {
-            try {
-                const response = await fetch(url, options);
-                const payload = await response.json();
-                if (!response.ok) {
-                    throw new Error(payload.detail || payload.error || "Request failed");
-                }
-                return payload;
-            } catch (error) {
-                console.error("Failed to load:", error);
-                window.showErrorToast("Failed to load. Please refresh.");
-                throw error;
-            }
-        };
+        window.kashToast = window.kashToast || new ToastQueue(3);
+        window.showToast = (message, type = "info") => window.kashToast.show(message, type);
+        window.showErrorToast = (message) => window.kashToast.show(message || "Something went wrong.", "error");
+        window.showHelp = () => window.showToast("Use medicines, consult, or labs to get started.", "info");
+        window.showFeedback = () => window.showToast("Open the contact page to share product feedback.", "info");
 
         document.querySelectorAll("form").forEach(function(form) {
             if ((form.method || "").toLowerCase() === "post" && !form.querySelector('input[name="csrf_token"]')) {
@@ -621,299 +326,10 @@
                     form.prepend(input);
                 }
             }
-            form.addEventListener("blur", function(event) {
-                const target = event.target;
-                if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) {
-                    return;
-                }
-                const wrapper = target.closest(".form-row");
-                if (wrapper) {
-                    wrapper.classList.toggle("is-invalid", !target.checkValidity() && target.value.trim() !== "");
-                }
-            }, true);
-        });
-
-        const socialProof = document.getElementById("socialProof");
-        const referralBanner = document.getElementById("referralBanner");
-        const confirmModal = document.querySelector("#global-base-confirm-modal");
-        const confirmTitle = document.getElementById("baseConfirmModalTitle");
-        const confirmMessage = document.getElementById("baseConfirmModalMessage");
-        const confirmSubmit = document.getElementById("baseConfirmModalSubmit");
-        const tooltipBubble = document.getElementById("globalTooltip");
-        let confirmState = null;
-        let confirmFocusOrigin = null;
-
-        const confirmFocusable = () => Array.from(confirmModal?.querySelectorAll("button,[href],[tabindex]:not([tabindex='-1'])") || []);
-        const setFieldError = function (field, message) {
-            if (!field) return;
-            const fieldGroup = field.closest(".field, .form-group, .form-row, label, .stack-item") || field.parentElement;
-            let errorNode = fieldGroup?.querySelector(".field-error");
-            field.classList.toggle("is-invalid", Boolean(message));
-            fieldGroup?.classList.toggle("is-invalid", Boolean(message));
-            if (!message) {
-                if (errorNode) errorNode.remove();
-                return;
-            }
-            if (!errorNode) {
-                errorNode = document.createElement("small");
-                errorNode.className = "field-error";
-                fieldGroup?.appendChild(errorNode);
-            }
-            errorNode.textContent = message;
-        };
-
-        const validateField = function (field) {
-            if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement)) return true;
-            const label = document.querySelector(`label[for="${field.id}"]`);
-            if (field.required && !String(field.value || "").trim()) {
-                setFieldError(field, "This field is required");
-                if (label && !label.querySelector(".required-star")) {
-                    label.insertAdjacentHTML("beforeend", ' <span class="required-star" aria-hidden="true">*</span>');
-                }
-                return false;
-            }
-            if (field.type === "email" && field.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(field.value.trim())) {
-                setFieldError(field, "Please enter a valid email address");
-                return false;
-            }
-            const isPhoneField = field.type === "tel" || /phone|mobile/i.test(field.name || "") || /phone|mobile/i.test(field.id || "");
-            if (isPhoneField && field.value) {
-                const digits = field.value.replace(/\D/g, "").slice(-10);
-                if (digits.length !== 10) {
-                    setFieldError(field, "Enter a valid 10-digit mobile number");
-                    return false;
-                }
-            }
-            if (field.type === "password" && field.value && field.value.length < 8) {
-                setFieldError(field, "Password must be at least 8 characters");
-                return false;
-            }
-            if (/confirm/i.test(field.name || field.id || "")) {
-                const form = field.form;
-                const passwordField = form?.querySelector('input[type="password"]:not([name*="confirm" i]):not([id*="confirm" i])');
-                if (passwordField && field.value && passwordField.value !== field.value) {
-                    setFieldError(field, "Passwords do not match");
-                    return false;
-                }
-            }
-            setFieldError(field, "");
-            return true;
-        };
-
-        const normalizePhoneField = function (field) {
-            if (!(field instanceof HTMLInputElement)) return;
-            const isPhoneField = field.type === "tel" || /phone|mobile/i.test(field.name || "") || /phone|mobile/i.test(field.id || "");
-            if (!isPhoneField) return;
-            const digits = field.value.replace(/\D/g, "").slice(-10);
-            if (!digits) return;
-            const left = digits.slice(0, 5);
-            const right = digits.slice(5, 10);
-            field.value = right ? `+91 ${left} ${right}` : `+91 ${left}`;
-        };
-
-        const ensureRequiredLegend = function (form) {
-            if (!form.querySelector("[required]")) return;
-            if (form.querySelector(".form-legend")) return;
-            const legend = document.createElement("p");
-            legend.className = "form-legend";
-            legend.textContent = "* Required fields";
-            form.insertBefore(legend, form.firstElementChild || null);
-            form.querySelectorAll("[required]").forEach((field) => {
-                const label = field.id ? form.querySelector(`label[for="${field.id}"]`) : null;
-                if (label && !label.querySelector(".required-star")) {
-                    label.insertAdjacentHTML("beforeend", ' <span class="required-star" aria-hidden="true">*</span>');
-                }
-            });
-        };
-
-        const openConfirmModal = function (config) {
-            if (!confirmModal) return;
-            confirmFocusOrigin = document.activeElement;
-            confirmState = config;
-            confirmTitle.textContent = config.title || "Confirm action";
-            confirmMessage.textContent = config.message || "Are you sure you want to continue?";
-            confirmSubmit.textContent = config.label || "Confirm";
-            confirmSubmit.className = `portal-primary-button confirm-button is-${config.type || "confirm"}`;
-            confirmModal.hidden = false;
-            confirmSubmit.focus();
-        };
-
-        const closeConfirmModal = function () {
-            if (!confirmModal) return;
-            confirmModal.hidden = true;
-            confirmState = null;
-            confirmSubmit.disabled = false;
-            if (confirmFocusOrigin && typeof confirmFocusOrigin.focus === "function") {
-                confirmFocusOrigin.focus();
-            }
-        };
-
-        const showTooltip = function (trigger) {
-            if (!tooltipBubble || !trigger) return;
-            tooltipBubble.textContent = trigger.getAttribute("data-tip") || "";
-            tooltipBubble.hidden = false;
-            tooltipBubble.classList.add("is-visible");
-            const rect = trigger.getBoundingClientRect();
-            const bubbleRect = tooltipBubble.getBoundingClientRect();
-            const top = Math.max(12, rect.top - bubbleRect.height - 12);
-            const left = Math.min(window.innerWidth - bubbleRect.width - 12, Math.max(12, rect.left + (rect.width / 2) - (bubbleRect.width / 2)));
-            tooltipBubble.style.top = `${top}px`;
-            tooltipBubble.style.left = `${left}px`;
-        };
-
-        const hideTooltip = function () {
-            if (!tooltipBubble) return;
-            tooltipBubble.classList.remove("is-visible");
-            tooltipBubble.hidden = true;
-        };
-
-        if (referralBanner) {
-            window.setTimeout(() => referralBanner.classList.add("is-visible"), 1200);
-        }
-        if (socialProof) {
-            const refreshSocialProof = function () {
-                fetch("/api/social-proof/activity")
-                    .then((res) => res.ok ? res.json() : Promise.reject(new Error("social-proof-failed")))
-                    .then((data) => {
-                        if (!data || !data.activity) return;
-                        socialProof.textContent = data.activity;
-                        socialProof.classList.add("is-visible");
-                        window.setTimeout(() => socialProof.classList.remove("is-visible"), 4200);
-                    })
-                    .catch(() => {});
-            };
-            window.setTimeout(refreshSocialProof, 1800);
-            window.setInterval(refreshSocialProof, 30000);
-        }
-
-        document.querySelectorAll("form").forEach(function (form) {
-            ensureRequiredLegend(form);
-            form.addEventListener("blur", function (event) {
-                const target = event.target;
-                validateField(target);
-            }, true);
-
-            form.addEventListener("submit", function (event) {
-                const fields = Array.from(form.querySelectorAll("input, select, textarea"));
-                const isValid = fields.every(validateField);
-                if (!isValid) {
-                    event.preventDefault();
-                    const firstInvalid = form.querySelector(".is-invalid");
-                    if (firstInvalid && typeof firstInvalid.focus === "function") firstInvalid.focus();
-                    return;
-                }
-                const submitButton = event.submitter || form.querySelector('button[type="submit"], button:not([type]), input[type="submit"]');
-                if (!(submitButton instanceof HTMLButtonElement || submitButton instanceof HTMLInputElement)) return;
-                if (submitButton.dataset.loadingApplied === "true") return;
-                submitButton.dataset.loadingApplied = "true";
-                submitButton.dataset.originalText = submitButton instanceof HTMLButtonElement ? submitButton.innerHTML : submitButton.value;
-                submitButton.disabled = true;
-                if (submitButton instanceof HTMLButtonElement) {
-                    submitButton.innerHTML = '<span class="fa-solid fa-spinner fa-spin" aria-hidden="true"></span> Processing...';
-                } else {
-                    submitButton.value = "Processing...";
-                }
-                window.setTimeout(() => {
-                    if (submitButton.dataset.loadingApplied !== "true") return;
-                    submitButton.disabled = false;
-                    if (submitButton instanceof HTMLButtonElement) {
-                        submitButton.innerHTML = submitButton.dataset.originalText || "Submit";
-                    } else {
-                        submitButton.value = submitButton.dataset.originalText || "Submit";
-                    }
-                    delete submitButton.dataset.loadingApplied;
-                }, 8000);
-            });
-        });
-
-        document.addEventListener("input", function (event) {
-            normalizePhoneField(event.target);
-        });
-
-        document.addEventListener("click", function (event) {
-            const trigger = event.target.closest("[data-confirm]");
-            if (!trigger) return;
-            event.preventDefault();
-            openConfirmModal({
-                title: trigger.getAttribute("data-confirm-title"),
-                message: trigger.getAttribute("data-confirm-message"),
-                action: trigger.getAttribute("data-confirm-action"),
-                method: trigger.getAttribute("data-confirm-method") || "POST",
-                payload: trigger.getAttribute("data-confirm-payload"),
-                form: trigger.getAttribute("data-confirm-form"),
-                label: trigger.getAttribute("data-confirm-label"),
-                type: trigger.getAttribute("data-confirm-type") || "confirm",
-            });
-        });
-
-        confirmModal?.querySelectorAll("[data-confirm-close]").forEach((button) => {
-            button.addEventListener("click", closeConfirmModal);
-        });
-
-        confirmSubmit?.addEventListener("click", async function () {
-            if (!confirmState) return;
-            confirmSubmit.disabled = true;
-            if (confirmState.form) {
-                const form = document.getElementById(confirmState.form);
-                if (form) {
-                    form.dataset.confirmAccepted = "true";
-                }
-                closeConfirmModal();
-                form?.requestSubmit();
-                return;
-            }
-            if (!confirmState.action) {
-                closeConfirmModal();
-                return;
-            }
-            try {
-                const response = await fetch(confirmState.action, {
-                    method: confirmState.method,
-                    headers: { "Content-Type": "application/json" },
-                    body: confirmState.payload || null
-                });
-                let payload = {};
-                try { payload = await response.json(); } catch (error) {}
-                if (response.ok) {
-                    window.showToast(payload.message || "Action completed.", "success");
-                    window.location.reload();
-                } else {
-                    window.showToast(payload.error || payload.detail || "Unable to complete this action.", "error");
-                }
-            } catch (error) {
-                window.showToast("Unable to complete this action right now.", "error");
-            } finally {
-                closeConfirmModal();
-            }
-        });
-
-        document.addEventListener("keydown", function (event) {
-            if (event.key === "Escape" && confirmModal && !confirmModal.hidden) {
-                closeConfirmModal();
-            }
-            if (event.key === "Tab" && confirmModal && !confirmModal.hidden) {
-                const focusable = confirmFocusable();
-                if (!focusable.length) return;
-                const first = focusable[0];
-                const last = focusable[focusable.length - 1];
-                if (event.shiftKey && document.activeElement === first) {
-                    event.preventDefault();
-                    last.focus();
-                } else if (!event.shiftKey && document.activeElement === last) {
-                    event.preventDefault();
-                    first.focus();
-                }
-            }
-        });
-
-        document.querySelectorAll(".tooltip-trigger[data-tip]").forEach((trigger) => {
-            trigger.addEventListener("mouseenter", () => showTooltip(trigger));
-            trigger.addEventListener("focus", () => showTooltip(trigger));
-            trigger.addEventListener("mouseleave", hideTooltip);
-            trigger.addEventListener("blur", hideTooltip);
         });
     });
     </script>
     {% block extra_scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

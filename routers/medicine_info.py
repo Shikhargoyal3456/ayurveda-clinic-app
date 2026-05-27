@@ -20,6 +20,7 @@ from models.medicine import MedicineOrder
 from services.ai_prescription_analyzer import AIPrescriptionAnalyzer
 from services.cache_service import cache_get_json, cache_set_json
 from services.pure_ai_core import add_disclaimer, pure_ai
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["medicine-info"])
@@ -88,8 +89,7 @@ def prescription_image(
 
 @router.get("/medicine/{medicine_name}")
 def medicine_detail_page(request: Request, medicine_name: str):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "patient/medicine_detail.html",
         {
             "request": request,

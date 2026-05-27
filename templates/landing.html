@@ -1,110 +1,195 @@
 {% extends "base.html" %}
-{% set hide_header = true %}
-{% set hide_footer = true %}
+{% set hide_header = false %}
+{% set hide_footer = false %}
+{% set active_page = 'home' %}
+{% set is_guest_user = true %}
+{% set user_name = 'Visitor' %}
+{% set user_role = 'AI-powered healthcare' %}
+{% set avatar_label = 'KA' %}
 
-{% block title %}Kash AI | Healthcare made simple{% endblock %}
+{% block title %}Kash AI | Healthcare intelligence powered by AI{% endblock %}
 
 {% block page %}
-<div class="simplified-landing">
-    <a href="/contact" class="landing-help-btn">Help</a>
+<div class="modern-landing">
+    <section class="hero-section">
+        <div class="hero-bg-gradient"></div>
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                AI-Powered Healthcare
+            </div>
+            <h1 class="hero-title">
+                Healthcare intelligence<br>
+                <span class="gradient-text">powered by AI</span>
+            </h1>
+            <p class="hero-subtitle">
+                Order medicines, consult doctors, analyze reports, and manage your health journey in one calm, intelligent platform built for modern India.
+            </p>
+            <div class="hero-buttons">
+                <a href="/auth/register/patient" class="btn-primary-large">Get Started <i class="fa-solid fa-arrow-right"></i></a>
+                <a href="/order-medicines" class="btn-outline-large">Browse Medicines</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-value">10L+</span>
+                    <span class="stat-label">Happy Users</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">500+</span>
+                    <span class="stat-label">Partner Pharmacies</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">4.9</span>
+                    <span class="stat-label">Platform Rating</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-device">
+                <div class="hero-device-content">
+                    <div class="hero-device-top">
+                        <div class="hero-device-title">
+                            <strong>Kash AI Care Hub</strong>
+                            <span>One connected healthcare workspace</span>
+                        </div>
+                        <span class="hero-device-pill">Live AI</span>
+                    </div>
+                    <div class="hero-device-pills">
+                        <span class="hero-device-pill">Medicine delivery</span>
+                        <span class="hero-device-pill">Video consultation</span>
+                        <span class="hero-device-pill">Lab intelligence</span>
+                    </div>
+                    <div class="hero-device-grid">
+                        <div class="hero-device-card">
+                            <strong>Order Medicines</strong>
+                            <p>Search, compare, reorder, and track with verified pharmacies.</p>
+                        </div>
+                        <div class="hero-device-card">
+                            <strong>AI Scribe</strong>
+                            <p>Ambient documentation and structured consult support for clinics.</p>
+                        </div>
+                        <div class="hero-device-card">
+                            <strong>Lab Insights</strong>
+                            <p>Upload reports and get practical, easy-to-understand interpretation.</p>
+                        </div>
+                        <div class="hero-device-card">
+                            <strong>Care Dashboard</strong>
+                            <p>Manage patient, pharmacy, lab, and delivery journeys from one platform.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="floating-card card-1">
+                <i class="fas fa-prescription-bottle"></i>
+                <span>Order Medicines</span>
+            </div>
+            <div class="floating-card card-2">
+                <i class="fas fa-microphone-alt"></i>
+                <span>AI Scribe</span>
+            </div>
+            <div class="floating-card card-3">
+                <i class="fas fa-chart-line"></i>
+                <span>Health Insights</span>
+            </div>
+        </div>
+    </section>
 
-    <div class="hero">
-        <img src="/static/images/kash-ai-logo.svg" alt="KASH AI" class="logo">
-        <h1>Healthcare made simple</h1>
-        <p>Choose who you are</p>
-    </div>
+    <section class="features-section reveal-on-scroll">
+        <div class="modern-container">
+            <div class="section-header">
+                <h2>Everything you need in one place</h2>
+                <p>Healthcare commerce, clinical tools, and intelligent automation designed to feel trustworthy, simple, and premium.</p>
+            </div>
+            <div class="features-grid">
+                <article class="feature-card-modern">
+                    <div class="feature-icon-modern"><i class="fa-solid fa-capsules"></i></div>
+                    <h3>Order Medicines</h3>
+                    <p>Search 20,000+ medicines, compare options, upload a prescription, and track every step.</p>
+                </article>
+                <article class="feature-card-modern">
+                    <div class="feature-icon-modern"><i class="fa-solid fa-file-waveform"></i></div>
+                    <h3>Upload Prescription</h3>
+                    <p>Let AI read your prescription and prefill medicine selections with faster checkout flows.</p>
+                </article>
+                <article class="feature-card-modern">
+                    <div class="feature-icon-modern"><i class="fa-solid fa-vial-circle-check"></i></div>
+                    <h3>AI Lab Analyzer</h3>
+                    <p>Upload reports and get structured interpretations, flags, and easy-to-understand next steps.</p>
+                </article>
+                <article class="feature-card-modern">
+                    <div class="feature-icon-modern"><i class="fa-solid fa-user-doctor"></i></div>
+                    <h3>Video Consult</h3>
+                    <p>Book doctors, join sessions, and keep follow-ups, prescriptions, and records connected.</p>
+                </article>
+            </div>
+        </div>
+    </section>
 
-    <div class="role-cards">
-        <a href="/auth/login/patient" class="role-card">
-            <div class="role-emoji">👤</div>
-            <div class="role-name">I'M A PATIENT</div>
-            <div class="role-desc">Order medicines, upload prescription</div>
-        </a>
+    <section class="story-section reveal-on-scroll">
+        <div class="modern-container">
+            <div class="story-grid">
+                <article class="story-card">
+                    <div class="section-header">
+                        <h2>Built for patients</h2>
+                        <p>A streamlined experience for medicine ordering, consult booking, health tracking, and family care.</p>
+                    </div>
+                    <div class="story-list">
+                        <div class="story-list-item"><i class="fa-solid fa-check"></i> Fast search and reorder flows</div>
+                        <div class="story-list-item"><i class="fa-solid fa-check"></i> Live order and delivery visibility</div>
+                        <div class="story-list-item"><i class="fa-solid fa-check"></i> AI-assisted prescription and lab support</div>
+                    </div>
+                </article>
+                <article class="story-card">
+                    <div class="section-header">
+                        <h2>Built for care teams</h2>
+                        <p>Doctors, pharmacies, labs, and delivery partners each get focused operational workspaces with AI support.</p>
+                    </div>
+                    <div class="story-list">
+                        <div class="story-list-item"><i class="fa-solid fa-bolt"></i> Modern doctor and EMR workflows</div>
+                        <div class="story-list-item"><i class="fa-solid fa-bolt"></i> Inventory, diagnostics, and partner dashboards</div>
+                        <div class="story-list-item"><i class="fa-solid fa-bolt"></i> Real-time updates across the care journey</div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
 
-        <a href="/auth/login/doctor" class="role-card">
-            <div class="role-emoji">👨‍⚕️</div>
-            <div class="role-name">I'M A DOCTOR</div>
-            <div class="role-desc">Manage patients, write prescriptions</div>
-        </a>
+    <section class="trust-section reveal-on-scroll">
+        <div class="modern-container">
+            <div class="section-header">
+                <h2>A trustworthy healthcare feel, not a cluttered marketplace</h2>
+                <p>Designed with the confidence of a modern health platform and the warmth of a human care brand.</p>
+            </div>
+            <div class="trust-grid">
+                <article class="trust-card">
+                    <strong>Verified healthcare workflows</strong>
+                    <p>Prescription handling, consult flows, and patient operations shaped for real healthcare teams.</p>
+                </article>
+                <article class="trust-card">
+                    <strong>AI with practical value</strong>
+                    <p>Use AI for faster intake, report interpretation, care insights, and workflow acceleration.</p>
+                </article>
+                <article class="trust-card">
+                    <strong>One connected platform</strong>
+                    <p>Patients, doctors, pharmacies, labs, delivery partners, and admins stay connected in one system.</p>
+                </article>
+            </div>
+        </div>
+    </section>
 
-        <a href="/auth/login/pharmacy" class="role-card">
-            <div class="role-emoji">🏪</div>
-            <div class="role-name">I'M A PHARMACY</div>
-            <div class="role-desc">Manage orders, update inventory</div>
-        </a>
-
-        <a href="/auth/login/lab" class="role-card">
-            <div class="role-emoji">🔬</div>
-            <div class="role-name">I'M A LAB</div>
-            <div class="role-desc">Upload reports, manage tests</div>
-        </a>
-    </div>
-
-    <div class="guest-section">
-        <p>Want to try first? <a href="/order-medicines">Search medicines as guest →</a></p>
-    </div>
+    <section class="cta-section reveal-on-scroll">
+        <div class="modern-container">
+            <div class="cta-card">
+                <div>
+                    <h2>Start your healthcare journey with Kash AI</h2>
+                    <p>Sign up as a patient, browse medicines as a guest, or open a professional workspace for your clinic or business.</p>
+                </div>
+                <div class="cta-actions">
+                    <a href="/auth/register/patient" class="btn-primary-large">Create Account</a>
+                    <a href="/portal" class="btn-outline-large">Explore Workspaces</a>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>
-{% endblock %}
-
-{% block extra_head %}
-<style>
-.simplified-landing {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #0F4C5C 0%, #1A7F6B 100%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    position: relative;
-}
-.landing-help-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: rgba(255, 255, 255, 0.14);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 999px;
-    padding: 10px 16px;
-    text-decoration: none;
-    font-weight: 700;
-    backdrop-filter: blur(10px);
-}
-.hero { text-align: center; margin-bottom: 48px; }
-.hero .logo { height: 60px; margin-bottom: 20px; }
-.hero h1 { color: white; font-size: 36px; margin: 0; font-family: "Plus Jakarta Sans", sans-serif; }
-.hero p { color: rgba(255,255,255,0.8); font-size: 18px; margin-top: 8px; }
-.role-cards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-.role-card {
-    background: white;
-    border-radius: 20px;
-    padding: 32px 24px;
-    text-align: center;
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
-    color: inherit;
-    box-shadow: 0 20px 40px rgba(8, 38, 46, 0.12);
-}
-.role-card:hover { transform: translateY(-5px); box-shadow: 0 24px 48px rgba(8, 38, 46, 0.18); }
-.role-emoji { font-size: 48px; margin-bottom: 16px; }
-.role-name { font-size: 18px; font-weight: 700; color: #0F4C5C; margin-bottom: 8px; }
-.role-desc { font-size: 13px; color: #6B7280; }
-.guest-section { margin-top: 48px; color: white; text-align: center; }
-.guest-section a { color: #FFD700; text-decoration: none; }
-@media (max-width: 768px) {
-    .role-cards { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-}
-@media (max-width: 480px) {
-    .role-cards { grid-template-columns: 1fr; }
-    .hero h1 { font-size: 30px; }
-    .landing-help-btn { top: 16px; right: 16px; }
-}
-</style>
 {% endblock %}

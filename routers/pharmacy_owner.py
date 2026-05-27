@@ -36,6 +36,7 @@ from services.medicine_management import (
 from services.predictive_reorder import PredictiveReorderService
 from services.price_comparison_service import PriceComparisonService
 from services.stock_alert_service import StockAlertService
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["pharmacy-owner"])
@@ -132,8 +133,7 @@ def _expiry_alerts_for_user(user: User) -> tuple[list[dict[str, Any]], dict[str,
 
 @router.get("/portal/pharmacy/add-medicine")
 def add_medicine_page(request: Request, user: User = Depends(require_portal_roles("pharmacy_owner", "admin"))):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "pharmacy/add_medicine.html",
         _inventory_context(request, user),
     )
@@ -141,8 +141,7 @@ def add_medicine_page(request: Request, user: User = Depends(require_portal_role
 
 @router.get("/portal/pharmacy/bulk-upload")
 def bulk_upload_page(request: Request, user: User = Depends(require_portal_roles("pharmacy_owner", "admin"))):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "pharmacy/bulk_upload.html",
         _inventory_context(request, user),
     )
@@ -155,8 +154,7 @@ def stock_alerts_page(request: Request, user: User = Depends(require_portal_role
         store = _store_for_user(db, user)
     finally:
         db.close()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "pharmacy/stock_alerts.html",
         _inventory_context(request, user, pharmacy_id=store.id),
     )
@@ -165,8 +163,7 @@ def stock_alerts_page(request: Request, user: User = Depends(require_portal_role
 @router.get("/portal/pharmacy/expiry-tracker")
 def expiry_tracker_page(request: Request, user: User = Depends(require_portal_roles("pharmacy_owner", "admin"))):
     alerts, summary = _expiry_alerts_for_user(user)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "pharmacy/expiry_tracker.html",
         _inventory_context(request, user, expiring_medicines=alerts, **summary),
     )

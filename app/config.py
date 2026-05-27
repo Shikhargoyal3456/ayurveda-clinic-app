@@ -11,6 +11,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.template_compat import patch_jinja2_templates
+
+
+patch_jinja2_templates()
+
 
 def load_dotenv(dotenv_path: Path) -> None:
     if not dotenv_path.exists():
@@ -167,6 +172,10 @@ class Settings:
     rate_limit_enabled: bool
     rate_limit_requests: int
     rate_limit_period: int
+    api_ip_rate_limit_requests: int
+    api_ip_rate_limit_period: int
+    api_user_rate_limit_requests: int
+    api_user_rate_limit_period: int
     cache_enabled: bool
     cache_ttl_seconds: int
     backup_enabled: bool
@@ -180,6 +189,8 @@ class Settings:
     max_concurrent_requests: int
     overload_queue_timeout_seconds: float
     runtime_python: str
+    ai_max_cost_per_call_usd: float
+    ai_daily_budget_usd: float
 
     @property
     def is_production(self) -> bool:
@@ -306,6 +317,10 @@ def _build_settings() -> Settings:
         rate_limit_enabled=_get_bool("RATE_LIMIT_ENABLED", True),
         rate_limit_requests=_get_int("RATE_LIMIT_REQUESTS", 100),
         rate_limit_period=_get_int("RATE_LIMIT_PERIOD", 60),
+        api_ip_rate_limit_requests=_get_int("API_IP_RATE_LIMIT_REQUESTS", 120),
+        api_ip_rate_limit_period=_get_int("API_IP_RATE_LIMIT_PERIOD", 60),
+        api_user_rate_limit_requests=_get_int("API_USER_RATE_LIMIT_REQUESTS", 240),
+        api_user_rate_limit_period=_get_int("API_USER_RATE_LIMIT_PERIOD", 60),
         cache_enabled=_get_bool("CACHE_ENABLED", bool(os.getenv("REDIS_URL", "").strip())),
         cache_ttl_seconds=_get_int("CACHE_TTL", 300),
         backup_enabled=_get_bool("BACKUP_ENABLED", True),
@@ -322,6 +337,8 @@ def _build_settings() -> Settings:
             "RUNTIME_PYTHON",
             r"C:\Users\goyal\AppData\Local\ayurveda-runtime\Scripts\python.exe",
         ),
+        ai_max_cost_per_call_usd=float(os.getenv("AI_MAX_COST_PER_CALL_USD", "0.10").strip() or "0.10"),
+        ai_daily_budget_usd=float(os.getenv("AI_DAILY_BUDGET_USD", "10.0").strip() or "10.0"),
     )
 
     for error in production_validation_errors(

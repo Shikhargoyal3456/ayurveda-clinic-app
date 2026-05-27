@@ -33,6 +33,7 @@ from services.ai_provider import generate_role_based_prescription_sync
 from services.diet_ai import generate_diet_plan, generate_whatsapp_message
 from services.voice_ai import structure_case_sheet, transcribe_audio
 from services.whatsapp import build_whatsapp_link
+from shared.template_engine import render_template
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -560,8 +561,7 @@ def add_case_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     patient = _get_patient_or_404(db, doctor.id, patient_id)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "add_case.html",
         {
             "patient": patient,
@@ -600,8 +600,7 @@ async def transcribe_case_audio(
         transcript = await run_in_threadpool(transcribe_audio, temp_path, language)
         structured_case = await run_in_threadpool(structure_case_sheet, transcript, patient.name)
         track_event("voice_transcription_used", doctor_id=doctor.id, patient_id=patient.id, mode="upload")
-        return templates.TemplateResponse(
-            request,
+        return render_template(templates, request,
             "add_case.html",
             {
                 "patient": patient,
@@ -803,8 +802,7 @@ def view_cases(
         }
         for case in cases
     ]
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "view_cases.html",
         {
             "patient": patient,

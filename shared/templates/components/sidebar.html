@@ -30,13 +30,16 @@
     </div>
 
     <div class="portal-sidebar-footer">
-        <a href="/auth/logout" class="sidebar-link">
-            <i class="fa-solid fa-right-from-bracket"></i>
-            <span class="sidebar-link-copy">
-                <span>Logout</span>
-                <small>Sign out safely from this workspace</small>
-            </span>
-        </a>
+        <form method="post" action="/auth/logout" class="sidebar-logout-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+            <button type="submit" class="sidebar-link">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span class="sidebar-link-copy">
+                    <span>Logout</span>
+                    <small>Sign out safely from this workspace</small>
+                </span>
+            </button>
+        </form>
     </div>
 </aside>
 

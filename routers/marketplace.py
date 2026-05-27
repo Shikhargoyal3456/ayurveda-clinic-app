@@ -13,6 +13,7 @@ from services.marketplace_service import (
     marketplace_nearby_shops,
 )
 from shared.template_engine import templates
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["marketplace"])
@@ -28,7 +29,7 @@ def portal_selector(request: Request, db=Depends(get_db)):
         return RedirectResponse(url="/doctor/dashboard", status_code=303)
     context = selector_payload()
     context.update({"request": request})
-    return templates.TemplateResponse(request, "auth/smart_entry.html", context)
+    return render_template(templates, request, "auth/smart_entry.html", {"request": request, **context})
 
 
 @router.post("/api/marketplace/route-order")

@@ -50,6 +50,7 @@ from services.medicine_api_service import MedicineAPIService
 from services.ai_medicine_alternatives import AIMedicineAlternatives
 from services.ai_prescription_analyzer import AIPrescriptionAnalyzer
 from services.price_comparison_service import PriceComparisonService
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["pharmacy"])
@@ -57,6 +58,7 @@ templates = Jinja2Templates(directory=str(settings.templates_dir))
 logger = logging.getLogger(__name__)
 client = razorpay.Client(auth=(settings.razorpay_key_id, settings.razorpay_key_secret)) if razorpay else None
 ORDER_AGAIN_SALT = "medicine-order-again"
+GUEST_ORDER_TRACKING_SALT = "guest-order-tracking"
 _PAYMENT_VERIFY_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 _FOLLOWUP_SENT_KEYS: set[tuple[int, int]] = set()
 _VALID_ORDER_TRANSITIONS = {
@@ -70,20 +72,6 @@ medicine_api_service = MedicineAPIService()
 ai_medicine_alternatives = AIMedicineAlternatives()
 price_comparison_service = PriceComparisonService()
 prescription_analyzer = AIPrescriptionAnalyzer()
-SAMPLE_AYURVEDIC_MEDICINES = [
-    {"name": "Ashwagandha Capsules", "price": 349, "description": "Adaptogenic support for stress balance, stamina, and sleep quality.", "category": "ayurveda"},
-    {"name": "Triphala Tablets", "price": 199, "description": "Classic digestive support blend for gentle bowel regularity and gut comfort.", "category": "ayurveda"},
-    {"name": "Brahmi Syrup", "price": 229, "description": "Traditional cognitive wellness tonic for focus, calmness, and memory support.", "category": "ayurveda"},
-    {"name": "Giloy Immunity Juice", "price": 275, "description": "Herbal immunity support with guduchi for seasonal wellness routines.", "category": "ayurveda"},
-    {"name": "Shatavari Granules", "price": 310, "description": "Women's wellness support traditionally used for nourishment and hormonal balance.", "category": "ayurveda"},
-    {"name": "Neem Tulsi Tablets", "price": 185, "description": "Skin and detox support with neem and tulsi in a daily tablet format.", "category": "ayurveda"},
-    {"name": "Sitopaladi Churna", "price": 145, "description": "Respiratory support powder traditionally used for cough and throat irritation.", "category": "ayurveda"},
-    {"name": "Amla Rasayan", "price": 260, "description": "Vitamin C rich rejuvenative tonic for immunity and antioxidant support.", "category": "ayurveda"},
-    {"name": "Dashmool Kwath", "price": 240, "description": "Herbal decoction blend used for inflammation support and recovery routines.", "category": "ayurveda"},
-    {"name": "Arjun Heart Tonic", "price": 330, "description": "Ayurvedic cardiovascular support built around arjuna bark extract.", "category": "ayurveda"},
-    {"name": "Punarnava Tablets", "price": 210, "description": "Traditional fluid balance and kidney support supplement.", "category": "ayurveda"},
-    {"name": "Livwell Bhumyamalaki", "price": 190, "description": "Liver wellness support with bhumyamalaki and complementary herbs.", "category": "ayurveda"},
-]
 
 
 def _run_ai_order_processing(order_id: int) -> None:
@@ -115,6 +103,29 @@ def _load_order_again_token(order_token: str) -> int:
     return int(payload["order_id"])
 
 
+def _guest_order_tracking_token(order_id: int) -> str:
+    serializer = URLSafeTimedSerializer(settings.secret_key, salt=GUEST_ORDER_TRACKING_SALT)
+    return serializer.dumps({"order_id": order_id, "scope": "guest_tracking"})
+
+
+def _load_guest_order_tracking_token(order_token: str) -> int:
+    serializer = URLSafeTimedSerializer(settings.secret_key, salt=GUEST_ORDER_TRACKING_SALT)
+    payload = serializer.loads(order_token, max_age=60 * 60 * 24 * 30)
+    if payload.get("scope") != "guest_tracking":
+        raise BadSignature("Invalid guest order tracking token")
+    return int(payload["order_id"])
+
+
+def _public_tracking_value(order: MedicineOrder) -> str:
+    if order.patient_user_id is None:
+        return _guest_order_tracking_token(order.id)
+    return str(order.id)
+
+
+def _public_tracking_url(order: MedicineOrder) -> str:
+    return f"/order-status/{_public_tracking_value(order)}"
+
+
 def can_transition(current: str, target: str) -> bool:
     return target in _VALID_ORDER_TRANSITIONS.get(current, set())
 
@@ -130,7 +141,7 @@ def _ensure_sample_catalog(db: Session) -> list[Medicine]:
         .order_by(Medicine.name.asc())
         .all()
     )
-    if medicines:
+    if len(medicines) >= 20:
         return medicines
 
     pharmacy = (
@@ -153,7 +164,9 @@ def _ensure_sample_catalog(db: Session) -> list[Medicine]:
         db.flush()
 
     seeded: list[Medicine] = []
-    for item in SAMPLE_AYURVEDIC_MEDICINES:
+    for item in get_default_medicines():
+        description = str(item.get("description") or f"{item['name']} support from the Kash AI curated catalog.").strip()
+        manufacturer = "Kash AI Wellness" if str(item.get("category")) == "wellness" else "Kash AI Healthcare"
         master = ensure_master_medicine(
             db,
             name=item["name"],
@@ -161,10 +174,10 @@ def _ensure_sample_catalog(db: Session) -> list[Medicine]:
             generic_name=item["name"],
             mrp=float(item["price"]),
             price=float(item["price"]),
-            prescription_required=False,
-            description=item["description"],
+            prescription_required=not bool(item.get("otc", True)),
+            description=description,
             image_url=default_image_for_category(item["category"]),
-            manufacturer="Kash AI Ayurveda",
+            manufacturer=manufacturer,
         )
         medicine = (
             db.query(Medicine)
@@ -181,17 +194,24 @@ def _ensure_sample_catalog(db: Session) -> list[Medicine]:
                 category=item["category"],
                 price=int(item["price"]),
                 mrp=int(item["price"]),
-                brand="Kash AI Ayurveda",
-                description=item["description"],
+                brand=manufacturer,
+                description=description,
                 image_url=default_image_for_category(item["category"]),
                 stock=100,
                 unit="bottle",
-                requires_prescription=False,
+                requires_prescription=not bool(item.get("otc", True)),
                 is_available=True,
                 pharmacy_id=pharmacy.id,
                 master_medicine_id=master.id,
             )
             db.add(medicine)
+        else:
+            medicine.price = int(item["price"])
+            medicine.mrp = int(item["price"])
+            medicine.category = str(item["category"])
+            medicine.description = description
+            medicine.requires_prescription = not bool(item.get("otc", True))
+            medicine.is_available = True
         seeded.append(medicine)
 
     commit_with_retry(db)
@@ -264,6 +284,7 @@ def _order_status_payload(order: MedicineOrder) -> dict[str, object]:
         "is_delayed": _is_order_delayed(order),
         "notification_failed": order.notification_failed,
         "order_again_url": f"/pharmacy/order-again/{_order_again_token(order.id)}",
+        "tracking_url": _public_tracking_url(order),
         "source": _order_source(order),
         "is_repeat_order": _is_repeat_order(order),
     }
@@ -309,6 +330,45 @@ def _wants_json(request: Request) -> bool:
     accept = request.headers.get("accept", "")
     requested_with = request.headers.get("x-requested-with", "")
     return "application/json" in accept.lower() or requested_with.lower() == "xmlhttprequest"
+
+
+def _owned_patient_order_or_404(request: Request, db: Session, order_id: int) -> tuple[MedicineOrder, int]:
+    portal_user = get_portal_user(request, db)
+    portal_role = getattr(getattr(portal_user, "role", None), "value", getattr(portal_user, "role", ""))
+    if portal_user is None or str(portal_role) != "patient":
+        raise HTTPException(status_code=403, detail="Sign in to view your order.")
+
+    order = db.get(MedicineOrder, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if order.patient_user_id is None or int(order.patient_user_id) != int(portal_user.id):
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    active_profile_id = request.session.get("active_profile_id")
+    if order.profile_id is not None and active_profile_id and int(order.profile_id) != int(active_profile_id):
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    return order, int(portal_user.id)
+
+
+def _order_from_guest_tracking_token_or_404(db: Session, order_token: str) -> MedicineOrder:
+    try:
+        order_id = _load_guest_order_tracking_token(order_token)
+    except (BadSignature, SignatureExpired, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=404, detail="Order not found") from exc
+
+    order = db.get(MedicineOrder, order_id)
+    if order is None or order.patient_user_id is not None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+def _public_tracking_order_or_404(request: Request, db: Session, tracking_value: str) -> MedicineOrder:
+    if str(tracking_value).isdigit():
+        order, _owner_user_id = _owned_patient_order_or_404(request, db, int(tracking_value))
+        return order
+    return _order_from_guest_tracking_token_or_404(db, tracking_value)
 
 
 def _payment_rate_limit(request: Request) -> None:
@@ -442,8 +502,7 @@ def _patient_reordered_after(db: Session, order: MedicineOrder, anchor) -> bool:
 
 @router.get("/order/{token}", response_class=HTMLResponse)
 def patient_order_page(token: str, request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "patient_order.html",
         {"request": request, "token": token, "csrf_token": ensure_csrf_token(request)},
     )
@@ -466,8 +525,7 @@ def order_again_page(order_token: str, request: Request, db: Session = Depends(g
         logger.exception("Could not parse medicines_json for order-again order_id=%s", order.id)
         prefill_medicines = []
 
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "patient_order.html",
         {
             "request": request,
@@ -528,8 +586,7 @@ def patient_medicines(db: Session = Depends(get_db)):
 
 @router.get("/patient/medicine-alternatives", response_class=HTMLResponse)
 def medicine_alternatives_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "patient/medicine_alternatives.html",
         {"request": request, "active_page": "medicines", "user_name": "Patient tools", "user_role": "Alternative finder", "avatar_label": "AL"},
     )
@@ -537,8 +594,7 @@ def medicine_alternatives_page(request: Request):
 
 @router.get("/patient/price-comparison", response_class=HTMLResponse)
 def price_comparison_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "patient/price_comparison.html",
         {"request": request, "active_page": "medicines", "user_name": "Patient tools", "user_role": "Price comparison", "avatar_label": "PC"},
     )
@@ -855,6 +911,7 @@ def create_patient_order(
         "payment_pending_message": f"Complete your payment to confirm your order: /patient/order/{order.id}/status",
         "paid_at": order.paid_at.isoformat() if order.paid_at else None,
         "order_again_url": f"/pharmacy/order-again/{_order_again_token(order.id)}",
+        "tracking_url": _public_tracking_url(order),
         "source": _order_source(order),
         "is_repeat_order": _is_repeat_order(order),
     }
@@ -975,14 +1032,12 @@ async def verify_patient_order(
 
 
 @router.get("/patient/order/{order_id}/status")
-def patient_order_status(order_id: int, db: Session = Depends(get_db)):
-    cache_key = f"patient-order-status:{order_id}"
+def patient_order_status(order_id: int, request: Request, db: Session = Depends(get_db)):
+    order, owner_user_id = _owned_patient_order_or_404(request, db, order_id)
+    cache_key = f"patient-order-status:{owner_user_id}:{order_id}"
     cached = cache_get_json(cache_key)
     if cached is not None:
         return cached
-    order = db.get(MedicineOrder, order_id)
-    if order is None:
-        raise HTTPException(status_code=404, detail="Order not found")
     payload = {
         "order_id": order.id,
         "status": order.status,
@@ -1006,25 +1061,25 @@ def patient_order_status(order_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/order-status/{order_id}")
-def public_order_fulfillment_status(order_id: str, db: Session = Depends(get_db)):
+def public_order_fulfillment_status(order_id: str, request: Request, db: Session = Depends(get_db)):
     # POLISH-1-ORDER-BUTTONS: Add reorder metadata while preserving the existing fulfillment payload.
-    payload = track_order(order_id)
     try:
-        numeric_order_id = int(order_id)
-        order = db.get(MedicineOrder, numeric_order_id)
-        if order is not None:
-            payload["order_again_url"] = f"/pharmacy/order-again/{_order_again_token(order.id)}"
-            payload["reorder_label"] = "Reorder"
+        order = _public_tracking_order_or_404(request, db, order_id)
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Order status reorder metadata failed for order_id=%s: %s", order_id, exc)
+        raise HTTPException(status_code=404, detail="Order not found") from exc
+    payload = track_order(str(order.id))
+    payload["order_again_url"] = f"/pharmacy/order-again/{_order_again_token(order.id)}"
+    payload["reorder_label"] = "Reorder"
+    payload["tracking_url"] = _public_tracking_url(order)
     return payload
 
 
 @router.get("/api/orders/check/{order_id}")
-def quick_order_check(order_id: int, db: Session = Depends(get_db)):
-    order = db.get(MedicineOrder, order_id)
-    if order is None:
-        return {"exists": False, "message": "Order not found"}
+def quick_order_check(order_id: int, request: Request, db: Session = Depends(get_db)):
+    order, _owner_user_id = _owned_patient_order_or_404(request, db, order_id)
 
     created_at = order.created_at.isoformat() if order.created_at else None
     expected_delivery = "Within 24 hours" if order.status in {"pending", "confirmed"} else "On the way"
@@ -1057,6 +1112,7 @@ def order_confirmation_page(order_id: int, request: Request, db: Session = Depen
     context = {
         "request": request,
         "order": order,
+        "tracking_url": _public_tracking_url(order),
         "active_profile_name": order.profile_name or order.patient_name,
         "order_items": items,
         "subtotal": subtotal,
@@ -1069,7 +1125,7 @@ def order_confirmation_page(order_id: int, request: Request, db: Session = Depen
         "user_role": "Medicine order",
         "avatar_label": "OR",
     }
-    return templates.TemplateResponse(request, "orders/confirmation.html", context)
+    return render_template(templates, request, "orders/confirmation.html", {"request": request, **context})
 
 
 @router.get("/orders/invoice/{order_id}", response_class=HTMLResponse)
@@ -1089,7 +1145,7 @@ def order_invoice_page(order_id: int, request: Request, db: Session = Depends(ge
         "user_role": "Invoice",
         "avatar_label": "IV",
     }
-    return templates.TemplateResponse(request, "orders/invoice.html", context)
+    return render_template(templates, request, "orders/invoice.html", {"request": request, **context})
 
 
 @router.get("/pharmacy/dashboard", response_class=HTMLResponse)
@@ -1116,8 +1172,7 @@ def pharmacy_dashboard(request: Request, db: Session = Depends(get_db)):
         .scalar()
         or 0,
     }
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "pharmacy_portal.html",
         {"request": request, "orders": orders, "dashboard_metrics": dashboard_metrics, "csrf_token": ensure_csrf_token(request)},
     )

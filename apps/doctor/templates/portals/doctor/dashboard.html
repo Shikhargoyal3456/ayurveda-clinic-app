@@ -6,11 +6,12 @@
 {% set display_doctor_name = doctor_name | default(doctor.name if doctor is defined and doctor and doctor.name is defined else user_name, true) | default("Doctor", true) %}
 {% set display_recent_patients = recent_patients | default([], true) %}
 <div class="doctor-workspace">
-    <section class="ai-hero" id="aiHero">
+    <section class="ai-hero glass-card" id="aiHero">
         <div class="ai-hero__copy">
-            <p class="workspace-kicker">AI Doctor Workspace</p>
+            <span class="workspace-kicker">AI Doctor Workspace</span>
             <h1>Dr. {{ display_doctor_name }}</h1>
             <p class="ai-hero__meta">Live insights generated from your clinic data{% if today_date %} • {{ today_date }}{% endif %}</p>
+            <p class="ai-hero__summary">Today’s workspace is built to help you move faster across patients, follow-ups, labs, and prescriptions.</p>
         </div>
         <div class="ai-loading" id="aiLoading">
             <div class="spinner"></div>
@@ -219,23 +220,6 @@
 </div>
 
 <style>
-:root {
-    --primary-dark: #0f4c5c;
-    --primary: #1a7f6b;
-    --primary-light: #2bae66;
-    --primary-soft: #e6f4f1;
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-300: #d1d5db;
-    --gray-500: #6b7280;
-    --gray-700: #374151;
-    --gray-800: #1f2937;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
 .doctor-workspace {
     max-width: 1380px;
     margin: 0 auto;
@@ -243,59 +227,83 @@
 }
 
 .ai-hero {
-    display: flex;
-    justify-content: space-between;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.8fr);
     gap: 24px;
-    align-items: flex-start;
-    padding: 28px 32px;
+    align-items: start;
+    padding: 30px 32px;
     margin-bottom: 24px;
-    border-radius: 28px;
+    border-radius: 30px;
     color: white;
+    overflow: hidden;
     background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 24%),
-        linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 58%, var(--primary-light) 100%);
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 22%),
+        radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.28), transparent 26%),
+        linear-gradient(135deg, #0f4c5c 0%, #145a65 45%, #1a7f6b 75%, #2bae66 100%);
     box-shadow: var(--shadow-xl);
 }
 
 .workspace-kicker {
-    margin: 0 0 10px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
     text-transform: uppercase;
     letter-spacing: 0.14em;
     font-size: 0.72rem;
-    font-weight: 700;
-    opacity: 0.8;
+    font-weight: 800;
 }
 
 .ai-hero h1 {
-    margin: 0 0 8px;
-    font-size: clamp(2rem, 3vw, 2.7rem);
+    margin: 18px 0 8px;
+    font-size: clamp(2rem, 3vw, 2.9rem);
+    line-height: 1.05;
     font-weight: 800;
 }
 
 .ai-hero__meta,
 .ai-summary,
-.ai-insight {
+.ai-insight,
+.ai-hero__summary {
     margin: 0;
-    opacity: 0.92;
+    opacity: 0.94;
+}
+
+.ai-hero__summary {
+    margin-top: 16px;
+    max-width: 720px;
+    font-size: 1.05rem;
+    line-height: 1.8;
+}
+
+.ai-hero__body {
+    margin-top: 18px;
+    padding: 18px 20px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(12px);
 }
 
 .ai-summary {
-    margin-top: 16px;
-    font-size: 1.18rem;
+    font-size: 1.08rem;
     font-weight: 700;
 }
 
 .ai-insight {
     margin-top: 8px;
-    max-width: 720px;
+    line-height: 1.7;
 }
 
 .ai-loading {
     min-width: 280px;
-    padding: 18px 20px;
-    border-radius: 20px;
+    padding: 20px;
+    border-radius: 22px;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(12px);
 }
 
 .spinner {
@@ -324,9 +332,9 @@
 }
 
 .card {
-    background: linear-gradient(180deg, #ffffff 0%, #fcfefd 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(251, 253, 252, 0.96) 100%);
     border: 1px solid rgba(229, 231, 235, 0.9);
-    border-radius: 24px;
+    border-radius: 26px;
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     margin-bottom: 24px;
@@ -352,20 +360,20 @@
 }
 
 .title-icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 14px;
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
     display: inline-grid;
     place-items: center;
-    background: linear-gradient(135deg, var(--primary-soft) 0%, #f2fbf7 100%);
-    color: var(--primary-dark);
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.1) 0%, rgba(99, 102, 241, 0.12) 100%);
+    color: var(--primary);
     font-size: 0.8rem;
     font-weight: 800;
 }
 
 .card-title h3 {
     margin: 0;
-    color: var(--gray-800);
+    color: var(--gray-900);
     font-size: 1.08rem;
     font-weight: 700;
 }
@@ -398,21 +406,18 @@
     border: 1px solid var(--gray-200);
 }
 
-.action-item {
+.action-item,
+.alert-item {
     display: flex;
     justify-content: space-between;
     gap: 16px;
     align-items: center;
 }
 
-.action-item a {
-    text-decoration: none;
-}
-
 .action-copy strong,
 .alert-copy strong {
     display: block;
-    color: var(--gray-800);
+    color: var(--gray-900);
 }
 
 .action-copy p,
@@ -420,14 +425,8 @@
 .score-factors p,
 .recommendation-box p {
     margin: 6px 0 0;
-    color: var(--gray-500);
-}
-
-.alert-item {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: center;
+    color: var(--gray-600);
+    line-height: 1.65;
 }
 
 .alert-high { border-left: 4px solid #dc2626; }
@@ -455,8 +454,8 @@
 }
 
 .patient-avatar {
-    width: 50px;
-    height: 50px;
+    width: 52px;
+    height: 52px;
     border-radius: 18px;
     display: flex;
     align-items: center;
@@ -472,12 +471,12 @@
 
 .patient-name {
     font-weight: 700;
-    color: var(--gray-800);
+    color: var(--gray-900);
 }
 
 .patient-meta {
     margin-top: 4px;
-    color: var(--gray-500);
+    color: var(--gray-600);
     font-size: 0.875rem;
 }
 
@@ -490,6 +489,7 @@
     font-weight: 700;
     cursor: pointer;
     transition: 0.2s ease;
+    text-decoration: none;
 }
 
 .view-patient-btn,
@@ -514,7 +514,7 @@
 .empty-state {
     text-align: center;
     padding: 48px 24px;
-    color: var(--gray-500);
+    color: var(--gray-600);
 }
 
 .empty-icon {
@@ -524,7 +524,7 @@
     border-radius: 24px;
     display: grid;
     place-items: center;
-    background: var(--primary-soft);
+    background: rgba(15, 76, 92, 0.1);
     color: var(--primary);
     font-weight: 800;
 }
@@ -597,6 +597,7 @@
 }
 
 @media (max-width: 1024px) {
+    .ai-hero,
     .ai-grid,
     .dashboard-grid,
     .form-row--triple {
@@ -610,7 +611,6 @@
     }
 
     .ai-hero {
-        flex-direction: column;
         padding: 22px 20px;
     }
 
@@ -691,14 +691,99 @@ function takePortalAction(actionKey) {
     }
 }
 
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function makeText(tag, text, className = "") {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    node.textContent = text;
+    return node;
+}
+
 function renderList(targetId, items) {
     const target = document.getElementById(targetId);
-    target.innerHTML = items.map((item) => `<div class="stack-item"><strong>${item}</strong></div>`).join("");
+    clearNode(target);
+    items.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "stack-item";
+        row.appendChild(makeText("strong", item));
+        target.appendChild(row);
+    });
 }
 
 function renderFactors(targetId, items) {
     const target = document.getElementById(targetId);
-    target.innerHTML = items.map((item) => `<p>${item}</p>`).join("");
+    clearNode(target);
+    items.forEach((item) => {
+        target.appendChild(makeText("p", item));
+    });
+}
+
+function appendHeroInsight(insights) {
+    const hero = document.getElementById("aiHero");
+    const existing = hero.querySelector(".ai-hero__body");
+    if (existing) existing.remove();
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "ai-hero__body";
+    wrapper.appendChild(makeText("p", insights.daily_message || "", "ai-summary"));
+    wrapper.appendChild(makeText("p", insights.insight || "", "ai-insight"));
+    hero.appendChild(wrapper);
+}
+
+function renderActions(actionMap) {
+    const actionsList = document.getElementById("actionsList");
+    clearNode(actionsList);
+    Object.entries(actionMap || {}).forEach(([, action]) => {
+        const row = document.createElement("div");
+        row.className = "action-item";
+
+        const copy = document.createElement("div");
+        copy.className = "action-copy";
+        copy.appendChild(makeText("strong", action.label || "Open"));
+        copy.appendChild(makeText("p", action.reason || ""));
+
+        const link = document.createElement("a");
+        link.className = "btn-primary";
+        link.href = action.url || "#";
+        link.textContent = "Open";
+
+        row.appendChild(copy);
+        row.appendChild(link);
+        actionsList.appendChild(row);
+    });
+}
+
+function renderAlerts(alerts) {
+    const alertsCard = document.getElementById("alertsCard");
+    const alertsList = document.getElementById("alertsList");
+    clearNode(alertsList);
+    if (!alerts.length) {
+        alertsCard.hidden = true;
+        return;
+    }
+    alertsCard.hidden = false;
+    alerts.forEach((alert) => {
+        const row = document.createElement("div");
+        row.className = `alert-item alert-${alert.urgency || "low"}`;
+
+        const copy = document.createElement("div");
+        copy.className = "alert-copy";
+        copy.appendChild(makeText("strong", alert.patient_name || "Patient"));
+        copy.appendChild(makeText("p", `${alert.alert_type || "Alert"}: ${alert.reason || "Review this case today."}`));
+
+        const button = document.createElement("button");
+        button.className = "btn-outline";
+        button.type = "button";
+        button.textContent = "Review";
+        button.addEventListener("click", () => openPortalPatient(alert.patient_id));
+
+        row.appendChild(copy);
+        row.appendChild(button);
+        alertsList.appendChild(row);
+    });
 }
 
 function displayPortalAI(insights) {
@@ -709,36 +794,9 @@ function displayPortalAI(insights) {
     renderFactors("healthFactors", insights.health_score_factors || []);
     renderFactors("careFactors", insights.care_score_factors || []);
     renderList("prioritiesList", insights.top_priorities || []);
-
-    const hero = document.getElementById("aiHero");
-    hero.insertAdjacentHTML(
-        "beforeend",
-        `<div class="ai-hero__body"><p class="ai-summary">${insights.daily_message}</p><p class="ai-insight">${insights.insight}</p></div>`
-    );
-
-    const actionsList = document.getElementById("actionsList");
-    actionsList.innerHTML = Object.entries(insights.action_map || {}).map(([key, action]) => `
-        <div class="action-item">
-            <div class="action-copy">
-                <strong>${action.label}</strong>
-                <p>${action.reason}</p>
-            </div>
-            <a class="btn-primary" href="${action.url}">Open</a>
-        </div>
-    `).join("");
-
-    if ((insights.patient_alerts || []).length) {
-        document.getElementById("alertsCard").hidden = false;
-        document.getElementById("alertsList").innerHTML = insights.patient_alerts.map((alert) => `
-            <div class="alert-item alert-${alert.urgency}">
-                <div class="alert-copy">
-                    <strong>${alert.patient_name}</strong>
-                    <p>${alert.alert_type}: ${alert.reason || "Review this case today."}</p>
-                </div>
-                <button class="btn-outline" type="button" onclick="openPortalPatient(${alert.patient_id})">Review</button>
-            </div>
-        `).join("");
-    }
+    appendHeroInsight(insights);
+    renderActions(insights.action_map || {});
+    renderAlerts(insights.patient_alerts || []);
 
     document.getElementById("recommendationCard").hidden = false;
     document.getElementById("recommendationText").textContent = insights.recommendation || "";
@@ -748,7 +806,8 @@ function displayPortalAI(insights) {
 function showPortalAIFallback() {
     const loading = document.getElementById("aiLoading");
     if (!loading) return;
-    loading.innerHTML = "<p>AI insight generation is temporarily unavailable. Refresh to retry while live clinic data continues below.</p>";
+    clearNode(loading);
+    loading.appendChild(makeText("p", "AI insight generation is temporarily unavailable. Refresh to retry while live clinic data continues below."));
 }
 
 async function loadPortalAIDashboard() {

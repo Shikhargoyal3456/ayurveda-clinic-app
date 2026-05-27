@@ -18,7 +18,8 @@ function getMockNotifications() {
                 id: 1,
                 message: "Your order #AYU123 has been delivered",
                 unread: true,
-                link: "/orders/tracking/123",
+                tracking_url: "/orders/tracking/demo-token",
+                link: "/orders/tracking/demo-token",
                 icon: "📦",
                 timestamp: "5 min ago"
             },
@@ -40,7 +41,14 @@ async function fetchNotifications() {
         if (!response.ok) {
             throw new Error("Notifications endpoint unavailable");
         }
-        return await response.json();
+        const payload = await response.json();
+        const notifications = Array.isArray(payload?.notifications)
+            ? payload.notifications.map((item) => ({
+                ...item,
+                link: item?.tracking_url || item?.link || "#"
+            }))
+            : [];
+        return { ...payload, notifications };
     } catch (error) {
         return getMockNotifications();
     }

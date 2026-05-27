@@ -15,13 +15,25 @@ def test_password_complexity_validation():
 async def test_rate_limiting_returns_429(authenticated_client, monkeypatch):
     client = authenticated_client["client"]
     engine = get_rag_engine()
+    from routers import ai as ai_router
+
     monkeypatch.setattr(
         engine,
         "generate_clinical_response",
         lambda symptoms, patient_context="": {"answer": "ok", "sources": [], "context_passages": [], "mode": "fallback"},
     )
-    analyzer_page = await client.get("/ai-analyzer")
-    csrf_token = extract_csrf_token(analyzer_page.text)
+    monkeypatch.setattr(
+        ai_router,
+        "get_ai_response",
+        lambda prompt, mode="samhita", context=None: {"answer": "ok", "sources": [], "context_passages": [], "mode": mode, "provider": "mock"},
+    )
+    analyzer_page = await client.get("/ai-analyzer", follow_redirects=False)
+    if analyzer_page.status_code == 200:
+        csrf_token = extract_csrf_token(analyzer_page.text)
+    else:
+        dashboard_page = await client.get("/dashboard")
+        assert dashboard_page.status_code == 200
+        csrf_token = extract_csrf_token(dashboard_page.text)
 
     for _ in range(10):
         response = await client.post(

@@ -109,6 +109,26 @@ def is_bruteforce_blocked(identifier: str, limit: int = 8, window_seconds: int =
     return len(bucket) >= limit
 
 
+def failed_login_retry_after_seconds(
+    identifier: str,
+    *,
+    base_delay_seconds: int = 2,
+    max_delay_seconds: int = 300,
+    window_seconds: int = 900,
+) -> int:
+    now = time.time()
+    bucket = _login_attempts[identifier]
+    while bucket and now - bucket[0] > window_seconds:
+        bucket.popleft()
+    attempts = len(bucket)
+    if attempts <= 1:
+        return 0
+    delay = min(max_delay_seconds, base_delay_seconds * (2 ** max(0, attempts - 2)))
+    elapsed_since_last_attempt = now - bucket[-1]
+    remaining = int(delay - elapsed_since_last_attempt)
+    return max(0, remaining)
+
+
 def _session_timeout_seconds() -> int:
     return settings.session_idle_timeout_minutes * 60
 

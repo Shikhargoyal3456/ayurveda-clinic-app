@@ -2,7 +2,7 @@
 {% from "components/cards.html" import metric_card, nav_card %}
 {% block title %}Lab Dashboard | {{ APP_NAME }}{% endblock %}
 {% block portal_content %}
-<section class="surface-card">
+<section class="surface-card ops-hero-card">
     <div class="section-heading">
         <div>
             <p class="eyebrow">Lab dashboard</p>
@@ -22,11 +22,11 @@
         {{ metric_card('Earnings', earnings_summary, 'This week') }}
     </div>
 </section>
-<section class="split-grid">
+<section class="split-grid ops-nav-grid">
     {{ nav_card("Upload and release reports", "Review today's reports and jump into the upload workflow without leaving the lab console.", "/lab#reports", "file-arrow-up", "Reports") }}
     {{ nav_card('Review home collection queue', 'Keep technician pickups and home sample requests visible in one place.', '/lab#collections', 'truck-medical', 'Field Ops') }}
 </section>
-<section class="split-grid">
+<section class="split-grid ops-surface-grid">
     <article class="surface-card" id="today-bookings">
         <div class="section-heading"><div><p class="eyebrow">Bookings</p><h2>Today schedule</h2></div></div>
         <div class="table-list">
@@ -44,7 +44,7 @@
         </div>
     </article>
 </section>
-<section class="split-grid">
+<section class="split-grid ops-surface-grid">
     <article class="surface-card" id="reports">
         <div class="section-heading"><div><p class="eyebrow">Reports</p><h2>Release center</h2></div></div>
         <div class="table-list">
@@ -70,4 +70,10 @@
         </div>
     </article>
 </section>
+{% endblock %}
+{% block extra_head %}
+<style>
+.ops-hero-card{background:radial-gradient(circle at top right, rgba(99,102,241,.1), transparent 34%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%);border-radius:28px;box-shadow:var(--shadow-lg)}
+.ops-nav-grid .surface-card,.ops-surface-grid .surface-card{border-radius:24px;box-shadow:var(--shadow-lg)}
+</style>
 {% endblock %}

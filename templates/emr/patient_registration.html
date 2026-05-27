@@ -1,17 +1,17 @@
 {% extends 'base.html' %}
 {% block title %}Patient Registration | Kash AI{% endblock %}
 {% block page %}
-<div class="site-container page-shell emr-shell">
+<div class="site-container page-shell emr-shell emr-modern-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
-        <div class="page-header">
+        <section class="emr-hero-card glass-card">
             <div>
                 <p class="eyebrow">Patient intake</p>
                 <h1 class="h2">Patient Registration</h1>
-                <p>Start with the basics. Add medical history and Ayurveda details only if needed.</p>
+                <p class="emr-hero-copy">Start with the basics. Add medical history and Ayurveda details only if needed, and keep patient intake fast for the front desk.</p>
             </div>
             <span class="badge badge-soft">{{ ur_preview }}</span>
-        </div>
+        </section>
 
         <form id="patientRegistrationForm" class="card form-stack simple-registration-card" method="post" action="/emr/patient-registration" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -74,47 +74,22 @@
         </form>
     </section>
 </div>
+{% endblock %}
+{% block extra_head %}
 <style>
-.simple-registration-card {
-    padding: 24px;
-    border-radius: 24px;
-}
-
-.simple-registration-intro {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 20px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, #eef7f3 0%, #f8fcfb 100%);
-    border: 1px solid #d8e8e0;
-}
-
-.intro-badge {
-    min-width: 72px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: #0f4c5c;
-    color: #fff;
-    font-weight: 700;
-    text-align: center;
-}
-
-.optional-panel__content[hidden] {
-    display: none;
-}
-
-.optional-panel__content {
-    display: block;
-}
-
-@media (max-width: 760px) {
-    .simple-registration-intro {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
+.emr-modern-shell .page-content{display:grid;gap:24px}
+.emr-hero-card{display:grid;grid-template-columns:minmax(0,1.2fr) auto;gap:24px;padding:30px;background:radial-gradient(circle at top right, rgba(99,102,241,.12), transparent 32%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%)}
+.emr-hero-card h1{margin:10px 0 0;font-size:clamp(2rem,4vw,3rem);color:var(--gray-900)}
+.emr-hero-copy{margin:14px 0 0;color:var(--gray-600);line-height:1.8;max-width:760px}
+.simple-registration-card{padding:24px;border-radius:24px;box-shadow:var(--shadow-lg);border:1px solid rgba(229,231,235,.92)}
+.simple-registration-intro{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:20px;background:linear-gradient(135deg, #eef7f3 0%, #f8fcfb 100%);border:1px solid #d8e8e0}
+.intro-badge{min-width:72px;padding:10px 14px;border-radius:999px;background:#0f4c5c;color:#fff;font-weight:700;text-align:center}
+.nested-card{border-radius:22px}
+.optional-panel__content[hidden]{display:none}.optional-panel__content{display:block}
+@media (max-width:760px){.emr-hero-card,.simple-registration-intro{grid-template-columns:1fr;flex-direction:column;align-items:flex-start}.emr-hero-card,.simple-registration-card{padding:20px}}
 </style>
+{% endblock %}
+{% block extra_scripts %}
 <script>
 function toggleRegistrationOptional() {
     const optional = document.getElementById('registrationOptionalFields');

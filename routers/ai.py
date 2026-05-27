@@ -39,8 +39,10 @@ try:
         GEMINI_MODEL,
         GROQ_API_KEY,
         GROQ_MODEL,
+        ai_budget_fallback_message,
         generate_role_based_prescription,
         get_ai_response,
+        is_ai_budget_error,
     )
 except Exception as exc:
     _ai_provider_import_error = str(exc)
@@ -48,16 +50,21 @@ except Exception as exc:
     GEMINI_MODEL = settings.gemini_model
     GROQ_API_KEY = ""
     GROQ_MODEL = ""
+    def ai_budget_fallback_message() -> str:
+        return "AI service is currently unavailable. Please try again later or use manual entry."
     def get_ai_response(prompt: str, mode: str = "samhita", context: dict | None = None):
         raise RuntimeError(f"AI provider unavailable: {_ai_provider_import_error}")
     async def generate_role_based_prescription(case_data: dict[str, object], mode: str):
         raise RuntimeError(f"AI provider unavailable: {_ai_provider_import_error}")
+    def is_ai_budget_error(exc: Exception) -> bool:
+        return False
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
     increment_subscription_usage as increment_usage,
 )
 from routers.cases import _case_ai_payload, _case_query_text, _patient_context_text
+from shared.template_engine import render_template
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -110,6 +117,20 @@ def _wrap_ai_safety_response(symptoms: str, result: dict[str, object]) -> dict[s
     return result
 
 
+def _fallback_ai_analyzer_result(symptoms: str, mode: str, sources: list[str], context_passages: list[str], warning: str) -> dict[str, object]:
+    return {
+        "answer": (
+            f"{ai_budget_fallback_message()} "
+            "Based on the symptoms provided, use conservative self-care and seek doctor review if symptoms persist or worsen."
+        ).strip(),
+        "mode": mode,
+        "provider": "fallback",
+        "sources": sources,
+        "context_passages": context_passages,
+        "warning": warning,
+    }
+
+
 def _extract_case_text_safely(case: CaseSheet) -> str:
     return f"{_patient_context_text(case)}\n\n{_case_query_text(case)}".strip()
 
@@ -157,8 +178,7 @@ async def _ai_rate_limit(request: Request, doctor: Doctor = Depends(get_current_
 
 @router.get("/ai-analyzer")
 def ai_analyzer_page(request: Request, _: Doctor = Depends(get_current_doctor)):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "ai_analyzer.html",
         {"request": request, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
     )
@@ -185,9 +205,9 @@ async def analyze_symptoms(
         raise HTTPException(status_code=400, detail="Symptoms must be 2000 characters or fewer.")
 
     logger.info("AI analyzer request received: symptom_length=%s", len(symptoms))
+    sources: list[str] = []
+    context_passages: list[str] = []
     try:
-        sources: list[str] = []
-        context_passages: list[str] = []
         if mode == "samhita":
             try:
                 passages = await run_in_threadpool(get_rag_engine().retrieve, symptoms, 3)
@@ -217,8 +237,11 @@ async def analyze_symptoms(
         result.setdefault("sources", sources)
         result.setdefault("context_passages", context_passages)
     except Exception as exc:
-        logger.exception("AI analyzer failed unexpectedly: %s", exc)
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        if is_ai_budget_error(exc):
+            result = _fallback_ai_analyzer_result(symptoms, mode, sources, context_passages, str(exc))
+        else:
+            logger.exception("AI analyzer failed unexpectedly: %s", exc)
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
     write_audit_event("ai_analyzer_used", request, symptom_length=len(symptoms), source_count=len(result.get("sources", [])))
     result["mode"] = str(result.get("mode") or mode)
     track_event("ai_analyzer_used", doctor_id=request.session.get("doctor_id"), mode=result.get("mode", "unknown"))

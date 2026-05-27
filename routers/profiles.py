@@ -25,6 +25,7 @@ from services.profile_service import (
 )
 from services.cache_service import cache_get_json, cache_set_json
 from shared.template_engine import templates
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["profiles"])
@@ -54,15 +55,17 @@ def profile_selector(request: Request, db: Session = Depends(get_db), user=Depen
         set_active_profile_session(request, profiles[0])
         touch_profile(db, profiles[0])
         return RedirectResponse(url="/patient", status_code=303)
-    return templates.TemplateResponse(request, "profiles/profile_selector.html", _profile_page_context(request, db, user))
+    return render_template(templates, request,
+        "profiles/profile_selector.html",
+        {"request": request, **_profile_page_context(request, db, user)},
+    )
 
 
 @router.api_route("/profiles/add", methods=["GET", "HEAD"])
 def add_profile_page(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
     if count_active_profiles(db, user.id) >= MAX_USER_PROFILES:
         return RedirectResponse(url="/profiles/manage", status_code=303)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "profiles/add_profile.html",
         _profile_page_context(request, db, user, page_mode="create"),
     )
@@ -70,7 +73,10 @@ def add_profile_page(request: Request, db: Session = Depends(get_db), user=Depen
 
 @router.api_route("/profiles/manage", methods=["GET", "HEAD"])
 def manage_profiles_page(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
-    return templates.TemplateResponse(request, "profiles/manage_profiles.html", _profile_page_context(request, db, user))
+    return render_template(templates, request,
+        "profiles/manage_profiles.html",
+        {"request": request, **_profile_page_context(request, db, user)},
+    )
 
 
 @router.get("/api/profiles/list")

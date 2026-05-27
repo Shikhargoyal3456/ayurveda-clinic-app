@@ -122,7 +122,10 @@
                     {% for item in account_links %}
                     <a href="{{ item.href }}">{{ item.label }}</a>
                     {% endfor %}
-                    <a href="/auth/logout">Logout</a>
+                    <form method="post" action="/auth/logout" class="logout-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                        <button type="submit" class="portal-user-menu__button">Logout</button>
+                    </form>
                 </div>
             </details>
         </div>

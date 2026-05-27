@@ -43,6 +43,7 @@
     <link rel="stylesheet" href="/shared-static/css/layouts.css">
     <link rel="stylesheet" href="/shared-static/css/utilities.css">
     <link rel="stylesheet" href="/shared-static/css/responsive.css">
+    {% block extra_head %}{% endblock %}
     <script defer src="/shared-static/js/tooltips.js"></script>
     <script defer src="/static/js/onboarding.js?v=20260506-1"></script>
 </head>
@@ -209,16 +210,44 @@
                 updateNotificationBadge();
                 return;
             }
-            notifList.innerHTML = notificationsCache.map((item) => `
-                <a class="notif-item" href="${item.link || item.url || '#'}" role="menuitem" data-notification-id="${item.id || ''}">
-                    <span>${String(item.icon || "").startsWith("fa-") ? `<i class="${item.icon}"></i>` : `<span aria-hidden="true">${item.icon || "🔔"}</span>`}</span>
-                    <span>
-                        <strong>${item.message || 'Update available'}</strong>
-                        <div class="notif-item__time">${item.timestamp || 'Just now'}</div>
-                    </span>
-                    ${item.unread !== false ? '<span class="notif-item__dot" aria-hidden="true"></span>' : '<span></span>'}
-                </a>
-            `).join("");
+            notifList.replaceChildren();
+            notificationsCache.forEach((item) => {
+                const link = document.createElement("a");
+                link.className = "notif-item";
+                link.href = String(item.link || item.url || "#");
+                link.setAttribute("role", "menuitem");
+                link.dataset.notificationId = String(item.id || "");
+
+                const iconHost = document.createElement("span");
+                const rawIcon = String(item.icon || "");
+                if (rawIcon.startsWith("fa-") && /^[a-z0-9\- ]+$/i.test(rawIcon)) {
+                    const icon = document.createElement("i");
+                    rawIcon.split(/\s+/).filter(Boolean).forEach((token) => icon.classList.add(token));
+                    iconHost.appendChild(icon);
+                } else {
+                    const iconText = document.createElement("span");
+                    iconText.setAttribute("aria-hidden", "true");
+                    iconText.textContent = rawIcon || "🔔";
+                    iconHost.appendChild(iconText);
+                }
+
+                const content = document.createElement("span");
+                const title = document.createElement("strong");
+                title.textContent = String(item.message || "Update available");
+                const time = document.createElement("div");
+                time.className = "notif-item__time";
+                time.textContent = String(item.timestamp || "Just now");
+                content.append(title, time);
+
+                const dot = document.createElement("span");
+                if (item.unread !== false) {
+                    dot.className = "notif-item__dot";
+                    dot.setAttribute("aria-hidden", "true");
+                }
+
+                link.append(iconHost, content, dot);
+                notifList.appendChild(link);
+            });
             updateNotificationBadge();
         };
 
@@ -388,7 +417,11 @@
             if (!host) return;
             const toast = document.createElement("div");
             toast.className = "search-scope-row";
-            toast.innerHTML = `<strong>${type || "Info"}</strong><span>${message}</span>`;
+            const title = document.createElement("strong");
+            title.textContent = String(type || "Info");
+            const body = document.createElement("span");
+            body.textContent = String(message || "");
+            toast.append(title, body);
             host.appendChild(toast);
             window.setTimeout(() => toast.remove(), 4000);
         };

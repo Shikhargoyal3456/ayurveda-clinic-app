@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 
 from app.config import settings
 from app.rate_limit import limiter
+from shared.template_engine import render_template
 from services.marketing_automation import MarketingAutomation
 from services.superapp_service import (
     add_to_cart,
@@ -46,8 +47,7 @@ marketing = MarketingAutomation()
 @router.get("/superapp/dashboard")
 def superapp_dashboard_page(request: Request):
     bootstrap_superapp(force=False)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "dashboard/superapp_dashboard.html",
         {"request": request, **get_dashboard_payload()},
     )
@@ -57,8 +57,7 @@ def superapp_dashboard_page(request: Request):
 def smart_subscriptions_page(request: Request):
     payload = get_dashboard_payload()
     payload["offers"] = get_offers()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "subscription/smart_subscriptions.html",
         {"request": request, **payload},
     )
@@ -66,8 +65,7 @@ def smart_subscriptions_page(request: Request):
 
 @router.get("/diagnostics/lab-booking")
 def lab_booking_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "diagnostics/lab_booking.html",
         {
             "request": request,
@@ -80,8 +78,7 @@ def lab_booking_page(request: Request):
 
 @router.get("/health/articles")
 def health_articles_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "health/articles.html",
         {
             "request": request,
@@ -93,8 +90,7 @@ def health_articles_page(request: Request):
 
 @router.get("/store/wellness-store")
 def wellness_store_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "store/wellness_store.html",
         {
             "request": request,
@@ -107,7 +103,7 @@ def wellness_store_page(request: Request):
 
 @router.get("/support/ai-assistant")
 def ai_support_page(request: Request):
-    return templates.TemplateResponse(request, "support/ai_assistant.html", {"request": request})
+    return render_template(templates, request, "support/ai_assistant.html", {"request": request})
 
 
 @router.get("/orders/tracking/{order_id}")
@@ -130,13 +126,12 @@ def order_tracking_page(request: Request, order_id: int):
             "location": {"eta": "Pending"},
         }
     tracking.update({"request": request, "simple_nav": "orders", "page_hint": "See where your medicine is"})
-    return templates.TemplateResponse(request, "orders/tracking.html", {"request": request, **tracking})
+    return render_template(templates, request, "orders/tracking.html", {"request": request, **tracking})
 
 
 @router.get("/loyalty/rewards-program")
 def rewards_program_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "loyalty/rewards_program.html",
         {
             "request": request,

@@ -47,6 +47,7 @@ from services.emr_service import (
     write_emr_audit_log,
 )
 from services.diet_ai import generate_diet_plan
+from shared.template_engine import render_template
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["emr"])
@@ -232,8 +233,7 @@ def _consultation_payload_to_model(consultation: EMRConsultation, payload: dict[
 @router.get("/emr/doctor-dashboard")
 def emr_doctor_dashboard(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(require_doctor_role)):
     _seed_if_needed(db)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/doctor_dashboard.html",
         _base_context(request, doctor, "doctor_dashboard", get_doctor_dashboard_data(db, doctor)),
     )
@@ -269,8 +269,7 @@ def emr_patient_registry(
                 "medical_flags": (profile.medical_history or {}).get("past_conditions", []),
             }
         )
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/patient_registry.html",
         _base_context(request, doctor, "patient_registry", {"patient_cards": cards, "query": q, "system": system}),
     )
@@ -278,8 +277,7 @@ def emr_patient_registry(
 
 @router.get("/emr/patient-registration")
 def emr_patient_registration_page(request: Request, doctor: Doctor = Depends(require_doctor_role)):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/patient_registration.html",
         _base_context(request, doctor, "patient_registration", {"ur_preview": f"UR-{date.today().year}-AUTO"}),
     )
@@ -405,8 +403,7 @@ def emr_patient_detail(patient_id: int, request: Request, db: Session = Depends(
     vitals = db.query(EMRVital).filter(EMRVital.patient_id == patient.id).order_by(EMRVital.recorded_at.desc()).limit(10).all()
     timeline = build_patient_timeline(db, patient.id)
     assessment_map = {assessment.assessment_type: assessment.payload for assessment in assessments}
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/patient_detail.html",
         _base_context(
             request,
@@ -525,8 +522,7 @@ def emr_modern_consultation(patient_id: int, request: Request, db: Session = Dep
     patient = _patient_for_doctor(db, doctor.id, patient_id)
     profile = _profile_for_patient(db, patient)
     recent_vitals = db.query(EMRVital).filter(EMRVital.patient_id == patient.id).order_by(EMRVital.recorded_at.desc()).limit(5).all()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/modern_consultation.html",
         _base_context(request, doctor, "modern_consultation", {"patient": patient, "profile": profile, "recent_vitals": recent_vitals, "icd_codes": ICD11_SAMPLE_CODES, "drug_library": MODERN_DRUG_LIBRARY}),
     )
@@ -544,8 +540,7 @@ def emr_ayurveda_consultation(patient_id: int, request: Request, db: Session = D
     profile = _profile_for_patient(db, patient)
     assessments = db.query(EMRAssessment).filter(EMRAssessment.patient_id == patient.id).all()
     assessment_map = {item.assessment_type: item.payload for item in assessments}
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/ayurveda_consultation.html",
         _base_context(request, doctor, "ayurveda_consultation", {"patient": patient, "profile": profile, "assessments": assessment_map, "prakriti_questions": PRAKRITI_QUESTION_BANK[:18], "formulations": AYURVEDA_FORMULATION_LIBRARY}),
     )
@@ -555,8 +550,7 @@ def emr_ayurveda_consultation(patient_id: int, request: Request, db: Session = D
 def emr_integrated_consultation(patient_id: int, request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(require_integrated_access)):
     patient = _patient_for_doctor(db, doctor.id, patient_id)
     profile = _profile_for_patient(db, patient)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/integrated_consultation.html",
         _base_context(request, doctor, "integrated_consultation", {"patient": patient, "profile": profile, "interaction_pairs": DRUG_HERB_INTERACTIONS}),
     )
@@ -568,8 +562,7 @@ def emr_prescription_viewer(request: Request, patient_id: int | None = Query(Non
     if patient_id:
         query = query.filter(EMRPrescription.patient_id == patient_id)
     prescriptions = query.order_by(EMRPrescription.created_at.desc()).all()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/prescription_viewer.html",
         _base_context(request, doctor, "prescription_viewer", {"prescriptions": prescriptions, "selected_patient_id": patient_id}),
     )
@@ -579,7 +572,10 @@ def emr_prescription_viewer(request: Request, patient_id: int | None = Query(Non
 def emr_lab_dashboard(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     _seed_if_needed(db)
     orders = db.query(EMRLabOrder).filter(EMRLabOrder.doctor_id == doctor.id).order_by(EMRLabOrder.ordered_at.desc()).all()
-    return templates.TemplateResponse(request, "emr/lab_dashboard.html", _base_context(request, doctor, "lab_dashboard", {"lab_orders": orders}))
+    return render_template(templates, request,
+        "emr/lab_dashboard.html",
+        {"request": request, **_base_context(request, doctor, "lab_dashboard", {"lab_orders": orders})},
+    )
 
 
 @router.get("/emr/vital-tracker")
@@ -590,26 +586,34 @@ def emr_vital_tracker(request: Request, patient_id: int | None = Query(None), db
         vitals = vitals.filter(EMRVital.patient_id == patient_id)
     vital_rows = vitals.order_by(EMRVital.recorded_at.desc()).limit(30).all()
     patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).order_by(Patient.name.asc()).all()
-    return templates.TemplateResponse(request, "emr/vital_tracker.html", _base_context(request, doctor, "vital_tracker", {"vitals": vital_rows, "patients": patients, "selected_patient_id": patient_id}))
+    return render_template(templates, request,
+        "emr/vital_tracker.html",
+        {"request": request, **_base_context(request, doctor, "vital_tracker", {"vitals": vital_rows, "patients": patients, "selected_patient_id": patient_id})},
+    )
 
 
 @router.get("/emr/clinical-decisions")
 def emr_clinical_decisions(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     _seed_if_needed(db)
-    return templates.TemplateResponse(request, "emr/clinical_decisions.html", _base_context(request, doctor, "clinical_decisions", {"interaction_pairs": DRUG_HERB_INTERACTIONS, "icd_codes": ICD11_SAMPLE_CODES}))
+    return render_template(templates, request,
+        "emr/clinical_decisions.html",
+        {"request": request, **_base_context(request, doctor, "clinical_decisions", {"interaction_pairs": DRUG_HERB_INTERACTIONS, "icd_codes": ICD11_SAMPLE_CODES})},
+    )
 
 
 @router.get("/emr/panchakarma-scheduler")
 def emr_panchakarma_scheduler(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).limit(8).all()
     plans = [{"name": "Virechana Preparation", "patient": patient.name, "staff": "Therapy Team A", "status": "Scheduled", "date": date.today().isoformat()} for patient in patients[:3]]
-    return templates.TemplateResponse(request, "emr/panchakarma_scheduler.html", _base_context(request, doctor, "panchakarma_scheduler", {"plans": plans}))
+    return render_template(templates, request,
+        "emr/panchakarma_scheduler.html",
+        {"request": request, **_base_context(request, doctor, "panchakarma_scheduler", {"plans": plans})},
+    )
 
 
 @router.get("/emr/clinical-reporting")
 def emr_clinical_reporting(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/clinical_reporting.html",
         _base_context(
             request,
@@ -626,7 +630,10 @@ def emr_clinical_reporting(request: Request, db: Session = Depends(get_db), doct
 
 @router.get("/emr/telemedicine")
 def emr_telemedicine(request: Request, doctor: Doctor = Depends(get_current_doctor)):
-    return templates.TemplateResponse(request, "emr/telemedicine.html", _base_context(request, doctor, "telemedicine", {}))
+    return render_template(templates, request,
+        "emr/telemedicine.html",
+        {"request": request, **_base_context(request, doctor, "telemedicine", {})},
+    )
 
 
 @router.get("/emr/patient-portal/{patient_id}")
@@ -636,36 +643,50 @@ def emr_patient_portal(patient_id: int, request: Request, db: Session = Depends(
     prescriptions = db.query(EMRPrescription).filter(EMRPrescription.patient_id == patient.id).order_by(EMRPrescription.created_at.desc()).all()
     labs = db.query(EMRLabOrder).filter(EMRLabOrder.patient_id == patient.id).order_by(EMRLabOrder.ordered_at.desc()).all()
     appointments = db.query(Appointment).filter(Appointment.patient_id == patient.id).order_by(Appointment.date.desc()).all()
-    return templates.TemplateResponse(request, "emr/patient_portal.html", _base_context(request, doctor, "patient_portal", {"patient": patient, "profile": profile, "prescriptions": prescriptions, "labs": labs, "appointments": appointments}))
+    return render_template(templates, request,
+        "emr/patient_portal.html",
+        {"request": request, **_base_context(request, doctor, "patient_portal", {"patient": patient, "profile": profile, "prescriptions": prescriptions, "labs": labs, "appointments": appointments})},
+    )
 
 
 @router.get("/emr/consent-forms")
 def emr_consent_forms(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     forms = db.query(EMRConsentForm).filter(EMRConsentForm.doctor_id == doctor.id).order_by(EMRConsentForm.created_at.desc()).all()
-    return templates.TemplateResponse(request, "emr/consent_forms.html", _base_context(request, doctor, "consent_forms", {"forms": forms}))
+    return render_template(templates, request,
+        "emr/consent_forms.html",
+        {"request": request, **_base_context(request, doctor, "consent_forms", {"forms": forms})},
+    )
 
 
 @router.get("/emr/audit-trail")
 def emr_audit_trail(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     audit_logs = db.query(EMRAuditLog).filter(EMRAuditLog.user_id == doctor.id).order_by(EMRAuditLog.created_at.desc()).limit(50).all()
-    return templates.TemplateResponse(request, "emr/audit_trail.html", _base_context(request, doctor, "audit_trail", {"audit_logs": audit_logs}))
+    return render_template(templates, request,
+        "emr/audit_trail.html",
+        {"request": request, **_base_context(request, doctor, "audit_trail", {"audit_logs": audit_logs})},
+    )
 
 
 @router.get("/emr/data-quality")
 def emr_data_quality(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
-    return templates.TemplateResponse(request, "emr/data_quality.html", _base_context(request, doctor, "data_quality", get_data_quality_report(db, doctor.id)))
+    return render_template(templates, request,
+        "emr/data_quality.html",
+        {"request": request, **_base_context(request, doctor, "data_quality", get_data_quality_report(db, doctor.id))},
+    )
 
 
 @router.get("/emr/billing-integration")
 def emr_billing_integration(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
-    return templates.TemplateResponse(request, "emr/billing_integration.html", _base_context(request, doctor, "billing_integration", {"revenue_trend": get_revenue_trend(db, doctor.id, days=14)}))
+    return render_template(templates, request,
+        "emr/billing_integration.html",
+        {"request": request, **_base_context(request, doctor, "billing_integration", {"revenue_trend": get_revenue_trend(db, doctor.id, days=14)})},
+    )
 
 
 @router.get("/emr/mobile-emr")
 def emr_mobile_emr(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     recent_patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).order_by(Patient.created_at.desc()).limit(6).all()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "emr/mobile_emr.html",
         _base_context(
             request,
@@ -682,7 +703,10 @@ def emr_mobile_emr(request: Request, db: Session = Depends(get_db), doctor: Doct
 @router.get("/emr/test-emr")
 def emr_test_page(request: Request, db: Session = Depends(get_db), doctor: Doctor = Depends(get_current_doctor)):
     patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).limit(5).all()
-    return templates.TemplateResponse(request, "emr/test_emr.html", _base_context(request, doctor, "test_emr", {"patients": patients, "question_count": len(PRAKRITI_QUESTION_BANK)}))
+    return render_template(templates, request,
+        "emr/test_emr.html",
+        {"request": request, **_base_context(request, doctor, "test_emr", {"patients": patients, "question_count": len(PRAKRITI_QUESTION_BANK)})},
+    )
 
 
 @router.get("/emr/test-emr/{action}")

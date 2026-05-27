@@ -61,6 +61,20 @@ async def _login_patient(client, email: str):
     return login_response
 
 
+async def _logout_patient(client):
+    logout_page = await client.get("/profiles/select")
+    assert logout_page.status_code == 200
+    logout_csrf = extract_csrf_token(logout_page.text)
+    logout_response = await client.post(
+        "/auth/logout",
+        data={"csrf_token": logout_csrf},
+        headers={"X-CSRF-Token": logout_csrf},
+        follow_redirects=False,
+    )
+    assert logout_response.status_code == 303
+    return logout_response
+
+
 async def test_profile_pages_support_head_requests(client):
     for path in ("/profiles/select", "/profiles/add", "/profiles/manage"):
         response = await client.head(path, follow_redirects=False)
@@ -119,7 +133,7 @@ async def test_patient_with_multiple_profiles_redirects_to_selector_and_lists_pr
     )
     assert second_add.status_code == 303
 
-    await client.get("/auth/logout", follow_redirects=False)
+    await _logout_patient(client)
     relogin = await _login_patient(client, email=unique_email)
     assert relogin.headers["location"] == "/profiles/select"
 

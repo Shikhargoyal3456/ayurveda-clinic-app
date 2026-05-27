@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.portal_auth import require_portal_roles, user_public_context
-from shared.template_engine import templates
+from shared.template_engine import render_template, templates
 from services.profile_service import active_profiles_for_user, profile_avatar_for_relationship, resolve_active_profile
 from services.superapp_service import get_dashboard_payload
 
@@ -41,12 +41,15 @@ def patient_dashboard_context(request: Request, user=None) -> dict[str, object]:
     quick_actions = []
     if recent_orders:
         latest_order = recent_orders[0]
+        latest_tracking_url = latest_order.get("tracking_url") or (
+            f"/orders/tracking/{latest_order.get('id')}" if latest_order.get("id") is not None else "#"
+        )
         quick_actions.append(
             {
                 "title": f"Track order #{latest_order.get('id', '')}",
                 "body": f"Current status: {str(latest_order.get('status', 'processing')).replace('_', ' ')}.",
                 "tone": "green",
-                "href": f"/orders/tracking/{latest_order.get('id')}",
+                "href": latest_tracking_url,
                 "action_label": "Track order",
             }
         )
@@ -87,6 +90,7 @@ def patient_dashboard_context(request: Request, user=None) -> dict[str, object]:
                 "active_profile_relationship": request.session.get("active_profile_relationship", "Self"),
             }
         )
+    context["request"] = request
     return context
 
 
@@ -104,4 +108,4 @@ def dashboard(request: Request, db: Session = Depends(get_db), user=Depends(requ
         request.session["active_profile_avatar"] = profile_avatar_for_relationship(active_profile.relationship, active_profile.profile_avatar)
         request.session["active_profile_relationship"] = active_profile.relationship
     context = patient_dashboard_context(request, user)
-    return templates.TemplateResponse(request, "patient_home.html", context)
+    return render_template(templates, request, "patient_home.html", context)

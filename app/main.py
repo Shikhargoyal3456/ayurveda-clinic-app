@@ -19,6 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.analytics import track_event
+from app.auth import _apply_rate_limit
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.exception_handlers import register_exception_handlers
@@ -50,6 +51,7 @@ except Exception as exc:
 from app.logging_config import clear_request_id, configure_logging, set_request_id
 from app.monitoring import PerformanceMonitoringMiddleware
 from app.rate_limit import limiter
+from app.template_compat import patch_jinja2_templates
 from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
 from models.subscription import ClinicSubscription  # noqa: F401
@@ -97,6 +99,7 @@ from routers.patients import router as patients_router
 from routers.order_medicines import router as order_medicines_router
 from routers.pharmacy_owner import router as pharmacy_owner_router
 from routers.pharmacy import router as pharmacy_router
+from routers.prescription_ocr import router as prescription_ocr_router
 from routers.profiles import router as profiles_router
 from routers.pure_ai import router as pure_ai_router
 from routers.public_clinic import router as public_clinic_router
@@ -118,6 +121,7 @@ from utils.subscription_utils import (
 
 configure_logging()
 logger = logging.getLogger(__name__)
+patch_jinja2_templates()
 
 
 def _masked_setting(name: str, value: str) -> str:
@@ -183,6 +187,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(self)"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-site"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
@@ -217,6 +223,92 @@ class OverloadProtectionMiddleware(BaseHTTPMiddleware):
         response.headers["X-In-Flight-Requests"] = str(snapshot.in_flight)
         response.headers["X-Request-Capacity"] = str(snapshot.limit)
         return response
+
+
+class APIRateLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if not settings.rate_limit_enabled or not path.startswith("/api/"):
+            return await call_next(request)
+
+        forwarded_for = request.headers.get("x-forwarded-for", "")
+        client_ip = forwarded_for.split(",")[0].strip() if forwarded_for else (request.client.host if request.client else "unknown")
+        ip_retry_after = _apply_rate_limit(
+            f"api-ip:{client_ip}:{request.method}",
+            limit=max(1, settings.api_ip_rate_limit_requests),
+            window_seconds=max(1, settings.api_ip_rate_limit_period),
+        )
+        if ip_retry_after is not None:
+            return JSONResponse(
+                status_code=429,
+                content={"success": False, "error": "Too many requests. Please slow down.", "retry_after": ip_retry_after},
+                headers={"Retry-After": str(ip_retry_after)},
+            )
+
+        session = request.scope.get("session")
+        actor_id = None
+        if isinstance(session, dict):
+            actor_id = session.get("doctor_id") or session.get("portal_user_id")
+        if actor_id:
+            actor_retry_after = _apply_rate_limit(
+                f"api-user:{actor_id}:{request.method}",
+                limit=max(1, settings.api_user_rate_limit_requests),
+                window_seconds=max(1, settings.api_user_rate_limit_period),
+            )
+            if actor_retry_after is not None:
+                return JSONResponse(
+                    status_code=429,
+                    content={"success": False, "error": "Too many requests for this account. Please wait and try again.", "retry_after": actor_retry_after},
+                    headers={"Retry-After": str(actor_retry_after)},
+                )
+
+        return await call_next(request)
+
+
+class AttachSessionUserMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request.state.user = None
+        session = request.scope.get("session")
+        doctor_id = session.get("doctor_id") if isinstance(session, dict) else None
+        if doctor_id:
+            db = SessionLocal()
+            try:
+                request.state.user = db.get(Doctor, doctor_id)
+            finally:
+                db.close()
+        return await call_next(request)
+
+
+class SubscriptionEnforcementMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        feature = _subscription_feature_for_request(request)
+        if not feature:
+            return await call_next(request)
+
+        try:
+            session = request.scope.get("session")
+            doctor_id = request.session.get("doctor_id") if isinstance(session, dict) else None
+        except AssertionError:
+            doctor_id = None
+
+        if not doctor_id:
+            return await call_next(request)
+
+        db = SessionLocal()
+        try:
+            doctor = db.get(Doctor, doctor_id)
+            if doctor is None:
+                return await call_next(request)
+            access = check_subscription_access(doctor, feature)
+            logger.info("Subscription check: user=%s, feature=%s, allowed=%s", doctor.id, feature, access["allowed"])
+            if not access["allowed"]:
+                return JSONResponse(build_paywall_response(doctor, feature), status_code=403)
+            response = await call_next(request)
+            if 200 <= response.status_code < 400:
+                increment_usage(doctor, feature)
+            return response
+        finally:
+            db.close()
 
 
 def _run_startup_warmups() -> None:
@@ -283,13 +375,6 @@ def create_app() -> FastAPI:
     application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     register_exception_handlers(application)
     application.add_middleware(
-        SessionMiddleware,
-        secret_key=settings.secret_key,
-        max_age=settings.session_idle_timeout_minutes * 60,
-        same_site=settings.session_same_site,
-        https_only=settings.session_https_only,
-    )
-    application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
         allow_credentials=True,
@@ -304,8 +389,20 @@ def create_app() -> FastAPI:
     application.add_middleware(GZipMiddleware, minimum_size=512)
     application.add_middleware(SlowAPIMiddleware)
     application.add_middleware(PerformanceMonitoringMiddleware)
+    application.add_middleware(APIRateLimitMiddleware)
     application.add_middleware(RequestContextMiddleware)
     application.add_middleware(OverloadProtectionMiddleware)
+    application.add_middleware(AttachSessionUserMiddleware)
+    application.add_middleware(SubscriptionEnforcementMiddleware)
+    # Starlette executes the last-added middleware first, so SessionMiddleware must
+    # be added after session-dependent middleware declarations in source order.
+    application.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.secret_key,
+        max_age=settings.session_idle_timeout_minutes * 60,
+        same_site=settings.session_same_site,
+        https_only=settings.session_https_only,
+    )
 
     @application.middleware("http")
     async def https_redirect_middleware(request: Request, call_next):
@@ -315,47 +412,6 @@ def create_app() -> FastAPI:
                 secure_url = str(request.url.replace(scheme="https"))
                 return RedirectResponse(url=secure_url, status_code=307)
         return await call_next(request)
-
-    @application.middleware("http")
-    async def attach_session_user(request: Request, call_next):
-        request.state.user = None
-        try:
-            doctor_id = request.session.get("doctor_id")
-        except AssertionError:
-            doctor_id = None
-        if doctor_id:
-            db = SessionLocal()
-            try:
-                request.state.user = db.get(Doctor, doctor_id)
-            finally:
-                db.close()
-        return await call_next(request)
-
-    @application.middleware("http")
-    async def subscription_enforcement_middleware(request: Request, call_next):
-        feature = _subscription_feature_for_request(request)
-        try:
-            doctor_id = request.session.get("doctor_id")
-        except AssertionError:
-            return await call_next(request)
-        if not feature or not doctor_id:
-            return await call_next(request)
-
-        db = SessionLocal()
-        try:
-            doctor = db.get(Doctor, doctor_id)
-            if doctor is None:
-                return await call_next(request)
-            access = check_subscription_access(doctor, feature)
-            logger.info("Subscription check: user=%s, feature=%s, allowed=%s", doctor.id, feature, access["allowed"])
-            if not access["allowed"]:
-                return JSONResponse(build_paywall_response(doctor, feature), status_code=403)
-            response = await call_next(request)
-            if 200 <= response.status_code < 400:
-                increment_usage(doctor, feature)
-            return response
-        finally:
-            db.close()
 
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
     application.mount("/shared-static", StaticFiles(directory=settings.shared_static_dir), name="shared-static")
@@ -388,6 +444,7 @@ def create_app() -> FastAPI:
     application.include_router(lab_owner_router)
     application.include_router(lab_analyzer_router)
     application.include_router(pharmacy_router)
+    application.include_router(prescription_ocr_router)
     application.include_router(profiles_router)
     application.include_router(pure_ai_router)
     application.include_router(ecommerce_router)

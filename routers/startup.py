@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from app.config import settings
+from shared.template_engine import render_template
 from services.startup_service import (
     claim_referral_bonus,
     get_demo_inventory_snapshot,
@@ -30,8 +31,7 @@ templates = Jinja2Templates(directory=str(settings.templates_dir))
 @router.get("/marketplace/panchakarma-booking")
 def panchakarma_booking_page(request: Request):
     centers = get_panchakarma_centers()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "marketplace/panchakarma_booking.html",
         {
             "request": request,
@@ -44,8 +44,7 @@ def panchakarma_booking_page(request: Request):
 
 @router.get("/trust/verified-practitioners")
 def verified_practitioners_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "trust/verified_practitioners.html",
         {
             "request": request,
@@ -58,8 +57,7 @@ def verified_practitioners_page(request: Request):
 
 @router.get("/community/wellness-feed")
 def community_feed_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "community/wellness_feed.html",
         {
             "request": request,
@@ -75,8 +73,7 @@ def community_feed_page(request: Request):
 
 @router.get("/growth/referral-system")
 def referral_system_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "growth/referral_system.html",
         {"request": request, **get_referral_snapshot()},
     )
@@ -84,8 +81,7 @@ def referral_system_page(request: Request):
 
 @router.get("/growth/waitlist")
 def waitlist_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "growth/waitlist.html",
         {"request": request, **get_waitlist_snapshot()},
     )
@@ -94,8 +90,7 @@ def waitlist_page(request: Request):
 @router.get("/investor-demo")
 def investor_demo_page(request: Request):
     payload = get_investor_demo_payload()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "investor_demo.html",
         {"request": request, **payload},
     )
@@ -103,8 +98,7 @@ def investor_demo_page(request: Request):
 
 @router.get("/launch/press-kit")
 def press_kit_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "launch/press_kit.html",
         {"request": request, "comparison_rows": get_competitor_matrix()},
     )
@@ -114,8 +108,7 @@ def press_kit_page(request: Request):
 def growth_dashboard_page(request: Request):
     payload = get_growth_metrics()
     payload["inventory"] = get_demo_inventory_snapshot()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "admin/growth_dashboard.html",
         {"request": request, **payload},
     )

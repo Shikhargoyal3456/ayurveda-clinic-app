@@ -7,6 +7,7 @@ from app.portal_auth import require_portal_roles, user_public_context
 from core.dashboards import pharmacy_dashboard_context
 from services.medicine_management import ensure_pharmacy_store_for_user
 from shared.template_engine import templates
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["pharmacy-portal"])
@@ -28,4 +29,4 @@ def dashboard(
             db.close()
     context = pharmacy_dashboard_context(store_id)
     context.update({"request": request, "active_page": "dashboard", **user_public_context(user)})
-    return templates.TemplateResponse(request, "portals/pharmacy/dashboard.html", context)
+    return render_template(templates, request, "portals/pharmacy/dashboard.html", context)

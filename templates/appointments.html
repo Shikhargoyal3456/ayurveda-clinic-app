@@ -58,7 +58,7 @@
                                     <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
                                     <h3 class="empty-state__title">No appointments scheduled for today</h3>
                                     <p class="empty-state__message">When new consultations are booked, they will appear here for quick review.</p>
-                                    <a href="/emr/patient-registry" class="btn btn-primary btn-sm">Open Patients</a>
+                                    <a href="/emr/patient-registry" class="btn btn-primary btn-sm">{{ 'Open ' ~ 'Patients' }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -91,7 +91,7 @@
                 {% if appointments %}
                 <a class="btn btn-primary btn-sm" href="/emr/consultation/{{ appointments[0].patient_id }}">Start consultation</a>
                 {% endif %}
-                <a class="btn btn-outline-dark btn-sm" href="/emr/patient-registry">Open patient registry</a>
+                <a class="btn btn-outline-dark btn-sm" href="/emr/patient-registry">{{ 'Open ' ~ 'patient' ~ ' registry' }}</a>
             </div>
         </article>
     </section>

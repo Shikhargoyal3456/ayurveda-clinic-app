@@ -149,7 +149,11 @@ async function readJson(response) {
 function renderEmpty(containerId, message) {
     const target = document.getElementById(containerId);
     if (!target) return;
-    target.innerHTML = `<div class="empty-state">${message}</div>`;
+    target.replaceChildren();
+    const state = document.createElement('div');
+    state.className = 'empty-state';
+    state.textContent = String(message || '');
+    target.appendChild(state);
 }
 
 function renderActivity(activity) {
@@ -157,7 +161,13 @@ function renderActivity(activity) {
     if (!feed) return;
     const card = document.createElement('article');
     card.className = 'activity-item';
-    card.innerHTML = `<span class="time">${new Date(activity.timestamp).toLocaleTimeString()}</span><span class="message">${activity.message}</span>`;
+    const time = document.createElement('span');
+    time.className = 'time';
+    time.textContent = new Date(activity.timestamp).toLocaleTimeString();
+    const message = document.createElement('span');
+    message.className = 'message';
+    message.textContent = String(activity.message || '');
+    card.append(time, message);
     feed.prepend(card);
     while (feed.children.length > 50) feed.removeChild(feed.lastChild);
 }
@@ -177,23 +187,47 @@ async function loadMedicines() {
             renderEmpty('medicinesList', 'No medicines match this search yet.');
             return;
         }
-        target.innerHTML = medicines.map(med => `
-        <article class="card medicine-card">
-            <div class="medicine-card-top">
-                <h3>${med.name}</h3>
-                <span class="badge">${med.category}</span>
-            </div>
-            <p>${med.brand || 'In-house catalog'} • Stock ${med.stock}</p>
-            <div class="price-row">
-                <strong>Rs ${med.price}</strong>
-                <span class="text-muted">MRP Rs ${med.mrp}</span>
-            </div>
-            <div class="header-actions-row">
-                <a class="btn btn-outline-success btn-xs" href="/admin/master-medicines">Manage</a>
-                <a class="btn btn-ghost btn-xs" href="/admin/add-medicine">Add New</a>
-            </div>
-        </article>
-    `).join('');
+        target.replaceChildren();
+        medicines.forEach((med) => {
+            const article = document.createElement('article');
+            article.className = 'card medicine-card';
+
+            const top = document.createElement('div');
+            top.className = 'medicine-card-top';
+            const title = document.createElement('h3');
+            title.textContent = String(med.name || '');
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = String(med.category || '');
+            top.append(title, badge);
+
+            const summary = document.createElement('p');
+            summary.textContent = `${med.brand || 'In-house catalog'} • Stock ${med.stock}`;
+
+            const priceRow = document.createElement('div');
+            priceRow.className = 'price-row';
+            const price = document.createElement('strong');
+            price.textContent = `Rs ${med.price}`;
+            const mrp = document.createElement('span');
+            mrp.className = 'text-muted';
+            mrp.textContent = `MRP Rs ${med.mrp}`;
+            priceRow.append(price, mrp);
+
+            const actions = document.createElement('div');
+            actions.className = 'header-actions-row';
+            const manage = document.createElement('a');
+            manage.className = 'btn btn-outline-success btn-xs';
+            manage.href = '/admin/master-medicines';
+            manage.textContent = 'Manage';
+            const addNew = document.createElement('a');
+            addNew.className = 'btn btn-ghost btn-xs';
+            addNew.href = '/admin/add-medicine';
+            addNew.textContent = 'Add New';
+            actions.append(manage, addNew);
+
+            article.append(top, summary, priceRow, actions);
+            target.appendChild(article);
+        });
     } catch (error) {
         renderEmpty('medicinesList', error.message || 'Unable to load medicines right now.');
         showToast(error.message || 'Unable to load medicines right now.', 'error');
@@ -214,21 +248,47 @@ async function loadOrders() {
             renderEmpty('ordersList', 'No recent orders yet.');
             return;
         }
-        target.innerHTML = orders.map(order => `
-        <article class="card order-card-admin">
-            <div class="order-card-head">
-                <strong>Order #${order.id}</strong>
-                <span class="status-badge ${order.status}">${order.status}</span>
-            </div>
-            <p>${order.customer_name}</p>
-            <p>${order.items_count} items • Rs ${order.total}</p>
-            <div class="header-actions-row">
-                <button class="btn btn-primary btn-xs" onclick="updateOrderStatus(${order.id}, 'processing')">Process</button>
-                <button class="btn btn-secondary btn-xs" onclick="updateOrderStatus(${order.id}, 'shipped')">Ship</button>
-                <button class="btn btn-outline-success btn-xs" onclick="notifyCustomer(${order.id}, '${order.status}')">Notify</button>
-            </div>
-        </article>
-    `).join('');
+        target.replaceChildren();
+        orders.forEach((order) => {
+            const article = document.createElement('article');
+            article.className = 'card order-card-admin';
+
+            const head = document.createElement('div');
+            head.className = 'order-card-head';
+            const strong = document.createElement('strong');
+            strong.textContent = `Order #${order.id}`;
+            const status = document.createElement('span');
+            status.className = `status-badge ${order.status}`;
+            status.textContent = String(order.status || '');
+            head.append(strong, status);
+
+            const customer = document.createElement('p');
+            customer.textContent = String(order.customer_name || '');
+            const items = document.createElement('p');
+            items.textContent = `${order.items_count} items • Rs ${order.total}`;
+
+            const actions = document.createElement('div');
+            actions.className = 'header-actions-row';
+            const process = document.createElement('button');
+            process.className = 'btn btn-primary btn-xs';
+            process.type = 'button';
+            process.textContent = 'Process';
+            process.addEventListener('click', () => updateOrderStatus(order.id, 'processing'));
+            const ship = document.createElement('button');
+            ship.className = 'btn btn-secondary btn-xs';
+            ship.type = 'button';
+            ship.textContent = 'Ship';
+            ship.addEventListener('click', () => updateOrderStatus(order.id, 'shipped'));
+            const notify = document.createElement('button');
+            notify.className = 'btn btn-outline-success btn-xs';
+            notify.type = 'button';
+            notify.textContent = 'Notify';
+            notify.addEventListener('click', () => notifyCustomer(order.id, String(order.status || '')));
+            actions.append(process, ship, notify);
+
+            article.append(head, customer, items, actions);
+            target.appendChild(article);
+        });
     } catch (error) {
         renderEmpty('ordersList', error.message || 'Unable to load orders right now.');
         showToast(error.message || 'Unable to load orders right now.', 'error');
@@ -277,7 +337,11 @@ async function checkOrderStatus() {
     const target = document.getElementById('orderStatusResult');
     if (!target) return;
     if (!orderId) {
-        target.innerHTML = '<div class="alert-error">Enter an order ID first.</div>';
+        target.replaceChildren();
+        const errorBox = document.createElement('div');
+        errorBox.className = 'alert-error';
+        errorBox.textContent = 'Enter an order ID first.';
+        target.appendChild(errorBox);
         return;
     }
     try {
@@ -286,20 +350,42 @@ async function checkOrderStatus() {
             credentials: 'same-origin',
         });
         const result = await readJson(response);
-        target.innerHTML = result.exists ? `
-        <div class="status-card">
-            <div class="order-header">
-                <strong>Order #${result.order_id}</strong>
-                <span class="status-badge ${result.status}">${result.status}</span>
-            </div>
-            <p>Placed on ${new Date(result.placed_at).toLocaleDateString()}</p>
-            <p>Total Rs ${result.total}</p>
-            <p>Expected delivery: ${result.expected_delivery}</p>
-            <a href="${result.tracking_url}" class="btn btn-outline-success btn-xs">Track Order</a>
-        </div>
-    ` : `<div class="alert-error">Order not found.</div>`;
+        target.replaceChildren();
+        if (result.exists) {
+            const card = document.createElement('div');
+            card.className = 'status-card';
+            const header = document.createElement('div');
+            header.className = 'order-header';
+            const title = document.createElement('strong');
+            title.textContent = `Order #${result.order_id}`;
+            const status = document.createElement('span');
+            status.className = `status-badge ${result.status}`;
+            status.textContent = String(result.status || '');
+            header.append(title, status);
+            const placed = document.createElement('p');
+            placed.textContent = `Placed on ${new Date(result.placed_at).toLocaleDateString()}`;
+            const total = document.createElement('p');
+            total.textContent = `Total Rs ${result.total}`;
+            const expected = document.createElement('p');
+            expected.textContent = `Expected delivery: ${result.expected_delivery}`;
+            const link = document.createElement('a');
+            link.href = String(result.tracking_url || '#');
+            link.className = 'btn btn-outline-success btn-xs';
+            link.textContent = 'Track Order';
+            card.append(header, placed, total, expected, link);
+            target.appendChild(card);
+        } else {
+            const errorBox = document.createElement('div');
+            errorBox.className = 'alert-error';
+            errorBox.textContent = 'Order not found.';
+            target.appendChild(errorBox);
+        }
     } catch (error) {
-        target.innerHTML = `<div class="alert-error">${error.message || 'Unable to check order right now.'}</div>`;
+        target.replaceChildren();
+        const errorBox = document.createElement('div');
+        errorBox.className = 'alert-error';
+        errorBox.textContent = error.message || 'Unable to check order right now.';
+        target.appendChild(errorBox);
     }
 }
 

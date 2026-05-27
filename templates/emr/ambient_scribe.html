@@ -234,13 +234,22 @@
     }
 
     function transcriptEmptyState() {
-        transcriptContainer.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state__icon"><i class="fa-solid fa-wave-square"></i></div>
-                <h3 class="empty-state__title">Ready for ambient capture</h3>
-                <p class="empty-state__message">Tap start, allow microphone access, and speak naturally. Kash AI will keep updating the transcript and EMR panel on the right.</p>
-            </div>
-        `;
+        transcriptContainer.replaceChildren();
+        const wrapper = document.createElement('div');
+        wrapper.className = 'empty-state';
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'empty-state__icon';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-wave-square';
+        iconWrap.appendChild(icon);
+        const title = document.createElement('h3');
+        title.className = 'empty-state__title';
+        title.textContent = 'Ready for ambient capture';
+        const message = document.createElement('p');
+        message.className = 'empty-state__message';
+        message.textContent = 'Tap start, allow microphone access, and speak naturally. Kash AI will keep updating the transcript and EMR panel on the right.';
+        wrapper.append(iconWrap, title, message);
+        transcriptContainer.appendChild(wrapper);
     }
 
     function setEditable(enabled) {
@@ -257,14 +266,19 @@
     function appendTranscriptLine(text, speaker) {
         if (!text) return;
         const empty = transcriptContainer.querySelector('.empty-state');
-        if (empty) transcriptContainer.innerHTML = '';
+        if (empty) transcriptContainer.replaceChildren();
         const line = document.createElement('div');
         line.className = `conversation-line ${speaker}`;
-        line.innerHTML = `
-            <div class="speaker ${speaker}">${speaker === 'doctor' ? 'Doctor' : 'Patient'}</div>
-            <div class="message-text">${text}</div>
-            <div class="timestamp">${new Date().toLocaleTimeString()}</div>
-        `;
+        const speakerNode = document.createElement('div');
+        speakerNode.className = `speaker ${speaker}`;
+        speakerNode.textContent = speaker === 'doctor' ? 'Doctor' : 'Patient';
+        const messageNode = document.createElement('div');
+        messageNode.className = 'message-text';
+        messageNode.textContent = text;
+        const timestamp = document.createElement('div');
+        timestamp.className = 'timestamp';
+        timestamp.textContent = new Date().toLocaleTimeString();
+        line.append(speakerNode, messageNode, timestamp);
         transcriptContainer.appendChild(line);
         transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
     }

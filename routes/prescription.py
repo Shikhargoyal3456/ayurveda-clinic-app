@@ -29,6 +29,7 @@ from services.communication import send_patient_message
 from services.email_service import EmailService
 from services.pure_ai_core import pure_ai
 from services.sms_service import SMSService
+from shared.template_engine import render_template
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
@@ -226,8 +227,7 @@ def prescription_form(
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
     last_prescription = _last_prescription_for_patient(db, doctor.id, patient.id)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "prescriptions/form.html",
         {
             "patient": patient,
@@ -313,8 +313,7 @@ def view_prescription(
 ):
     prescription = _prescription_for_doctor(db, doctor.id, prescription_id)
 
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "prescriptions/detail.html",
         {
             "prescription": prescription,

@@ -10,6 +10,7 @@ from app.auth import ensure_csrf_token, get_current_doctor, pop_flash, set_flash
 from app.config import settings
 from app.database import commit_with_retry, get_db
 from app.models import Appointment, CaseSheet, Doctor, Patient
+from shared.template_engine import render_template
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -31,10 +32,15 @@ def schedule_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     patient = _patient_for_doctor(db, doctor.id, patient_id)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "schedule.html",
-        {"request": request, "patient": patient, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+        {
+            "patient": patient,
+            "flash": pop_flash(request),
+            "csrf_token": ensure_csrf_token(request),
+        },
     )
 
 
@@ -101,11 +107,11 @@ def appointments_page(
         .count()
     )
     scheduled_today = sum(1 for item in todays_appointments if (item.status or "").lower() == "scheduled")
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "appointments.html",
         {
-            "request": request,
             "appointments": todays_appointments,
             "upcoming_appointments": upcoming_appointments,
             "total_appointments": total_appointments,
@@ -149,11 +155,11 @@ def followups_page(
         .limit(250)
         .all()
     )
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "followups.html",
         {
-            "request": request,
             "cases": due_cases,
             "pending_cases": pending_cases,
             "overdue_cases": overdue_cases,

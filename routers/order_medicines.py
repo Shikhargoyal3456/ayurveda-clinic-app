@@ -15,11 +15,18 @@ from app.database import get_db
 from models.ai_features import AIPrescriptionScan
 from models.prescription import Prescription
 from services import ai_provider
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["direct-medicine-ordering"])
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 logger = logging.getLogger(__name__)
+
+_GENERIC_MEDICINE_MAP = {
+    "antacids": "Avipattikar Churna",
+    "proton pump inhibitors": "Hingvastak Churna",
+    "acetaminophen": "Paracetamol",
+}
 
 
 @router.get("/medicines")
@@ -57,6 +64,14 @@ def _dedupe_suggestions(values: list[str]) -> list[str]:
             seen.add(key)
             normalized.append(text)
     return normalized[:6]
+
+
+def _map_generic_suggestions(values: list[str]) -> list[str]:
+    mapped: list[str] = []
+    for value in values:
+        key = str(value or "").strip().lower()
+        mapped.append(_GENERIC_MEDICINE_MAP.get(key, str(value or "").strip()))
+    return mapped
 
 
 def _prefill_from_prescription(prescription: Prescription | None) -> list[dict[str, object]]:
@@ -132,8 +147,7 @@ def order_medicines_page(
     else:
         log_event("otc_order_initiated", {})
     log_event("order_medicines_page_viewed", {"source": source or "direct", "prescription_id": prescription_id})
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "order_medicines.html",
         {
             "request": request,
@@ -207,7 +221,7 @@ async def order_medicines_ai_suggest(
 
         suggested_medicines = parsed.get("suggested_medicines") or parsed.get("medicines") or []
         precautions = parsed.get("precautions") or []
-        suggestions = _dedupe_suggestions(_string_list(suggested_medicines))
+        suggestions = _dedupe_suggestions(_map_generic_suggestions(_string_list(suggested_medicines)))
 
         return {
             "suggested_medicines": suggestions,
@@ -217,6 +231,26 @@ async def order_medicines_ai_suggest(
         }
     except Exception as exc:
         logger.exception("Direct medicine AI suggestion failed: %s", exc)
+        if ai_provider.is_ai_budget_error(exc):
+            fallback_suggestions = _dedupe_suggestions(
+                _map_generic_suggestions(
+                    [
+                        "Antacids",
+                        "Proton pump inhibitors",
+                        "Acetaminophen",
+                    ]
+                )
+            )
+            return {
+                "suggested_medicines": fallback_suggestions,
+                "precautions": [
+                    ai_provider.ai_budget_fallback_message(),
+                    "Verify the prescription with your doctor or pharmacist before placing the order.",
+                ],
+                "provider": "fallback",
+                "error": str(exc),
+                "disclaimer": "AI suggestions are advisory. Consult a doctor if needed.",
+            }
         return JSONResponse(
             {
                 "suggested_medicines": [],

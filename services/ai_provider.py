@@ -4,13 +4,15 @@ import os
 import re
 import time
 import asyncio
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Iterator, List
+from threading import Lock
 
 from google import genai
 from google.genai import types
 
-from app.config import BASE_DIR, load_dotenv
+from app.config import BASE_DIR, load_dotenv, settings
 from services.cache_service import cache_result
 
 
@@ -29,6 +31,8 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "30"))
+_AI_SPEND_LOCK = Lock()
+_AI_SPEND_LEDGER = BASE_DIR / "logs" / "ai_spend_guard.json"
 
 _PHI_FIELDS = {
     "patient_name",
@@ -43,11 +47,58 @@ _PHI_FIELDS = {
     "patient_id",
 }
 
+_AI_BUDGET_ERROR_MARKERS = (
+    "spend cap",
+    "daily spend cap",
+    "daily budget",
+    "quota",
+    "resource exhausted",
+    "billing",
+)
+
 
 def _cacheable_prompt_value(value: str | List[Dict[str, str]]) -> str:
     if isinstance(value, list):
         return json.dumps(value, ensure_ascii=True, sort_keys=True)
     return str(value or "")
+
+
+def _load_spend_state() -> dict[str, Any]:
+    if not _AI_SPEND_LEDGER.exists():
+        return {"date": "", "estimated_spend_usd": 0.0, "calls": 0}
+    try:
+        return json.loads(_AI_SPEND_LEDGER.read_text(encoding="utf-8"))
+    except Exception:
+        return {"date": "", "estimated_spend_usd": 0.0, "calls": 0}
+
+
+def _enforce_ai_budget() -> None:
+    today = datetime.now(timezone.utc).date().isoformat()
+    estimated_call_cost = max(0.0, float(getattr(settings, "ai_max_cost_per_call_usd", 0.0)))
+    daily_budget = max(0.0, float(getattr(settings, "ai_daily_budget_usd", 0.0)))
+    if not daily_budget:
+        return
+
+    with _AI_SPEND_LOCK:
+        state = _load_spend_state()
+        if state.get("date") != today:
+            state = {"date": today, "estimated_spend_usd": 0.0, "calls": 0}
+        projected_spend = float(state.get("estimated_spend_usd", 0.0)) + estimated_call_cost
+        if projected_spend > daily_budget:
+            raise RuntimeError("AI daily spend cap reached. Please try again later.")
+        state["estimated_spend_usd"] = round(projected_spend, 4)
+        state["calls"] = int(state.get("calls", 0) or 0) + 1
+        _AI_SPEND_LEDGER.parent.mkdir(parents=True, exist_ok=True)
+        _AI_SPEND_LEDGER.write_text(json.dumps(state, ensure_ascii=True, indent=2), encoding="utf-8")
+
+
+def is_ai_budget_error(exc: Exception) -> bool:
+    message = str(exc or "").strip().lower()
+    return any(marker in message for marker in _AI_BUDGET_ERROR_MARKERS)
+
+
+def ai_budget_fallback_message() -> str:
+    return "AI service is currently unavailable. Please try again later or use manual entry."
 
 
 def chat_with_gemini(
@@ -63,6 +114,7 @@ def chat_with_gemini(
     """
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
+    _enforce_ai_budget()
 
     if isinstance(system_prompt, list):
         prompt_parts = []
@@ -114,6 +166,7 @@ def stream_with_gemini(
 ) -> Iterator[str]:
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
+    _enforce_ai_budget()
 
     if isinstance(system_prompt, list):
         prompt_parts = []
@@ -159,6 +212,7 @@ def chat_with_groq(
     """
     if not GROQ_API_KEY:
         raise RuntimeError("GROQ_API_KEY is not configured.")
+    _enforce_ai_budget()
 
     try:
         import groq
@@ -245,6 +299,28 @@ async def call_gemini(
         max_output_tokens,
     )
     return str(result.get("text") or "").strip()
+
+
+async def call_gemini_with_fallback(
+    prompt: str,
+    *,
+    system_prompt: str = "You are a careful healthcare AI assistant. Return grounded, structured output.",
+    temperature: float = 0.3,
+    response_mime_type: str | None = None,
+    max_output_tokens: int = 2048,
+) -> str:
+    try:
+        return await call_gemini(
+            prompt,
+            system_prompt=system_prompt,
+            temperature=temperature,
+            response_mime_type=response_mime_type,
+            max_output_tokens=max_output_tokens,
+        )
+    except Exception as exc:
+        if is_ai_budget_error(exc):
+            return ai_budget_fallback_message()
+        raise
 
 
 async def call_ai_with_retry(

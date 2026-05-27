@@ -31,7 +31,7 @@
                         <td><span class="sparkline" aria-hidden="true"><i></i><i></i><i></i><i></i></span></td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-heart-pulse"></i></div><h3 class="empty-state__title">No vitals recorded yet</h3><p class="empty-state__message">Weight, pulse, and other vital trends will appear here after the first recording.</p><a href="/emr/patient-registry" class="btn btn-primary btn-sm">Open Patient Registry</a></div></td></tr>
+                    <tr><td colspan="4"><div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-heart-pulse"></i></div><h3 class="empty-state__title">No vitals recorded yet</h3><p class="empty-state__message">Weight, pulse, and other vital trends will appear here after the first recording.</p><a href="/emr/patient-registry" class="btn btn-primary btn-sm">{{ 'Open ' ~ 'Patient' ~ ' Registry' }}</a></div></td></tr>
                 {% endfor %}
                     </tbody>
                 </table>

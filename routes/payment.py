@@ -23,6 +23,7 @@ from app.config import settings
 from app.database import commit_with_retry, get_db
 from app.models import Doctor, Patient
 from models.payment import Payment
+from shared.template_engine import render_template
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -59,7 +60,8 @@ def daily_payments(
         .scalar()
     )
     patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).order_by(Patient.name.asc()).limit(500).all()
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "payments/daily.html",
         {

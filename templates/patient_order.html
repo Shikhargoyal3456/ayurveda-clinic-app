@@ -8,56 +8,48 @@
 {% block title %}Kash AI | Patient Order{% endblock %}
 
 {% block page %}
-<div class="site-container section-stack fade-in-up">
-    <section class="page-header">
-        <div>
-            <div class="breadcrumbs mb-2"><span>Home</span><span>Medicines</span><span>Patient order</span></div>
-            <p class="eyebrow">Order tracking and checkout</p>
+<div class="site-container section-stack fade-in-up patient-order-modern">
+    <section class="patient-order-hero glass-card">
+        <div class="patient-order-hero__copy">
+            <span class="patient-order-kicker"><i class="fa-solid fa-bag-shopping" aria-hidden="true"></i> Fast prescription-led checkout</span>
             <h1>Complete a patient medicine order</h1>
-            <p class="mb-0">Use this lighter order page for prescription-led flows, patient details, and nearby pharmacy selection.</p>
+            <p>Use this lighter order page for prescription-led flows, patient details, and nearby pharmacy selection in one cleaner experience.</p>
         </div>
-    </section>
-
-    <section class="hero-grid">
-        <article class="form-panel">
+        <article class="patient-order-advisory">
             <p class="eyebrow mb-2">Advisory assistant</p>
             <label for="symptoms" class="form-label">Symptoms</label>
             <textarea id="symptoms" class="form-control" rows="4" placeholder="Describe your symptoms..."></textarea>
-            <button type="button" id="aiButton" class="btn btn-primary mt-3">Get AI Suggestions</button>
-            <div id="aiResult" class="alert alert-info mt-3 d-none"></div>
-        </article>
-        <article class="hero-visual">
-            <p class="eyebrow">Fast order flow</p>
-            <h3>Prescription-linked medicine ordering without friction.</h3>
-            <p class="mb-0">Search medicines, select a pharmacy, review the cart, and proceed to payment from a calmer patient experience.</p>
+            <button type="button" id="aiButton" class="btn-modern mt-3">Get AI Suggestions</button>
+            <div id="aiResult" class="patient-order-inline-status d-none"></div>
         </article>
     </section>
 
-    <div class="store-layout">
+    <div class="patient-order-layout">
         <div class="section-stack">
-            <section class="table-panel">
+            <section class="patient-order-surface-card">
                 <label for="medicineSearch" class="form-label">Search medicines</label>
                 <input id="medicineSearch" class="form-control" type="search" placeholder="Search by medicine name">
                 <div id="medicineList" class="stack-list mt-4"></div>
                 <p id="medicineEmpty" class="text-muted mt-3 mb-0 d-none">No medicines found.</p>
-                <div class="card compact-card mt-4">
+                <div class="patient-order-help-card mt-4">
                     <h3 class="h5">Medicine not found?</h3>
                     <div class="hero-actions">
                         <input type="text" id="requestMedicine" class="form-control" placeholder="Enter medicine name">
                         <input type="text" id="requestBrand" class="form-control" placeholder="Brand if known">
                     </div>
-                    <button onclick="requestMissingMedicine()" class="btn btn-outline-success mt-3" type="button">Request Medicine</button>
+                    <button onclick="requestMissingMedicine()" class="btn-modern btn-modern--secondary mt-3" type="button">Request Medicine</button>
                 </div>
             </section>
-            <section class="table-panel">
+
+            <section class="patient-order-surface-card">
                 <p class="eyebrow mb-2">Nearby pharmacies</p>
-                <button id="findPharmaciesBtn" type="button" class="btn btn-outline-success">Find Nearby Pharmacies</button>
+                <button id="findPharmaciesBtn" type="button" class="btn-modern btn-modern--secondary">Find Nearby Pharmacies</button>
                 <div id="pharmacyList" class="stack-list mt-3"></div>
                 <input type="hidden" id="nearby_place_id" name="nearby_place_id">
             </section>
         </div>
 
-        <aside class="table-panel cart-panel">
+        <aside class="patient-order-surface-card patient-order-cart-panel">
             <div class="page-header mb-3">
                 <div>
                     <p class="eyebrow">Cart</p>
@@ -86,12 +78,112 @@
                     <label for="patientAddress" class="form-label">Address</label>
                     <textarea id="patientAddress" name="patient_address" class="form-control" rows="3" autocomplete="street-address" required>{{ (prefill_patient.address if prefill_patient is defined else '') | e }}</textarea>
                 </div>
-                <button id="orderButton" class="btn btn-dark w-100" type="submit">Proceed to Payment</button>
-                <div id="orderMessage" class="alert alert-info d-none"></div>
+                <button id="orderButton" class="btn-modern w-100" type="submit">Proceed to Payment</button>
+                <div id="orderMessage" class="patient-order-inline-status d-none"></div>
             </form>
         </aside>
     </div>
 </div>
+
+<style>
+.patient-order-modern {
+    padding-bottom: 40px;
+}
+
+.patient-order-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+    gap: 24px;
+    padding: 30px;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 32%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 250, 249, 0.94) 100%);
+}
+
+.patient-order-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--ai-indigo);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.patient-order-hero h1 {
+    margin-top: 18px;
+}
+
+.patient-order-hero p {
+    color: var(--gray-600);
+    line-height: 1.75;
+}
+
+.patient-order-advisory,
+.patient-order-surface-card,
+.patient-order-help-card,
+.patient-order-inline-status {
+    border-radius: 24px;
+}
+
+.patient-order-advisory,
+.patient-order-surface-card,
+.patient-order-help-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    box-shadow: var(--shadow-md);
+}
+
+.patient-order-advisory,
+.patient-order-surface-card {
+    padding: 24px;
+}
+
+.patient-order-help-card {
+    padding: 20px;
+}
+
+.patient-order-inline-status {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--gray-50);
+}
+
+.patient-order-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.88fr);
+    gap: 24px;
+}
+
+.patient-order-cart-panel {
+    position: sticky;
+    top: 100px;
+    align-self: start;
+}
+
+@media (max-width: 1024px) {
+    .patient-order-hero,
+    .patient-order-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .patient-order-cart-panel {
+        position: static;
+    }
+}
+
+@media (max-width: 720px) {
+    .patient-order-hero,
+    .patient-order-advisory,
+    .patient-order-surface-card {
+        padding: 20px;
+    }
+}
+</style>
 
 <script>
 window.prefillMedicines = {{ prefill_medicines | default(none) | tojson | safe }};
@@ -115,20 +207,175 @@ const pharmacyInput = document.getElementById("nearby_place_id");
 let medicines = [];
 let cart = [];
 function money(value) { return `₹${Number(value || 0)}`; }
-function escapeHtml(value) { return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\"/g, "&quot;").replace(/'/g, "&#039;"); }
 function updateTotal() { const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0); cartTotal.textContent = money(total); }
 function selectedPharmacyId() { return cart.length ? cart[0].pharmacy_id : ""; }
-function renderMedicines() { const query = medicineSearch.value.trim().toLowerCase(); const visible = medicines.filter((medicine) => medicine.name.toLowerCase().includes(query)); medicineList.innerHTML = ""; medicineEmpty.classList.toggle("d-none", visible.length > 0); visible.forEach((medicine) => { const row = document.createElement("div"); row.className = "stack-item"; row.innerHTML = `<div class="d-flex justify-content-between align-items-center gap-3"><div><strong>${medicine.name}</strong><div class="text-muted small">${medicine.category || "Medicine"} · ${money(medicine.price)} / ${medicine.unit}</div></div><button type="button" class="btn btn-outline-success btn-sm">Add</button></div>`; row.querySelector("button").addEventListener("click", () => addToCart(medicine)); medicineList.appendChild(row); }); }
-function renderCart() { cartItems.innerHTML = ""; cartEmpty.classList.toggle("d-none", cart.length > 0); pharmacyId.value = selectedPharmacyId(); cart.forEach((item) => { const row = document.createElement("div"); row.className = "stack-item"; row.innerHTML = `<div class="d-flex justify-content-between gap-3 mb-2"><div><strong>${item.name}</strong><div class="text-muted small">${money(item.price)} each</div></div><button type="button" class="btn btn-outline-danger btn-sm">Remove</button></div><label class="form-label small mb-1">Quantity</label><input class="form-control" type="number" min="1" value="${item.qty}">`; row.querySelector("button").addEventListener("click", () => { cart = cart.filter((cartItem) => cartItem.medicine_id !== item.medicine_id); renderCart(); }); row.querySelector("input").addEventListener("input", (event) => { item.qty = Math.max(1, Number(event.target.value || 1)); renderCart(); }); cartItems.appendChild(row); }); updateTotal(); }
+function renderMedicines() {
+  const query = medicineSearch.value.trim().toLowerCase();
+  const visible = medicines.filter((medicine) => medicine.name.toLowerCase().includes(query));
+  medicineList.replaceChildren();
+  medicineEmpty.classList.toggle("d-none", visible.length > 0);
+  visible.forEach((medicine) => {
+    const row = document.createElement("div");
+    row.className = "stack-item";
+    const shell = document.createElement("div");
+    shell.className = "d-flex justify-content-between align-items-center gap-3";
+    const details = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = String(medicine.name || "");
+    const meta = document.createElement("div");
+    meta.className = "text-muted small";
+    meta.textContent = `${medicine.category || "Medicine"} · ${money(medicine.price)} / ${medicine.unit}`;
+    details.append(name, meta);
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn btn-outline-success btn-sm";
+    button.textContent = "Add";
+    button.addEventListener("click", () => addToCart(medicine));
+    shell.append(details, button);
+    row.appendChild(shell);
+    medicineList.appendChild(row);
+  });
+}
+function renderCart() {
+  cartItems.replaceChildren();
+  cartEmpty.classList.toggle("d-none", cart.length > 0);
+  pharmacyId.value = selectedPharmacyId();
+  cart.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "stack-item";
+    const top = document.createElement("div");
+    top.className = "d-flex justify-content-between gap-3 mb-2";
+    const details = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = String(item.name || "");
+    const meta = document.createElement("div");
+    meta.className = "text-muted small";
+    meta.textContent = `${money(item.price)} each`;
+    details.append(name, meta);
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "btn btn-outline-danger btn-sm";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => {
+      cart = cart.filter((cartItem) => cartItem.medicine_id !== item.medicine_id);
+      renderCart();
+    });
+    top.append(details, removeButton);
+    const label = document.createElement("label");
+    label.className = "form-label small mb-1";
+    label.textContent = "Quantity";
+    const input = document.createElement("input");
+    input.className = "form-control";
+    input.type = "number";
+    input.min = "1";
+    input.value = String(item.qty);
+    input.addEventListener("input", (event) => {
+      item.qty = Math.max(1, Number(event.target.value || 1));
+      renderCart();
+    });
+    row.append(top, label, input);
+    cartItems.appendChild(row);
+  });
+  updateTotal();
+}
 function addToCart(medicine) { if (cart.length && selectedPharmacyId() !== medicine.pharmacy_id) { orderMessage.textContent = "Please order from one pharmacy at a time."; orderMessage.classList.remove("d-none"); return; } const existing = cart.find((item) => item.medicine_id === medicine.id); if (existing) { existing.qty += 1; } else { cart.push({ medicine_id: medicine.id, name: medicine.name, price: medicine.price, qty: 1, pharmacy_id: medicine.pharmacy_id }); } orderMessage.classList.add("d-none"); renderCart(); }
 function applyPrefillMedicines() { if (cart.length || !Array.isArray(window.prefillMedicines)) { return; } if (!window.prefillMedicines.length) { orderMessage.textContent = "No medicines available for ordering"; orderMessage.classList.remove("d-none"); return; } const matchedMedicines = []; const unavailableNames = []; window.prefillMedicines.forEach((prefillItem) => { const requestedName = String(prefillItem.name || "").trim().toLowerCase(); if (!requestedName) { return; } const matched = medicines.find((medicine) => medicine.name.trim().toLowerCase() === requestedName); if (!matched) { unavailableNames.push(prefillItem.name); return; } matchedMedicines.push({ medicine: matched, qty: Number(prefillItem.qty || 1) }); }); matchedMedicines.forEach((entry) => { addToCart(entry.medicine); const cartItem = cart.find((item) => item.medicine_id === entry.medicine.id); if (cartItem) { cartItem.qty = Math.max(cartItem.qty, entry.qty); } }); renderCart(); if (!matchedMedicines.length) { orderMessage.textContent = "No medicines available for ordering"; orderMessage.classList.remove("d-none"); } else if (unavailableNames.length) { orderMessage.textContent = `Some prescription medicines are not in the pharmacy catalog: ${unavailableNames.join(", ")}`; orderMessage.classList.remove("d-none"); } }
 async function loadMedicines() { const response = await fetch("/patient/medicines"); medicines = await response.json(); renderMedicines(); applyPrefillMedicines(); }
 async function requestMissingMedicine() { const medicineName = document.getElementById("requestMedicine").value.trim(); const brand = document.getElementById("requestBrand").value.trim(); if (!medicineName) { showToast("Enter a medicine name first.", "error"); return; } const response = await fetch("/api/patient/request-medicine", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: medicineName, brand }) }); const result = await response.json(); if (response.ok && result.success) { showToast("Request sent. Nearby pharmacies will be notified.", "success"); document.getElementById("requestMedicine").value = ""; document.getElementById("requestBrand").value = ""; } else { showToast(result.detail || "Unable to send request.", "error"); } }
 medicineSearch.addEventListener("input", renderMedicines);
-document.getElementById("findPharmaciesBtn").addEventListener("click", () => { if (!navigator.geolocation) { alert("Geolocation not supported"); return; } navigator.geolocation.getCurrentPosition(async (pos) => { const lat = pos.coords.latitude; const lng = pos.coords.longitude; pharmacyList.innerHTML = "Loading..."; try { const res = await fetch(`/patient/nearby-pharmacies?lat=${lat}&lng=${lng}`); const data = await res.json(); pharmacyList.innerHTML = ""; if (!data.length) { pharmacyList.innerHTML = "<p class='text-muted'>No pharmacies found</p>"; return; } data.forEach((pharmacy) => { const div = document.createElement("div"); div.className = "stack-item"; div.innerHTML = `<div class="d-flex justify-content-between"><div><strong>${pharmacy.name}</strong><br><small>${pharmacy.vicinity}</small><br><small>⭐ ${pharmacy.rating || "N/A"}</small><br><small>${pharmacy.open_now ? "Open" : "Closed"}</small></div><button class="btn btn-sm btn-primary">Select</button></div>`; const selectButton = div.querySelector("button"); selectButton.onclick = () => { pharmacyInput.value = pharmacy.place_id; document.querySelectorAll("#pharmacyList .stack-item").forEach(el => el.classList.remove("surface-tint")); document.querySelectorAll("#pharmacyList button").forEach(btn => { btn.disabled = false; btn.innerText = "Select"; }); div.classList.add("surface-tint"); selectButton.disabled = true; selectButton.innerText = "Selected"; alert(`Selected: ${pharmacy.name}`); }; pharmacyList.appendChild(div); }); } catch (err) { pharmacyList.innerHTML = "<p class='text-danger'>Failed to load pharmacies</p>"; } }); });
-aiButton.addEventListener("click", async () => { aiButton.disabled = true; aiButton.textContent = "Getting suggestions..."; aiResult.classList.add("d-none"); try { const formData = new FormData(); formData.append("symptoms", symptoms.value); formData.append("csrf_token", csrfToken); const response = await fetch("/patient/ai-suggest", { method: "POST", body: formData }); const payload = await response.json(); aiResult.innerHTML = `<pre class="mb-0 text-wrap">${escapeHtml(payload.suggestion || payload.error || "Add more symptom detail for a clearer AI suggestion.")}</pre>`; aiResult.classList.remove("d-none"); } catch (error) { aiResult.innerHTML = '<pre class="mb-0 text-wrap">We could not complete the AI request.</pre>'; aiResult.classList.remove("d-none"); } finally { aiButton.disabled = false; aiButton.textContent = "Get AI Suggestions"; } });
+document.getElementById("findPharmaciesBtn").addEventListener("click", () => {
+  if (!navigator.geolocation) { alert("Geolocation not supported"); return; }
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    pharmacyList.textContent = "Loading...";
+    try {
+      const res = await fetch(`/patient/nearby-pharmacies?lat=${lat}&lng=${lng}`);
+      const data = await res.json();
+      pharmacyList.replaceChildren();
+      if (!data.length) {
+        const empty = document.createElement("p");
+        empty.className = "text-muted";
+        empty.textContent = "No pharmacies found";
+        pharmacyList.appendChild(empty);
+        return;
+      }
+      data.forEach((pharmacy) => {
+        const div = document.createElement("div");
+        div.className = "stack-item";
+        const shell = document.createElement("div");
+        shell.className = "d-flex justify-content-between";
+        const details = document.createElement("div");
+        const name = document.createElement("strong");
+        name.textContent = String(pharmacy.name || "");
+        details.appendChild(name);
+        details.appendChild(document.createElement("br"));
+        const vicinity = document.createElement("small");
+        vicinity.textContent = String(pharmacy.vicinity || "");
+        details.appendChild(vicinity);
+        details.appendChild(document.createElement("br"));
+        const rating = document.createElement("small");
+        rating.textContent = `⭐ ${pharmacy.rating || "N/A"}`;
+        details.appendChild(rating);
+        details.appendChild(document.createElement("br"));
+        const openNow = document.createElement("small");
+        openNow.textContent = pharmacy.open_now ? "Open" : "Closed";
+        details.appendChild(openNow);
+        const selectButton = document.createElement("button");
+        selectButton.className = "btn btn-sm btn-primary";
+        selectButton.type = "button";
+        selectButton.textContent = "Select";
+        selectButton.onclick = () => {
+          pharmacyInput.value = pharmacy.place_id;
+          document.querySelectorAll("#pharmacyList .stack-item").forEach(el => el.classList.remove("surface-tint"));
+          document.querySelectorAll("#pharmacyList button").forEach(btn => { btn.disabled = false; btn.innerText = "Select"; });
+          div.classList.add("surface-tint");
+          selectButton.disabled = true;
+          selectButton.innerText = "Selected";
+          alert(`Selected: ${pharmacy.name}`);
+        };
+        shell.append(details, selectButton);
+        div.appendChild(shell);
+        pharmacyList.appendChild(div);
+      });
+    } catch (err) {
+      pharmacyList.replaceChildren();
+      const error = document.createElement("p");
+      error.className = "text-danger";
+      error.textContent = "Failed to load pharmacies";
+      pharmacyList.appendChild(error);
+    }
+  });
+});
+aiButton.addEventListener("click", async () => {
+  aiButton.disabled = true;
+  aiButton.textContent = "Getting suggestions...";
+  aiResult.classList.add("d-none");
+  try {
+    const formData = new FormData();
+    formData.append("symptoms", symptoms.value);
+    formData.append("csrf_token", csrfToken);
+    const response = await fetch("/patient/ai-suggest", { method: "POST", body: formData });
+    const payload = await response.json();
+    aiResult.replaceChildren();
+    const pre = document.createElement("pre");
+    pre.className = "mb-0 text-wrap";
+    pre.textContent = String(payload.suggestion || payload.error || "Add more symptom detail for a clearer AI suggestion.");
+    aiResult.appendChild(pre);
+    aiResult.classList.remove("d-none");
+  } catch (error) {
+    aiResult.replaceChildren();
+    const pre = document.createElement("pre");
+    pre.className = "mb-0 text-wrap";
+    pre.textContent = "We could not complete the AI request.";
+    aiResult.appendChild(pre);
+    aiResult.classList.remove("d-none");
+  } finally {
+    aiButton.disabled = false;
+    aiButton.textContent = "Get AI Suggestions";
+  }
+});
 orderForm.addEventListener("submit", (event) => { if (!cart.length) { event.preventDefault(); orderMessage.textContent = "Add at least one medicine before placing the order."; orderMessage.classList.remove("d-none"); return; } if (!selectedPharmacyId()) { event.preventDefault(); alert("Please select a pharmacy"); return; } medicinesJson.value = JSON.stringify(cart); pharmacyId.value = selectedPharmacyId(); orderButton.disabled = true; orderButton.textContent = "Processing..."; });
 document.addEventListener("DOMContentLoaded", () => { loadMedicines().catch(() => { medicineEmpty.textContent = "Medicines are temporarily unavailable."; medicineEmpty.classList.remove("d-none"); }); });
 </script>
 {% endblock %}
-

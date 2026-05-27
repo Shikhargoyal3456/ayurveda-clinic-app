@@ -17,6 +17,7 @@ from models.emr import EMRConsultation, EMRPrescription, EMRPatientProfile
 from routers.emr import _base_context, _patient_for_doctor, _profile_for_patient
 from services.ambient_emr import AmbientEMRService
 from services.emr_service import ensure_emr_profile, serialize_consultation, serialize_prescription, write_emr_audit_log
+from shared.template_engine import render_template
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -124,7 +125,10 @@ def ambient_scribe_page(
     if patient_id is not None:
         patient = _patient_for_doctor(db, doctor.id, patient_id)
         profile = _profile_for_patient(db, patient)
-    return templates.TemplateResponse(request, "emr/ambient_scribe.html", _ambient_context(request, doctor, db, patient=patient, profile=profile))
+    return render_template(templates, request,
+        "emr/ambient_scribe.html",
+        {"request": request, **_ambient_context(request, doctor, db, patient=patient, profile=profile)},
+    )
 
 
 @router.post("/api/ambient-emr/session/start")

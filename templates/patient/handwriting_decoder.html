@@ -1,0 +1,343 @@
+{% extends "patient_simple_base.html" %}
+{% block meta %}<meta name="csrf-token" content="{{ csrf_token }}">{% endblock %}
+{% block title %}KASH AI - Decode Handwritten Prescription{% endblock %}
+
+{% block page %}
+<div
+    class="handwriting-decoder-page"
+    id="prescriptionDecoderApp"
+    data-decode-endpoint="/api/prescription/decode-handwriting"
+    data-enhance-endpoint="/prescription/enhance-image"
+    data-suggest-endpoint="/prescription/suggest-medicine"
+    data-medicine-db-endpoint="/prescription/medicine-db"
+    data-feedback-endpoint="/api/prescription/decoder-feedback"
+>
+    <section class="decoder-hero glass-card">
+        <div>
+            <span class="decoder-kicker"><i class="fa-solid fa-pen-fancy" aria-hidden="true"></i> AI handwriting decoder</span>
+            <h1>Decode Handwritten Prescription</h1>
+            <p>Upload a prescription, enhance the image before OCR, review alternative medicine matches, and correct unclear lines before you trust the result.</p>
+            <div class="decoder-actions">
+                <button type="button" class="btn-modern" onclick="document.getElementById('prescriptionImage').click()">Upload prescription</button>
+                <a href="/order-medicines?tab=scan" class="btn-modern btn-modern--secondary">Open scan in medicine order flow</a>
+            </div>
+        </div>
+        <div class="decoder-hero__panel">
+            <div class="decoder-stat-card"><strong>Image enhancement</strong><span>Sharpening, contrast, denoise, deskew, and ROI focus before OCR</span></div>
+            <div class="decoder-stat-card"><strong>Medicine suggestions</strong><span>Fuzzy matching against clinic medicine data with top alternatives</span></div>
+            <div class="decoder-stat-card"><strong>Safer verification</strong><span>Confidence breakdown and unclear lines are flagged for manual review</span></div>
+        </div>
+    </section>
+
+    <section class="decoder-surface-card">
+        <div class="upload-area" onclick="document.getElementById('prescriptionImage').click()">
+            <i class="fas fa-cloud-upload-alt fa-3x" aria-hidden="true"></i>
+            <p>Click to upload prescription image or PDF</p>
+            <small>Supports JPG, PNG, PDF up to 5MB</small>
+            <input type="file" id="prescriptionImage" accept="image/*,application/pdf,.pdf" hidden>
+        </div>
+        <div class="decoder-toolbar">
+            <div id="fileName" class="decoder-status" aria-live="polite">No file selected yet.</div>
+            <label class="toggle-chip">
+                <input type="checkbox" id="enhanceToggle" checked>
+                <span>Enhance image before OCR</span>
+            </label>
+        </div>
+        <div class="preview-grid">
+            <div class="preview-card">
+                <strong>Original preview</strong>
+                <img id="originalPreview" class="preview-image" alt="Original prescription preview" hidden>
+                <p id="originalPreviewPlaceholder" class="preview-placeholder">Upload an image or PDF to preview it here.</p>
+            </div>
+            <div class="preview-card">
+                <strong>Enhanced preview</strong>
+                <img id="enhancedPreview" class="preview-image" alt="Enhanced prescription preview" hidden>
+                <p id="enhancedPreviewPlaceholder" class="preview-placeholder">Image enhancement will appear here after preprocessing.</p>
+            </div>
+        </div>
+        <div class="decoder-actions">
+            <button type="button" class="btn-modern" id="enhanceBtn" disabled>Enhance Image</button>
+            <button type="button" class="btn-modern" id="decodeBtn" disabled>Decode Handwriting</button>
+            <a href="/order-medicines?tab=upload" class="btn-modern btn-modern--secondary">Use standard prescription upload</a>
+        </div>
+    </section>
+
+    <section id="loadingSection" class="decoder-surface-card decoder-loading" hidden>
+        <div class="ai-spinner"></div>
+        <p id="loadingMessage">AI is reading the doctor&apos;s handwriting...</p>
+        <small>This can take 10 to 15 seconds on larger prescriptions.</small>
+    </section>
+
+    <section id="resultSection" class="decoder-surface-card" hidden>
+        <div class="section-header">
+            <div>
+                <span class="decoder-kicker">Decoded result</span>
+                <h2>Prescription interpretation</h2>
+            </div>
+            <div class="decoder-actions decoder-actions--tight">
+                <button type="button" id="downloadDecodedTextBtn" class="btn-modern btn-modern--secondary">Download text</button>
+                <button type="button" id="feedbackBtn" class="btn-modern btn-modern--secondary">This is incorrect</button>
+            </div>
+        </div>
+        <div id="decodedContent" class="decoded-content"></div>
+        <div class="editor-card">
+            <label for="manualEditor"><strong>Manual review notes</strong></label>
+            <textarea id="manualEditor" rows="6" placeholder="Correct unclear medicine names, dosage, or instructions here before using the result."></textarea>
+        </div>
+        <div class="decoder-disclaimer">
+            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+            <p>AI interpretation may not be 100% accurate. Always verify unclear medicines or dosages with your doctor or pharmacist before dispensing or ordering.</p>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.handwriting-decoder-page {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    display: grid;
+    gap: 24px;
+}
+
+.decoder-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.95fr);
+    gap: 24px;
+    padding: 32px;
+    background:
+        radial-gradient(circle at top right, rgba(17, 94, 89, 0.14), transparent 34%),
+        linear-gradient(145deg, rgba(255, 251, 245, 0.96), rgba(246, 252, 250, 0.96));
+}
+
+.decoder-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #0f766e;
+}
+
+.decoder-hero h1,
+.decoder-surface-card h2 {
+    margin: 16px 0 0;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    color: var(--gray-900);
+}
+
+.decoder-hero h1 {
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    line-height: 1.08;
+}
+
+.decoder-hero p,
+.decoder-status,
+.decoder-stat-card span,
+.decoder-disclaimer p,
+.medicine-card p,
+.decoded-meta,
+.preview-placeholder,
+.editor-card textarea {
+    color: var(--gray-600);
+    line-height: 1.75;
+}
+
+.decoder-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.decoder-actions--tight {
+    margin-top: 0;
+}
+
+.decoder-hero__panel,
+.decoded-content,
+.medicines-section,
+.medicine-detail-list,
+.medicine-info-list,
+.image-quality-list,
+.editor-card {
+    display: grid;
+    gap: 14px;
+}
+
+.decoder-stat-card,
+.decoder-surface-card,
+.medicine-card,
+.decoded-meta-card,
+.unreadable-note,
+.preview-card,
+.editor-card,
+.quality-card {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: var(--shadow-md);
+    border-radius: 24px;
+}
+
+.decoder-stat-card,
+.preview-card,
+.quality-card,
+.editor-card {
+    padding: 20px 22px;
+}
+
+.decoder-surface-card {
+    padding: 26px;
+}
+
+.upload-area {
+    border: 2px dashed var(--primary);
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--gray-50);
+    transition: background var(--transition-slow), border-color var(--transition-slow), transform var(--transition-slow);
+}
+
+.upload-area:hover {
+    background: rgba(26, 127, 107, 0.08);
+    border-color: var(--primary-glow);
+    transform: translateY(-2px);
+}
+
+.decoder-toolbar {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.toggle-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(15, 118, 110, 0.08);
+    color: #115e59;
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+
+.preview-grid,
+.decoded-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.preview-image {
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    border-radius: 18px;
+    margin-top: 12px;
+    background: #f8fafc;
+}
+
+.decoded-meta-card {
+    padding: 16px 18px;
+}
+
+.medicine-card {
+    padding: 22px;
+}
+
+.medicine-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.medicine-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.detail-pill,
+.confidence-badge,
+.match-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.detail-pill,
+.match-chip {
+    background: rgba(15, 118, 110, 0.08);
+    color: #115e59;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+
+.confidence-high {
+    background: rgba(16, 185, 129, 0.12);
+    color: #047857;
+}
+
+.confidence-medium {
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+}
+
+.confidence-low {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}
+
+.suggestion-select,
+.editor-card textarea {
+    width: 100%;
+    border: 1px solid rgba(203, 213, 225, 0.95);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font: inherit;
+    background: white;
+}
+
+.raw-text-card,
+.unreadable-note {
+    padding: 18px;
+}
+
+.decoder-disclaimer {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(254, 242, 242, 0.85);
+    color: #7f1d1d;
+}
+
+@media (max-width: 900px) {
+    .decoder-hero,
+    .preview-grid,
+    .decoded-meta-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', path='js/prescription_decoder.js') }}"></script>
+{% endblock %}

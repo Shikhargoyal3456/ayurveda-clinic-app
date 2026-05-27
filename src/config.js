@@ -30,6 +30,15 @@ function sanitizeWhatsAppNumber(number) {
 const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 3000),
+  allowedOrigins: String(process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean),
+  trustProxy: String(process.env.TRUST_PROXY || 'true').toLowerCase() === 'true',
+  apiIpRateLimitRequests: Number(process.env.NODE_API_IP_RATE_LIMIT_REQUESTS || 60),
+  apiIpRateLimitWindowSeconds: Number(process.env.NODE_API_IP_RATE_LIMIT_WINDOW_SECONDS || 60),
+  aiMaxCostPerCallUsd: Number(process.env.AI_MAX_COST_PER_CALL_USD || 0.10),
+  aiDailyBudgetUsd: Number(process.env.AI_DAILY_BUDGET_USD || 10),
   publicDir: path.join(rootDir, 'public'),
   publicUrl: (process.env.PUBLIC_URL || '').replace(/\/$/, ''),
   kashAiLogoUrl: process.env.KASH_AI_LOGO_URL || '',

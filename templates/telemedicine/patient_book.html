@@ -1,133 +1,486 @@
 {% extends "patient_simple_base.html" %}
 {% set simple_nav = 'health' %}
 {% block title %}Consult Doctor{% endblock %}
+
 {% block page %}
-<section class="landing-hero card" style="padding:2rem;">
-    <div class="content-grid-2" style="align-items:center;">
-        <div class="section-stack" style="gap:1rem;">
-            <span class="section-kicker"><i class="fa-solid fa-stethoscope"></i> Video Consultation</span>
-            <div>
-                <h1>Book a doctor with confidence.</h1>
-                <p style="font-size:1.05rem;">Find the right doctor by specialty, rating, language, and availability, then book a slot that fits your day.</p>
-            </div>
-            <div class="search-bar">
+<div class="consult-modern-page">
+    <section class="consult-hero glass-card">
+        <div class="consult-hero__copy">
+            <span class="consult-kicker"><i class="fa-solid fa-wave-square" aria-hidden="true"></i> AI-guided consultations</span>
+            <h1>Choose a doctor and start a calmer care experience.</h1>
+            <p>
+                Search by specialty, compare experience, and move into a video consultation flow that feels faster, clearer, and more trustworthy.
+            </p>
+            <div class="consult-searchbar">
                 <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
                 <input type="search" placeholder="Search specialty, symptom, or doctor name" aria-label="Search doctor">
-                <button class="primary-btn" type="button">Search</button>
+                <button class="btn-modern" type="button">Search</button>
             </div>
-            <div class="hero-actions">
-                <span class="pill-chip is-active">Ayurveda</span>
-                <span class="pill-chip">General Physician</span>
-                <span class="pill-chip">Skin & Hair</span>
-                <span class="pill-chip">Women’s Health</span>
-            </div>
-        </div>
-        <div class="card" style="padding:1.25rem;">
-            <p class="eyebrow">AI match suggestion</p>
-            <h3>Best fit: Dr. {{ doctors[0].name if doctors else 'Care Specialist' }}</h3>
-            <p>Kash AI recommends a doctor with strong patient ratings, fast availability, and the right specialty for common symptoms.</p>
-            <div class="feature-card surface-muted">
-                <strong>Why this match?</strong>
-                <p>High rating, consultation availability today, and strong experience in this care category.</p>
+            <div class="consult-chip-row">
+                <span class="consult-chip consult-chip--active">Ayurveda</span>
+                <span class="consult-chip">General Physician</span>
+                <span class="consult-chip">Skin & Hair</span>
+                <span class="consult-chip">Women’s Health</span>
             </div>
         </div>
-    </div>
-</section>
+        <div class="consult-hero__panel">
+            <div class="consult-panel-card">
+                <span class="consult-panel-card__label">AI match suggestion</span>
+                <h2>Best fit: Dr. {{ doctors[0].name if doctors else 'Care Specialist' }}</h2>
+                <p>Kash AI recommends doctors using ratings, availability, and care category fit.</p>
+            </div>
+            <div class="consult-panel-card consult-panel-card--soft">
+                <strong>Why this works</strong>
+                <p>Better visibility into experience, fee, and next available slots before the booking starts.</p>
+            </div>
+        </div>
+    </section>
 
-<section class="content-grid-2">
-    <article class="card" style="padding:1.5rem;">
-        <div class="page-header mb-3">
-            <div>
-                <p class="eyebrow">Filters</p>
-                <h2 class="h4 mb-0">Choose a doctor</h2>
-                <p class="subtitle" style="margin-top:8px;">Refine your search by experience, language, fee, and availability.</p>
-            </div>
-        </div>
-        <div class="section-stack">
-            <label>
-                <strong>Choose your doctor</strong>
-                <select id="doctorId" class="booking-select" style="width:100%;margin-top:.75rem;">
-                    {% for doctor in doctors %}
-                    <option value="{{ doctor.id }}">Dr. {{ doctor.name }} - {{ doctor.specialization }} - ⭐{{ doctor.rating }}</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <div class="grid-auto-fit">
-                <div class="feature-card surface-muted"><strong>Language</strong><p>English, Hindi, local language support</p></div>
-                <div class="feature-card surface-muted"><strong>Fee range</strong><p>Transparent pricing before booking</p></div>
-                <div class="feature-card surface-muted"><strong>Rating</strong><p>Choose highly rated doctors</p></div>
-                <div class="feature-card surface-muted"><strong>Availability</strong><p>Morning, afternoon, evening slots</p></div>
-            </div>
-        </div>
-    </article>
-
-    <article class="card" style="padding:1.5rem;">
-        <div class="page-header mb-3">
-            <div>
-                <p class="eyebrow">Consultation preview</p>
-                <h2 class="h4 mb-0">What to expect</h2>
-            </div>
-        </div>
-        <div class="feature-card surface-muted">
-            <strong>Video consultation</strong>
-            <p>Talk to your doctor face to face, share your symptoms, review medicines, and receive next steps.</p>
-        </div>
-        <div class="feature-card surface-muted" style="margin-top:1rem;">
-            <strong>Post-consultation flow</strong>
-            <p>Order medicines, upload prescriptions, or book tests & reports right after the call.</p>
-        </div>
-    </article>
-</section>
-
-<section class="card" style="padding:1.5rem;">
-    <div class="page-header mb-3">
-        <div>
-            <p class="eyebrow">Available doctors</p>
-            <h2 class="h4 mb-0">Choose by experience and next available slot</h2>
-        </div>
-    </div>
-    <div class="grid-auto-fit">
-        {% for doctor in doctors %}
-        <article class="feature-card">
-            <div class="hero-actions" style="justify-content:space-between; align-items:flex-start;">
+    <section class="consult-layout">
+        <article class="consult-surface-card consult-sidebar">
+            <div class="section-header">
                 <div>
-                    <h3>Dr. {{ doctor.name }}</h3>
-                    <p>{{ doctor.specialization }}</p>
+                    <span class="section-kicker">Booking filters</span>
+                    <h2>Choose a doctor</h2>
+                    <p>Pick the doctor that matches the care you need today.</p>
                 </div>
-                <span class="section-kicker">⭐ {{ doctor.rating }}</span>
             </div>
-            <p style="margin-top:.75rem;">{{ doctor.experience or '8+' }} years experience · Next available today</p>
-            <div class="hero-actions" style="margin-top:1rem;">
-                <span class="pill-chip is-active">English</span>
-                <span class="pill-chip">Video</span>
-                <span class="pill-chip">₹{{ doctor.fee or 499 }}</span>
+            <label class="consult-label" for="doctorId">Choose your doctor</label>
+            <select id="doctorId" class="consult-select">
+                {% for doctor in doctors %}
+                <option value="{{ doctor.id }}">Dr. {{ doctor.name }} - {{ doctor.specialization }} - ⭐{{ doctor.rating }}</option>
+                {% endfor %}
+            </select>
+            <div class="consult-mini-grid">
+                <div class="consult-mini-card">
+                    <strong>Language</strong>
+                    <p>English, Hindi, and regional options</p>
+                </div>
+                <div class="consult-mini-card">
+                    <strong>Fee range</strong>
+                    <p>Transparent consultation pricing</p>
+                </div>
+                <div class="consult-mini-card">
+                    <strong>Ratings</strong>
+                    <p>Choose highly trusted doctors</p>
+                </div>
+                <div class="consult-mini-card">
+                    <strong>Availability</strong>
+                    <p>Slots across morning to evening</p>
+                </div>
             </div>
         </article>
-        {% endfor %}
-    </div>
-</section>
 
-<section class="card" style="padding:1.5rem;">
-    <div class="page-header mb-3">
-        <div>
-            <p class="eyebrow">Choose a time slot</p>
-            <h2 class="h4 mb-0">Visual slot picker</h2>
+        <article class="consult-surface-card">
+            <div class="section-header">
+                <div>
+                    <span class="section-kicker">Consultation preview</span>
+                    <h2>What happens next</h2>
+                    <p>See the flow before you click into the session.</p>
+                </div>
+            </div>
+            <div class="consult-preview-list">
+                <div class="consult-preview-item">
+                    <span class="consult-preview-item__icon"><i class="fa-solid fa-video" aria-hidden="true"></i></span>
+                    <div>
+                        <strong>Video consultation</strong>
+                        <p>Talk face-to-face, review symptoms, and discuss care options directly.</p>
+                    </div>
+                </div>
+                <div class="consult-preview-item">
+                    <span class="consult-preview-item__icon"><i class="fa-solid fa-file-prescription" aria-hidden="true"></i></span>
+                    <div>
+                        <strong>Post-consult follow-up</strong>
+                        <p>Continue into medicines, lab booking, and prescription actions after the call.</p>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="consult-surface-card">
+        <div class="section-header">
+            <div>
+                <span class="section-kicker">Available doctors</span>
+                <h2>Choose a doctor by experience and next available slot</h2>
+            </div>
         </div>
-    </div>
-    <div class="grid-auto-fit">
-        <button class="slot-chip is-selected" type="button" data-slot="09:00 AM">09:00 AM</button>
-        <button class="slot-chip" type="button" data-slot="10:30 AM">10:30 AM</button>
-        <button class="slot-chip" type="button" data-slot="12:00 PM">12:00 PM</button>
-        <button class="slot-chip" type="button" disabled>02:00 PM</button>
-        <button class="slot-chip" type="button" data-slot="04:00 PM">04:00 PM</button>
-        <button class="slot-chip" type="button" data-slot="06:00 PM">06:00 PM</button>
-    </div>
-    <div style="display:grid; gap:12px; margin-top:1rem;">
-        <button class="primary-btn" id="startConsultationButton" type="button" onclick="createSession()">Start Consultation</button>
-        <p id="bookingResult" class="empty-state" aria-live="polite">Your selected consultation slot will open the video room directly.</p>
-    </div>
-</section>
+        <div class="doctor-card-grid">
+            {% for doctor in doctors %}
+            <article class="doctor-card">
+                <div class="doctor-card__top">
+                    <div>
+                        <h3>Dr. {{ doctor.name }}</h3>
+                        <p>{{ doctor.specialization }}</p>
+                    </div>
+                    <span class="doctor-rating">⭐ {{ doctor.rating }}</span>
+                </div>
+                <p class="doctor-card__meta">{{ doctor.experience or '8+' }} years experience · Next available today</p>
+                <div class="consult-chip-row">
+                    <span class="consult-chip consult-chip--active">English</span>
+                    <span class="consult-chip">Video</span>
+                    <span class="consult-chip">₹{{ doctor.fee or 499 }}</span>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="consult-surface-card">
+        <div class="section-header">
+            <div>
+                <span class="section-kicker">Choose a time slot</span>
+                <h2>Start Consultation</h2>
+                <p>Select the time that suits you and launch the doctor room directly.</p>
+            </div>
+        </div>
+        <div class="slot-grid">
+            <button class="slot-chip is-selected" type="button" data-slot="09:00 AM">09:00 AM</button>
+            <button class="slot-chip" type="button" data-slot="10:30 AM">10:30 AM</button>
+            <button class="slot-chip" type="button" data-slot="12:00 PM">12:00 PM</button>
+            <button class="slot-chip" type="button" disabled>02:00 PM</button>
+            <button class="slot-chip" type="button" data-slot="04:00 PM">04:00 PM</button>
+            <button class="slot-chip" type="button" data-slot="06:00 PM">06:00 PM</button>
+        </div>
+        <div class="consult-cta">
+            <button class="btn-modern consult-cta__button" id="startConsultationButton" type="button" onclick="createSession()">Start Consultation</button>
+            <p id="bookingResult" class="consult-status" aria-live="polite">Your selected consultation slot will open the video room directly.</p>
+        </div>
+    </section>
+</div>
 {% endblock %}
+
+{% block extra_head %}
+<style>
+.consult-modern-page {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    display: grid;
+    gap: 24px;
+}
+
+.consult-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+    gap: 24px;
+    padding: 32px;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 32%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 250, 249, 0.94) 100%);
+}
+
+.consult-kicker,
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--ai-indigo);
+}
+
+.consult-hero h1 {
+    margin: 18px 0 0;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(2.2rem, 4vw, 3.3rem);
+    line-height: 1.08;
+    color: var(--gray-900);
+}
+
+.consult-hero p {
+    margin: 16px 0 0;
+    color: var(--gray-600);
+    line-height: 1.8;
+}
+
+.consult-searchbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: var(--shadow-md);
+}
+
+.consult-searchbar input,
+.consult-select {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+}
+
+.consult-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.consult-chip {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(229, 231, 235, 0.88);
+    color: var(--gray-600);
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.consult-chip--active {
+    background: rgba(15, 76, 92, 0.1);
+    border-color: rgba(15, 76, 92, 0.18);
+    color: var(--primary);
+}
+
+.consult-hero__panel {
+    display: grid;
+    gap: 14px;
+}
+
+.consult-panel-card,
+.consult-surface-card,
+.doctor-card,
+.consult-mini-card {
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: var(--shadow-md);
+}
+
+.consult-panel-card {
+    padding: 22px;
+}
+
+.consult-panel-card__label {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--ai-indigo);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.consult-panel-card h2 {
+    margin: 14px 0 0;
+    font-size: 1.3rem;
+    color: var(--gray-900);
+}
+
+.consult-panel-card p,
+.consult-mini-card p,
+.doctor-card__meta,
+.consult-preview-item p,
+.section-header p,
+.consult-status {
+    margin: 10px 0 0;
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+
+.consult-panel-card--soft {
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.06) 0%, rgba(99, 102, 241, 0.08) 100%);
+}
+
+.consult-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
+    gap: 24px;
+}
+
+.consult-surface-card {
+    padding: 26px;
+}
+
+.section-header h2 {
+    margin: 10px 0 0;
+    font-size: 1.35rem;
+    color: var(--gray-900);
+}
+
+.consult-label {
+    display: block;
+    margin-top: 18px;
+    font-weight: 700;
+    color: var(--gray-900);
+}
+
+.consult-select {
+    margin-top: 10px;
+    padding: 16px 18px;
+    border: 1px solid rgba(229, 231, 235, 0.95);
+    border-radius: 18px;
+    background: var(--gray-50);
+}
+
+.consult-mini-grid,
+.doctor-card-grid,
+.slot-grid {
+    display: grid;
+    gap: 14px;
+}
+
+.consult-mini-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 20px;
+}
+
+.consult-mini-card {
+    padding: 18px;
+}
+
+.consult-preview-list {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.consult-preview-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 18px;
+    border-radius: 20px;
+    background: var(--gray-50);
+    border: 1px solid rgba(229, 231, 235, 0.92);
+}
+
+.consult-preview-item__icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.1) 0%, rgba(99, 102, 241, 0.12) 100%);
+    color: var(--primary);
+}
+
+.doctor-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 18px;
+}
+
+.doctor-card {
+    padding: 22px;
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+}
+
+.doctor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.doctor-card__top {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.doctor-card h3 {
+    margin: 0;
+    color: var(--gray-900);
+    font-size: 1.08rem;
+}
+
+.doctor-card p {
+    margin: 8px 0 0;
+}
+
+.doctor-rating {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(15, 76, 92, 0.08);
+    color: var(--primary);
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.slot-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-top: 18px;
+}
+
+.slot-chip {
+    padding: 16px 12px;
+    border-radius: 18px;
+    border: 1px solid rgba(229, 231, 235, 0.95);
+    background: white;
+    font-weight: 700;
+    color: var(--gray-900);
+    transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+.slot-chip:hover:not([disabled]),
+.slot-chip.is-selected {
+    transform: translateY(-2px);
+    border-color: rgba(15, 76, 92, 0.24);
+    box-shadow: var(--shadow-md);
+}
+
+.slot-chip.is-selected {
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.96) 0%, rgba(26, 127, 107, 0.94) 100%);
+    color: white;
+}
+
+.slot-chip[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.consult-cta {
+    display: grid;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.consult-cta__button {
+    justify-self: start;
+}
+
+@media (max-width: 1100px) {
+    .consult-hero,
+    .consult-layout,
+    .doctor-card-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .consult-modern-page {
+        padding: 18px 14px 34px;
+    }
+
+    .consult-hero,
+    .consult-surface-card {
+        padding: 20px;
+    }
+
+    .consult-searchbar {
+        grid-template-columns: 1fr;
+    }
+
+    .consult-mini-grid,
+    .slot-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .consult-cta__button {
+        justify-self: stretch;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
 let selectedSlot = "09:00 AM";

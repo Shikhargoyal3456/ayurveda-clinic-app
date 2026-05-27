@@ -57,6 +57,20 @@ async def _seed_medicine(admin_client, name: str, brand: str, category: str, mrp
     assert response.status_code == 200
 
 
+async def _logout_portal_user(client):
+    page = await client.get("/profiles/add")
+    assert page.status_code == 200
+    csrf_token = extract_csrf_token(page.text)
+    response = await client.post(
+        "/auth/logout",
+        data={"csrf_token": csrf_token},
+        headers={"X-CSRF-Token": csrf_token},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    return response
+
+
 async def test_patient_prescription_analysis_history_and_order_prefill(client, admin_client):
     await _seed_medicine(admin_client, "Paracetamol 500mg", "HealthBrand", "allopathy", "50", "32")
     await _seed_medicine(admin_client, "Omeprazole 20mg", "AcidCare", "allopathy", "80", "55")
@@ -88,7 +102,7 @@ async def test_medicine_info_and_pharmacy_verification_flow(client, admin_client
     image_payload = "data:image/jpeg;base64," + base64.b64encode(b"Tab Paracetamol 650mg twice daily for 3 days").decode("utf-8")
     analyze_response = await client.post("/api/prescription/analyze", json={"image": image_payload})
     prescription_id = analyze_response.json()["id"]
-    await client.get("/auth/logout", follow_redirects=False)
+    await _logout_portal_user(client)
 
     await _register_and_login_portal_user(
         client,

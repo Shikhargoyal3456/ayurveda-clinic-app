@@ -18,6 +18,7 @@ from services.ai_order_automation import AIOrderAutomation
 from services.ai_support_automation import AISupportAutomation
 from services.feature_flags import is_ai_automation_enabled, is_telemedicine_enabled
 from services.telemedicine_service import TelemedicineService
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["telemedicine"])
@@ -69,8 +70,7 @@ class AlternativesRequest(BaseModel):
 @router.get("/telemedicine/symptom-checker")
 def symptom_checker_page(request: Request):
     _ensure_telemedicine_enabled()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "telemedicine/symptom_checker.html",
         {
             "request": request,
@@ -87,8 +87,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
     portal_user = get_portal_user(request, db)
     if portal_user is None and getattr(request.state, "user", None) is None:
         doctors = telemedicine_service._recommend_doctors()
-        return templates.TemplateResponse(
-            request,
+        return render_template(templates, request,
             "telemedicine/guest_book.html",
             {
                 "request": request,
@@ -104,8 +103,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
     role = _current_session_role(request, portal_user)
     if role == "patient":
         doctors = telemedicine_service._recommend_doctors()
-        return templates.TemplateResponse(
-            request,
+        return render_template(templates, request,
             "telemedicine/patient_book.html",
             {
                 "request": request,
@@ -121,8 +119,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
         if legacy_doctor is None:
             raise HTTPException(status_code=404, detail="Doctor profile not found")
         dashboard = _doctor_consultation_dashboard(db, legacy_doctor.id)
-        return templates.TemplateResponse(
-            request,
+        return render_template(templates, request,
             "telemedicine/doctor_consultations.html",
             {
                 "request": request,
@@ -147,8 +144,7 @@ def telemedicine_room_page(request: Request, session_id: str):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
     doctor_name = _doctor_display_name(int(session.get("doctor_id", 0) or 0))
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "telemedicine/video_consult.html",
         {
             "request": request,
@@ -168,8 +164,7 @@ async def telemedicine_summary_page(request: Request, session_id: str):
     _ensure_telemedicine_enabled()
     summary = await telemedicine_service.ai_post_consultation_summary(session_id)
     followup = await telemedicine_service.auto_schedule_followup(session_id)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "telemedicine/summary.html",
         {
             "request": request,
@@ -191,8 +186,7 @@ async def ai_order_automation_page(request: Request):
             "items": [{"name": "Ashwagandha Tablets", "prescription_required": True}],
         }
     )
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "ai/order_automation.html",
         {
             "request": request,
@@ -207,8 +201,7 @@ async def ai_order_automation_page(request: Request):
 @router.get("/ai/support")
 def ai_support_page(request: Request):
     _ensure_ai_enabled()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "support/ai_assistant.html",
         {
             "request": request,

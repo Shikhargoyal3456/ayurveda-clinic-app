@@ -14,7 +14,9 @@ from app.database import get_db
 from app.portal_auth import get_portal_user, require_portal_roles
 from models.user import User
 from services.lab_analyzer import LabReportAnalyzer, clean_extracted_text
+from services.ai_provider import is_ai_budget_error
 from shared.template_engine import templates
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["lab-analyzer"])
@@ -29,8 +31,7 @@ def get_current_user_optional(request: Request, db: Session = Depends(get_db)) -
 
 @router.get("/lab-analyzer")
 def lab_analyzer_page(request: Request, user: User = Depends(require_portal_roles("patient"))):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "patient/lab_analyzer.html",
         {
             "request": request,
@@ -111,6 +112,9 @@ async def analyze_lab_report(
     except HTTPException:
         raise
     except Exception as exc:
+        if is_ai_budget_error(exc):
+            fallback = analyzer.build_fallback_analysis(readable_text, parsed, error=str(exc))
+            return JSONResponse({"success": True, **fallback, "fallback": True})
         return JSONResponse({"success": False, "error": str(exc), "source": "ai_error"}, status_code=503)
     finally:
         if tmp_path and os.path.exists(tmp_path):

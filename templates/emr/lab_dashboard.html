@@ -2,11 +2,17 @@
 {% block title %}Lab Dashboard | Kash AI{% endblock %}
 {% block page %}
 {% from "components/skeletons.html" import table_rows %}
-<div class="site-container page-shell emr-shell">
+<div class="site-container page-shell emr-shell emr-modern-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
-        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Lab Dashboard</h1><p>Order tracking, result entry, and abnormal result visibility for integrated diagnostics.</p></div></div>
-        <div class="card responsive-table-card">
+        <section class="emr-hero-card glass-card">
+            <div>
+                <p class="eyebrow">EMR module</p>
+                <h1 class="h2">Lab Dashboard</h1>
+                <p class="emr-hero-copy">Order tracking, result entry, and abnormal result visibility for integrated diagnostics.</p>
+            </div>
+        </section>
+        <div class="card responsive-table-card emr-surface-card">
             <div class="table-scroll-wrapper">
             <table class="data-table" data-sortable-table data-export-name="lab-results">
                 <thead><tr><th>Lab</th><th>Priority</th><th>Status</th><th>Tests</th><th>Ordered</th></tr></thead>
@@ -17,9 +23,46 @@
     </section>
 </div>
 {% endblock %}
+{% block extra_head %}
+<style>
+.emr-modern-shell .page-content{display:grid;gap:24px}
+.emr-hero-card{padding:30px;border-radius:26px;background:radial-gradient(circle at top right, rgba(99,102,241,.12), transparent 32%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%)}
+.emr-hero-card h1{margin:10px 0 0;font-size:clamp(2rem,4vw,3rem);color:var(--gray-900)}
+.emr-hero-copy{margin:14px 0 0;color:var(--gray-600);line-height:1.8}
+.emr-surface-card{padding:22px;border-radius:24px;box-shadow:var(--shadow-lg);border:1px solid rgba(229,231,235,.92)}
+.lab-row-critical{background:#fff3f0}.lab-row-warning{background:#fff9ef}
+</style>
+{% endblock %}
 {% block extra_scripts %}
 <script defer src="{{ url_for('static', path='js/admin-table.js') }}"></script>
 <script>
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function makeBadge(priority, status) {
+    const badge = document.createElement("span");
+    if (priority === "urgent") {
+        badge.className = "inline-badge is-danger";
+        const icon = document.createElement("i");
+        icon.className = "fa-solid fa-triangle-exclamation";
+        badge.append(icon, document.createTextNode("Urgent"));
+        return badge;
+    }
+    badge.className = "inline-badge is-warning";
+    const icon = document.createElement("i");
+    icon.className = "fa-solid fa-clock";
+    badge.append(icon, document.createTextNode(String(priority)));
+    return badge;
+}
+
+function makeStatus(status) {
+    const pill = document.createElement("span");
+    pill.className = "status-pill status-pending";
+    pill.textContent = status;
+    return pill;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const labOrders = [
         {% for order in lab_orders %}
@@ -34,13 +77,54 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
     const body = document.getElementById("labOrdersBody");
     window.setTimeout(() => {
-        body.innerHTML = labOrders.length
-            ? labOrders.map((order) => `<tr class="${order.priority === 'urgent' ? 'lab-row-critical' : order.status !== 'completed' ? 'lab-row-warning' : ''}"><td>${order.lab_name}</td><td>${order.priority === 'urgent' ? '<span class="inline-badge is-danger"><i class="fa-solid fa-triangle-exclamation"></i>Urgent</span>' : `<span class="inline-badge is-warning"><i class="fa-solid fa-clock"></i>${order.priority}</span>`}</td><td><span class="status-pill status-pending">${order.status}</span></td><td>${order.tests_count}</td><td>${order.ordered_at}</td></tr>`).join("")
-            : `<tr><td colspan="5"><div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-vial"></i></div><h3 class="empty-state__title">No lab orders yet</h3><p class="empty-state__message">Ordered tests and result updates will appear here once the care team sends them to the lab.</p><a href="/emr/clinical-reporting" class="btn btn-primary btn-sm">Open Reports</a></div></td></tr>`;
+        clearNode(body);
+        if (labOrders.length) {
+            labOrders.forEach((order) => {
+                const row = document.createElement("tr");
+                if (order.priority === "urgent") row.className = "lab-row-critical";
+                else if (order.status !== "completed") row.className = "lab-row-warning";
+
+                const lab = document.createElement("td");
+                lab.textContent = order.lab_name;
+                const priority = document.createElement("td");
+                priority.appendChild(makeBadge(order.priority, order.status));
+                const status = document.createElement("td");
+                status.appendChild(makeStatus(order.status));
+                const tests = document.createElement("td");
+                tests.textContent = String(order.tests_count);
+                const ordered = document.createElement("td");
+                ordered.textContent = order.ordered_at;
+                row.append(lab, priority, status, tests, ordered);
+                body.appendChild(row);
+            });
+            return;
+        }
+
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        const iconWrap = document.createElement("div");
+        iconWrap.className = "empty-state__icon";
+        const icon = document.createElement("i");
+        icon.className = "fa-solid fa-vial";
+        iconWrap.appendChild(icon);
+        const title = document.createElement("h3");
+        title.className = "empty-state__title";
+        title.textContent = "No lab orders yet";
+        const message = document.createElement("p");
+        message.className = "empty-state__message";
+        message.textContent = "Ordered tests and result updates will appear here once the care team sends them to the lab.";
+        const link = document.createElement("a");
+        link.className = "btn btn-primary btn-sm";
+        link.href = "/emr/clinical-reporting";
+        link.textContent = "Open Reports";
+        empty.append(iconWrap, title, message, link);
+        cell.appendChild(empty);
+        row.appendChild(cell);
+        body.appendChild(row);
     }, 250);
 });
 </script>
-<style>
-.lab-row-critical{background:#fff3f0}.lab-row-warning{background:#fff9ef}
-</style>
 {% endblock %}

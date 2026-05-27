@@ -32,7 +32,10 @@
 
     <div class="profile-selector__footer">
         <a href="/profiles/manage" class="secondary-btn">Manage Profiles</a>
-        <a href="/auth/logout" class="secondary-btn">Sign out</a>
+        <form method="post" action="/auth/logout" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+            <button type="submit" class="secondary-btn">Sign out</button>
+        </form>
     </div>
 </section>
 {% endblock %}

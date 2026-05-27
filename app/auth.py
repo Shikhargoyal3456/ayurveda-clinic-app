@@ -19,6 +19,7 @@ from app.models import Doctor
 from app.security import (
     clear_failed_login,
     compare_refresh_token,
+    failed_login_retry_after_seconds,
     hash_refresh_token,
     invalidate_current_session,
     is_bruteforce_blocked,
@@ -116,6 +117,34 @@ def rate_limit_dependency(bucket: str, limit: int, window_seconds: int):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Too many requests. Please wait and try again.",
+                headers={"Retry-After": str(retry_after_seconds)},
+            )
+
+    return dependency
+
+
+def auth_backoff_dependency(bucket: str = "auth-backoff"):
+    async def dependency(request: Request) -> None:
+        identifier = ""
+        content_type = request.headers.get("content-type", "").lower()
+        if "application/json" in content_type:
+            try:
+                payload = await request.json()
+            except Exception:
+                payload = {}
+            identifier = str((payload or {}).get("identifier") or (payload or {}).get("username") or "").strip().lower()
+        elif "application/x-www-form-urlencoded" in content_type or "multipart/form-data" in content_type:
+            form = await request.form()
+            identifier = str(form.get("identifier") or form.get("username") or "").strip().lower()
+
+        if not identifier:
+            return
+
+        retry_after_seconds = failed_login_retry_after_seconds(identifier)
+        if retry_after_seconds > 0:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many attempts. Please wait before trying again.",
                 headers={"Retry-After": str(retry_after_seconds)},
             )
 

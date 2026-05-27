@@ -1,89 +1,297 @@
 {% extends "patient_simple_base.html" %}
 {% set simple_nav = 'health' %}
 {% block title %}KASH AI - Patient Health{% endblock %}
+
 {% block page %}
-<section class="simple-card">
-    <h1 class="title page-title">My Health</h1>
-    {% if user_name %}
-    <p class="subtitle"><strong>{{ user_name }}</strong></p>
-    {% endif %}
-    <p class="subtitle page-description">Track your care activity, prescriptions, and medicine reminders</p>
-    <div class="metric-row" style="margin-top:16px;">
-        <div class="pill">
-            <strong>{{ health_score }}/100</strong>
-            <span>Care Outlook</span>
+<div class="health-modern-page">
+    <section class="health-hero glass-card">
+        <div class="health-hero__copy">
+            <span class="health-kicker"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Personal care overview</span>
+            <h1 class="title page-title">My Health</h1>
+            {% if user_name %}
+            <p class="health-user-name"><strong>{{ user_name }}</strong></p>
+            {% endif %}
+            <p class="subtitle page-description">Track your care activity, prescriptions, and medicine reminders in one cleaner health workspace.</p>
         </div>
-        <div class="pill">
-            <strong>{{ active_medicines|length }}</strong>
-            <span>Active Medicines</span>
+        <div class="health-metrics">
+            <div class="health-metric-card">
+                <strong>{{ health_score }}/100</strong>
+                <span>Care Outlook</span>
+            </div>
+            <div class="health-metric-card">
+                <strong>{{ active_medicines|length }}</strong>
+                <span>Active Medicines</span>
+            </div>
+            <div class="health-metric-card">
+                <strong>{{ recent_consults }}</strong>
+                <span>Recent Doctor Visits</span>
+            </div>
         </div>
-        <div class="pill">
-            <strong>{{ recent_consults }}</strong>
-            <span>Recent Doctor Visits</span>
-        </div>
-    </div>
-</section>
+    </section>
 
-<section class="simple-card">
-    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Active Medicines</h2>
-    {% for item in active_medicines %}
-    <div class="list-row">
-        <div class="list-copy">
-            <strong>{{ item.name }}</strong>
-            <span>Reorder Medicines {{ item.refill_text }}</span>
+    <section class="health-surface-card">
+        <div class="section-header">
+            <div>
+                <span class="section-kicker">Active medicines</span>
+                <h2>Current treatment flow</h2>
+            </div>
         </div>
-        <span class="status {{ item.tone }}">{{ item.badge }}</span>
-    </div>
-    {% else %}
-    <div class="empty-state">
-        <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
-        <h3 class="empty-state__title">No active medicines yet</h3>
-        <p class="empty-state__message">When you place an order or upload a prescription, your active medicines will show here.</p>
-        <a href="/order-medicines" class="btn-primary">Order Medicines</a>
-    </div>
-    {% endfor %}
-</section>
-
-<section class="simple-card">
-    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Past Prescriptions</h2>
-    <div id="prescriptionHistory" class="empty-state">
-        <div class="skeleton-loader">
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line"></div>
+        <div class="health-list">
+            {% for item in active_medicines %}
+            <div class="health-list-row">
+                <div class="list-copy">
+                    <strong>{{ item.name }}</strong>
+                    <span>Reorder Medicines {{ item.refill_text }}</span>
+                </div>
+                <span class="status {{ item.tone }}">{{ item.badge }}</span>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                <h3 class="empty-state__title">No active medicines yet</h3>
+                <p class="empty-state__message">When you place an order or upload a prescription, your active medicines will show here.</p>
+                <a href="/order-medicines" class="btn-modern">Order Medicines</a>
+            </div>
+            {% endfor %}
         </div>
-    </div>
-</section>
+    </section>
 
-<section class="simple-card">
-    <h2 style="margin-top:0; font-family:'Nunito', sans-serif;">Quick Help</h2>
-    <p class="subtitle">Active deliveries and medicine reorder reminders are easy to find here.</p>
-    <div class="tile-grid">
-        <a class="action-tile" href="/order-medicines?tab=upload">
-            <div class="emoji">📄</div>
-            <strong>Upload New Prescription</strong>
-            <span>Take a photo and order faster.</span>
-        </a>
-        <a class="action-tile" href="/orders">
-            <div class="emoji">🔔</div>
-            <strong>Track My Order</strong>
-            <span>See your latest delivery status.</span>
-        </a>
-        <a class="action-tile" href="/telemedicine/book">
-            <div class="emoji">🩺</div>
-            <strong>Consult Doctor</strong>
-            <span>Choose a doctor and start your call.</span>
-        </a>
-        <button class="action-tile" type="button" onclick="window.showSimpleMessage('Reminder saved for your medicines.')">
-            <div class="emoji">⏰</div>
-            <strong>Set Reminder</strong>
-            <span>Get a simple reminder before your next reorder is due.</span>
-        </button>
-    </div>
-</section>
+    <section class="health-surface-card">
+        <div class="section-header">
+            <div>
+                <span class="section-kicker">Past prescriptions</span>
+                <h2>Prescription history</h2>
+            </div>
+        </div>
+        <div id="prescriptionHistory" class="empty-state">
+            <div class="skeleton-loader">
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+                <div class="skeleton-line"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="health-surface-card">
+        <div class="section-header">
+            <div>
+                <span class="section-kicker">Quick help</span>
+                <h2>Take the next step</h2>
+                <p>Deliveries, reorders, and consultations stay close at hand here.</p>
+            </div>
+        </div>
+        <div class="health-action-grid">
+            <a class="health-action-card" href="/order-medicines?tab=upload">
+                <div class="health-action-card__icon">📄</div>
+                <strong>Upload New Prescription</strong>
+                <span>Take a photo and order faster.</span>
+            </a>
+            <a class="health-action-card" href="/orders">
+                <div class="health-action-card__icon">🔔</div>
+                <strong>Track My Order</strong>
+                <span>See your latest delivery status.</span>
+            </a>
+            <a class="health-action-card" href="/telemedicine/book">
+                <div class="health-action-card__icon">🩺</div>
+                <strong>Consult Doctor</strong>
+                <span>Choose a doctor and start your call.</span>
+            </a>
+            <button class="health-action-card" type="button" onclick="window.showSimpleMessage('Reminder saved for your medicines.')">
+                <div class="health-action-card__icon">⏰</div>
+                <strong>Set Reminder</strong>
+                <span>Get a simple reminder before your next reorder is due.</span>
+            </button>
+        </div>
+    </section>
+</div>
 {% endblock %}
+
+{% block extra_head %}
+<style>
+.health-modern-page {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    display: grid;
+    gap: 24px;
+}
+
+.health-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr);
+    gap: 24px;
+    padding: 30px;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 250, 249, 0.94) 100%);
+}
+
+.health-kicker,
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--ai-indigo);
+}
+
+.health-hero h1 {
+    margin: 18px 0 0;
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    color: var(--gray-900);
+}
+
+.health-user-name,
+.health-hero .subtitle,
+.health-surface-card p,
+.health-list-row span {
+    color: var(--gray-600);
+}
+
+.health-user-name {
+    margin: 12px 0 0;
+}
+
+.health-metrics {
+    display: grid;
+    gap: 14px;
+}
+
+.health-metric-card,
+.health-surface-card,
+.health-list-row,
+.health-action-card {
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    box-shadow: var(--shadow-md);
+}
+
+.health-metric-card {
+    padding: 20px;
+}
+
+.health-metric-card strong {
+    display: block;
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.health-metric-card span {
+    display: block;
+    margin-top: 6px;
+    color: var(--gray-600);
+}
+
+.health-surface-card {
+    padding: 26px;
+}
+
+.health-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.health-list-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+}
+
+.health-action-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.health-action-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 22px;
+    text-align: left;
+    text-decoration: none;
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+}
+
+.health-action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.health-action-card__icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.1) 0%, rgba(99, 102, 241, 0.12) 100%);
+}
+
+@media (max-width: 1024px) {
+    .health-hero,
+    .health-action-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .health-modern-page {
+        padding: 18px 14px 34px;
+    }
+
+    .health-hero,
+    .health-surface-card {
+        padding: 20px;
+        grid-template-columns: 1fr;
+    }
+
+    .health-list-row,
+    .health-action-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .health-list-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function buildEmptyHistory(host, titleText, messageText) {
+    host.className = "empty-state";
+    clearNode(host);
+    const icon = document.createElement("div");
+    icon.className = "empty-state__icon";
+    icon.innerHTML = '<i class="fas fa-box-open fa-3x"></i>';
+    const title = document.createElement("h3");
+    title.className = "empty-state__title";
+    title.textContent = titleText;
+    const message = document.createElement("p");
+    message.className = "empty-state__message";
+    message.textContent = messageText;
+    const link = document.createElement("a");
+    link.href = "/order-medicines?tab=upload";
+    link.className = "btn-modern";
+    link.textContent = "Upload Prescription";
+    host.append(icon, title, message, link);
+}
+
 async function loadPrescriptionHistory() {
     const host = document.getElementById("prescriptionHistory");
     if (!host) return;
@@ -94,23 +302,33 @@ async function loadPrescriptionHistory() {
         }
         const items = await response.json();
         if (!Array.isArray(items) || !items.length) {
-            host.className = "empty-state";
-            host.innerHTML = '<div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div><h3 class="empty-state__title">No prescriptions yet</h3><p class="empty-state__message">When you upload or receive a prescription, it will appear here for quick reorder.</p><a href="/order-medicines?tab=upload" class="btn-primary">Upload Prescription</a>';
+            buildEmptyHistory(host, "No prescriptions yet", "When you upload or receive a prescription, it will appear here for quick reorder.");
             return;
         }
-        host.className = "";
-        host.innerHTML = items.slice(0, 5).map((item) => `
-            <div class="list-row">
-                <div class="list-copy">
-                    <strong>${item.title || "Prescription"}</strong>
-                    <span>${item.date || item.created_at || "Recently added"}</span>
-                </div>
-                <a class="secondary-btn" href="/order-medicines?source=prescription&prescription_id=${item.id}">Order Again</a>
-            </div>
-        `).join("");
+        host.className = "health-list";
+        clearNode(host);
+        items.slice(0, 5).forEach((item) => {
+            const row = document.createElement("div");
+            row.className = "health-list-row";
+
+            const copy = document.createElement("div");
+            copy.className = "list-copy";
+            const title = document.createElement("strong");
+            title.textContent = item.title || "Prescription";
+            const meta = document.createElement("span");
+            meta.textContent = item.date || item.created_at || "Recently added";
+            copy.append(title, meta);
+
+            const link = document.createElement("a");
+            link.className = "btn-modern btn-modern--secondary";
+            link.href = `/order-medicines?source=prescription&prescription_id=${encodeURIComponent(item.id)}`;
+            link.textContent = "Order Again";
+
+            row.append(copy, link);
+            host.appendChild(row);
+        });
     } catch (error) {
-        host.className = "empty-state";
-        host.innerHTML = '<div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div><h3 class="empty-state__title">Prescription history unavailable</h3><p class="empty-state__message">Please refresh, or upload a prescription to start building your history.</p><a href="/order-medicines?tab=upload" class="btn-primary">Upload Prescription</a>';
+        buildEmptyHistory(host, "Prescription history unavailable", "Please refresh, or upload a prescription to start building your history.");
     }
 }
 document.addEventListener("DOMContentLoaded", loadPrescriptionHistory);

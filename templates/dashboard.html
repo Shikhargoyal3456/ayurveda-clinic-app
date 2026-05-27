@@ -49,7 +49,10 @@
             </div>
             <div class="inline-actions">
                 <span class="badge text-bg-light">{{ clinic_name }}</span>
-                <a href="/auth/logout" class="btn btn-outline-danger btn-sm">Logout</a>
+                <form method="post" action="/auth/logout" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
+                </form>
             </div>
         </section>
 

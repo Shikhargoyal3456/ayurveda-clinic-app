@@ -21,6 +21,7 @@ from models.outcome import Outcome
 from models.payment import Payment
 from models.prescription import Prescription
 from services.superapp_service import get_dashboard_payload
+from shared.template_engine import render_template
 from utils.subscription_utils import (
     build_paywall_response,
     check_subscription_access,
@@ -101,9 +102,11 @@ def root(request: Request, db: Session = Depends(get_db)):
                 request.session["active_profile_name"] = active_profile.profile_name
                 request.session["active_profile_avatar"] = profile_avatar_for_relationship(active_profile.relationship, active_profile.profile_avatar)
                 request.session["active_profile_relationship"] = active_profile.relationship
-            return templates.TemplateResponse(request, "patient_home.html", patient_dashboard_context(request, portal_user))
+            ctx = patient_dashboard_context(request, portal_user)
+            return render_template(templates, request, "patient_home.html", ctx)
         return RedirectResponse(url=dashboard_path_for_role(role_value), status_code=303)
-    return templates.TemplateResponse(request, "patient_home.html", patient_dashboard_context(request))
+    ctx = patient_dashboard_context(request)
+    return render_template(templates, request, "patient_home.html", ctx)
 
 
 @router.get("/my-health")
@@ -131,11 +134,11 @@ def my_health(request: Request, db: Session = Depends(get_db)):
                 "badge": badge,
             }
         )
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "patient/simple_health.html",
         {
-            "request": request,
             "simple_nav": "health",
             "page_hint": "Your medicines and refill reminders",
             "health_score": payload.get("health_score", 85),
@@ -156,11 +159,11 @@ def my_orders(request: Request, db: Session = Depends(get_db)):
             return RedirectResponse(url="/profiles/add", status_code=303)
         if len(profiles) > 1 and not request.session.get("active_profile_id"):
             return RedirectResponse(url="/profiles/select", status_code=303)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "orders/tracking.html",
         {
-            "request": request,
             "simple_nav": "orders",
             "page_hint": "See where your medicine is",
             "simple_mode": True,
@@ -173,12 +176,12 @@ def my_orders(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/pricing")
 def pricing_page(request: Request):
-    return templates.TemplateResponse(request, "pricing.html", {})
+    return render_template(templates, request, "pricing.html")
 
 
 @router.get("/investors")
 def investor_page(request: Request):
-    return templates.TemplateResponse(request, "investors.html", {})
+    return render_template(templates, request, "investors.html")
 
 
 @router.get("/dashboard")
@@ -322,7 +325,8 @@ def dashboard(
         for prescription in followup_prescriptions
         if prescription.follow_up_days
     ]
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "dashboard.html",
         {
@@ -356,7 +360,8 @@ def demo_page(
     request: Request,
     doctor: Doctor = Depends(get_current_doctor),
 ):
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "demo.html",
         {
@@ -604,11 +609,11 @@ def edit_patient_page(
     patient = db.get(Patient, patient_id)
     if patient is None or patient.doctor_id != doctor.id:
         raise HTTPException(status_code=404, detail="Patient not found")
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "edit_patient.html",
         {
-            "request": request,
             "patient": patient,
             "csrf_token": ensure_csrf_token(request),
         },

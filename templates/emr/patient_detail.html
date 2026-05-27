@@ -2,22 +2,22 @@
 {% block title %}Patient Detail | Kash AI{% endblock %}
 {% block page %}
 {% from "components/skeletons.html" import card_list %}
-<div class="site-container page-shell emr-shell">
+<div class="site-container page-shell emr-shell emr-modern-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
-        <div class="page-header">
+        <section class="emr-hero-card glass-card">
             <div>
                 <p class="eyebrow">{{ profile.ur_number }}</p>
                 <h1 class="h2">{{ patient.name }}</h1>
-                <p>{{ patient.gender }} • {{ patient.age }} years • {{ patient.phone or 'No phone on file' }}</p>
+                <p class="emr-hero-copy">{{ patient.gender }} • {{ patient.age }} years • {{ patient.phone or 'No phone on file' }}</p>
             </div>
-            <div class="page-header-actions">
+            <div class="page-header-actions emr-hero-actions">
                 <a class="btn btn-primary btn-pill" href="{{ consultation_href }}">New consultation</a>
                 <a class="btn btn-outline-dark btn-pill" href="/emr/ambient-scribe?patient_id={{ patient.id }}">AI Scribe</a>
                 <a class="btn btn-outline-success btn-pill" href="/patients/{{ patient.id }}/appointments/new">Book appointment</a>
                 <a class="btn btn-ghost btn-pill" href="/emr/patient-portal/{{ patient.id }}">Patient portal</a>
             </div>
-        </div>
+        </section>
 
         <div class="tab-strip mb-4">
             <span class="tab-pill is-active">Demographics</span>
@@ -26,7 +26,7 @@
             <span class="tab-pill">Timeline</span>
         </div>
 
-        <article class="card mb-4">
+        <article class="card emr-surface-card mb-4">
             <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
                 <div>
                     <p class="eyebrow mb-1">AI Prescription Mode</p>
@@ -46,7 +46,7 @@
         </article>
 
         <div class="content-grid-2">
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Demographics & contact</h2>
                 <div class="detail-list">
                     <div><span>Name</span><strong>{{ patient.name }}</strong></div>
@@ -55,7 +55,7 @@
                     <div><span>Address</span><strong>{{ patient.address or 'Pending' }}</strong></div>
                 </div>
             </article>
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Ayurveda snapshot</h2>
                 <div class="dosha-stack">
                     <div class="dosha-card vata"><span>Prakriti</span><strong>{{ assessments.get('prakriti', {}).get('label', profile.ayurveda_profile.get('prakriti', 'Pending')) }}</strong></div>
@@ -66,13 +66,13 @@
         </div>
 
         <div class="content-grid-2 mt-4">
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Allergies & family history</h2>
                 <div id="patientHistory" role="status" aria-live="polite">
                     {{ card_list(1) }}
                 </div>
             </article>
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Recent vitals</h2>
                 <div class="stack-sm">
                     {% for vital in vitals %}
@@ -85,13 +85,13 @@
         </div>
 
         <div class="content-grid-2 mt-4">
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Consultation timeline</h2>
                 <div class="timeline-list" id="patientTimeline" role="status" aria-live="polite">
                     {{ card_list(3) }}
                 </div>
             </article>
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Prescriptions</h2>
                 <div class="stack-sm">
                     {% for prescription in prescriptions %}
@@ -104,7 +104,7 @@
         </div>
 
         <div class="content-grid-2 mt-4">
-            <article class="card">
+            <article class="card emr-surface-card">
                 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
                     <div>
                         <h2 class="h4 mb-1">AI diet planner</h2>
@@ -118,20 +118,99 @@
         </div>
     </section>
 </div>
+{% endblock %}
+{% block extra_head %}
+<style>
+.emr-modern-shell .page-content{display:grid;gap:24px}
+.emr-hero-card{display:grid;grid-template-columns:minmax(0,1.25fr) auto;gap:24px;padding:30px;background:radial-gradient(circle at top right, rgba(99,102,241,.12), transparent 32%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%)}
+.emr-hero-card h1{margin:10px 0 0;font-size:clamp(2rem,4vw,3rem);color:var(--gray-900)}
+.emr-hero-copy{margin:14px 0 0;color:var(--gray-600);line-height:1.8}
+.emr-hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+.emr-surface-card{padding:22px;border-radius:24px;box-shadow:var(--shadow-lg);border:1px solid rgba(229,231,235,.92)}
+.timeline-entry{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:18px;background:var(--gray-50);border:1px solid var(--gray-200)}
+.timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--primary);margin-top:7px}
+.info-chip{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:16px;background:var(--gray-50);border:1px solid var(--gray-200)}
+.diet-plan{padding:18px;border-radius:18px;background:var(--gray-50);border:1px solid var(--gray-200)}
+.loading,.error{padding:14px 16px;border-radius:16px}
+.loading{background:var(--gray-50);color:var(--gray-600)}
+.error{background:#FEF2F2;color:#B91C1C}
+@media (max-width:1024px){.emr-hero-card{grid-template-columns:1fr}}
+@media (max-width:720px){.emr-hero-card,.emr-surface-card{padding:20px}}
+</style>
+{% endblock %}
+{% block extra_scripts %}
 <script>
 function getPatientIdFromUrl() {
     const match = window.location.pathname.match(/\/emr\/patient\/(\d+)/);
     return match ? match[1] : "";
 }
 
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function makeTimelineEntry(item) {
+    const row = document.createElement("div");
+    row.className = "timeline-entry";
+    const dot = document.createElement("span");
+    dot.className = "timeline-dot";
+    const copy = document.createElement("div");
+    const title = document.createElement("strong");
+    title.textContent = item.title || "Clinical update";
+    const type = document.createElement("p");
+    type.className = "mb-1";
+    type.textContent = String(item.type || "entry").replace(/-/g, " ");
+    const meta = document.createElement("small");
+    meta.className = "text-muted";
+    meta.textContent = `${item.date || "Pending date"} • ${item.meta || "No metadata"}`;
+    copy.append(title, type, meta);
+    row.append(dot, copy);
+    return row;
+}
+
+function makeEmptyState(iconClass, titleText, messageText, href, label) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "empty-state";
+    const iconWrap = document.createElement("div");
+    iconWrap.className = "empty-state__icon";
+    const icon = document.createElement("i");
+    icon.className = iconClass;
+    iconWrap.appendChild(icon);
+    const title = document.createElement("h3");
+    title.className = "empty-state__title";
+    title.textContent = titleText;
+    const message = document.createElement("p");
+    message.className = "empty-state__message";
+    message.textContent = messageText;
+    const link = document.createElement("a");
+    link.className = "btn btn-primary btn-sm";
+    link.href = href;
+    link.textContent = label;
+    wrapper.append(iconWrap, title, message, link);
+    return wrapper;
+}
+
+function makeInfoChip(iconClass, text) {
+    const chip = document.createElement("div");
+    chip.className = "info-chip";
+    const icon = document.createElement("i");
+    icon.className = iconClass;
+    const label = document.createElement("span");
+    label.textContent = text;
+    chip.append(icon, label);
+    return chip;
+}
+
 async function generateAIDietPlan() {
     const patientId = document.getElementById('patientId')?.value || getPatientIdFromUrl();
     const resultDiv = document.getElementById('aiDietPlanResult');
-    if (!patientId || !resultDiv) {
-        return;
-    }
+    if (!patientId || !resultDiv) return;
 
-    resultDiv.innerHTML = '<div class="loading">Generating personalized diet plan...</div>';
+    clearNode(resultDiv);
+    const loading = document.createElement("div");
+    loading.className = "loading";
+    loading.textContent = "Generating personalized diet plan...";
+    resultDiv.appendChild(loading);
 
     try {
         const response = await fetch(`/api/ai/diet-plan/${patientId}`, {
@@ -143,21 +222,35 @@ async function generateAIDietPlan() {
         });
         const data = await response.json();
 
+        clearNode(resultDiv);
         if (response.ok && data.success) {
-            const safePlan = String(data.diet_plan || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            resultDiv.innerHTML = `
-                <div class="diet-plan">
-                    <h4>Personalized Diet Plan</h4>
-                    <pre style="white-space: pre-wrap;">${safePlan}</pre>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="saveDietPlan()">Save to Patient Record</button>
-                </div>
-            `;
+            const wrapper = document.createElement("div");
+            wrapper.className = "diet-plan";
+            const heading = document.createElement("h4");
+            heading.textContent = "Personalized Diet Plan";
+            const pre = document.createElement("pre");
+            pre.style.whiteSpace = "pre-wrap";
+            pre.textContent = String(data.diet_plan || "");
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "btn btn-primary btn-sm";
+            button.textContent = "Save to Patient Record";
+            button.addEventListener("click", saveDietPlan);
+            wrapper.append(heading, pre, button);
+            resultDiv.appendChild(wrapper);
             resultDiv.dataset.generatedDietPlan = data.diet_plan || '';
         } else {
-            resultDiv.innerHTML = `<div class="error">${data.error || data.detail || 'Unable to generate diet plan'}</div>`;
+            const error = document.createElement("div");
+            error.className = "error";
+            error.textContent = data.error || data.detail || 'Unable to generate diet plan';
+            resultDiv.appendChild(error);
         }
     } catch (error) {
-        resultDiv.innerHTML = '<div class="error">Network error. Please try again.</div>';
+        clearNode(resultDiv);
+        const message = document.createElement("div");
+        message.className = "error";
+        message.textContent = "Network error. Please try again.";
+        resultDiv.appendChild(message);
     }
 }
 
@@ -165,9 +258,7 @@ async function saveDietPlan() {
     const patientId = document.getElementById('patientId')?.value || getPatientIdFromUrl();
     const resultDiv = document.getElementById('aiDietPlanResult');
     const dietPlan = resultDiv?.dataset.generatedDietPlan || '';
-    if (!patientId || !dietPlan || !resultDiv) {
-        return;
-    }
+    if (!patientId || !dietPlan || !resultDiv) return;
 
     try {
         const response = await fetch(`/api/ai/diet-plan/${patientId}/save`, {
@@ -199,28 +290,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (timelineContainer) {
         window.setTimeout(() => {
-            timelineContainer.innerHTML = timeline.length ? timeline.map((item) => `
-                <div class="timeline-entry">
-                    <span class="timeline-dot"></span>
-                    <div>
-                        <strong>${item.title || "Clinical update"}</strong>
-                        <p class="mb-1">${String(item.type || "entry").replace(/-/g, " ")}</p>
-                        <small class="text-muted">${item.date || "Pending date"} • ${item.meta || "No metadata"}</small>
-                    </div>
-                </div>
-            `).join("") : '<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-notes-medical"></i></div><h3 class="empty-state__title">No timeline entries yet</h3><p class="empty-state__message">Consultations, prescriptions, and appointment updates will appear here over time.</p><a href="{{ consultation_href }}" class="btn btn-primary btn-sm">Add Consultation</a></div>';
+            clearNode(timelineContainer);
+            if (timeline.length) {
+                timeline.forEach((item) => timelineContainer.appendChild(makeTimelineEntry(item)));
+            } else {
+                timelineContainer.appendChild(makeEmptyState("fa-solid fa-notes-medical", "No timeline entries yet", "Consultations, prescriptions, and appointment updates will appear here over time.", "{{ consultation_href }}", "Add Consultation"));
+            }
         }, 250);
     }
 
     if (historyContainer) {
         window.setTimeout(() => {
-            historyContainer.innerHTML = `
-                <div class="stack-sm">
-                    <div class="info-chip"><i class="fa-solid fa-triangle-exclamation"></i> ${allergies.length} allergy entries</div>
-                    <div class="info-chip"><i class="fa-solid fa-people-group"></i> ${familyHistory.length} family history entries</div>
-                    <div class="info-chip"><i class="fa-solid fa-heart-pulse"></i> ${pastConditions.length ? pastConditions.join(", ") : "No chronic issues tagged yet"}</div>
-                </div>
-            `;
+            clearNode(historyContainer);
+            const stack = document.createElement("div");
+            stack.className = "stack-sm";
+            stack.appendChild(makeInfoChip("fa-solid fa-triangle-exclamation", `${allergies.length} allergy entries`));
+            stack.appendChild(makeInfoChip("fa-solid fa-people-group", `${familyHistory.length} family history entries`));
+            stack.appendChild(makeInfoChip("fa-solid fa-heart-pulse", `${pastConditions.length ? pastConditions.join(", ") : "No chronic issues tagged yet"}`));
+            historyContainer.appendChild(stack);
         }, 280);
     }
 });

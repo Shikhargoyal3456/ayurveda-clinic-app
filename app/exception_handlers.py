@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import traceback
 import uuid
 
 from fastapi import FastAPI, HTTPException, Request, status
@@ -98,7 +97,7 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def global_exception_handler(request: Request, exc: Exception):
         error_id = generate_error_id()
         logger.error("Unhandled exception at path=%s error_id=%s", request.url.path, error_id)
-        logger.error(traceback.format_exc())
+        logger.exception("Unhandled exception details error_id=%s", error_id)
 
         if _wants_json(request):
             return JSONResponse(

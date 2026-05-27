@@ -1,12 +1,19 @@
 {% extends 'base.html' %}
 {% block title %}Patient Portal | Kash AI{% endblock %}
 {% block page %}
-<div class="site-container page-shell emr-shell">
+<div class="site-container page-shell emr-shell emr-modern-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
-        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Patient Portal</h1><p>Preview the patient-facing record experience including appointments, labs, and prescriptions.</p></div></div>
+        <section class="emr-hero-card glass-card">
+            <div>
+                <p class="eyebrow">EMR module</p>
+                <h1 class="h2">Patient Portal</h1>
+                <p class="emr-hero-copy">Preview the patient-facing record experience including appointments, labs, and prescriptions.</p>
+            </div>
+        </section>
+
         <div class="content-grid-2">
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Appointments history</h2>
                 <div class="stack-sm">
                     {% for item in appointments %}
@@ -16,7 +23,7 @@
                     {% endfor %}
                 </div>
             </article>
-            <article class="card">
+            <article class="card emr-surface-card">
                 <h2 class="h4">Reports & prescriptions</h2>
                 <div class="stack-sm">
                     <div class="info-chip">{{ prescriptions|length }} prescriptions</div>
@@ -27,4 +34,15 @@
         </div>
     </section>
 </div>
+{% endblock %}
+{% block extra_head %}
+<style>
+.emr-modern-shell .page-content{display:grid;gap:24px}
+.emr-hero-card{padding:30px;border-radius:26px;background:radial-gradient(circle at top right, rgba(99,102,241,.12), transparent 32%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%)}
+.emr-hero-card h1{margin:10px 0 0;font-size:clamp(2rem,4vw,3rem);color:var(--gray-900)}
+.emr-hero-copy{margin:14px 0 0;color:var(--gray-600);line-height:1.8}
+.emr-surface-card{padding:22px;border-radius:24px;box-shadow:var(--shadow-lg);border:1px solid rgba(229,231,235,.92)}
+.info-chip{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:16px;background:var(--gray-50);border:1px solid var(--gray-200)}
+@media (max-width:720px){.emr-hero-card,.emr-surface-card{padding:20px}}
+</style>
 {% endblock %}

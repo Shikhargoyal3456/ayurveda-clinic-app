@@ -4,159 +4,436 @@
 {% block page %}
 {% set display_name = patient_name | default(user_name, true) | default('Patient', true) %}
 {% set display_date = today_date | default('Today', true) %}
-<div class="simple-patient-dashboard">
-    <div class="welcome">
-        <h1>Welcome, {{ display_name }} 👋</h1>
-        <p class="date">{{ display_date }}</p>
-    </div>
-
-    <div class="actions-section">
-        <div class="section-title">What do you need today?</div>
-        <div class="action-buttons">
-            <button onclick="location.href='/order-medicines'" class="action-btn primary">
-                <span class="emoji">💊</span>
-                <span class="label">ORDER MEDICINES</span>
-                <span class="hint">Search and buy medicines</span>
-            </button>
-
-            <button onclick="location.href='/order-medicines?tab=upload'" class="action-btn primary">
-                <span class="emoji">📄</span>
-                <span class="label">UPLOAD PRESCRIPTION</span>
-                <span class="hint">Take photo, AI reads it</span>
-            </button>
-
-            <button onclick="location.href='/orders'" class="action-btn primary">
-                <span class="emoji">📦</span>
-                <span class="label">TRACK ORDER</span>
-                <span class="hint">See where your medicine is</span>
-            </button>
+<div class="patient-modern-home">
+    <section class="patient-hero glass-card">
+        <div class="patient-hero__copy">
+            <span class="hero-badge"><span class="hero-badge__dot"></span>Personal health command center</span>
+            <p class="patient-hero__eyebrow">{{ display_date }}</p>
+            <h1>Welcome back, {{ display_name }}</h1>
+            <p class="patient-hero__text">
+                Order medicines, upload prescriptions, and track care progress from one calmer, AI-assisted workspace.
+            </p>
+            <div class="patient-hero__actions">
+                <a href="/order-medicines" class="btn-modern">ORDER MEDICINES</a>
+                <a href="/order-medicines?tab=upload" class="btn-modern btn-modern--secondary">UPLOAD PRESCRIPTION</a>
+            </div>
         </div>
-    </div>
-
-    <div class="quick-tip">
-        <div class="tip-icon">💡</div>
-        <div class="tip-text">
-            <strong>Quick Tip:</strong> Tap 'Upload Prescription' to take a photo of your doctor's note. Our AI will read it and add medicines to your cart automatically.
+        <div class="patient-hero__panel">
+            <div class="hero-panel-card">
+                <strong>Fast actions</strong>
+                <p>Move from prescription to checkout, refill, or tracking in a couple of taps.</p>
+            </div>
+            <div class="hero-stat-grid">
+                <div class="hero-stat">
+                    <span class="hero-stat__value">AI</span>
+                    <span class="hero-stat__label">Prescription reading</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat__value">24/7</span>
+                    <span class="hero-stat__label">Order visibility</span>
+                </div>
+                <div class="hero-stat">
+                    <span class="hero-stat__value">1x</span>
+                    <span class="hero-stat__label">Unified health journey</span>
+                </div>
+            </div>
         </div>
-    </div>
+    </section>
 
-    <div class="secondary-tools">
-        <a href="/lab-analyzer" class="tool-card">
-            <span class="tool-emoji">🔬</span>
-            <span>
-                <strong>AI Lab Report Analyzer</strong>
-                <small>Upload reports and get simple AI explanations</small>
-            </span>
+    <section class="patient-actions-grid">
+        <button onclick="location.href='/order-medicines'" class="patient-action-card patient-action-card--primary" type="button">
+            <span class="patient-action-card__icon"><i class="fa-solid fa-capsules" aria-hidden="true"></i></span>
+            <span class="patient-action-card__label">ORDER MEDICINES</span>
+            <span class="patient-action-card__hint">Search trusted medicines, compare choices, and add to cart faster.</span>
+        </button>
+
+        <button onclick="location.href='/order-medicines?tab=upload'" class="patient-action-card" type="button">
+            <span class="patient-action-card__icon"><i class="fa-solid fa-file-medical" aria-hidden="true"></i></span>
+            <span class="patient-action-card__label">UPLOAD PRESCRIPTION</span>
+            <span class="patient-action-card__hint">Let Kash AI read your doctor note and prepare medicines automatically.</span>
+        </button>
+
+        <button onclick="location.href='/orders'" class="patient-action-card" type="button">
+            <span class="patient-action-card__icon"><i class="fa-solid fa-box-open" aria-hidden="true"></i></span>
+            <span class="patient-action-card__label">TRACK ORDER</span>
+            <span class="patient-action-card__hint">Follow delivery progress, order status, and recent confirmations.</span>
+        </button>
+
+        <button onclick="location.href='/prescription/decode-handwriting'" class="patient-action-card" type="button">
+            <span class="patient-action-card__icon"><i class="fa-solid fa-pen-fancy" aria-hidden="true"></i></span>
+            <span class="patient-action-card__label">DECODE HANDWRITTEN PRESCRIPTION</span>
+            <span class="patient-action-card__hint">Can&apos;t read your doctor&apos;s writing? Kash AI will interpret it for you.</span>
+        </button>
+    </section>
+
+    <section class="patient-content-grid">
+        <article class="patient-surface-card patient-tip-card">
+            <div class="section-heading">
+                <span class="section-heading__icon">AI</span>
+                <div>
+                    <h2>Quick Tip</h2>
+                    <p>Make prescription ordering feel effortless.</p>
+                </div>
+            </div>
+            <p class="patient-tip-card__body">
+                Tap <strong>Upload Prescription</strong> to take a photo of your doctor's note. Kash AI reads the medicines and prepares your cart for review.
+            </p>
+        </article>
+
+        <a href="/lab-analyzer" class="patient-surface-card patient-tool-card">
+            <div class="section-heading">
+                <span class="section-heading__icon"><i class="fa-solid fa-flask-vial" aria-hidden="true"></i></span>
+                <div>
+                    <h2>AI Lab Analyzer</h2>
+                    <p>Upload reports and get clearer explanations.</p>
+                </div>
+            </div>
+            <span class="patient-tool-card__link">Open analyzer <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
         </a>
-    </div>
+    </section>
 
     {% if last_order %}
-    <div class="last-order">
-        <h3>🔄 Last Order</h3>
-        <p>{{ last_order.medicines }} - ₹{{ last_order.total }}</p>
-        <button onclick="refillLastOrder()" class="secondary-btn" type="button">Reorder</button>
-    </div>
+    <section class="patient-surface-card patient-last-order">
+        <div class="section-heading">
+            <span class="section-heading__icon"><i class="fa-solid fa-rotate" aria-hidden="true"></i></span>
+            <div>
+                <h2>Last Order</h2>
+                <p>Jump back into a recent purchase.</p>
+            </div>
+        </div>
+        <div class="patient-last-order__body">
+            <div>
+                <strong>{{ last_order.medicines }}</strong>
+                <p>Order value: ₹{{ last_order.total }}</p>
+            </div>
+            <button onclick="refillLastOrder()" class="btn-modern" type="button">Reorder</button>
+        </div>
+    </section>
     {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_head %}
 <style>
-.simple-patient-dashboard {
-    max-width: 600px;
+.patient-modern-home {
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 28px 20px 48px;
+    display: grid;
+    gap: 24px;
 }
-.welcome { margin-bottom: 32px; }
-.welcome h1 { font-size: 28px; margin: 0 0 4px; color: #0F4C5C; font-family: "Plus Jakarta Sans", sans-serif; }
-.date { color: #6B7280; margin: 0; }
-.section-title {
-    margin-bottom: 16px;
-    padding: 14px 18px;
-    border-radius: 16px;
-    background: #F3F8F7;
-    color: #0F4C5C;
+
+.patient-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+    gap: 24px;
+    padding: 32px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.14), transparent 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(247, 251, 249, 0.92) 100%);
+}
+
+.patient-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -60px -80px auto;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(43, 174, 102, 0.16), transparent 70%);
+    pointer-events: none;
+}
+
+.patient-hero__copy,
+.patient-hero__panel {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--ai-indigo);
+    font-size: 0.86rem;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    text-align: center;
 }
-.action-buttons {
+
+.hero-badge__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+.patient-hero__eyebrow {
+    margin: 22px 0 10px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--gray-600);
+    font-weight: 700;
+}
+
+.patient-hero h1 {
+    margin: 0;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    line-height: 1.04;
+    color: var(--gray-900);
+}
+
+.patient-hero__text {
+    max-width: 640px;
+    margin: 18px 0 0;
+    font-size: 1.02rem;
+    line-height: 1.8;
+    color: var(--gray-600);
+}
+
+.patient-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 26px;
+}
+
+.btn-modern--secondary {
+    background: white;
+    color: var(--primary);
+    border: 1px solid rgba(15, 76, 92, 0.14);
+    box-shadow: none;
+}
+
+.hero-panel-card,
+.hero-stat {
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(14px);
+}
+
+.hero-panel-card {
+    padding: 20px 22px;
+    border-radius: 24px;
+}
+
+.hero-panel-card strong {
+    display: block;
+    font-size: 1rem;
+    color: var(--gray-900);
+}
+
+.hero-panel-card p {
+    margin: 8px 0 0;
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+
+.hero-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.hero-stat {
+    padding: 18px 16px;
+    border-radius: 20px;
+}
+
+.hero-stat__value {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.hero-stat__label {
+    display: block;
+    margin-top: 6px;
+    color: var(--gray-600);
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.patient-actions-grid,
+.patient-content-grid {
+    display: grid;
+    gap: 20px;
+}
+
+.patient-actions-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.patient-content-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+.patient-action-card,
+.patient-surface-card {
+    border-radius: 26px;
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition);
+}
+
+.patient-action-card {
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 26px;
+    text-align: left;
+    cursor: pointer;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+    box-shadow: var(--shadow-md);
+}
+
+.patient-action-card:hover,
+.patient-surface-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: rgba(99, 102, 241, 0.16);
+}
+
+.patient-action-card--primary {
+    background:
+        linear-gradient(135deg, rgba(15, 76, 92, 0.98) 0%, rgba(26, 127, 107, 0.96) 65%, rgba(43, 174, 102, 0.94) 100%);
+    color: white;
+}
+
+.patient-action-card--primary .patient-action-card__label,
+.patient-action-card--primary .patient-action-card__hint,
+.patient-action-card--primary .patient-action-card__icon {
+    color: white;
+}
+
+.patient-action-card__icon {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    font-size: 1.3rem;
+    color: var(--primary);
+    background: rgba(15, 76, 92, 0.08);
+}
+
+.patient-action-card--primary .patient-action-card__icon {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.patient-action-card__label {
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    font-weight: 800;
+    color: var(--gray-900);
+}
+
+.patient-action-card__hint {
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+
+.patient-surface-card {
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: var(--shadow-md);
+    padding: 24px;
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.section-heading__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.1) 0%, rgba(99, 102, 241, 0.12) 100%);
+    color: var(--primary);
+    font-weight: 800;
+}
+
+.section-heading h2 {
+    margin: 2px 0 0;
+    font-size: 1.15rem;
+    color: var(--gray-900);
+}
+
+.section-heading p,
+.patient-tip-card__body,
+.patient-last-order__body p {
+    margin: 8px 0 0;
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+
+.patient-tool-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-decoration: none;
+}
+
+.patient-tool-card__link {
+    margin-top: 20px;
+    color: var(--ai-indigo);
+    font-weight: 700;
+}
+
+.patient-last-order__body {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 16px;
 }
-.action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    width: 100%;
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
 }
-.action-btn.primary {
-    background: linear-gradient(135deg, #0F4C5C 0%, #1A7F6B 100%);
-    color: white;
+
+@media (max-width: 1024px) {
+    .patient-hero,
+    .patient-actions-grid,
+    .patient-content-grid {
+        grid-template-columns: 1fr;
+    }
 }
-.action-btn:hover { transform: translateY(-2px); }
-.action-btn .emoji { font-size: 40px; margin-bottom: 12px; }
-.action-btn .label { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-.action-btn .hint { font-size: 14px; opacity: 0.8; }
-.quick-tip {
-    margin-top: 32px;
-    padding: 16px;
-    background: #FEF3C7;
-    border-radius: 12px;
-    display: flex;
-    gap: 12px;
-}
-.tip-icon { font-size: 24px; }
-.tip-text { font-size: 14px; color: #92400E; }
-.secondary-tools {
-    margin-top: 20px;
-}
-.tool-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 18px;
-    border-radius: 14px;
-    background: #EEF6FF;
-    border: 1px solid #D6E7FF;
-    text-decoration: none;
-    color: #0F4C5C;
-}
-.tool-card strong {
-    display: block;
-    font-size: 16px;
-}
-.tool-card small {
-    display: block;
-    margin-top: 4px;
-    color: #4B5563;
-    font-size: 13px;
-}
-.tool-emoji {
-    font-size: 28px;
-    flex: 0 0 auto;
-}
-.last-order {
-    margin-top: 24px;
-    padding: 16px;
-    background: #F3F4F6;
-    border-radius: 12px;
-}
-.last-order h3 { margin-top: 0; }
-.secondary-btn {
-    background: #2BAE66;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
+
+@media (max-width: 640px) {
+    .patient-modern-home {
+        padding: 18px 14px 32px;
+    }
+
+    .patient-hero,
+    .patient-action-card,
+    .patient-surface-card {
+        padding: 20px;
+        border-radius: 22px;
+    }
+
+    .hero-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .patient-hero__actions,
+    .patient-last-order__body {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 </style>
 {% endblock %}

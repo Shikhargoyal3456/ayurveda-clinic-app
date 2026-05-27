@@ -12,6 +12,7 @@ from sqlalchemy import insert, select, update
 from app.database import SessionLocal, engine
 from app.models import Appointment, CaseSheet, Doctor, Patient
 from services.ai_provider import call_ai_json_with_retry
+from services.ai_provider import is_ai_budget_error
 from services.automation_tables import ai_processing_logs_table, ensure_automation_tables, telemedicine_sessions_table
 from services.pure_ai_core import pure_ai
 logger = logging.getLogger(__name__)
@@ -187,25 +188,30 @@ class TelemedicineService:
 
     async def analyze_symptoms(self, symptoms: str) -> dict[str, Any]:
         text = str(symptoms or "").strip()
-        parsed, _provider = await call_ai_json_with_retry(
-            system_prompt=(
-                "You are a careful telemedicine triage assistant. "
-                "Return only JSON and avoid claiming certainty."
-            ),
-            user_prompt=(
-                f"Patient symptoms: {text}\n\n"
-                "Analyze these symptoms and return JSON with keys conditions, urgency, recommendations. "
-                "conditions must be an array of objects with name and probability fields. "
-                "urgency must be one of low, medium, high, emergency. "
-                "recommendations must be an array of concise next steps."
-            ),
-            simpler_user_prompt=(
-                f"Symptoms: {text}\n"
-                'Return JSON with conditions, urgency, and recommendations.'
-            ),
-            temperature=0.2,
-            max_output_tokens=900,
-        )
+        try:
+            parsed, _provider = await call_ai_json_with_retry(
+                system_prompt=(
+                    "You are a careful telemedicine triage assistant. "
+                    "Return only JSON and avoid claiming certainty."
+                ),
+                user_prompt=(
+                    f"Patient symptoms: {text}\n\n"
+                    "Analyze these symptoms and return JSON with keys conditions, urgency, recommendations. "
+                    "conditions must be an array of objects with name and probability fields. "
+                    "urgency must be one of low, medium, high, emergency. "
+                    "recommendations must be an array of concise next steps."
+                ),
+                simpler_user_prompt=(
+                    f"Symptoms: {text}\n"
+                    'Return JSON with conditions, urgency, and recommendations.'
+                ),
+                temperature=0.2,
+                max_output_tokens=900,
+            )
+        except Exception as exc:
+            if not is_ai_budget_error(exc):
+                raise
+            parsed = self._symptom_fallback_payload(text)
         doctors = self._recommend_doctors()
         normalized_urgency = str(parsed.get("urgency") or "medium").strip().lower()
         urgency_aliases = {
@@ -224,6 +230,28 @@ class TelemedicineService:
         }
         self._log_decision("telemedicine_triage", 0, "symptom_analysis", result, 0.73)
         return result
+
+    def _symptom_fallback_payload(self, symptoms: str) -> dict[str, Any]:
+        text = str(symptoms or "").lower()
+        conditions: list[dict[str, Any]] = []
+        recommendations = ["Monitor symptoms and consult a doctor if they worsen."]
+        urgency = "medium"
+
+        if "fever" in text or "headache" in text:
+            conditions.append({"name": "Viral illness", "probability": "medium"})
+            recommendations.insert(0, "Rest, hydrate well, and track temperature trends.")
+            urgency = "medium"
+        if "cough" in text or "cold" in text:
+            conditions.append({"name": "Upper respiratory irritation", "probability": "medium"})
+        if "chest pain" in text or "breath" in text:
+            conditions.append({"name": "Urgent clinical review needed", "probability": "high"})
+            recommendations = ["Seek urgent medical evaluation, especially if breathing difficulty or worsening pain is present."]
+            urgency = "high"
+        if not conditions:
+            conditions.append({"name": "General symptom review needed", "probability": "medium"})
+            recommendations.insert(0, "AI triage is temporarily unavailable, so use a clinician review for a full assessment.")
+
+        return {"conditions": conditions, "urgency": urgency, "recommendations": recommendations}
 
     async def handle_signaling(self, session_id: str, data: dict[str, Any], sender: Any | None = None) -> None:
         self.session_history.setdefault(session_id, []).append(

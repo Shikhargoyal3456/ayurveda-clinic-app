@@ -25,7 +25,10 @@
 
     <div class="hero-actions">
         <a href="/" class="btn btn-outline-dark">Go Home</a>
-        <a href="/auth/logout" class="btn btn-primary">Logout</a>
+        <form method="post" action="/auth/logout" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+            <button type="submit" class="btn btn-primary">Logout</button>
+        </form>
     </div>
 </div>
 {% endblock %}

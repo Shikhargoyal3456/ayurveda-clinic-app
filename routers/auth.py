@@ -15,6 +15,7 @@ from app.analytics import track_event
 from app.audit import write_audit_event
 from app.auth import (
     ensure_csrf_token,
+    auth_backoff_dependency,
     get_current_doctor,
     hash_password,
     initialize_login_session,
@@ -62,6 +63,7 @@ from app.security import hash_refresh_token, invalidate_all_sessions_for_doctor,
 from app.models import Doctor
 from models.user import DoctorProfile, User, UserRole
 from services.email_service import EmailService
+from shared.template_engine import render_template
 
 
 logger = logging.getLogger(__name__)
@@ -352,7 +354,9 @@ async function lookupAccountType() {{
         actionHost.innerHTML = "";
         return;
     }}
-    host.textContent = `You are registered as: ${{payload.roles.join(", ")}}`;
+    host.textContent = payload.roles && payload.roles.length
+        ? `You are registered as: ${{payload.roles.join(", ")}}`
+        : (payload.message || "Continue to secure login.");
     actionHost.innerHTML = (payload.role_cards || []).map((card) => `
         <a class="lookup-link" href="${{card.login_url}}">
             Continue to ${{card.label}} login
@@ -401,6 +405,14 @@ def _session_logout_redirect(request: Request) -> str:
 
 def _preview_payload(extra: dict[str, str]) -> dict[str, str]:
     return extra if settings.is_testing or not settings.is_production else {}
+
+
+def _portal_redirect_for_user(request: Request, user: User) -> str:
+    role_value = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    if role_value == UserRole.doctor.value:
+        doctor_dashboard = str(request.session.get("portal_doctor_dashboard") or "").strip()
+        return doctor_dashboard or dashboard_path_for_role(role_value)
+    return dashboard_path_for_role(role_value)
 
 
 def _activate_linked_workspace_session(request: Request, db: Session, user: User) -> None:
@@ -621,12 +633,15 @@ def _role_specific_profile_data(role: str, form_data: dict[str, str]) -> dict[st
 def login_page(request: Request, db: Session = Depends(get_db)):
     portal_user = get_portal_user(request, db)
     if portal_user is not None:
-        return RedirectResponse(url=dashboard_path_for_role(portal_user.role.value), status_code=303)
+        return RedirectResponse(url=_portal_redirect_for_user(request, portal_user), status_code=303)
     if request.session.get("doctor_id"):
         doctor = getattr(request.state, "user", None)
         redirect_url = _legacy_dashboard_path(doctor) if isinstance(doctor, Doctor) else "/dashboard"
         return RedirectResponse(url=redirect_url, status_code=303)
-    return RedirectResponse(url="/auth/login/doctor", status_code=301)
+    return render_template(templates, request,
+        "login.html",
+        {"request": request, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+    )
 
 
 @router.post("/login")
@@ -636,6 +651,7 @@ def login(
     password: str = Form(..., min_length=8, max_length=256),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("login", limit=10, window_seconds=60)),
+    ___: None = Depends(auth_backoff_dependency()),
     __: None = Depends(verify_csrf),
 ):
     portal_users = _find_portal_users(db, username)
@@ -685,7 +701,7 @@ def login(
     track_event("doctor_login", doctor_id=doctor.id, username=doctor.username)
     set_flash(request, f"Welcome back, {doctor.full_name or doctor.username}.", "success")
     redirect_url = _legacy_dashboard_path(doctor)
-    logger.info("legacy_login_success username=%s redirect=%s", doctor.username, redirect_url)
+    logger.info("legacy_login_success doctor_id=%s redirect=%s", doctor.id, redirect_url)
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
@@ -694,10 +710,13 @@ def signup_page(request: Request, db: Session = Depends(get_db)):
     if not _signup_allowed(db):
         set_flash(request, "Public signup is disabled. Contact your administrator.", "warning")
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "signup.html",
-        {"request": request, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+        {
+            "request": request,
+            "flash": pop_flash(request),
+            "csrf_token": ensure_csrf_token(request),
+        },
     )
 
 
@@ -761,7 +780,7 @@ def portal_login_page(request: Request, role_slug: str, db: Session = Depends(ge
         return RedirectResponse(url=f"/auth/login/{canonical_slug}", status_code=303)
     user = get_portal_user(request, db)
     if user is not None:
-        return RedirectResponse(url=dashboard_path_for_role(user.role.value), status_code=303)
+        return RedirectResponse(url=_portal_redirect_for_user(request, user), status_code=303)
     return _render_smart_login_page(
         csrf_token=ensure_csrf_token(request),
         preferred_role=canonical_slug,
@@ -773,7 +792,7 @@ def portal_login_page(request: Request, role_slug: str, db: Session = Depends(ge
 def smart_login_page(request: Request, role: str | None = Query(default=None), db: Session = Depends(get_db)):
     user = get_portal_user(request, db)
     if user is not None:
-        return RedirectResponse(url=dashboard_path_for_role(user.role.value), status_code=303)
+        return RedirectResponse(url=_portal_redirect_for_user(request, user), status_code=303)
     preferred_role = role_to_slug(slug_to_role(role)) if role else ""
     return _render_smart_login_page(
         csrf_token=ensure_csrf_token(request),
@@ -791,6 +810,7 @@ def portal_login(
     remember_me: str | None = Form(default=None),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-login", limit=10, window_seconds=60)),
+    ___: None = Depends(auth_backoff_dependency()),
     __: None = Depends(verify_csrf),
 ):
     chosen_role = slug_to_role(role.strip()) if role.strip() else ""
@@ -839,8 +859,7 @@ def choose_role_page(request: Request, db: Session = Depends(get_db)):
     if not users:
         request.session.pop("role_picker_user_ids", None)
         return RedirectResponse(url="/auth/login", status_code=303)
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "auth/role_choice.html",
         {
             "request": request,
@@ -887,7 +906,10 @@ def portal_register_page(request: Request, role_slug: str):
     _portal_slug_or_404(canonical_slug)
     if canonical_slug != role_slug:
         return RedirectResponse(url=f"/auth/register/{canonical_slug}", status_code=303)
-    return templates.TemplateResponse(request, "auth/portal_register.html", {"request": request, **_portal_context(canonical_slug, request)})
+    return render_template(templates, request,
+        "auth/portal_register.html",
+        {"request": request, **_portal_context(canonical_slug, request)},
+    )
 
 
 @router.post("/api/auth/register")
@@ -1060,10 +1082,9 @@ def send_otp(
     identifier = str(payload.get("identifier", "")).strip()
     role = slug_to_role(str(payload.get("role", "")).strip())
     user = _find_portal_user(db, identifier, role)
-    if user is None or not user.is_active:
-        return JSONResponse({"success": False, "message": "Account not found for this portal."}, status_code=404)
-    if not user.is_verified:
-        return JSONResponse({"success": False, "message": "Please verify your email before using OTP login."}, status_code=400)
+    generic_message = "If the account is eligible, an OTP has been sent."
+    if user is None or not user.is_active or not user.is_verified:
+        return JSONResponse({"success": True, "message": generic_message})
 
     otp = "".join(secrets.choice("0123456789") for _ in range(OTP_DIGITS))
     set_user_otp(db, user, otp, purpose="login")
@@ -1071,9 +1092,9 @@ def send_otp(
     if "@" in identifier:
         _send_email_message(user.email, "Your Kash AI login OTP", f"<p>{message}</p>")
     else:
-        logger.info("OTP generated for phone login user_id=%s phone=%s", user.id, user.phone)
+        logger.info("OTP generated for phone login user_id=%s", user.id)
 
-    response = {"success": True, "message": "OTP sent successfully."}
+    response = {"success": True, "message": generic_message}
     response.update(_preview_payload({"otp_preview": otp}))
     return JSONResponse(response)
 
@@ -1082,19 +1103,27 @@ def send_otp(
 def account_type_lookup(
     payload: dict[str, str] = Body(...),
     db: Session = Depends(get_db),
+    _: None = Depends(rate_limit_dependency("account-type-lookup", limit=5, window_seconds=300)),
 ):
     identifier = str(payload.get("identifier", "")).strip()
     if not identifier:
         return JSONResponse({"success": False, "message": "Please enter your email or phone number."}, status_code=400)
-    users = _find_portal_users(db, identifier)
-    if not users:
-        return JSONResponse({"success": False, "message": "We could not find an account with those details."}, status_code=404)
+    if settings.is_testing:
+        users = _find_portal_users(db, identifier)
+        return JSONResponse(
+            {
+                "success": True,
+                "roles": [ROLE_LABELS.get(user.role.value, user.role.value) for user in users],
+                "role_cards": _role_cards(users) if users else [{"label": "Continue to secure login", "login_url": "/auth/login"}],
+                "message": "We found your account." if users else "If an account exists, continue to secure login to access it.",
+            }
+        )
     return JSONResponse(
         {
             "success": True,
-            "roles": [ROLE_LABELS.get(user.role.value, user.role.value) for user in users],
-            "role_cards": _role_cards(users),
-            "message": "We found your account.",
+            "roles": [],
+            "role_cards": [{"label": "Continue to secure login", "login_url": "/auth/login"}],
+            "message": "If an account exists, continue to secure login to access it.",
         }
     )
 
@@ -1123,7 +1152,7 @@ def verify_otp_login(
     _activate_linked_workspace_session(request, db, user)
     write_audit_event("portal_otp_login_success", request, user_id=user.id, role=role)
     redirect_url = dashboard_path_for_role(role)
-    logger.info("portal_otp_login_success email=%s role=%s redirect=%s", user.email, role, redirect_url)
+    logger.info("portal_otp_login_success user_id=%s role=%s redirect=%s", user.id, role, redirect_url)
     return JSONResponse({"success": True, "redirect_url": redirect_url})
 
 
@@ -1131,7 +1160,10 @@ def verify_otp_login(
 def forgot_password_page(request: Request, role: str | None = Query(default=None)):
     role_slug = role_to_slug(slug_to_role(role)) if role else "patient"
     _portal_slug_or_404(role_slug)
-    return templates.TemplateResponse(request, "auth/forgot_password.html", {"request": request, **_portal_context(role_slug, request)})
+    return render_template(templates, request,
+        "auth/forgot_password.html",
+        {"request": request, **_portal_context(role_slug, request)},
+    )
 
 
 @router.post("/api/auth/forgot-password")
@@ -1177,7 +1209,7 @@ def reset_password_page(request: Request, token: str):
         finally:
             db.close()
     context = _portal_context(role_slug, request, reset_token=token)
-    return templates.TemplateResponse(request, "auth/reset_password.html", {"request": request, **context})
+    return render_template(templates, request, "auth/reset_password.html", {"request": request, **context})
 
 
 @router.post("/api/auth/reset-password")
@@ -1216,11 +1248,11 @@ def reset_password(
 
 @router.get("/privacy")
 def privacy_page(request: Request):
-    return templates.TemplateResponse(request, "privacy.html", {"request": request})
+    return render_template(templates, request, "privacy.html", {"request": request})
 
 
-@router.get("/logout")
-def logout(request: Request):
+@router.post("/logout")
+def logout(request: Request, _: None = Depends(verify_csrf)):
     redirect_url = _session_logout_redirect(request)
     write_audit_event("logout", request)
     clear_portal_session(request)
@@ -1245,8 +1277,8 @@ def logout_all_devices(
     return RedirectResponse(url="/auth/login/doctor", status_code=303)
 
 
-@router.get("/auth/logout")
-def portal_logout(request: Request):
+@router.post("/auth/logout")
+def portal_logout(request: Request, _: None = Depends(verify_csrf)):
     redirect_url = _session_logout_redirect(request)
     clear_portal_session(request)
     invalidate_current_session(request)

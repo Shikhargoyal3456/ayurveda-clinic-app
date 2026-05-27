@@ -49,6 +49,7 @@ from routers.pharmacy import (
     _order_has_followups,
     _order_source,
     _patient_reordered_after,
+    _public_tracking_url,
 )
 from services.analytics_service import (
     get_ai_optimization_insights,
@@ -84,6 +85,7 @@ from services.cache_service import cache_get_json, cache_set_json
 from services.pricing_service import get_pricing_preview
 from services.profit_service import get_profit_metrics
 from services.medicine_management import ensure_master_medicine, normalize_category
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["admin"])
@@ -365,7 +367,7 @@ def _recent_order_payload(order: MedicineOrder) -> dict[str, object]:
         "status": order.status,
         "payment_status": order.payment_status,
         "created_at": order.created_at.isoformat() if order.created_at else None,
-        "tracking_url": f"/orders/tracking/{order.id}",
+        "tracking_url": _public_tracking_url(order),
     }
 
 
@@ -1337,7 +1339,8 @@ def admin_dashboard(
     doctor = _require_admin(doctor)
     try:
         track_event("admin_dashboard_viewed", doctor_id=doctor.id)
-        return templates.TemplateResponse(
+        return render_template(
+            templates,
             request,
             "admin_new.html",
             _admin_new_context(request, doctor),
@@ -1753,7 +1756,11 @@ def add_medicine_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(request, "admin/add_medicine.html", _admin_template_context(request))
+    return templates.TemplateResponse(
+        request,
+        "admin/add_medicine.html",
+        {"request": request, **_admin_template_context(request)},
+    )
 
 
 @router.get("/admin/bulk-upload")
@@ -1762,7 +1769,11 @@ def bulk_upload_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(request, "admin/bulk_upload.html", _admin_template_context(request))
+    return templates.TemplateResponse(
+        request,
+        "admin/bulk_upload.html",
+        {"request": request, **_admin_template_context(request)},
+    )
 
 
 @router.get("/admin/master-medicines")
@@ -1771,7 +1782,11 @@ def master_medicine_db_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(request, "admin/master_medicine_db.html", _admin_template_context(request))
+    return templates.TemplateResponse(
+        request,
+        "admin/master_medicine_db.html",
+        {"request": request, **_admin_template_context(request)},
+    )
 
 
 @router.get("/admin/activity-dashboard")
@@ -1780,7 +1795,11 @@ def activity_dashboard_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(request, "admin/activity_dashboard.html", _admin_template_context(request))
+    return templates.TemplateResponse(
+        request,
+        "admin/activity_dashboard.html",
+        {"request": request, **_admin_template_context(request)},
+    )
 
 
 @router.get("/admin/complete")
@@ -1789,7 +1808,11 @@ def complete_admin_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(request, "admin/complete_admin.html", _admin_template_context(request))
+    return templates.TemplateResponse(
+        request,
+        "admin/complete_admin.html",
+        {"request": request, **_admin_template_context(request)},
+    )
 
 
 @router.get("/api/admin/medicines")

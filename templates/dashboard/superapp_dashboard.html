@@ -2,24 +2,28 @@
 {% block title %}Superapp Dashboard | Kash AI{% endblock %}
 {% block page %}
 {% from "components/skeletons.html" import card_list %}
-<div class="site-container section-stack fade-in-up superapp-dashboard">
-    <section class="landing-hero card" style="padding:2rem;">
-        <div class="content-grid-2" style="align-items:center;">
-            <div class="section-stack" style="gap:1rem;">
-                <span class="section-kicker"><i class="fa-solid fa-heart-pulse"></i> Personal health cockpit</span>
-                <div>
-                    <h1>Welcome back, {{ user_name | default('there') }}.</h1>
-                    <p style="font-size:1.05rem;">Track orders, reorder medicines, review your care outlook, and act on AI-powered health insights from one clean dashboard.</p>
-                </div>
-                <div class="quick-actions-grid">
-                    <a class="action-card" href="/order-medicines"><i class="fas fa-capsules fa-xl"></i><strong>Order Medicines</strong><span>Search and add medicines to your order</span></a>
-                    <a class="action-card" href="/patient/order/create"><i class="fas fa-file-prescription fa-xl"></i><strong>Upload Rx</strong><span>Use your prescription to build an order faster</span></a>
-                    <a class="action-card" href="/telemedicine/book"><i class="fas fa-user-doctor fa-xl"></i><strong>Consult Doctor</strong><span>Book a video consultation with specialists</span></a>
-                    <a class="action-card" href="/orders"><i class="fas fa-truck fa-xl"></i><strong>Track Orders</strong><span>See deliveries, statuses, and upcoming refills</span></a>
-                </div>
+<div class="site-container section-stack fade-in-up superapp-modern-dashboard">
+    <section class="superapp-hero glass-card">
+        <div class="superapp-hero__copy">
+            <span class="superapp-kicker"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Personal health cockpit</span>
+            <div>
+                <h1>Welcome back, {{ user_name | default('there') }}.</h1>
+                <p>Track orders, reorder medicines, review your care outlook, and act on AI-powered health insights from one clean dashboard.</p>
             </div>
-            <article class="card" id="healthScoreCard"><div class="skel-group"><div class="skel skel-avatar" style="width:120px;height:120px;border-radius:50%;margin:0 auto;"></div><div class="skel skel-heading"></div><div class="skel skel-text skel-text--medium"></div></div></article>
+            <div class="superapp-actions-grid">
+                <a class="superapp-action-card" href="/order-medicines"><i class="fas fa-capsules fa-xl"></i><strong>Order Medicines</strong><span>Search and add medicines to your order</span></a>
+                <a class="superapp-action-card" href="/patient/order/create"><i class="fas fa-file-prescription fa-xl"></i><strong>Upload Rx</strong><span>Use your prescription to build an order faster</span></a>
+                <a class="superapp-action-card" href="/telemedicine/book"><i class="fas fa-user-doctor fa-xl"></i><strong>Consult Doctor</strong><span>Book a video consultation with specialists</span></a>
+                <a class="superapp-action-card" href="/orders"><i class="fas fa-truck fa-xl"></i><strong>Track Orders</strong><span>See deliveries, statuses, and upcoming refills</span></a>
+            </div>
         </div>
+        <article class="superapp-score-card" id="healthScoreCard">
+            <div class="skel-group">
+                <div class="skel skel-avatar" style="width:120px;height:120px;border-radius:50%;margin:0 auto;"></div>
+                <div class="skel skel-heading"></div>
+                <div class="skel skel-text skel-text--medium"></div>
+            </div>
+        </article>
     </section>
 
     <section class="grid-auto-fit">
@@ -30,7 +34,7 @@
     </section>
 
     <section class="content-grid-2">
-        <article class="card" style="padding:1.5rem;">
+        <article class="card superapp-surface-card">
             <div class="page-header mb-3">
                 <div>
                     <p class="eyebrow">Recent orders</p>
@@ -44,7 +48,7 @@
                         <strong>Order #{{ order.id }}</strong>
                         <span>{{ order.status|title }} · ₹{{ order.total_amount }}</span>
                     </div>
-                    <a href="/orders/tracking/{{ order.id }}" class="btn btn-primary btn-sm">Track</a>
+                    <a href="{{ order.tracking_url or '/orders/tracking/' ~ order.id }}" class="btn btn-primary btn-sm">Track</a>
                 </div>
                 {% else %}
                 <div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-receipt"></i></div><h3 class="empty-state__title">No recent orders yet</h3><p class="empty-state__message">Your medicine and wellness orders will appear here once you place your first order.</p><a href="/order-medicines" class="btn btn-primary btn-sm">Order Medicines</a></div>
@@ -52,26 +56,26 @@
             </div>
         </article>
 
-        <article class="card ai-card" style="padding:1.5rem;">
-            <p class="eyebrow" style="color:rgba(255,255,255,.82);">Health insights</p>
-            <h2 class="h4 mb-2" style="color:white;">Kash AI recommendations for you</h2>
+        <article class="card ai-card superapp-insights-card">
+            <p class="eyebrow superapp-insights-card__eyebrow">Health insights</p>
+            <h2 class="h4 mb-2">Kash AI recommendations for you</h2>
             <div class="section-stack">
                 {% for insight in health_insights %}
-                <div class="feature-card" style="background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.14); color:white;">
+                <div class="feature-card superapp-insight-item">
                     <strong>{{ insight.title }}</strong>
-                    <p style="color:rgba(255,255,255,.82);">{{ insight.description }}</p>
+                    <p>{{ insight.description }}</p>
                 </div>
                 {% else %}
-                <div class="feature-card" style="background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.14); color:white;">
+                <div class="feature-card superapp-insight-item">
                     <strong>No new insights yet</strong>
-                    <p style="color:rgba(255,255,255,.82);">As you use the app more, Kash AI will personalize care suggestions here.</p>
+                    <p>As you use the app more, Kash AI will personalize care suggestions here.</p>
                 </div>
                 {% endfor %}
             </div>
         </article>
     </section>
 
-    <section class="card reveal-on-scroll" style="padding:1.5rem;">
+    <section class="card reveal-on-scroll superapp-surface-card">
         <div class="page-header mb-3">
             <div>
                 <p class="eyebrow">Recommended for you</p>
@@ -82,7 +86,7 @@
     </section>
 
     <section class="content-grid-2 reveal-on-scroll">
-        <article class="card" style="padding:1.5rem;">
+        <article class="card superapp-surface-card">
             <p class="eyebrow">Upcoming refills</p>
             <h2 class="h4 mb-3">Stay ahead of your routine</h2>
             <div class="section-stack">
@@ -99,7 +103,7 @@
                 {% endfor %}
             </div>
         </article>
-        <article class="card" style="padding:1.5rem;">
+        <article class="card superapp-surface-card">
             <p class="eyebrow">Quick support</p>
             <h2 class="h4 mb-3">Need help with your care journey?</h2>
             <div class="section-stack">
@@ -111,17 +115,189 @@
     </section>
 </div>
 {% endblock %}
+{% block extra_head %}
+<style>
+.superapp-modern-dashboard {
+    padding-bottom: 40px;
+}
+
+.superapp-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+    gap: 24px;
+    padding: 32px;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 34%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 250, 249, 0.94) 100%);
+}
+
+.superapp-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--ai-indigo);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.superapp-hero h1 {
+    margin: 18px 0 0;
+    font-size: clamp(2.2rem, 4vw, 3.3rem);
+    line-height: 1.06;
+    color: var(--gray-900);
+}
+
+.superapp-hero p {
+    margin-top: 14px;
+    color: var(--gray-600);
+    line-height: 1.75;
+}
+
+.superapp-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.superapp-action-card,
+.superapp-score-card {
+    border-radius: 24px;
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: var(--shadow-md);
+}
+
+.superapp-action-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 22px;
+    text-decoration: none;
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+}
+
+.superapp-action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.superapp-action-card i {
+    color: var(--primary);
+}
+
+.superapp-score-card {
+    display: grid;
+    place-items: center;
+    padding: 26px;
+}
+
+.superapp-surface-card {
+    padding: 1.5rem;
+}
+
+.superapp-insights-card {
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.96) 0%, rgba(99, 102, 241, 0.92) 100%);
+}
+
+.superapp-insights-card h2,
+.superapp-insights-card__eyebrow {
+    color: white;
+}
+
+.superapp-insight-item {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: white;
+}
+
+.superapp-insight-item p {
+    color: rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 1024px) {
+    .superapp-hero {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .superapp-hero {
+        padding: 20px;
+    }
+
+    .superapp-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
 {% block extra_scripts %}
 <script>
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function createOfferCard(offer) {
+    const card = document.createElement("div");
+    card.className = "feature-card";
+    const title = document.createElement("strong");
+    title.textContent = offer.title || offer.name || "Offer";
+    const description = document.createElement("p");
+    description.className = "mb-0";
+    description.textContent = offer.description || offer.subtitle || "";
+    card.append(title, description);
+    return card;
+}
+
+function createOffersEmptyState() {
+    const wrapper = document.createElement("div");
+    wrapper.className = "empty-state";
+    const icon = document.createElement("div");
+    icon.className = "empty-state__icon";
+    icon.innerHTML = '<i class="fa-solid fa-tags"></i>';
+    const title = document.createElement("h3");
+    title.className = "empty-state__title";
+    title.textContent = "No personalized offers yet";
+    const message = document.createElement("p");
+    message.className = "empty-state__message";
+    message.textContent = "Fresh savings and refill suggestions will appear here once your activity gives us enough context.";
+    const link = document.createElement("a");
+    link.href = "/store/wellness-store";
+    link.className = "btn btn-primary btn-sm";
+    link.textContent = "Browse Store";
+    wrapper.append(icon, title, message, link);
+    return wrapper;
+}
+
+function renderHealthScoreCard(scoreCard) {
+    clearNode(scoreCard);
+    const wrapper = document.createElement("div");
+    wrapper.className = "score-circle";
+    wrapper.innerHTML = `<svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Care Outlook</span></div>`;
+    const message = document.createElement("p");
+    message.className = "mt-3 mb-0";
+    message.textContent = "{{ health_message }}";
+    scoreCard.append(wrapper, message);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const scoreCard = document.getElementById("healthScoreCard");
     const offersHost = document.getElementById("personalizedOffers");
     const offers = {{ personalized_offers | default([]) | tojson }};
     window.setTimeout(() => {
-        scoreCard.innerHTML = `<div class="score-circle"><svg viewBox="0 0 120 120"><circle class="bg" cx="60" cy="60" r="54"></circle><circle class="progress" cx="60" cy="60" r="54" style="stroke-dasharray: {{ health_score_percent }} 339;"></circle></svg><div class="score-text"><span class="score">{{ health_score }}</span><span>Care Outlook</span></div></div><p class="mt-3 mb-0">{{ health_message }}</p>`;
-        offersHost.innerHTML = offers.length
-            ? offers.map((offer) => `<div class="feature-card"><strong>${offer.title || offer.name}</strong><p class="mb-0">${offer.description || offer.subtitle || ''}</p></div>`).join("")
-            : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-tags"></i></div><h3 class="empty-state__title">No personalized offers yet</h3><p class="empty-state__message">Fresh savings and refill suggestions will appear here once your activity gives us enough context.</p><a href="/store/wellness-store" class="btn btn-primary btn-sm">Browse Store</a></div>`;
+        renderHealthScoreCard(scoreCard);
+        clearNode(offersHost);
+        if (offers.length) {
+            offers.forEach((offer) => offersHost.appendChild(createOfferCard(offer)));
+            return;
+        }
+        offersHost.appendChild(createOffersEmptyState());
     }, 250);
 });
 </script>

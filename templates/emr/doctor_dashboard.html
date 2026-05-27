@@ -2,25 +2,49 @@
 {% block title %}Doctor Dashboard | Kash AI{% endblock %}
 {% block page %}
 {% from "components/skeletons.html" import card_list %}
-<div class="site-container page-shell emr-shell">
+<div class="site-container page-shell emr-shell emr-modern-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
-        <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Doctor Dashboard</h1><p>Start the day with the numbers that matter most: appointments, pending clinical work, and unread labs.</p></div></div>
-        <div class="stats-grid stats-grid-4">
+        <section class="emr-hero-card glass-card">
+            <div>
+                <p class="eyebrow">EMR module</p>
+                <h1 class="h2">Doctor Dashboard</h1>
+                <p class="emr-hero-copy">Start the day with the numbers that matter most: appointments, pending clinical work, unread labs, and the next actions waiting for you.</p>
+            </div>
+            <div class="emr-hero-panels">
+                <div class="emr-mini-panel">
+                    <strong>Workflow focus</strong>
+                    <span>Appointments, follow-ups, and consult continuity in one place.</span>
+                </div>
+                <div class="emr-mini-panel emr-mini-panel--accent">
+                    <strong>Fast start</strong>
+                    <span>Open today’s list, then move straight into consults and charting.</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="stats-grid stats-grid-4 emr-stats-grid">
             <article class="metric-card"><span class="metric-label">Today's appointments</span><strong>{{ today_appointments|length }}</strong></article>
             <article class="metric-card"><span class="metric-label">Pending prescriptions</span><strong>{{ clinical_stats.consultations }}</strong></article>
             <article class="metric-card"><span class="metric-label">Unread lab results</span><strong>{{ pending_labs|length }}</strong></article>
             <article class="metric-card"><span class="metric-label">Revenue today</span><strong>Rs {{ '%.2f'|format(revenue_today) }}</strong></article>
         </div>
+
         <div class="content-grid-2 mt-4">
-            <article class="card">
-                <h2 class="h4">Today's appointments</h2>
+            <article class="card emr-surface-card">
+                <div class="section-headline">
+                    <h2 class="h4">Today's appointments</h2>
+                    <p>Priority patients and visit reasons for the day.</p>
+                </div>
                 <div class="stack-sm" id="doctorAppointmentsList">
                     {{ card_list(3) }}
                 </div>
             </article>
-            <article class="card">
-                <h2 class="h4">Follow-up reminders</h2>
+            <article class="card emr-surface-card">
+                <div class="section-headline">
+                    <h2 class="h4">Follow-up reminders</h2>
+                    <p>Patients who need review, continuity, or callback attention.</p>
+                </div>
                 <div class="stack-sm" id="doctorFollowupsList">
                     {{ card_list(2) }}
                 </div>
@@ -32,8 +56,66 @@
     <i class="fa-solid fa-plus"></i>
 </a>
 {% endblock %}
+{% block extra_head %}
+<style>
+.emr-modern-shell .page-content{display:grid;gap:24px}
+.emr-hero-card{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,.9fr);gap:24px;padding:30px;background:radial-gradient(circle at top right, rgba(99,102,241,.12), transparent 32%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%)}
+.emr-hero-card h1{margin:10px 0 0;font-size:clamp(2rem,4vw,3rem);color:var(--gray-900)}
+.emr-hero-copy{margin:14px 0 0;color:var(--gray-600);line-height:1.8;max-width:760px}
+.emr-hero-panels{display:grid;gap:14px}
+.emr-mini-panel{padding:20px;border-radius:22px;background:rgba(255,255,255,.92);border:1px solid rgba(229,231,235,.92);box-shadow:var(--shadow-md)}
+.emr-mini-panel strong{display:block;color:var(--gray-900)}
+.emr-mini-panel span{display:block;margin-top:8px;color:var(--gray-600);line-height:1.7}
+.emr-mini-panel--accent{background:linear-gradient(135deg, rgba(15,76,92,.08) 0%, rgba(99,102,241,.08) 100%)}
+.emr-stats-grid .metric-card,.emr-surface-card{border-radius:24px;box-shadow:var(--shadow-lg);border:1px solid rgba(229,231,235,.92);background:rgba(255,255,255,.96)}
+.emr-surface-card{padding:22px}
+.section-headline p{margin:8px 0 0;color:var(--gray-600)}
+.appointment-row{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:16px 18px;border-radius:18px;background:var(--gray-50);border:1px solid var(--gray-200)}
+.appointment-row strong{display:block;color:var(--gray-900)}
+.appointment-row span{color:var(--gray-600)}
+@media (max-width:1024px){.emr-hero-card{grid-template-columns:1fr}}
+@media (max-width:720px){.emr-hero-card,.emr-surface-card{padding:20px}.appointment-row{flex-direction:column}}
+</style>
+{% endblock %}
 {% block extra_scripts %}
 <script>
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function makeAppointmentRow(titleText, metaText) {
+    const row = document.createElement("div");
+    row.className = "appointment-row";
+    const title = document.createElement("strong");
+    title.textContent = titleText;
+    const meta = document.createElement("span");
+    meta.textContent = metaText;
+    row.append(title, meta);
+    return row;
+}
+
+function makeEmptyState(iconClass, titleText, messageText, href, label) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "empty-state";
+    const iconWrap = document.createElement("div");
+    iconWrap.className = "empty-state__icon";
+    const icon = document.createElement("i");
+    icon.className = iconClass;
+    iconWrap.appendChild(icon);
+    const title = document.createElement("h3");
+    title.className = "empty-state__title";
+    title.textContent = titleText;
+    const message = document.createElement("p");
+    message.className = "empty-state__message";
+    message.textContent = messageText;
+    const link = document.createElement("a");
+    link.className = "btn btn-primary btn-sm";
+    link.href = href;
+    link.textContent = label;
+    wrapper.append(iconWrap, title, message, link);
+    return wrapper;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const appointments = [
         {% for item in today_appointments %}
@@ -50,13 +132,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const followupsHost = document.getElementById("doctorFollowupsList");
 
     window.setTimeout(() => {
-        appointmentsHost.innerHTML = appointments.length
-            ? appointments.map((item) => `<div class="appointment-row"><strong>${item.name}</strong><span>${item.meta}</span></div>`).join("")
-            : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-regular fa-calendar"></i></div><h3 class="empty-state__title">No appointments today</h3><p class="empty-state__message">New bookings and walk-ins scheduled for today will appear here for quick review.</p><a href="/appointments" class="btn btn-primary btn-sm">View Appointments</a></div>`;
+        clearNode(appointmentsHost);
+        if (appointments.length) {
+            appointments.forEach((item) => appointmentsHost.appendChild(makeAppointmentRow(item.name, item.meta)));
+        } else {
+            appointmentsHost.appendChild(makeEmptyState("fa-regular fa-calendar", "No appointments today", "New bookings and walk-ins scheduled for today will appear here for quick review.", "/appointments", "View Appointments"));
+        }
 
-        followupsHost.innerHTML = followups.length
-            ? followups.map((item) => `<div class="appointment-row"><strong>${item.title}</strong><span>${item.date}</span></div>`).join("")
-            : `<div class="empty-state"><div class="empty-state__icon"><i class="fa-regular fa-bell"></i></div><h3 class="empty-state__title">No follow-ups due</h3><p class="empty-state__message">When patients need a check-in or review, their follow-up reminders will show up here.</p><a href="/followups" class="btn btn-primary btn-sm">Open Follow-ups</a></div>`;
+        clearNode(followupsHost);
+        if (followups.length) {
+            followups.forEach((item) => followupsHost.appendChild(makeAppointmentRow(item.title, item.date)));
+        } else {
+            followupsHost.appendChild(makeEmptyState("fa-regular fa-bell", "No follow-ups due", "When patients need a check-in or review, their follow-up reminders will show up here.", "/followups", "Open Follow-ups"));
+        }
     }, 250);
 });
 </script>

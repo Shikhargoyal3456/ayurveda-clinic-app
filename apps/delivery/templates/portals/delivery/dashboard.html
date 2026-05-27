@@ -2,7 +2,7 @@
 {% from "components/cards.html" import metric_card, nav_card %}
 {% block title %}Delivery Dashboard | {{ APP_NAME }}{% endblock %}
 {% block portal_content %}
-<section class="surface-card">
+<section class="surface-card ops-hero-card">
     <div class="section-heading">
         <div>
             <p class="eyebrow">Delivery dashboard</p>
@@ -23,25 +23,25 @@
         {{ metric_card('Status', partner.status, 'Current availability') }}
     </div>
 </section>
-<section class="split-grid">
+<section class="split-grid ops-nav-grid">
     {{ nav_card('Review live assignments', 'See the next deliveries in queue and prioritize the most urgent routes.', '/delivery#assignments', 'route', 'Live') }}
     {{ nav_card('Open route tracking', 'Jump into delivery tracking and keep route visibility close at hand during the shift.', '/delivery#tracking', 'location-dot', 'Tracking') }}
 </section>
-<section class="surface-card" id="assignments">
+<section class="surface-card ops-surface-card" id="assignments">
     <div class="section-heading"><div><p class="eyebrow">Assignment board</p><h2>Current deliveries</h2></div></div>
         <div class="table-list">
             {% for item in assignments %}
-            <div class="table-row"><div><strong>Order #{{ item.order_id }}</strong><div class="inline-meta"><span>{{ item.pickup }}</span><span>{{ item.drop }}</span><span>{{ item.eta }}</span></div></div><a class="ghost-button" href="/orders/tracking/{{ item.order_id }}">Track</a></div>
+            <div class="table-row"><div><strong>Order #{{ item.order_id }}</strong><div class="inline-meta"><span>{{ item.pickup }}</span><span>{{ item.drop }}</span><span>{{ item.eta }}</span></div></div><a class="ghost-button" href="{{ item.tracking_url or '/orders/tracking/' ~ item.order_id }}">Track</a></div>
         {% else %}<div class="empty-state"><strong>No deliveries assigned right now.</strong><span class="muted">Once new orders are routed to you, they will appear here with pickup, drop, and ETA details.</span></div>
         {% endfor %}
     </div>
 </section>
-<section class="split-grid">
+<section class="split-grid ops-surface-grid">
     <article class="surface-card" id="tracking">
         <div class="section-heading"><div><p class="eyebrow">Route tracking</p><h2>Live route visibility</h2></div></div>
         <div class="table-list">
             {% for item in assignments %}
-            <div class="table-row"><div><strong>Order #{{ item.order_id }}</strong><div class="inline-meta"><span>{{ item.pickup }}</span><span>{{ item.drop }}</span><span>{{ item.eta }}</span></div></div><a class="ghost-button" href="/orders/tracking/{{ item.order_id }}">Open map</a></div>
+            <div class="table-row"><div><strong>Order #{{ item.order_id }}</strong><div class="inline-meta"><span>{{ item.pickup }}</span><span>{{ item.drop }}</span><span>{{ item.eta }}</span></div></div><a class="ghost-button" href="{{ item.tracking_url or '/orders/tracking/' ~ item.order_id }}">Open map</a></div>
             {% else %}<div class="empty-state"><strong>No live routes yet.</strong><span class="muted">When you accept deliveries, live route tracking links will appear here.</span></div>{% endfor %}
         </div>
     </article>
@@ -54,4 +54,10 @@
         </div>
     </article>
 </section>
+{% endblock %}
+{% block extra_head %}
+<style>
+.ops-hero-card{background:radial-gradient(circle at top right, rgba(99,102,241,.1), transparent 34%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%);border-radius:28px;box-shadow:var(--shadow-lg)}
+.ops-nav-grid .surface-card,.ops-surface-grid .surface-card,.ops-surface-card{border-radius:24px;box-shadow:var(--shadow-lg)}
+</style>
 {% endblock %}

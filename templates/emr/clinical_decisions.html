@@ -51,15 +51,54 @@ document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("interactionResults");
     const interactionPairs = {{ interaction_pairs | default({}) | tojson }};
     if (!container) return;
+
+    function clearNode(node) {
+        while (node.firstChild) node.removeChild(node.firstChild);
+    }
+
+    function buildEmptyState() {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'empty-state';
+        const iconWrap = document.createElement('div');
+        iconWrap.className = 'empty-state__icon';
+        const icon = document.createElement('i');
+        icon.className = 'fa-solid fa-shield-heart';
+        iconWrap.appendChild(icon);
+        const title = document.createElement('h3');
+        title.className = 'empty-state__title';
+        title.textContent = 'No interaction alerts yet';
+        const message = document.createElement('p');
+        message.className = 'empty-state__message';
+        message.textContent = 'When drug and herb combinations need extra review, they will appear here.';
+        const button = document.createElement('button');
+        button.className = 'btn btn-primary btn-sm';
+        button.type = 'button';
+        button.textContent = 'Review medicines';
+        wrapper.append(iconWrap, title, message, button);
+        return wrapper;
+    }
+
+    function buildInteractionCard(drug, herbs) {
+        const card = document.createElement('div');
+        card.className = 'interaction-card';
+        const title = document.createElement('strong');
+        title.textContent = drug;
+        const copy = document.createElement('p');
+        copy.textContent = (herbs || []).join(', ');
+        card.append(title, copy);
+        return card;
+    }
+
     window.setTimeout(() => {
         const entries = Object.entries(interactionPairs || {});
+        clearNode(container);
         if (!entries.length) {
-            container.innerHTML = '<div class="empty-state"><div class="empty-state__icon"><i class="fa-solid fa-shield-heart"></i></div><h3 class="empty-state__title">No interaction alerts yet</h3><p class="empty-state__message">When drug and herb combinations need extra review, they will appear here.</p><button class="btn btn-primary btn-sm" type="button">Review medicines</button></div>';
+            container.appendChild(buildEmptyState());
             return;
         }
-        container.innerHTML = entries.map(([drug, herbs]) => `
-            <div class="interaction-card"><strong>${drug}</strong><p>${(herbs || []).join(", ")}</p></div>
-        `).join("");
+        entries.forEach(([drug, herbs]) => {
+            container.appendChild(buildInteractionCard(drug, herbs));
+        });
     }, 250);
 });
 </script>

@@ -8,6 +8,7 @@ from app.database import get_db
 from app.portal_auth import get_portal_user
 from models.user import User, UserRole
 from shared.template_engine import templates
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["debug"])
@@ -41,8 +42,7 @@ def debug_session(request: Request, db: Session = Depends(get_db)):
             "role": active_user.role.value if isinstance(active_user.role, UserRole) else str(active_user.role),
         }
 
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "debug_session.html",
         {
             "request": request,

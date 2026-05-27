@@ -35,7 +35,7 @@
                 <p>Expected delivery: {{ expected_delivery }}</p>
             </div>
             <div class="header-actions-row">
-                <a href="/orders/tracking/{{ order.id }}" class="btn btn-primary">Track Order</a>
+                <a href="{{ tracking_url or '/orders/tracking/' ~ order.id }}" class="btn btn-primary">Track Order</a>
                 <a href="/orders/invoice/{{ order.id }}" class="btn btn-outline-success">View Invoice</a>
                 <a href="/order-medicines" class="btn btn-secondary">Continue Shopping</a>
             </div>
@@ -54,7 +54,8 @@
 {% block extra_head %}
 <script>
 function sendWhatsAppConfirmation() {
-    const message = `Order #{{ order.id }} confirmed.%0ATotal: Rs {{ order.total_amount }}%0ATrack: ${window.location.origin}/orders/tracking/{{ order.id }}`;
+    const trackingUrl = "{{ tracking_url or '/orders/tracking/' ~ order.id }}";
+    const message = `Order #{{ order.id }} confirmed.%0ATotal: Rs {{ order.total_amount }}%0ATrack: ${window.location.origin}${trackingUrl}`;
     window.open(`https://wa.me/91{{ customer_mobile }}?text=${message}`, '_blank');
 }
 </script>

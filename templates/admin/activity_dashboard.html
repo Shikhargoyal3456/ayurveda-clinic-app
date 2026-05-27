@@ -5,7 +5,7 @@
 {% block page %}
 <section class="page-section">
     <div class="site-container content-stack activity-monitor">
-        <div class="page-header">
+        <section class="activity-hero glass-card">
             <div>
                 <p class="eyebrow">Operations monitor</p>
                 <h1>Platform Activity Monitor</h1>
@@ -15,7 +15,7 @@
                 <a href="/admin/complete" class="btn btn-primary">Open Admin Panel</a>
                 <a href="/admin/add-medicine" class="btn btn-outline-success">Add Medicine</a>
             </div>
-        </div>
+        </section>
 
         <div class="metrics-grid">
             <div class="metric-card"><h3>Active Users</h3><div class="metric-value" id="activeUsers">0</div></div>
@@ -26,16 +26,12 @@
 
         <div class="content-grid-2">
             <div class="card live-activity">
-                <div class="section-headline">
-                    <h2>Live Activity Feed</h2>
-                </div>
+                <div class="section-headline"><h2>Live Activity Feed</h2></div>
                 <div id="activityFeed" class="activity-feed-list"></div>
             </div>
 
             <div class="card order-summary">
-                <div class="section-headline">
-                    <h2>Order Status Overview</h2>
-                </div>
+                <div class="section-headline"><h2>Order Status Overview</h2></div>
                 <div class="status-grid">
                     <div class="status pending"><span>Pending</span><strong id="pendingCount">0</strong></div>
                     <div class="status confirmed"><span>Confirmed</span><strong id="confirmedCount">0</strong></div>
@@ -48,9 +44,7 @@
         </div>
 
         <div class="card recent-orders">
-            <div class="section-headline">
-                <h2>Recent Orders</h2>
-            </div>
+            <div class="section-headline"><h2>Recent Orders</h2></div>
             <div class="table-wrap">
                 <table class="data-table">
                     <thead>
@@ -65,17 +59,29 @@
 {% endblock %}
 
 {% block extra_head %}
+<style>
+.activity-hero{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;padding:28px 30px;background:radial-gradient(circle at top right, rgba(99,102,241,.12), transparent 32%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%);border-radius:26px}
+.activity-feed-list{display:grid;gap:12px}
+.activity-item{display:grid;grid-template-columns:auto auto 1fr;gap:12px;align-items:center;padding:14px 16px;border-radius:16px;background:var(--gray-50);border:1px solid var(--gray-200)}
+.activity-item .time{font-size:.82rem;color:var(--gray-600);font-weight:700}
+.activity-item .message{color:var(--gray-900)}
+.status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.status{padding:16px;border-radius:18px;border:1px solid rgba(229,231,235,.92);background:white}
+.status span{display:block;color:var(--gray-600);font-size:.88rem}
+.status strong{display:block;margin-top:6px;font-size:1.4rem;color:var(--gray-900)}
+.table-actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:720px){.activity-hero{padding:20px}.activity-item{grid-template-columns:1fr}.status-grid{grid-template-columns:1fr}}
+</style>
 <script>
 let activitySocket;
 
 function getActivityIcon(type) {
-    const icons = {
-        medicine_added: '💊',
-        bulk_upload: '📊',
-        order_status_updated: '📦',
-        order_notified: '📲'
-    };
+    const icons = { medicine_added: '💊', bulk_upload: '📊', order_status_updated: '📦', order_notified: '📲' };
     return icons[type] || '🔔';
+}
+
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
 }
 
 function addToActivityFeed(activity) {
@@ -83,11 +89,16 @@ function addToActivityFeed(activity) {
     if (!feed) return;
     const activityItem = document.createElement('div');
     activityItem.className = 'activity-item';
-    activityItem.innerHTML = `
-        <span class="time">${new Date(activity.timestamp).toLocaleTimeString()}</span>
-        <span class="icon">${getActivityIcon(activity.type)}</span>
-        <span class="message">${activity.message}</span>
-    `;
+    const time = document.createElement('span');
+    time.className = 'time';
+    time.textContent = new Date(activity.timestamp).toLocaleTimeString();
+    const icon = document.createElement('span');
+    icon.className = 'icon';
+    icon.textContent = getActivityIcon(activity.type);
+    const message = document.createElement('span');
+    message.className = 'message';
+    message.textContent = activity.message;
+    activityItem.append(time, icon, message);
     feed.insertBefore(activityItem, feed.firstChild);
     while (feed.children.length > 50) feed.removeChild(feed.lastChild);
 }
@@ -126,19 +137,47 @@ async function loadOrders() {
     const response = await fetch('/api/admin/orders/recent');
     const orders = await response.json();
     const tableBody = document.getElementById('ordersTable');
-    tableBody.innerHTML = orders.map(order => `
-        <tr>
-            <td><a href="/orders/tracking/${order.id}">#${order.id}</a></td>
-            <td>${order.customer_name}</td>
-            <td>${order.items_count} items</td>
-            <td>Rs ${order.total}</td>
-            <td><span class="status-badge ${order.status}">${order.status}</span></td>
-            <td class="table-actions">
-                <button class="btn btn-ghost btn-xs" onclick="updateStatus(${order.id}, 'processing')">Process</button>
-                <a class="btn btn-outline-success btn-xs" href="/orders/confirmation/${order.id}">View</a>
-            </td>
-        </tr>
-    `).join('');
+    clearNode(tableBody);
+    orders.forEach((order) => {
+        const row = document.createElement('tr');
+
+        const idCell = document.createElement('td');
+        const link = document.createElement('a');
+        link.href = order.tracking_url || '#';
+        link.textContent = `#${order.id}`;
+        idCell.appendChild(link);
+
+        const customer = document.createElement('td');
+        customer.textContent = order.customer_name;
+
+        const items = document.createElement('td');
+        items.textContent = `${order.items_count} items`;
+
+        const total = document.createElement('td');
+        total.textContent = `Rs ${order.total}`;
+
+        const statusCell = document.createElement('td');
+        const status = document.createElement('span');
+        status.className = `status-badge ${order.status}`;
+        status.textContent = order.status;
+        statusCell.appendChild(status);
+
+        const actions = document.createElement('td');
+        actions.className = 'table-actions';
+        const processBtn = document.createElement('button');
+        processBtn.className = 'btn btn-ghost btn-xs';
+        processBtn.type = 'button';
+        processBtn.textContent = 'Process';
+        processBtn.addEventListener('click', () => updateStatus(order.id, 'processing'));
+        const viewLink = document.createElement('a');
+        viewLink.className = 'btn btn-outline-success btn-xs';
+        viewLink.href = `/orders/confirmation/${order.id}`;
+        viewLink.textContent = 'View';
+        actions.append(processBtn, viewLink);
+
+        row.append(idCell, customer, items, total, statusCell, actions);
+        tableBody.appendChild(row);
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -146,9 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     activitySocket = new WebSocket(`${protocol}//${window.location.host}/ws/activity`);
     activitySocket.onmessage = event => addToActivityFeed(JSON.parse(event.data));
     setInterval(() => {
-        if (activitySocket && activitySocket.readyState === WebSocket.OPEN) {
-            activitySocket.send('ping');
-        }
+        if (activitySocket && activitySocket.readyState === WebSocket.OPEN) activitySocket.send('ping');
     }, 15000);
     fetchStats();
     loadOrders();

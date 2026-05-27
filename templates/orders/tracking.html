@@ -1,68 +1,278 @@
 {% extends "patient_simple_base.html" %}
 {% set simple_nav = 'orders' %}
 {% block title %}KASH AI - Track Orders{% endblock %}
-{% block page %}
-<section class="simple-card">
-    <h1 class="title page-title">Track Orders</h1>
-    <p class="subtitle page-description">See where your order is and when it will arrive.</p>
-    {% if active_profile_name %}
-    <p class="subtitle" style="margin-top:10px;">Showing orders for {{ active_profile_name }}</p>
-    {% endif %}
-</section>
 
-<section class="simple-card" id="trackingCard">
-    <div id="trackingFlash" class="notice green" style="display:none;" aria-live="polite"></div>
-    <div id="trackingEmpty" class="empty-state" aria-live="polite">
-        <div class="empty-state__icon">📦</div>
-        <h3 class="empty-state__title">No orders to track yet</h3>
-        <p class="empty-state__message">Your latest order will appear here after you place it.</p>
-        <div style="display:grid; gap:12px; margin-top:14px;">
-            <a class="secondary-btn" id="trackOrderBtn" href="/order-medicines">Add Medicines to Order</a>
-            <a class="secondary-btn" href="/order-medicines?tab=upload">Upload Prescription</a>
+{% block page %}
+<div class="tracking-modern-page">
+    <section class="tracking-hero glass-card">
+        <div class="tracking-hero__copy">
+            <span class="tracking-kicker"><i class="fa-solid fa-truck-fast" aria-hidden="true"></i> Live delivery visibility</span>
+            <h1 class="title page-title">Track Orders</h1>
+            <p class="subtitle page-description">See where your order is, when it should arrive, and what step comes next.</p>
+            {% if active_profile_name %}
+            <p class="tracking-profile-note">Showing orders for {{ active_profile_name }}</p>
+            {% endif %}
         </div>
-    </div>
-    <div class="subtitle">{% include "components/ws_status.html" %}</div>
-    <div id="trackingSkeleton" class="skel-group" role="status" aria-live="polite" aria-label="Loading order tracking">
-        <div class="skel skel-heading"></div>
-        <div class="skel skel-text skel-text--medium"></div>
-        <div class="skel skel-text skel-text--short"></div>
-        <div class="skel" style="height:88px;"></div>
-    </div>
-    <div id="trackingContent" style="display:none;" aria-live="polite">
-        <div class="list-row">
-            <div class="list-copy">
-                <strong id="orderTitle">Order</strong>
-                <span id="arrivalText">Checking delivery time...</span>
+        <div class="tracking-hero__panel">
+            <div class="tracking-panel-card">
+                <strong>Clear status updates</strong>
+                <p>From pharmacy confirmation to delivery movement, your latest updates appear in one timeline.</p>
             </div>
-            <span class="status blue" id="orderStatusBadge">Checking</span>
-        </div>
-        <div class="order-stepper" style="margin-top:14px;">
-            <div class="order-step is-active"><strong>Placed</strong><p id="stepPlaced">Waiting for update</p></div>
-            <div class="order-step"><strong>Confirmed</strong><p id="stepConfirmed">Waiting for update</p></div>
-            <div class="order-step"><strong>Dispatched</strong><p id="stepDelivery">Waiting for update</p></div>
-            <div class="order-step"><strong>Delivered</strong><p id="stepDelivered">Waiting for update</p></div>
-        </div>
-        <div class="list-row" style="margin-top:14px;">
-            <div class="list-copy">
-                <strong id="deliveryPartnerName">Delivery Partner: Rajesh</strong>
-                <span id="deliveryPartnerMeta">Location updates are on.</span>
-            </div>
-            <a class="secondary-btn" id="deliveryPartnerContact" href="tel:9999999999">Contact Delivery Partner</a>
-        </div>
-        <div class="list-row" style="margin-top:14px;">
-            <div class="list-copy">
-                <strong>Delivery person location</strong>
-                <span id="mapText">Live map updates available during delivery.</span>
+            <div class="tracking-panel-card tracking-panel-card--soft">
+                <strong>Fast next actions</strong>
+                <p>Reorder the same medicines or jump back into care and ordering without searching again.</p>
             </div>
         </div>
-        <iframe id="deliveryMap" title="Delivery location" style="width:100%;min-height:220px;border:0;border-radius:18px;margin-top:14px;display:none;" loading="lazy"></iframe>
-        <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:14px;">
-            <button class="secondary-btn" type="button" onclick="reorderSameItems()">🔄 Reorder Same Items</button>
-            <button class="secondary-btn" type="button" onclick="window.location.href='/'">🏠 Home</button>
+    </section>
+
+    <section class="tracking-surface-card" id="trackingCard">
+        <div id="trackingFlash" class="notice green" style="display:none;" aria-live="polite"></div>
+        <div class="tracking-ws-status">{% include "components/ws_status.html" %}</div>
+
+        <div id="trackingEmpty" class="empty-state tracking-empty" aria-live="polite">
+            <div class="empty-state__icon">📦</div>
+            <h3 class="empty-state__title">No orders to track yet</h3>
+            <p class="empty-state__message">Your latest order will appear here after you place it.</p>
+            <div class="tracking-empty__actions">
+                <a class="btn-modern btn-modern--secondary" id="trackOrderBtn" href="/order-medicines">Add Medicines to Order</a>
+                <a class="btn-modern btn-modern--secondary" href="/order-medicines?tab=upload">Upload Prescription</a>
+            </div>
         </div>
-    </div>
-</section>
+
+        <div id="trackingSkeleton" class="skel-group" role="status" aria-live="polite" aria-label="Loading order tracking">
+            <div class="skel skel-heading"></div>
+            <div class="skel skel-text skel-text--medium"></div>
+            <div class="skel skel-text skel-text--short"></div>
+            <div class="skel" style="height:88px;"></div>
+        </div>
+
+        <div id="trackingContent" style="display:none;" aria-live="polite">
+            <div class="tracking-topbar">
+                <div class="list-copy">
+                    <strong id="orderTitle">Order</strong>
+                    <span id="arrivalText">Checking delivery time...</span>
+                </div>
+                <span class="status blue" id="orderStatusBadge">Checking</span>
+            </div>
+
+            <div class="order-stepper">
+                <div class="order-step is-active"><strong>Placed</strong><p id="stepPlaced">Waiting for update</p></div>
+                <div class="order-step"><strong>Confirmed</strong><p id="stepConfirmed">Waiting for update</p></div>
+                <div class="order-step"><strong>Dispatched</strong><p id="stepDelivery">Waiting for update</p></div>
+                <div class="order-step"><strong>Delivered</strong><p id="stepDelivered">Waiting for update</p></div>
+            </div>
+
+            <div class="tracking-info-grid">
+                <div class="tracking-info-card">
+                    <div class="list-copy">
+                        <strong id="deliveryPartnerName">Delivery Partner: Rajesh</strong>
+                        <span id="deliveryPartnerMeta">Location updates are on.</span>
+                    </div>
+                    <a class="btn-modern btn-modern--secondary" id="deliveryPartnerContact" href="tel:9999999999">Contact Delivery Partner</a>
+                </div>
+
+                <div class="tracking-info-card">
+                    <div class="list-copy">
+                        <strong>Delivery person location</strong>
+                        <span id="mapText">Live map updates available during delivery.</span>
+                    </div>
+                </div>
+            </div>
+
+            <iframe id="deliveryMap" title="Delivery location" loading="lazy"></iframe>
+
+            <div class="tracking-actions">
+                <button class="btn-modern btn-modern--secondary" type="button" onclick="reorderSameItems()">Reorder Same Items</button>
+                <button class="btn-modern btn-modern--secondary" type="button" onclick="window.location.href='/'">Go Home</button>
+            </div>
+        </div>
+    </section>
+</div>
 {% endblock %}
+
+{% block extra_head %}
+<style>
+.tracking-modern-page {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    display: grid;
+    gap: 24px;
+}
+
+.tracking-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.85fr);
+    gap: 24px;
+    padding: 30px;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 32%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 250, 249, 0.94) 100%);
+}
+
+.tracking-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--ai-indigo);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.tracking-hero h1 {
+    margin: 18px 0 0;
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
+    line-height: 1.06;
+    color: var(--gray-900);
+}
+
+.tracking-profile-note,
+.tracking-panel-card p,
+.tracking-hero .subtitle,
+.tracking-ws-status {
+    color: var(--gray-600);
+}
+
+.tracking-profile-note {
+    margin-top: 14px;
+    font-weight: 600;
+}
+
+.tracking-hero__panel {
+    display: grid;
+    gap: 14px;
+}
+
+.tracking-panel-card,
+.tracking-surface-card,
+.tracking-info-card {
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    box-shadow: var(--shadow-md);
+}
+
+.tracking-panel-card {
+    padding: 22px;
+}
+
+.tracking-panel-card--soft {
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+}
+
+.tracking-surface-card {
+    padding: 26px;
+}
+
+.tracking-ws-status {
+    margin-top: 12px;
+}
+
+.tracking-topbar,
+.tracking-info-card {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.tracking-topbar {
+    margin-top: 18px;
+}
+
+.order-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.order-step {
+    padding: 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(214, 224, 221, 0.95);
+    background: white;
+}
+
+.order-step strong {
+    display: block;
+    color: var(--gray-900);
+}
+
+.order-step p {
+    margin-top: 6px;
+    font-size: 0.92rem;
+    color: var(--gray-600);
+}
+
+.order-step.is-active {
+    background: rgba(43, 174, 102, 0.12);
+    border-color: rgba(13, 122, 111, 0.28);
+}
+
+.tracking-info-grid {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.tracking-info-card {
+    padding: 18px;
+}
+
+#deliveryMap {
+    width: 100%;
+    min-height: 240px;
+    border: 0;
+    border-radius: 22px;
+    margin-top: 18px;
+    display: none;
+    box-shadow: var(--shadow-md);
+}
+
+.tracking-actions,
+.tracking-empty__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+@media (max-width: 1024px) {
+    .tracking-hero {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .tracking-modern-page {
+        padding: 18px 14px 34px;
+    }
+
+    .tracking-hero,
+    .tracking-surface-card {
+        padding: 20px;
+    }
+
+    .order-stepper {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .tracking-topbar,
+    .tracking-info-card,
+    .tracking-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
 let trackingSocket = null;
@@ -75,6 +285,29 @@ function getLatestOrderId() {
 function setText(id, value) {
     const node = document.getElementById(id);
     if (node) node.textContent = value;
+}
+
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function buildTrackingErrorState(host) {
+    clearNode(host);
+    host.style.display = "block";
+    const icon = document.createElement("div");
+    icon.className = "empty-state__icon";
+    icon.textContent = "📦";
+    const title = document.createElement("h3");
+    title.className = "empty-state__title";
+    title.textContent = "We could not load your order";
+    const message = document.createElement("p");
+    message.className = "empty-state__message";
+    message.textContent = "Please try again in a moment.";
+    const link = document.createElement("a");
+    link.className = "btn-modern";
+    link.href = "/order-medicines";
+    link.textContent = "Order Medicines";
+    host.append(icon, title, message, link);
 }
 
 function showTrackingFlash() {
@@ -172,10 +405,7 @@ async function loadTracking() {
         const emptyNode = document.getElementById("trackingEmpty");
         const skeletonNode = document.getElementById("trackingSkeleton");
         const contentNode = document.getElementById("trackingContent");
-        if (emptyNode) {
-            emptyNode.style.display = "block";
-            emptyNode.innerHTML = `<div class="empty-state__icon">📦</div><h3 class="empty-state__title">We could not load your order</h3><p class="empty-state__message">Please try again in a moment.</p><a class="btn-primary" href="/order-medicines">Order Medicines</a>`;
-        }
+        if (emptyNode) buildTrackingErrorState(emptyNode);
         if (skeletonNode) skeletonNode.style.display = "none";
         if (contentNode) contentNode.style.display = "none";
     }
@@ -184,8 +414,4 @@ async function loadTracking() {
 document.addEventListener("DOMContentLoaded", loadTracking);
 window.addEventListener("beforeunload", () => trackingSocket?.disconnect());
 </script>
-<style>
-.order-stepper{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.order-step{padding:14px;border-radius:18px;border:1px solid #d6e0dd;background:#fff}.order-step strong{display:block;color:#1a2332}.order-step p{margin-top:4px;font-size:.92rem;color:#5b6678}.order-step.is-active{background:#e8f5f0;border-color:#0d7a6f}
-@media (max-width:720px){.order-stepper{grid-template-columns:1fr 1fr}}
-</style>
 {% endblock %}

@@ -13,6 +13,7 @@ from pydantic import BaseModel, field_validator
 
 from app.config import settings
 from app.security import Sanitizer
+from shared.template_engine import render_template
 
 
 logger = logging.getLogger(__name__)
@@ -43,8 +44,7 @@ class ContactForm(BaseModel):
 
 @router.get("/contact")
 def contact_page(request: Request):
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "contact.html",
         {
             "request": request,

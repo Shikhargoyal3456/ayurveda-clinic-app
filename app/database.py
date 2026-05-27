@@ -191,6 +191,9 @@ def init_db() -> None:
     from models.supplier import Supplier  # noqa: F401
     from models.user import DeliveryProfile, DoctorProfile, LabProfile, PatientProfile, PharmacyProfile, User, UserProfile  # noqa: F401
 
+    if settings.is_testing and _engine_is_sqlite():
+        Base.metadata.drop_all(bind=engine)
+
     try:
         _run_database_startup()
     except OperationalError as exc:

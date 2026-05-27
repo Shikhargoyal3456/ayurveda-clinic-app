@@ -16,6 +16,7 @@ from models.emr import EMRLabOrder
 from models.marketplace import LabStore
 from models.user import User
 from services.marketplace_service import ensure_marketplace_seed_data, lab_owner_dashboard_payload
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["lab-owner"])
@@ -63,8 +64,7 @@ def require_lab_management_access(request: Request, db: Session = Depends(get_db
 def lab_dashboard_page(request: Request, user: User = Depends(require_portal_roles("lab_owner", "admin"))):
     ensure_marketplace_seed_data()
     payload = lab_owner_dashboard_payload()
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "portal/lab_dashboard.html",
         _lab_context(request, user, **payload),
     )

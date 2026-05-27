@@ -18,6 +18,7 @@ from core.dashboards import doctor_dashboard_context
 from models.user import DoctorProfile
 from services.emr_service import get_doctor_dashboard_data
 from shared.template_engine import templates
+from shared.template_engine import render_template
 
 
 router = APIRouter(tags=["doctor-portal"])
@@ -95,7 +96,7 @@ def _doctor_dashboard_context(user, db: Session, request: Request) -> tuple[dict
 @router.get("/portal/doctor")
 def dashboard(request: Request, user=Depends(require_portal_roles("doctor")), db: Session = Depends(get_db)):
     context, _ = _doctor_dashboard_context(user, db, request)
-    return templates.TemplateResponse(request, "portals/doctor/dashboard.html", context)
+    return render_template(templates, request, "portals/doctor/dashboard.html", context)
 
 
 @router.get("/doctor/{doctor_type}/dashboard")
@@ -109,4 +110,4 @@ def doctor_dashboard_variant(
     normalized = normalize_doctor_type(doctor_type, resolved_type)
     context["doctor_type"] = normalized
     template_name = f"doctor/{normalized}/dashboard.html"
-    return templates.TemplateResponse(request, template_name, context)
+    return render_template(templates, request, template_name, context)

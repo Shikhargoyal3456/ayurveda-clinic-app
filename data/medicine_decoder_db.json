@@ -1,0 +1,189 @@
+[
+  {
+    "name": "Dolo 650",
+    "generic_name": "Paracetamol",
+    "aliases": ["Dolo", "Dolo650", "Paracetamol 650", "Crocin 650", "PCM 650"],
+    "category": "allopathy",
+    "classification": "analgesic",
+    "typical_dosages": ["650 mg", "1 tablet"],
+    "common_frequencies": ["OD", "BD", "TDS", "SOS"],
+    "instructions": ["After food", "With water"],
+    "brand_alternatives": ["Paracetamol 650mg", "Crocin 650", "Calpol 650"]
+  },
+  {
+    "name": "Paracetamol 500mg",
+    "generic_name": "Paracetamol",
+    "aliases": ["PCM 500", "Acetaminophen 500", "Crocin 500", "Calpol 500"],
+    "category": "allopathy",
+    "classification": "analgesic",
+    "typical_dosages": ["500 mg", "1 tablet"],
+    "common_frequencies": ["OD", "BD", "TDS", "SOS"],
+    "instructions": ["After food", "With water"],
+    "brand_alternatives": ["Crocin 500", "Calpol 500", "Pacimol 500"]
+  },
+  {
+    "name": "Amoxicillin 500mg",
+    "generic_name": "Amoxicillin",
+    "aliases": ["Amox 500", "Amoxycillin 500", "Mox 500", "Novamox 500"],
+    "category": "allopathy",
+    "classification": "antibiotic",
+    "typical_dosages": ["500 mg", "1 capsule"],
+    "common_frequencies": ["BD", "TDS"],
+    "instructions": ["After food", "Complete the full course"],
+    "brand_alternatives": ["Novamox 500", "Mox 500", "Amox 500"]
+  },
+  {
+    "name": "Azithromycin 500mg",
+    "generic_name": "Azithromycin",
+    "aliases": ["Azithral 500", "Azee 500", "Azithro 500"],
+    "category": "allopathy",
+    "classification": "antibiotic",
+    "typical_dosages": ["500 mg", "1 tablet"],
+    "common_frequencies": ["OD"],
+    "instructions": ["Before food", "Daily at the same time"],
+    "brand_alternatives": ["Azithral 500", "Azee 500", "Azax 500"]
+  },
+  {
+    "name": "Cefixime 200mg",
+    "generic_name": "Cefixime",
+    "aliases": ["Taxim O 200", "Cefi 200", "Mahacef 200"],
+    "category": "allopathy",
+    "classification": "antibiotic",
+    "typical_dosages": ["200 mg", "1 tablet"],
+    "common_frequencies": ["BD"],
+    "instructions": ["After food", "Complete the full course"],
+    "brand_alternatives": ["Taxim O 200", "Mahacef 200", "Cefi 200"]
+  },
+  {
+    "name": "Omeprazole 20mg",
+    "generic_name": "Omeprazole",
+    "aliases": ["Omez 20", "Ocid 20", "Omep 20"],
+    "category": "allopathy",
+    "classification": "gastrointestinal",
+    "typical_dosages": ["20 mg", "1 capsule"],
+    "common_frequencies": ["OD", "BD"],
+    "instructions": ["Before food", "Before breakfast"],
+    "brand_alternatives": ["Omez 20", "Ocid 20", "Omep 20"]
+  },
+  {
+    "name": "Pantoprazole 40mg",
+    "generic_name": "Pantoprazole",
+    "aliases": ["Pan 40", "Pantocid 40", "Pantop 40"],
+    "category": "allopathy",
+    "classification": "gastrointestinal",
+    "typical_dosages": ["40 mg", "1 tablet"],
+    "common_frequencies": ["OD", "BD"],
+    "instructions": ["Before food", "Before breakfast"],
+    "brand_alternatives": ["Pantocid 40", "Pan 40", "Pantop 40"]
+  },
+  {
+    "name": "Cetirizine 10mg",
+    "generic_name": "Cetirizine",
+    "aliases": ["Cetzine", "Okacet", "Cetri 10"],
+    "category": "allopathy",
+    "classification": "antihistamine",
+    "typical_dosages": ["10 mg", "1 tablet"],
+    "common_frequencies": ["HS", "OD"],
+    "instructions": ["At night", "May cause drowsiness"],
+    "brand_alternatives": ["Cetzine", "Okacet", "Cetcip 10"]
+  },
+  {
+    "name": "Levocetirizine 5mg",
+    "generic_name": "Levocetirizine",
+    "aliases": ["LCZ 5", "Xyzal 5", "Levocetzine"],
+    "category": "allopathy",
+    "classification": "antihistamine",
+    "typical_dosages": ["5 mg", "1 tablet"],
+    "common_frequencies": ["HS", "OD"],
+    "instructions": ["At night", "May cause drowsiness"],
+    "brand_alternatives": ["LCZ 5", "Xyzal 5", "Levocetzine"]
+  },
+  {
+    "name": "Metformin 500mg",
+    "generic_name": "Metformin",
+    "aliases": ["Glycomet 500", "Metlong 500", "Obimet 500"],
+    "category": "allopathy",
+    "classification": "antidiabetic",
+    "typical_dosages": ["500 mg", "1 tablet"],
+    "common_frequencies": ["OD", "BD"],
+    "instructions": ["After food", "With meals"],
+    "brand_alternatives": ["Glycomet 500", "Metlong 500", "Obimet 500"]
+  },
+  {
+    "name": "Amlodipine 5mg",
+    "generic_name": "Amlodipine",
+    "aliases": ["Amlong 5", "Amlip 5", "Amcard 5"],
+    "category": "allopathy",
+    "classification": "antihypertensive",
+    "typical_dosages": ["5 mg", "1 tablet"],
+    "common_frequencies": ["OD"],
+    "instructions": ["Same time every day", "With water"],
+    "brand_alternatives": ["Amlong 5", "Amlip 5", "Amcard 5"]
+  },
+  {
+    "name": "Atorvastatin 10mg",
+    "generic_name": "Atorvastatin",
+    "aliases": ["Atorva 10", "Lipikind 10", "Tonact 10"],
+    "category": "allopathy",
+    "classification": "lipid-lowering",
+    "typical_dosages": ["10 mg", "1 tablet"],
+    "common_frequencies": ["HS", "OD"],
+    "instructions": ["At night", "Same time every day"],
+    "brand_alternatives": ["Atorva 10", "Lipikind 10", "Tonact 10"]
+  },
+  {
+    "name": "Ashwagandha Capsules",
+    "generic_name": "Ashwagandha",
+    "aliases": ["Ashwagandha", "Ashwa", "Withania somnifera"],
+    "category": "ayurveda",
+    "classification": "adaptogen",
+    "typical_dosages": ["1 capsule", "500 mg"],
+    "common_frequencies": ["OD", "BD"],
+    "instructions": ["After food", "With milk"],
+    "brand_alternatives": ["Ashwagandha Tablet", "Ashwagandha Churna", "Ashwagandha Forte"]
+  },
+  {
+    "name": "Triphala Churna",
+    "generic_name": "Triphala",
+    "aliases": ["Triphala", "Triphala Powder", "Trifla"],
+    "category": "ayurveda",
+    "classification": "digestive",
+    "typical_dosages": ["3 gm", "1 tsp"],
+    "common_frequencies": ["HS", "OD"],
+    "instructions": ["With warm water", "At bedtime"],
+    "brand_alternatives": ["Triphala Tablet", "Triphala Guggulu", "Organic Triphala"]
+  },
+  {
+    "name": "Sitopaladi Churna",
+    "generic_name": "Sitopaladi",
+    "aliases": ["Sitopaladi", "Sitopladi", "Sitopaladi Powder"],
+    "category": "ayurveda",
+    "classification": "respiratory",
+    "typical_dosages": ["2 gm", "1 tsp"],
+    "common_frequencies": ["BD", "TDS"],
+    "instructions": ["With honey", "After food"],
+    "brand_alternatives": ["Sitopaladi Vati", "Sitopaladi Powder", "Sitopaladi Plus"]
+  },
+  {
+    "name": "Guduchi Satva",
+    "generic_name": "Guduchi",
+    "aliases": ["Giloy Satva", "Guduchi", "Tinospora cordifolia"],
+    "category": "ayurveda",
+    "classification": "immunomodulator",
+    "typical_dosages": ["500 mg", "1 tablet"],
+    "common_frequencies": ["BD", "TDS"],
+    "instructions": ["After food", "With warm water"],
+    "brand_alternatives": ["Giloy Tablet", "Guduchi Ghanvati", "Guduchi Satva"]
+  },
+  {
+    "name": "Liv 52",
+    "generic_name": "Hepatoprotective herbal blend",
+    "aliases": ["Liv52", "LIV 52 DS", "Liv.52"],
+    "category": "ayurveda",
+    "classification": "liver support",
+    "typical_dosages": ["1 tablet", "10 ml"],
+    "common_frequencies": ["BD", "TDS"],
+    "instructions": ["After food", "With water"],
+    "brand_alternatives": ["Liv 52 DS", "Liv 52 Syrup", "Liv 52 Tablet"]
+  }
+]

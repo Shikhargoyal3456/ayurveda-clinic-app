@@ -118,7 +118,10 @@
                     <a class="portal-link" href="/telemedicine/book">Consult</a>
                     <a class="portal-link" href="/order-medicines">Search Medicines</a>
                     <a class="portal-link" href="/orders">Orders</a>
-                    <a class="portal-link" href="/auth/logout">Logout</a>
+                    <form method="post" action="/auth/logout" class="portal-link-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                        <button type="submit" class="portal-link portal-link-button">Logout</button>
+                    </form>
                     {% else %}
                     <a class="portal-link" href="/auth/login/patient">Patient Login</a>
                     <a class="portal-link" href="/auth/login/doctor">Doctor Login</a>
@@ -148,7 +151,10 @@
                 <button type="button" class="mini-btn" aria-label="Go back" onclick="history.length > 1 ? history.back() : window.location.href='{{ patient_home_href }}'">Back</button>
                 <a class="mini-btn" href="{{ patient_home_href }}">Home</a>
                 {% if portal_session_role == 'patient' %}
-                <a class="mini-btn" href="/auth/logout">Logout</a>
+                <form method="post" action="/auth/logout" class="mini-btn-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                    <button type="submit" class="mini-btn">Logout</button>
+                </form>
                 {% else %}
                 <a class="mini-btn" href="/auth/login">Login</a>
                 {% endif %}

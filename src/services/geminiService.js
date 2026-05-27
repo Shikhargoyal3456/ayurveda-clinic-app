@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { config } = require('../config');
 
@@ -13,6 +15,7 @@ const GEMINI_MODELS = [
 ];
 
 let genAI;
+const spendLedgerPath = path.join(__dirname, '..', '..', 'logs', 'node_ai_spend_guard.json');
 
 const PRESCRIPTION_IMAGE_PROMPT = `You are Kash AI, a medical assistant for Kash AI Smart Clinic Platform.
 Analyze this prescription image and provide:
@@ -59,10 +62,42 @@ Please review this with a qualified healthcare professional
 before making any changes to your medication or treatment plan. 
 Your health is important to us! 🌿 - Kash AI Team"`;
 
+function enforceAiBudget() {
+  const budget = Math.max(0, Number(config.aiDailyBudgetUsd || 0));
+  const callCost = Math.max(0, Number(config.aiMaxCostPerCallUsd || 0));
+  if (!budget) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  let state = { date: today, estimated_spend_usd: 0, calls: 0 };
+
+  if (fs.existsSync(spendLedgerPath)) {
+    try {
+      state = JSON.parse(fs.readFileSync(spendLedgerPath, 'utf8'));
+    } catch (_err) {
+      state = { date: today, estimated_spend_usd: 0, calls: 0 };
+    }
+  }
+
+  if (state.date !== today) {
+    state = { date: today, estimated_spend_usd: 0, calls: 0 };
+  }
+
+  const projectedSpend = Number(state.estimated_spend_usd || 0) + callCost;
+  if (projectedSpend > budget) {
+    throw new Error('AI daily spend cap reached. Please try again later.');
+  }
+
+  state.estimated_spend_usd = Number(projectedSpend.toFixed(4));
+  state.calls = Number(state.calls || 0) + 1;
+  fs.mkdirSync(path.dirname(spendLedgerPath), { recursive: true });
+  fs.writeFileSync(spendLedgerPath, JSON.stringify(state, null, 2));
+}
+
 function getGeminiClient() {
   if (!config.geminiApiKey) {
     throw new Error('GEMINI_API_KEY is not configured.');
   }
+  enforceAiBudget();
   if (!genAI) {
     genAI = new GoogleGenerativeAI(config.geminiApiKey);
   }
@@ -76,7 +111,7 @@ async function tryGeminiWithFallback(contents) {
     try {
       const model = client.getGenerativeModel({ model: modelName });
       const result = await model.generateContent(contents);
-      console.log(`✅ Gemini responded using: ${modelName}`);
+      console.log(`Gemini responded using model ${modelName}`);
       return result.response.text();
     } catch (err) {
       console.warn(`⚠️ Model ${modelName} failed: ${err.message}`);

@@ -2,7 +2,7 @@
 {% from "components/cards.html" import metric_card, nav_card %}
 {% block title %}Pharmacy Dashboard | {{ APP_NAME }}{% endblock %}
 {% block portal_content %}
-<section class="surface-card">
+<section class="surface-card pharmacy-hero-card">
     <div class="section-heading">
         <div>
             <p class="eyebrow">Pharmacy dashboard</p>
@@ -22,11 +22,11 @@
         {{ metric_card('Customer Rating', rating, 'Marketplace trust signal') }}
     </div>
 </section>
-<section class="split-grid">
+<section class="split-grid pharmacy-quick-grid">
     {{ nav_card('Manage inventory', 'Add products, update stock, and keep your live catalog ready for patient orders.', '/portal/pharmacy/add-medicine', 'boxes-stacked', 'Inventory') }}
     {{ nav_card('Review expiry tracker', 'Check medicines that need action before they become difficult to sell.', '/portal/pharmacy/expiry-tracker', 'calendar-xmark', 'Safety') }}
 </section>
-<section class="split-grid">
+<section class="split-grid pharmacy-ops-grid">
     <article class="surface-card" id="live-orders">
         <div class="section-heading"><div><p class="eyebrow">Order queue</p><h2>Real-time order queue</h2></div></div>
         <div class="table-list">
@@ -131,10 +131,19 @@
 document.addEventListener("DOMContentLoaded", function () {
     const pharmacyId = {{ pharmacy.id }};
 
+    const escapeHtml = function (value) {
+        return String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
     const renderError = function (targetId, message) {
         const node = document.getElementById(targetId);
         if (!node) return;
-        node.innerHTML = `<div class="alert alert-warning">${message}</div>`;
+        node.innerHTML = `<div class="alert alert-warning">${escapeHtml(message)}</div>`;
     };
 
     const priorityClass = function (priority) {
@@ -156,26 +165,26 @@ document.addEventListener("DOMContentLoaded", function () {
             if (insightsPayload.success) {
                 const insights = insightsPayload.insights || {};
                 document.getElementById("aiInsightContent").innerHTML = `
-                    <div class="insight-headline">${insights.message || "AI insight ready."}</div>
+                    <div class="insight-headline">${escapeHtml(insights.message || "AI insight ready.")}</div>
                     <div class="insight-meta-grid">
-                        <div class="insight-meta-item"><strong>Tip</strong><span>${insights.tip || "No tip available."}</span></div>
-                        <div class="insight-meta-item"><strong>Focus</strong><span>${insights.focus_area || "inventory"}</span></div>
-                        <div class="insight-meta-item"><strong>Opportunity</strong><span>${insights.opportunity || "Watch repeat refill demand."}</span></div>
+                        <div class="insight-meta-item"><strong>Tip</strong><span>${escapeHtml(insights.tip || "No tip available.")}</span></div>
+                        <div class="insight-meta-item"><strong>Focus</strong><span>${escapeHtml(insights.focus_area || "inventory")}</span></div>
+                        <div class="insight-meta-item"><strong>Opportunity</strong><span>${escapeHtml(insights.opportunity || "Watch repeat refill demand.")}</span></div>
                     </div>
-                    ${insights.alert ? `<div class="insight-alert">${insights.alert}</div>` : ""}
-                    <div class="ai-disclaimer">Confidence: ${insights.confidence || "--"}% · ${insightsPayload.disclaimer || ""}</div>
+                    ${insights.alert ? `<div class="insight-alert">${escapeHtml(insights.alert)}</div>` : ""}
+                    <div class="ai-disclaimer">Confidence: ${escapeHtml(insights.confidence || "--")}% · ${escapeHtml(insightsPayload.disclaimer || "")}</div>
                 `;
 
                 const customer = insights.customer_insights || {};
                 const trending = customer.trending_medicines || [];
                 const topCustomers = customer.top_customers || [];
                 document.getElementById("customerInsightContent").innerHTML = `
-                    <div class="insight-block-title">${customer.customer_signal || "Customer trends are loading."}</div>
+                    <div class="insight-block-title">${escapeHtml(customer.customer_signal || "Customer trends are loading.")}</div>
                     <div class="stack-list compact-stack">
                         ${trending.length ? trending.map(item => `
                             <div class="stack-item">
-                                <div><strong>${item.name}</strong><div class="muted">${item.category} · ${item.weekly_units} units this week</div></div>
-                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                <div><strong>${escapeHtml(item.name)}</strong><div class="muted">${escapeHtml(item.category)} · ${escapeHtml(item.weekly_units)} units this week</div></div>
+                                <span class="confidence-pill">${escapeHtml(item.confidence || "--")}%</span>
                             </div>
                         `).join("") : `<div class="empty-state"><strong>No clear medicine trend yet.</strong><span class="muted">Order history needs more volume before stronger patterning appears.</span></div>`}
                     </div>
@@ -184,7 +193,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     <div class="stack-list compact-stack">
                         ${topCustomers.length ? topCustomers.map(item => `
                             <div class="stack-item">
-                                <div><strong>${item.customer_name}</strong><div class="muted">${item.orders_count} orders · Rs ${Number(item.total_spend || 0).toFixed(0)}</div></div>
+                                <div><strong>${escapeHtml(item.customer_name)}</strong><div class="muted">${escapeHtml(item.orders_count)} orders · Rs ${escapeHtml(Number(item.total_spend || 0).toFixed(0))}</div></div>
                             </div>
                         `).join("") : `<div class="empty-state"><strong>No repeat-customer cluster yet.</strong><span class="muted">Repeat buyers will appear here once order history deepens.</span></div>`}
                     </div>
@@ -196,11 +205,11 @@ document.addEventListener("DOMContentLoaded", function () {
                         ${pricing.map(item => `
                             <div class="stack-item">
                                 <div>
-                                    <strong>${item.medicine_name}</strong>
-                                    <div class="muted">Current Rs ${Number(item.current_price || 0).toFixed(2)} -> Suggested Rs ${Number(item.suggested_price || 0).toFixed(2)}</div>
-                                    <div class="muted">Expected impact: ${item.expected_sales_impact}</div>
+                                    <strong>${escapeHtml(item.medicine_name)}</strong>
+                                    <div class="muted">Current Rs ${escapeHtml(Number(item.current_price || 0).toFixed(2))} -> Suggested Rs ${escapeHtml(Number(item.suggested_price || 0).toFixed(2))}</div>
+                                    <div class="muted">Expected impact: ${escapeHtml(item.expected_sales_impact)}</div>
                                 </div>
-                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                <span class="confidence-pill">${escapeHtml(item.confidence || "--")}%</span>
                             </div>
                         `).join("")}
                     </div>
@@ -216,16 +225,16 @@ document.addEventListener("DOMContentLoaded", function () {
                 const forecast = forecastPayload.forecast || {};
                 document.getElementById("forecastConfidence").textContent = `${forecast.confidence || "--"}%`;
                 document.getElementById("forecastContent").innerHTML = `
-                    <div class="forecast-insight">${forecast.insight || "Forecast ready."}</div>
-                    <div class="trending-row"><strong>Trending categories</strong><span>${(forecast.trending_categories || []).join(", ") || "No category spike yet"}</span></div>
+                    <div class="forecast-insight">${escapeHtml(forecast.insight || "Forecast ready.")}</div>
+                    <div class="trending-row"><strong>Trending categories</strong><span>${escapeHtml((forecast.trending_categories || []).join(", ") || "No category spike yet")}</span></div>
                     <div class="stack-list compact-stack">
                         ${(forecast.high_demand_medicines || []).length ? forecast.high_demand_medicines.map(item => `
                             <div class="stack-item">
                                 <div>
-                                    <strong>${item.name}</strong>
-                                    <div class="muted">Stock ${item.current_stock} · Predicted ${item.predicted_sales} sales · ${item.days_until_out} day(s) left</div>
+                                    <strong>${escapeHtml(item.name)}</strong>
+                                    <div class="muted">Stock ${escapeHtml(item.current_stock)} · Predicted ${escapeHtml(item.predicted_sales)} sales · ${escapeHtml(item.days_until_out)} day(s) left</div>
                                 </div>
-                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                <span class="confidence-pill">${escapeHtml(item.confidence || "--")}%</span>
                             </div>
                         `).join("") : `<div class="empty-state"><strong>No high-demand forecast yet.</strong><span class="muted">The model needs more sales signal to highlight upcoming winners.</span></div>`}
                     </div>
@@ -236,10 +245,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         ${forecast.restock_urgent.map(item => `
                             <div class="stack-item">
                                 <div>
-                                    <strong>${item.name}</strong>
-                                    <div class="muted">Order ${item.suggested_quantity} unit(s) · Supplier: ${item.supplier || "Preferred supplier"}</div>
+                                    <strong>${escapeHtml(item.name)}</strong>
+                                    <div class="muted">Order ${escapeHtml(item.suggested_quantity)} unit(s) · Supplier: ${escapeHtml(item.supplier || "Preferred supplier")}</div>
                                 </div>
-                                <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                <span class="confidence-pill">${escapeHtml(item.confidence || "--")}%</span>
                             </div>
                         `).join("")}
                     </div>
@@ -250,10 +259,10 @@ document.addEventListener("DOMContentLoaded", function () {
                             ${forecast.low_demand_medicines.map(item => `
                                 <div class="stack-item">
                                     <div>
-                                        <strong>${item.name}</strong>
-                                        <div class="muted">Stock ${item.current_stock} · ${item.days_without_sale} day(s) without sale</div>
+                                        <strong>${escapeHtml(item.name)}</strong>
+                                        <div class="muted">Stock ${escapeHtml(item.current_stock)} · ${escapeHtml(item.days_without_sale)} day(s) without sale</div>
                                     </div>
-                                    <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                    <span class="confidence-pill">${escapeHtml(item.confidence || "--")}%</span>
                                 </div>
                             `).join("")}
                         </div>
@@ -267,18 +276,18 @@ document.addEventListener("DOMContentLoaded", function () {
             if (prioritiesPayload.success) {
                 const priorities = prioritiesPayload.priorities || {};
                 document.getElementById("priorityContent").innerHTML = (priorities.orders || []).length ? `
-                    <div class="ai-disclaimer">Average confidence: ${priorities.confidence || "--"}% · ${prioritiesPayload.disclaimer || ""}</div>
+                    <div class="ai-disclaimer">Average confidence: ${escapeHtml(priorities.confidence || "--")}% · ${escapeHtml(prioritiesPayload.disclaimer || "")}</div>
                     <div class="stack-list compact-stack">
                         ${priorities.orders.map(item => `
                             <div class="stack-item priority-row ${priorityClass(item.priority)}">
                                 <div>
-                                    <strong>Order #${item.order_id} · ${item.patient_name}</strong>
-                                    <div class="muted">${item.reason}</div>
-                                    <div class="inline-meta">${(item.items_preview || []).map(label => `<span>${label}</span>`).join("")}</div>
+                                    <strong>Order #${escapeHtml(item.order_id)} · ${escapeHtml(item.patient_name)}</strong>
+                                    <div class="muted">${escapeHtml(item.reason)}</div>
+                                    <div class="inline-meta">${(item.items_preview || []).map(label => `<span>${escapeHtml(label)}</span>`).join("")}</div>
                                 </div>
                                 <div class="priority-side">
-                                    <span class="priority-pill ${priorityClass(item.priority)}">${item.priority}</span>
-                                    <span class="confidence-pill">${item.confidence || "--"}%</span>
+                                    <span class="priority-pill ${priorityClass(item.priority)}">${escapeHtml(item.priority)}</span>
+                                    <span class="confidence-pill">${escapeHtml(item.confidence || "--")}%</span>
                                 </div>
                             </div>
                         `).join("")}
@@ -433,5 +442,11 @@ document.addEventListener("DOMContentLoaded", function () {
         grid-template-columns: 1fr;
     }
 }
+</style>
+<style>
+.pharmacy-hero-card{background:radial-gradient(circle at top right, rgba(99,102,241,.1), transparent 34%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%);border-radius:28px;box-shadow:var(--shadow-lg)}
+.pharmacy-quick-grid .surface-card,.pharmacy-ops-grid .surface-card{border-radius:24px;box-shadow:var(--shadow-lg)}
+.ai-card-surface{border-radius:24px;box-shadow:var(--shadow-lg)}
+.stack-item{border-radius:18px}
 </style>
 {% endblock %}

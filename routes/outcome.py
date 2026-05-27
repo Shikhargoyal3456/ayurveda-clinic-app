@@ -13,6 +13,7 @@ from app.config import settings
 from app.database import commit_with_retry, get_db
 from app.models import CaseSheet, Doctor, Patient
 from models.outcome import Outcome
+from shared.template_engine import render_template
 
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -48,8 +49,7 @@ def patient_outcomes(
         .limit(200)
         .all()
     )
-    return templates.TemplateResponse(
-        request,
+    return render_template(templates, request,
         "outcomes/list.html",
         {
             "patient": patient,

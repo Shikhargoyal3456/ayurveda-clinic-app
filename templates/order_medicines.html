@@ -2,143 +2,530 @@
 {% set simple_nav = 'search' %}
 {% block meta %}<meta name="csrf-token" content="{{ csrf_token }}">{% endblock %}
 {% block title %}KASH AI - Search Medicines{% endblock %}
+
 {% block page %}
-<section class="landing-hero card" style="padding:2rem;">
-    <div class="content-grid-2" style="align-items:center;">
-        <div class="section-stack" style="gap:1rem;">
-            <span class="section-kicker"><i class="fa-solid fa-capsules"></i> Medicine ordering</span>
-            <div>
-                <h1 class="page-title">Search Medicines</h1>
-                <p class="page-description" style="font-size:1.05rem;">Find allopathy, Ayurveda, wellness, and device products with AI help, prescription upload, and a cleaner checkout flow.</p>
-            </div>
-            <form class="search-bar" onsubmit="event.preventDefault(); renderMedicines();">
+<div class="medicine-modern-page">
+    <section class="medicine-hero glass-card">
+        <div class="medicine-hero__copy">
+            <span class="medicine-kicker"><i class="fa-solid fa-sparkles" aria-hidden="true"></i> AI-assisted pharmacy experience</span>
+            <h1 class="page-title">Search Medicines</h1>
+            <p class="page-description">
+                Find medicines, upload prescriptions, and place trusted orders through a cleaner flow designed for confidence and speed.
+            </p>
+            <form class="medicine-searchbar" onsubmit="event.preventDefault(); renderMedicines();">
                 <span aria-hidden="true"><i class="fa-solid fa-magnifying-glass"></i></span>
                 <label class="sr-only" for="searchInput">Search for medicines</label>
-                <input id="searchInput" class="search-input" type="search" placeholder="Search for medicines..." value="{{ initial_query | e }}" aria-label="Search for medicines">
-                <button id="searchBtn" class="primary-btn" type="button" onclick="renderMedicines()">Search</button>
+                <input id="searchInput" class="medicine-searchbar__input" type="search" placeholder="Search for medicines..." value="{{ initial_query | e }}" aria-label="Search for medicines">
+                <button id="searchBtn" class="btn-modern" type="button" onclick="renderMedicines()">Search</button>
             </form>
-            <div class="hero-actions">
-                <span class="pill-chip is-active">Allopathy</span>
-                <span class="pill-chip">Ayurveda</span>
-                <span class="pill-chip">Wellness</span>
-                <span class="pill-chip">Devices</span>
+            <div class="medicine-chip-row">
+                <span class="medicine-chip medicine-chip--active">Allopathy</span>
+                <span class="medicine-chip">Ayurveda</span>
+                <span class="medicine-chip">Wellness</span>
+                <span class="medicine-chip">Devices</span>
             </div>
-            <div class="hero-actions">
-                <button id="uploadRxBtn" class="secondary-btn" type="button" onclick="openUploadArea()">Upload Prescription</button>
-                <button class="secondary-btn" type="button" onclick="document.getElementById('searchInput').focus()">Voice Search Ready</button>
-            </div>
-        </div>
-        <div class="card" style="padding:1.25rem;">
-            <p class="eyebrow">Why KASH AI</p>
-            <div class="section-stack">
-                <div class="feature-card surface-muted"><strong>Trusted pharmacy network</strong><p>Connected ordering and delivery from partner pharmacies.</p></div>
-                <div class="feature-card surface-muted"><strong>Prescription-aware flow</strong><p>Upload a prescription and turn it into an order faster.</p></div>
-                <div class="feature-card surface-muted"><strong>AI support built in</strong><p>Get suggestions before you place an order.</p></div>
+            <div class="medicine-hero__actions">
+                <button id="uploadRxBtn" class="btn-modern btn-modern--secondary" type="button" onclick="openUploadArea()">Upload Prescription</button>
+                <button id="scanRxBtn" class="btn-modern btn-modern--secondary" type="button" onclick="openScanArea()">Scan Handwriting</button>
+                <button class="btn-modern btn-modern--ghost" type="button" onclick="document.getElementById('searchInput').focus()">Voice Search Ready</button>
             </div>
         </div>
-    </div>
-    <div id="searchStatus" class="empty-state" style="margin-top:1rem;" aria-live="polite">Start typing medicine name to see search results.</div>
-</section>
+        <div class="medicine-hero__panel">
+            <div class="medicine-panel-card">
+                <strong>Trusted pharmacy network</strong>
+                <p>Partner-led ordering and cleaner delivery visibility across the care journey.</p>
+            </div>
+            <div class="medicine-panel-card">
+                <strong>Prescription-aware flow</strong>
+                <p>Upload a prescription, let Kash AI read it, and review medicines before checkout.</p>
+            </div>
+            <div class="medicine-panel-card medicine-panel-card--gradient">
+                <strong>AI support built in</strong>
+                <p>Use symptom guidance and suggestions before you place the order.</p>
+            </div>
+        </div>
+        <div id="searchStatus" class="medicine-status" aria-live="polite">Start typing medicine name to see search results.</div>
+    </section>
 
-<section class="content-grid-2" style="align-items:start;">
-    <aside class="card" style="padding:1.5rem;">
-        <p class="eyebrow">Filters</p>
-        <div class="section-stack" style="margin-top:1rem;">
-            <div class="feature-card surface-muted"><strong>Price range</strong><p>Budget-friendly to premium brands</p></div>
-            <div class="feature-card surface-muted"><strong>Brand</strong><p>Trusted manufacturers and alternatives</p></div>
-            <div class="feature-card surface-muted"><strong>Prescription required</strong><p>Clearer visibility before checkout</p></div>
-        </div>
-        <section class="simple-card" id="uploadArea" {% if initial_tab != 'upload' and not has_prescription %}style="display:none; margin-top:1rem;"{% else %}style="margin-top:1rem;"{% endif %}>
-            <h3 style="margin-top:0;">Upload Prescription</h3>
-            <p class="subtitle">Take a photo or upload a file. We will read it and add the medicines for you.</p>
-            <label class="sr-only" for="prescriptionUploadInput">Upload prescription photo or file</label>
-            <input type="file" id="prescriptionUploadInput" accept="image/*,.pdf,application/pdf" aria-label="Upload prescription photo or file">
-            <div id="prescriptionUploadStatus" class="empty-state" style="margin-top:12px;" aria-live="polite">Choose a file to begin.</div>
-        </section>
-    </aside>
+    <section class="medicine-layout">
+        <aside class="medicine-sidebar">
+            <article class="medicine-surface-card">
+                <span class="section-kicker">Filters</span>
+                <h2>Shop with clarity</h2>
+                <div class="medicine-filter-list">
+                    <div class="medicine-filter-card"><strong>Price range</strong><p>Budget-friendly to premium brands</p></div>
+                    <div class="medicine-filter-card"><strong>Brand quality</strong><p>Trusted manufacturers and alternatives</p></div>
+                    <div class="medicine-filter-card"><strong>Prescription required</strong><p>Clearer visibility before checkout</p></div>
+                </div>
+            </article>
 
-    <div class="section-stack">
-        <section class="card" style="padding:1.5rem;">
-            <div class="page-header mb-3">
-                <div>
-                    <p class="eyebrow">AI medicine help</p>
-                    <h2 class="h4 mb-0">Describe symptoms and get guidance</h2>
+            <article class="medicine-surface-card" id="uploadArea" {% if initial_tab != 'upload' and not has_prescription %}style="display:none;"{% endif %}>
+                <span class="section-kicker">Prescription upload</span>
+                <h2>Upload Prescription</h2>
+                <p>Take a photo or upload a file. Kash AI will read it and prepare the order flow for you.</p>
+                <label class="sr-only" for="prescriptionUploadInput">Upload prescription photo or file</label>
+                <input class="medicine-file-input" type="file" id="prescriptionUploadInput" accept="image/*,.pdf,application/pdf" aria-label="Upload prescription photo or file">
+                <div id="prescriptionUploadStatus" class="medicine-inline-status" aria-live="polite">Choose a file to begin.</div>
+            </article>
+
+            <article class="medicine-surface-card" id="scanArea" {% if initial_tab != 'scan' %}style="display:none;"{% endif %}>
+                <span class="section-kicker">Scan prescription</span>
+                <h2>Decode Handwritten Prescription</h2>
+                <p>Upload a handwritten prescription. Kash AI will interpret the medicines, dosage, duration, and notes before you add anything to cart.</p>
+                <label class="sr-only" for="handwritingUploadInput">Upload handwritten prescription photo or PDF</label>
+                <input class="medicine-file-input" type="file" id="handwritingUploadInput" accept="image/*,.pdf,application/pdf" aria-label="Upload handwritten prescription photo or PDF">
+                <div class="medicine-hero__actions">
+                    <button id="decodeHandwritingBtn" class="btn-modern" type="button" disabled onclick="decodeHandwrittenPrescription()">Decode handwriting</button>
+                    <a href="/prescription/decode-handwriting" class="btn-modern btn-modern--secondary">Open full decoder</a>
+                </div>
+                <div id="handwritingStatus" class="medicine-inline-status" aria-live="polite">Choose a file to decode the handwriting.</div>
+                <div id="handwritingResults" class="medicine-ai-results"></div>
+            </article>
+        </aside>
+
+        <div class="medicine-main">
+            <section class="medicine-surface-card">
+                <div class="section-header">
+                    <div>
+                        <span class="section-kicker">AI medicine help</span>
+                        <h2>Describe symptoms and get guidance</h2>
+                    </div>
+                </div>
+                <div class="medicine-ai-panel">
+                    <label class="sr-only" for="aiInput">Describe symptoms for AI suggestions</label>
+                    <textarea id="aiInput" rows="3" placeholder="Example: acidity after meals, mild headache, seasonal cold" aria-label="Describe symptoms for AI suggestions"></textarea>
+                    <div class="medicine-hero__actions">
+                        <button id="heroAiButton" class="btn-modern" type="button" onclick="requestAiSuggestions()">Ask Kash AI</button>
+                        <button class="btn-modern btn-modern--secondary" type="button" onclick="useAiSuggestionForSearch()">Use top suggestion in search</button>
+                    </div>
+                </div>
+                <div id="aiSuggestStatus" class="medicine-inline-status" aria-live="polite">AI suggestions will appear here.</div>
+                <div id="aiSuggestResults" class="medicine-ai-results"></div>
+            </section>
+
+            <section class="medicine-surface-card">
+                <div class="section-header">
+                    <div>
+                        <span class="section-kicker">Results</span>
+                        <h2>Search Results</h2>
+                    </div>
+                </div>
+                <div id="medicineList" class="medicine-results-grid" aria-live="polite">
+                    <div class="skeleton-loader">
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                </div>
+                <div id="medicineEmpty" class="empty-state" style="display:none; margin-top:12px;">
+                    <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                    <h3 class="empty-state__title">No medicines found</h3>
+                    <p class="empty-state__message">Try another name, upload a prescription, or search by brand.</p>
+                </div>
+            </section>
+        </div>
+    </section>
+
+    <section class="medicine-surface-card medicine-cart-section">
+        <div class="section-header">
+            <div>
+                <span class="section-kicker">Your order</span>
+                <h2>Your Cart</h2>
+                <p>Review medicines, confirm your profile, and place the order.</p>
+            </div>
+        </div>
+        <div class="medicine-cart-layout">
+            <div class="medicine-cart-column">
+                <div id="cartItems" class="medicine-cart-items" aria-live="polite"></div>
+                <div id="cartEmpty" class="empty-state">
+                    <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
+                    <h3 class="empty-state__title">No medicines in cart yet</h3>
+                    <p class="empty-state__message">Search for a medicine or upload a prescription to start your order.</p>
+                    <button type="button" onclick="document.getElementById('searchInput').focus()" class="btn-modern">Search Medicines</button>
+                </div>
+                <div id="cartSummary" class="medicine-cart-summary" style="display:none;">
+                    <div class="medicine-summary-row"><strong>Subtotal</strong><span id="subtotalText">₹0</span></div>
+                    <div class="medicine-summary-row"><strong>Delivery</strong><span>₹20</span></div>
+                    <div class="medicine-summary-row medicine-summary-row--total"><strong>Total</strong><span id="totalText">₹0</span></div>
                 </div>
             </div>
-            <div style="display:grid; gap:12px;">
-                <label class="sr-only" for="aiInput">Describe symptoms for AI suggestions</label>
-                <textarea id="aiInput" rows="3" placeholder="Example: acidity after meals, mild headache, seasonal cold" aria-label="Describe symptoms for AI suggestions"></textarea>
-                <div class="hero-actions">
-                    <button id="heroAiButton" class="primary-btn" type="button" onclick="requestAiSuggestions()">Ask Kash AI</button>
-                    <button class="secondary-btn" type="button" onclick="useAiSuggestionForSearch()">Use top suggestion in search</button>
-                </div>
-            </div>
-            <div id="aiSuggestStatus" class="empty-state" style="margin-top:12px;" aria-live="polite">AI suggestions will appear here.</div>
-            <div id="aiSuggestResults" style="display:grid; gap:10px; margin-top:14px;"></div>
-        </section>
-
-        <section class="card" style="padding:1.5rem;">
-            <div class="page-header mb-3">
-                <div>
-                    <p class="eyebrow">Results</p>
-                    <h2 class="h4 mb-0">Search Results</h2>
-                </div>
-            </div>
-            <div id="medicineList" class="grid-auto-fit" aria-live="polite">
-                <div class="skeleton-loader">
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                    <div class="skeleton-line"></div>
-                </div>
-            </div>
-            <div id="medicineEmpty" class="empty-state" style="display:none; margin-top:12px;">
-                <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
-                <h3 class="empty-state__title">No medicines found</h3>
-                <p class="empty-state__message">Try another name, upload a prescription, or search by brand.</p>
-            </div>
-        </section>
-    </div>
-</section>
-
-<section class="card" style="padding:1.5rem;">
-    <div class="page-header mb-3">
-        <div>
-            <p class="eyebrow">Your order</p>
-            <h2 class="h4 mb-0">Your Cart</h2>
-            <p class="subtitle" style="margin-top:8px;">Review cart and place order.</p>
+            <form id="orderForm" method="post" action="/patient/order/create" class="medicine-checkout-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" id="medicines_json" name="medicines_json">
+                <input type="hidden" id="pharmacyId" name="pharmacy_id" value="1">
+                <input type="hidden" name="order_source" value="{{ prefill_order_source | default('manual') }}">
+                <input type="hidden" name="prescription_id" value="{{ prefill_prescription_id | default('') }}">
+                <input type="hidden" name="source_order_id" id="sourceOrderId" value="">
+                <input id="patientName" name="patient_name" type="text" placeholder="Your name" value="{{ (prefill_patient.name if prefill_patient is defined else '') | e }}" required autocomplete="name" aria-label="Your name">
+                <input id="patientPhone" name="patient_phone" type="tel" placeholder="10-digit phone number" pattern="[0-9]{10}" value="{{ (prefill_patient.phone if prefill_patient is defined else '') | e }}" required autocomplete="tel" inputmode="numeric" aria-label="10-digit phone number">
+                <textarea id="patientAddress" name="patient_address" rows="3" placeholder="Delivery address" required autocomplete="street-address" aria-label="Delivery address">{{ (prefill_patient.address if prefill_patient is defined else '') | e }}</textarea>
+                <button id="checkoutBtn" class="btn-modern medicine-checkout-form__submit" type="submit" disabled>Place Order</button>
+                <div id="orderMessage" class="medicine-inline-status medicine-inline-status--alert" style="display:none;" aria-live="assertive"></div>
+            </form>
         </div>
-    </div>
-    <div class="content-grid-2" style="align-items:start;">
-        <div>
-            <div id="cartItems" aria-live="polite"></div>
-            <div id="cartEmpty" class="empty-state">
-                <div class="empty-state__icon"><i class="fas fa-box-open fa-3x"></i></div>
-                <h3 class="empty-state__title">No medicines in cart yet</h3>
-                <p class="empty-state__message">Search for a medicine or upload a prescription to start your order.</p>
-                <button type="button" onclick="document.getElementById('searchInput').focus()" class="btn-primary">Search Medicines</button>
-            </div>
-            <div id="cartSummary" style="display:none; margin-top:16px;">
-                <div class="list-row"><div class="list-copy"><strong>Subtotal</strong><span id="subtotalText">₹0</span></div></div>
-                <div class="list-row"><div class="list-copy"><strong>Delivery</strong><span>₹20</span></div></div>
-                <div class="list-row"><div class="list-copy"><strong>Total</strong><span id="totalText">₹0</span></div></div>
-            </div>
-        </div>
-        <form id="orderForm" method="post" action="/patient/order/create" style="display:grid; gap:12px;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <input type="hidden" id="medicines_json" name="medicines_json">
-            <input type="hidden" id="pharmacyId" name="pharmacy_id" value="1">
-            <input type="hidden" name="order_source" value="{{ prefill_order_source | default('manual') }}">
-            <input type="hidden" name="prescription_id" value="{{ prefill_prescription_id | default('') }}">
-            <input type="hidden" name="source_order_id" id="sourceOrderId" value="">
-            <input id="patientName" name="patient_name" type="text" placeholder="Your name" value="{{ (prefill_patient.name if prefill_patient is defined else '') | e }}" required autocomplete="name" aria-label="Your name">
-            <input id="patientPhone" name="patient_phone" type="tel" placeholder="10-digit phone number" pattern="[0-9]{10}" value="{{ (prefill_patient.phone if prefill_patient is defined else '') | e }}" required autocomplete="tel" inputmode="numeric" aria-label="10-digit phone number">
-            <textarea id="patientAddress" name="patient_address" rows="3" placeholder="Delivery address" required autocomplete="street-address" aria-label="Delivery address">{{ (prefill_patient.address if prefill_patient is defined else '') | e }}</textarea>
-            <button id="checkoutBtn" class="primary-btn checkout-btn" type="submit" disabled>Place Order</button>
-            <div id="orderMessage" class="empty-state" style="display:none;" aria-live="assertive"></div>
-        </form>
-    </div>
-</section>
+    </section>
+</div>
 {% endblock %}
+
+{% block extra_head %}
+<style>
+.medicine-modern-page {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 28px 20px 48px;
+    display: grid;
+    gap: 24px;
+}
+
+.medicine-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
+    gap: 24px;
+    padding: 32px;
+    background:
+        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 34%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 251, 249, 0.94) 100%);
+}
+
+.medicine-kicker,
+.section-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--ai-indigo);
+}
+
+.medicine-hero h1,
+.medicine-surface-card h2 {
+    margin: 16px 0 0;
+    color: var(--gray-900);
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+
+.medicine-hero h1 {
+    font-size: clamp(2.3rem, 4vw, 3.5rem);
+    line-height: 1.08;
+}
+
+.medicine-hero__copy p,
+.medicine-panel-card p,
+.medicine-filter-card p,
+.medicine-surface-card p,
+.medicine-inline-status,
+.medicine-status {
+    color: var(--gray-600);
+    line-height: 1.75;
+}
+
+.medicine-searchbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+    padding: 12px 14px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    box-shadow: var(--shadow-md);
+}
+
+.medicine-searchbar__input,
+.medicine-file-input,
+.medicine-checkout-form input,
+.medicine-checkout-form textarea,
+.medicine-ai-panel textarea {
+    width: 100%;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 1rem;
+}
+
+.medicine-chip-row,
+.medicine-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.medicine-chip {
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    color: var(--gray-600);
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
+.medicine-chip--active {
+    background: rgba(15, 76, 92, 0.1);
+    border-color: rgba(15, 76, 92, 0.2);
+    color: var(--primary);
+}
+
+.btn-modern--secondary {
+    background: white;
+    color: var(--primary);
+    border: 1px solid rgba(15, 76, 92, 0.14);
+    box-shadow: none;
+}
+
+.btn-modern--ghost {
+    background: rgba(99, 102, 241, 0.08);
+    color: var(--ai-indigo);
+    box-shadow: none;
+}
+
+.medicine-hero__panel {
+    display: grid;
+    gap: 14px;
+    align-content: start;
+}
+
+.medicine-panel-card,
+.medicine-surface-card,
+.medicine-filter-card,
+.medicine-ai-result,
+.medicine-result-card,
+.medicine-cart-row {
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: var(--shadow-md);
+}
+
+.medicine-panel-card {
+    padding: 22px;
+}
+
+.medicine-panel-card--gradient {
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%);
+}
+
+.medicine-status {
+    grid-column: 1 / -1;
+    margin-top: -4px;
+}
+
+.medicine-layout {
+    display: grid;
+    grid-template-columns: minmax(290px, 0.82fr) minmax(0, 1.18fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.medicine-sidebar,
+.medicine-main {
+    display: grid;
+    gap: 24px;
+}
+
+.medicine-surface-card {
+    padding: 26px;
+}
+
+.medicine-filter-list,
+.medicine-ai-results {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.medicine-filter-card {
+    padding: 18px;
+}
+
+.medicine-ai-panel {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.medicine-file-input,
+.medicine-checkout-form input,
+.medicine-checkout-form textarea,
+.medicine-ai-panel textarea {
+    margin-top: 14px;
+    padding: 15px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    background: var(--gray-50);
+    resize: vertical;
+}
+
+.medicine-inline-status {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: var(--gray-50);
+}
+
+.medicine-inline-status--alert {
+    background: rgba(254, 242, 242, 0.92);
+    color: #991b1b;
+}
+
+.medicine-results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.medicine-result-card {
+    padding: 22px;
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow);
+}
+
+.medicine-result-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.medicine-result-card__top,
+.medicine-result-card__footer,
+.medicine-cart-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.medicine-price-pill {
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(15, 76, 92, 0.08);
+    color: var(--primary);
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.medicine-result-card__footer {
+    align-items: center;
+    margin-top: 18px;
+}
+
+.medicine-result-card__note {
+    margin: 12px 0 0;
+    color: var(--gray-600);
+}
+
+.medicine-cart-section {
+    padding-bottom: 28px;
+}
+
+.medicine-cart-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.88fr);
+    gap: 24px;
+    margin-top: 18px;
+}
+
+.medicine-cart-items {
+    display: grid;
+    gap: 12px;
+}
+
+.medicine-cart-row {
+    padding: 18px;
+    align-items: center;
+}
+
+.medicine-cart-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.medicine-cart-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.medicine-mini-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(229, 231, 235, 0.92);
+    background: white;
+    font-weight: 800;
+}
+
+.medicine-cart-summary {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.medicine-summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: var(--gray-50);
+}
+
+.medicine-summary-row--total {
+    background: linear-gradient(135deg, rgba(15, 76, 92, 0.08) 0%, rgba(43, 174, 102, 0.1) 100%);
+    color: var(--gray-900);
+}
+
+.medicine-checkout-form {
+    display: grid;
+    gap: 12px;
+}
+
+.medicine-checkout-form__submit {
+    width: 100%;
+    justify-content: center;
+}
+
+.section-header h2 {
+    font-size: 1.36rem;
+}
+
+@media (max-width: 1100px) {
+    .medicine-hero,
+    .medicine-layout,
+    .medicine-cart-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .medicine-modern-page {
+        padding: 18px 14px 34px;
+    }
+
+    .medicine-hero,
+    .medicine-surface-card,
+    .medicine-panel-card {
+        padding: 20px;
+    }
+
+    .medicine-searchbar,
+    .medicine-results-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .medicine-result-card__top,
+    .medicine-result-card__footer,
+    .medicine-cart-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
@@ -162,6 +549,10 @@ const aiSuggestStatus = document.getElementById("aiSuggestStatus");
 const aiSuggestResults = document.getElementById("aiSuggestResults");
 const prescriptionUploadInput = document.getElementById("prescriptionUploadInput");
 const prescriptionUploadStatus = document.getElementById("prescriptionUploadStatus");
+const handwritingUploadInput = document.getElementById("handwritingUploadInput");
+const handwritingStatus = document.getElementById("handwritingStatus");
+const handwritingResults = document.getElementById("handwritingResults");
+const decodeHandwritingBtn = document.getElementById("decodeHandwritingBtn");
 const prefillMedicines = {{ prefill_medicines | default([], true) | tojson | safe }};
 const initialTab = {{ initial_tab | default('', true) | tojson | safe }};
 const cartKey = "kashSimpleCart";
@@ -213,10 +604,38 @@ function openUploadArea() {
     document.getElementById("uploadArea").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function openScanArea() {
+    document.getElementById("scanArea").style.display = "block";
+    document.getElementById("scanArea").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function clearNode(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+}
+
+function showSkeleton(target, lines = 3) {
+    clearNode(target);
+    const wrapper = document.createElement("div");
+    wrapper.className = "skeleton-loader";
+    for (let index = 0; index < lines; index += 1) {
+        const line = document.createElement("div");
+        line.className = "skeleton-line";
+        wrapper.appendChild(line);
+    }
+    target.appendChild(wrapper);
+}
+
+function makeText(tag, text, className = "") {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    node.textContent = text;
+    return node;
+}
+
 function renderAiSuggestions(payload) {
     const suggestions = Array.isArray(payload.suggested_medicines) ? payload.suggested_medicines : [];
     const precautions = Array.isArray(payload.precautions) ? payload.precautions : [];
-    aiSuggestResults.innerHTML = "";
+    clearNode(aiSuggestResults);
     if (!suggestions.length) {
         aiSuggestStatus.textContent = payload.error || precautions[0] || "Add a little more symptom detail so Kash AI can respond more precisely.";
         return;
@@ -224,42 +643,164 @@ function renderAiSuggestions(payload) {
     aiSuggestStatus.textContent = payload.disclaimer || "These AI suggestions are only for guidance.";
     suggestions.forEach((suggestion, index) => {
         const card = document.createElement("div");
-        card.className = "list-row";
-        card.innerHTML = `<div class="list-copy"><strong>${escapeHtml(suggestion)}</strong><span>${escapeHtml(precautions[index] || precautions[0] || "Search this medicine and confirm details before ordering.")}</span></div><button class="primary-btn" type="button">Search this</button>`;
-        card.querySelector("button").addEventListener("click", () => {
+        card.className = "medicine-ai-result";
+        card.style.padding = "18px";
+
+        const info = document.createElement("div");
+        info.appendChild(makeText("strong", suggestion));
+        info.appendChild(makeText("p", precautions[index] || precautions[0] || "Search this medicine and confirm details before ordering."));
+
+        const button = document.createElement("button");
+        button.className = "btn-modern btn-modern--secondary";
+        button.type = "button";
+        button.textContent = "Search this";
+        button.addEventListener("click", () => {
             searchInput.value = suggestion;
             renderMedicines();
-            searchInput.scrollIntoView({behavior: "smooth", block: "center"});
+            searchInput.scrollIntoView({ behavior: "smooth", block: "center" });
         });
+
+        card.appendChild(info);
+        card.appendChild(button);
+        card.style.display = "flex";
+        card.style.justifyContent = "space-between";
+        card.style.alignItems = "center";
+        card.style.gap = "14px";
         aiSuggestResults.appendChild(card);
     });
 }
 
+function renderHandwritingResult(data) {
+    clearNode(handwritingResults);
+    const medicines = Array.isArray(data.medicines) ? data.medicines : [];
+    handwritingStatus.textContent = medicines.length
+        ? `Decoded ${medicines.length} medicine${medicines.length === 1 ? "" : "s"} from the prescription.`
+        : (data.raw_decoded_text || "The handwriting could not be confidently decoded.");
+
+    if (data.doctor_name || data.patient_name || data.date) {
+        const metaCard = document.createElement("div");
+        metaCard.className = "medicine-ai-result";
+        metaCard.style.padding = "18px";
+        if (data.doctor_name) metaCard.appendChild(makeText("p", `Doctor: ${data.doctor_name}`));
+        if (data.patient_name) metaCard.appendChild(makeText("p", `Patient: ${data.patient_name}`));
+        if (data.date) metaCard.appendChild(makeText("p", `Date: ${data.date}`));
+        handwritingResults.appendChild(metaCard);
+    }
+
+    medicines.forEach((med) => {
+        const card = document.createElement("div");
+        card.className = "medicine-ai-result";
+        card.style.padding = "18px";
+
+        card.appendChild(makeText("strong", med.medicine_name || "Unclear medicine"));
+        card.appendChild(makeText("p", `Dosage: ${med.dosage || "Not clearly specified"}`));
+        card.appendChild(makeText("p", `Frequency: ${med.frequency || "Not clearly specified"}`));
+        card.appendChild(makeText("p", `Duration: ${med.duration || "Not clearly specified"}`));
+        if (med.special_instructions) card.appendChild(makeText("p", `Instructions: ${med.special_instructions}`));
+        card.appendChild(makeText("p", `AI confidence: ${Number(med.confidence || 0)}%`));
+
+        const addBtn = document.createElement("button");
+        addBtn.className = "btn-modern btn-modern--secondary";
+        addBtn.type = "button";
+        addBtn.textContent = "Add to cart";
+        addBtn.addEventListener("click", () => {
+            addDecodedMedicineToCart(med);
+        });
+        card.appendChild(addBtn);
+        handwritingResults.appendChild(card);
+    });
+
+    if (Array.isArray(data.unreadable_parts) && data.unreadable_parts.length) {
+        const warningCard = document.createElement("div");
+        warningCard.className = "medicine-ai-result";
+        warningCard.style.padding = "18px";
+        warningCard.appendChild(makeText("strong", "Needs verification"));
+        const list = document.createElement("ul");
+        data.unreadable_parts.forEach((part) => list.appendChild(makeText("li", part)));
+        warningCard.appendChild(list);
+        handwritingResults.appendChild(warningCard);
+    }
+}
+
+function addDecodedMedicineToCart(med) {
+    const medicineName = String(med.medicine_name || "").trim();
+    if (!medicineName) return;
+    const existing = cart.find((item) => String(item.name).toLowerCase() === medicineName.toLowerCase());
+    if (existing) {
+        existing.qty += 1;
+        existing.prescription_required = true;
+        if (med.dosage) existing.dosage = med.dosage;
+        if (med.frequency) existing.frequency = med.frequency;
+    } else {
+        cart.push({
+            id: `decoded-${medicineName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+            name: medicineName,
+            price: 0,
+            qty: 1,
+            category: "prescription",
+            description: med.special_instructions || "Decoded from handwritten prescription.",
+            prescription_required: true,
+            dosage: med.dosage || "",
+            frequency: med.frequency || med.duration || ""
+        });
+    }
+    saveCart();
+    updateCartUi();
+    handwritingStatus.textContent = `${medicineName} added to cart for review. Please verify before checkout.`;
+}
+
 async function requestAiSuggestions() {
     const symptoms = aiInput.value.trim();
-    aiSuggestResults.innerHTML = "";
+    clearNode(aiSuggestResults);
     aiSuggestStatus.textContent = "Kash AI is reviewing your symptoms...";
     const heroAiButton = document.getElementById("heroAiButton");
-    const originalText = heroAiButton.innerHTML;
-    heroAiButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+    const originalText = heroAiButton.textContent;
+    heroAiButton.textContent = "Thinking...";
     heroAiButton.disabled = true;
     try {
         const formData = new FormData();
         formData.append("symptoms", symptoms);
         formData.append("csrf_token", csrfToken);
-        const response = await fetch("/order-medicines/ai-suggest", {method: "POST", body: formData});
+        const response = await fetch("/order-medicines/ai-suggest", { method: "POST", body: formData });
         const payload = await response.json();
         renderAiSuggestions(payload);
     } catch (error) {
         aiSuggestStatus.textContent = "We could not complete the AI request just now.";
     } finally {
-        heroAiButton.innerHTML = originalText;
+        heroAiButton.textContent = originalText;
         heroAiButton.disabled = false;
     }
 }
 
+async function decodeHandwrittenPrescription() {
+    const file = handwritingUploadInput.files && handwritingUploadInput.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("prescription_image", file);
+    handwritingStatus.textContent = "Reading handwriting...";
+    clearNode(handwritingResults);
+    decodeHandwritingBtn.disabled = true;
+
+    try {
+        const response = await fetch("/api/prescription/decode-handwriting", {
+            method: "POST",
+            headers: { "X-CSRF-Token": csrfToken },
+            body: formData
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.error || "Could not decode the prescription handwriting.");
+        }
+        renderHandwritingResult(payload.data || {});
+    } catch (error) {
+        handwritingStatus.textContent = error.message || "Could not decode the prescription handwriting.";
+    } finally {
+        decodeHandwritingBtn.disabled = !handwritingUploadInput.files || !handwritingUploadInput.files[0];
+    }
+}
+
 function useAiSuggestionForSearch() {
-    const firstSuggestion = aiSuggestResults.querySelector(".list-row strong");
+    const firstSuggestion = aiSuggestResults.querySelector("strong");
     if (!firstSuggestion) {
         aiInput.focus();
         aiSuggestStatus.textContent = "Ask Kash AI first so we have a suggestion to use.";
@@ -275,9 +816,6 @@ function showOrderMessage(message) {
 }
 
 function money(value) { return `₹${Number(value || 0).toFixed(0)}`; }
-function escapeHtml(value) {
-    return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-}
 
 function addToCart(item, qty = 1) {
     const existing = cart.find((entry) => Number(entry.medicine_id) === Number(item.id));
@@ -298,7 +836,7 @@ function updateQty(id, delta) {
 function cartTotal() { return cart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0), 0); }
 
 function renderCart() {
-    cartItems.innerHTML = "";
+    clearNode(cartItems);
     if (!cart.length) {
         cartEmpty.style.display = "block";
         cartSummary.style.display = "none";
@@ -308,13 +846,37 @@ function renderCart() {
         return;
     }
     cartEmpty.style.display = "none";
-    cartSummary.style.display = "block";
+    cartSummary.style.display = "grid";
     cart.forEach((item) => {
         const row = document.createElement("div");
-        row.className = "list-row";
-        row.innerHTML = `<div class="list-copy"><strong>${escapeHtml(item.name)} x ${item.qty}</strong><span>${money(item.price * item.qty)}</span></div><div style="display:flex; gap:8px;"><button class="mini-btn" type="button" data-action="minus">-</button><button class="mini-btn" type="button" data-action="plus">+</button></div>`;
-        row.querySelector('[data-action="minus"]').addEventListener("click", () => updateQty(item.medicine_id, -1));
-        row.querySelector('[data-action="plus"]').addEventListener("click", () => updateQty(item.medicine_id, 1));
+        row.className = "medicine-cart-row";
+
+        const info = document.createElement("div");
+        info.className = "medicine-cart-copy";
+        info.appendChild(makeText("strong", `${item.name} x ${item.qty}`));
+        info.appendChild(makeText("span", money(item.price * item.qty)));
+
+        const actions = document.createElement("div");
+        actions.className = "medicine-cart-actions";
+
+        const minus = document.createElement("button");
+        minus.className = "medicine-mini-btn";
+        minus.type = "button";
+        minus.textContent = "-";
+        minus.dataset.action = "minus";
+        minus.addEventListener("click", () => updateQty(item.medicine_id, -1));
+
+        const plus = document.createElement("button");
+        plus.className = "medicine-mini-btn";
+        plus.type = "button";
+        plus.textContent = "+";
+        plus.dataset.action = "plus";
+        plus.addEventListener("click", () => updateQty(item.medicine_id, 1));
+
+        actions.appendChild(minus);
+        actions.appendChild(plus);
+        row.appendChild(info);
+        row.appendChild(actions);
         cartItems.appendChild(row);
     });
     const subtotal = cartTotal();
@@ -327,40 +889,53 @@ function renderCart() {
 }
 
 function renderMedicineCards(visible) {
-    medicineList.innerHTML = "";
+    clearNode(medicineList);
     medicineEmpty.style.display = visible.length ? "none" : "block";
     visible.forEach((item) => {
-        const row = document.createElement("article");
-        row.className = "feature-card";
-        row.innerHTML = `
-            <div class="hero-actions" style="justify-content:space-between; align-items:flex-start;">
-                <div>
-                    <h3 style="font-size:1.05rem;">${escapeHtml(item.name)}</h3>
-                    <p>${escapeHtml(item.description || item.category || "General use")}</p>
-                </div>
-                <span class="section-kicker">${money(item.price)}</span>
-            </div>
-            <p style="margin:1rem 0 .5rem;">Brand quality, fast delivery, and AI-guided comparison support.</p>
-            <div class="hero-actions" style="justify-content:space-between;">
-                <div>
-                    <strong>${money(item.price)}</strong>
-                    <p style="font-size:.9rem;">MRP <s>${money((Number(item.price || 0) * 1.1).toFixed(0))}</s> · Save 10%</p>
-                </div>
-                <button class="primary-btn add-to-cart-btn" type="button">Add to Cart</button>
-            </div>
-        `;
-        const addButton = row.querySelector("button");
-        if (addButton) {
-            addButton.addEventListener("click", () => addToCart(item, 1));
-        }
-        medicineList.appendChild(row);
+        const card = document.createElement("article");
+        card.className = "medicine-result-card";
+
+        const top = document.createElement("div");
+        top.className = "medicine-result-card__top";
+
+        const titleWrap = document.createElement("div");
+        titleWrap.appendChild(makeText("h3", item.name));
+        titleWrap.appendChild(makeText("p", item.description || item.category || "General use"));
+
+        const pricePill = makeText("span", money(item.price), "medicine-price-pill");
+
+        top.appendChild(titleWrap);
+        top.appendChild(pricePill);
+
+        const note = makeText("p", "Brand quality, fast delivery, and AI-guided comparison support.", "medicine-result-card__note");
+
+        const footer = document.createElement("div");
+        footer.className = "medicine-result-card__footer";
+
+        const pricing = document.createElement("div");
+        pricing.appendChild(makeText("strong", money(item.price)));
+        pricing.appendChild(makeText("p", `MRP ${money((Number(item.price || 0) * 1.1).toFixed(0))} · Save 10%`));
+
+        const addButton = document.createElement("button");
+        addButton.className = "btn-modern";
+        addButton.type = "button";
+        addButton.textContent = "Add to Cart";
+        addButton.addEventListener("click", () => addToCart(item, 1));
+
+        footer.appendChild(pricing);
+        footer.appendChild(addButton);
+
+        card.appendChild(top);
+        card.appendChild(note);
+        card.appendChild(footer);
+        medicineList.appendChild(card);
     });
 }
 
 function renderMedicines() {
     loadMedicines().catch(() => {
         medicineEmpty.style.display = "block";
-        medicineEmpty.textContent = "Medicines are not loading right now. Please try again.";
+        medicineEmpty.querySelector(".empty-state__message").textContent = "Medicines are not loading right now. Please try again.";
         searchStatus.textContent = "Network issue. Check your internet.";
         const searchButton = document.getElementById("searchBtn");
         searchButton.disabled = false;
@@ -371,10 +946,10 @@ function renderMedicines() {
 async function loadMedicines() {
     const q = searchInput.value.trim();
     const searchButton = document.getElementById("searchBtn");
-    searchStatus.innerHTML = '<div class="skeleton-loader"><div class="skeleton-line"></div><div class="skeleton-line"></div></div>';
-    medicineList.innerHTML = '<div class="skeleton-loader"><div class="skeleton-line"></div><div class="skeleton-line"></div><div class="skeleton-line"></div></div>';
+    showSkeleton(searchStatus, 2);
+    showSkeleton(medicineList, 3);
     searchButton.disabled = true;
-    searchButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+    searchButton.textContent = "Searching...";
     try {
         const response = await fetch(`/api/medicines/search?q=${encodeURIComponent(q)}`);
         const payload = await response.json();
@@ -406,8 +981,8 @@ orderForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!validateBeforeSubmit()) return;
     checkoutButton.disabled = true;
-    const originalText = checkoutButton.innerHTML;
-    checkoutButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Placing order...';
+    const originalText = checkoutButton.textContent;
+    checkoutButton.textContent = "Placing order...";
     orderMessage.style.display = "none";
     let response;
     let payload;
@@ -417,13 +992,13 @@ orderForm.addEventListener("submit", async (event) => {
     } catch (error) {
         showOrderMessage("Network issue. Check your internet.");
         checkoutButton.disabled = false;
-        checkoutButton.innerHTML = originalText;
+        checkoutButton.textContent = originalText;
         return;
     }
     if (!response.ok || payload.error) {
         showOrderMessage(payload.detail || payload.error || "Something went wrong. Please try again.");
         checkoutButton.disabled = false;
-        checkoutButton.innerHTML = originalText;
+        checkoutButton.textContent = originalText;
         return;
     }
     window.kashStorageSet(window.KASH_SIMPLE_KEYS.latestOrderId, String(payload.order_id));
@@ -455,14 +1030,29 @@ prescriptionUploadInput.addEventListener("change", async (event) => {
         return;
     }
     if (response.ok && payload.order_url) {
-        prescriptionUploadStatus.innerHTML = `Prescription read successfully! <a href="${payload.order_url}">Add all to cart</a>.`;
+        clearNode(prescriptionUploadStatus);
+        prescriptionUploadStatus.appendChild(document.createTextNode("Prescription read successfully! "));
+        const link = document.createElement("a");
+        link.href = payload.order_url;
+        link.textContent = "Add all to cart";
+        prescriptionUploadStatus.appendChild(link);
+        prescriptionUploadStatus.appendChild(document.createTextNode("."));
         return;
     }
     prescriptionUploadStatus.textContent = payload.detail || "We could not read that prescription. Please try another photo.";
 });
 
+if (handwritingUploadInput) {
+    handwritingUploadInput.addEventListener("change", () => {
+        const file = handwritingUploadInput.files && handwritingUploadInput.files[0];
+        decodeHandwritingBtn.disabled = !file;
+        handwritingStatus.textContent = file ? `Ready to decode: ${file.name}` : "Choose a file to decode the handwriting.";
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     if (initialTab === "upload") openUploadArea();
+    if (initialTab === "scan") openScanArea();
     applySavedPatientProfile();
     ["patientName", "patientPhone", "patientAddress"].forEach((id) => {
         const field = document.getElementById(id);

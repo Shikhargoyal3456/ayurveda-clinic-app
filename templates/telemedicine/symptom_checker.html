@@ -77,50 +77,87 @@ async function analyzeSymptoms() {
     });
     const result = await response.json();
     if (!response.ok) {
-        resultPanel.innerHTML = `<div class="alert alert-danger">${result.detail || result.error || "Unable to analyze symptoms right now."}</div>`;
+        resultPanel.replaceChildren();
+        const alert = document.createElement("div");
+        alert.className = "alert alert-danger";
+        alert.textContent = String(result.detail || result.error || "Unable to analyze symptoms right now.");
+        resultPanel.appendChild(alert);
         return;
     }
 
-    resultPanel.innerHTML = `
-        <h3>AI Analysis</h3>
-        <div class="possible-conditions">
-            <h4>Possible Conditions</h4>
-            <div id="conditions"></div>
-        </div>
-        <div class="urgency-level mt-3">
-            <h4>Urgency Level</h4>
-            <div id="urgency"></div>
-        </div>
-        <div class="recommendations mt-3">
-            <h4>AI Recommendations</h4>
-            <div id="recommendations"></div>
-        </div>
-        <div class="doctor-matching mt-3">
-            <h4>Recommended Doctors</h4>
-            <div id="doctors"></div>
-        </div>
-        <button onclick="bookConsultation()" class="btn btn-primary mt-4" type="button">Book Consultation Now</button>
-    `;
-    document.getElementById("conditions").innerHTML = (result.conditions || []).map(c =>
-        `<div class="condition">${c.name} (${c.probability}% probability)</div>`
-    ).join("");
-    document.getElementById("urgency").innerHTML = `
-        <div class="urgency-${result.urgency}">
-            ${result.urgency === "high" ? "Seek immediate consultation" :
-              result.urgency === "medium" ? "Consult within 24-48 hours" :
-              "Can wait for a regular appointment"}
-        </div>
-    `;
-    document.getElementById("recommendations").innerHTML = `
-        <ul>${(result.recommendations || []).map(r => `<li>${r}</li>`).join("")}</ul>
-    `;
-    document.getElementById("doctors").innerHTML = (result.doctors || []).map(doc => `
-        <div class="doctor-card">
-            <strong>Dr. ${doc.name}</strong> (${doc.specialization})
-            <div>Rating ${doc.rating} | ${doc.experience} years</div>
-            <button class="btn btn-outline-success btn-sm mt-2" type="button" onclick="bookWithDoctor(${doc.id})">Book Now</button>
-        </div>
-    `).join("");
+    resultPanel.replaceChildren();
+    const heading = document.createElement("h3");
+    heading.textContent = "AI Analysis";
+    resultPanel.appendChild(heading);
+
+    const sections = [
+        ["Possible Conditions", "possible-conditions", "conditions"],
+        ["Urgency Level", "urgency-level mt-3", "urgency"],
+        ["AI Recommendations", "recommendations mt-3", "recommendations"],
+        ["Recommended Doctors", "doctor-matching mt-3", "doctors"],
+    ];
+    const sectionHosts = {};
+    sections.forEach(([titleText, className, key]) => {
+        const section = document.createElement("div");
+        section.className = className;
+        const title = document.createElement("h4");
+        title.textContent = titleText;
+        const host = document.createElement("div");
+        host.id = key;
+        section.append(title, host);
+        resultPanel.appendChild(section);
+        sectionHosts[key] = host;
+    });
+
+    (result.conditions || []).forEach((condition) => {
+        const item = document.createElement("div");
+        item.className = "condition";
+        item.textContent = `${condition.name} (${condition.probability}% probability)`;
+        sectionHosts.conditions.appendChild(item);
+    });
+
+    const urgency = document.createElement("div");
+    urgency.className = `urgency-${String(result.urgency || "low")}`;
+    urgency.textContent = result.urgency === "high"
+        ? "Seek immediate consultation"
+        : result.urgency === "medium"
+            ? "Consult within 24-48 hours"
+            : "Can wait for a regular appointment";
+    sectionHosts.urgency.appendChild(urgency);
+
+    const recommendationsList = document.createElement("ul");
+    (result.recommendations || []).forEach((recommendation) => {
+        const item = document.createElement("li");
+        item.textContent = String(recommendation || "");
+        recommendationsList.appendChild(item);
+    });
+    sectionHosts.recommendations.appendChild(recommendationsList);
+
+    (result.doctors || []).forEach((doc) => {
+        const card = document.createElement("div");
+        card.className = "doctor-card";
+        const name = document.createElement("strong");
+        name.textContent = `Dr. ${doc.name}`;
+        card.appendChild(name);
+        card.appendChild(document.createTextNode(` (${doc.specialization})`));
+        const meta = document.createElement("div");
+        meta.textContent = `Rating ${doc.rating} | ${doc.experience} years`;
+        card.appendChild(meta);
+        const button = document.createElement("button");
+        button.className = "btn btn-outline-success btn-sm mt-2";
+        button.type = "button";
+        button.textContent = "Book Now";
+        button.addEventListener("click", () => bookWithDoctor(doc.id));
+        card.appendChild(button);
+        sectionHosts.doctors.appendChild(card);
+    });
+
+    const cta = document.createElement("button");
+    cta.className = "btn btn-primary mt-4";
+    cta.type = "button";
+    cta.textContent = "Book Consultation Now";
+    cta.addEventListener("click", () => bookConsultation());
+    resultPanel.appendChild(cta);
 }
 
 function bookConsultation() {
