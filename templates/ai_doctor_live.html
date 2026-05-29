@@ -1,0 +1,501 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}KASH AI - AI Doctor Live{% endblock %}
+
+{% block page %}
+<section class="live-doctor-shell">
+    <header class="live-doctor-topbar">
+        <div class="live-doctor-live-pill">
+            <span class="live-doctor-live-dot"></span>
+            <span>LIVE</span>
+        </div>
+        <div class="live-doctor-topbar__copy">
+            <strong>Dr. Kash Live</strong>
+            <span>I'm Dr. Kash, your AI medical assistant. For final diagnosis and treatment, please consult a real doctor.</span>
+        </div>
+        <a href="{{ book_appointment_url }}" class="live-doctor-book-link">Book Real Doctor</a>
+    </header>
+
+    <div class="live-doctor-stage">
+        <section class="live-doctor-camera">
+            <video id="liveDoctorVideo" autoplay playsinline muted></video>
+            <div class="live-doctor-camera__scrim"></div>
+            <div class="live-doctor-camera__overlay">
+                <div class="live-doctor-camera__status">
+                    <span id="cameraLabel">Camera off</span>
+                    <span id="connectionLabel">Waiting to start</span>
+                </div>
+                <p id="cameraPrompt">Tap Start Consultation, then show the area you want Dr. Kash to review.</p>
+            </div>
+        </section>
+
+        <section class="live-doctor-console">
+            <div class="live-doctor-console__hero" id="liveDoctorHero">
+                <div class="live-doctor-avatar">DK</div>
+                <div>
+                    <p class="live-doctor-kicker">Voice-first consultation</p>
+                    <h1>Start talking. Dr. Kash listens, watches, and responds naturally.</h1>
+                </div>
+            </div>
+
+            <div class="live-doctor-wave-card" id="waveCard" aria-live="polite">
+                <div class="live-doctor-wave" id="waveform" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <div class="live-doctor-wave-card__text">
+                    <strong id="conversationState">Ready when you are</strong>
+                    <p id="conversationHint">One tap starts camera, microphone, and live conversation.</p>
+                </div>
+            </div>
+
+            <div class="live-doctor-actions">
+                <button type="button" class="live-doctor-start" id="startConsultationButton">🎤 Start Consultation</button>
+                <button type="button" class="live-doctor-end" id="endConsultationButton" hidden>End</button>
+            </div>
+
+            <div class="live-doctor-emergency" id="emergencyPanel" hidden>
+                <div>
+                    <strong>Emergency support</strong>
+                    <p id="emergencyMessage">This sounds concerning. Please seek immediate medical attention.</p>
+                </div>
+                <a href="tel:911" class="live-doctor-emergency__button" id="call911Button">Call 911</a>
+            </div>
+
+            <div class="live-doctor-transcript" id="transcriptBox">
+                <article class="live-doctor-line live-doctor-line--doctor">
+                    <span>Dr. Kash</span>
+                    <p>I'm Dr. Kash, your AI medical assistant. For final diagnosis and treatment, please consult a real doctor.</p>
+                </article>
+            </div>
+
+            <footer class="live-doctor-footer">
+                <div class="live-doctor-footer__item">
+                    <span class="live-doctor-footer__label">You</span>
+                    <p id="patientLiveTranscript">Your live transcription will appear here.</p>
+                </div>
+                <div class="live-doctor-footer__item">
+                    <span class="live-doctor-footer__label">Dr. Kash</span>
+                    <p id="doctorLiveTranscript">AI responses will appear here and play aloud automatically.</p>
+                </div>
+            </footer>
+        </section>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.live-doctor-shell {
+    min-height: calc(100vh - 120px);
+    display: grid;
+    gap: 18px;
+    margin: 0 auto;
+    padding: 8px 0 28px;
+}
+
+.live-doctor-topbar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 20px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(10, 23, 31, 0.96) 0%, rgba(19, 57, 74, 0.95) 100%);
+    color: #f5fbff;
+    box-shadow: 0 22px 56px rgba(15, 23, 42, 0.16);
+}
+
+.live-doctor-live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.live-doctor-live-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.14);
+}
+
+.live-doctor-topbar__copy {
+    display: grid;
+    gap: 4px;
+}
+
+.live-doctor-topbar__copy strong {
+    font-size: 1rem;
+}
+
+.live-doctor-topbar__copy span {
+    color: rgba(230, 244, 255, 0.82);
+    line-height: 1.5;
+}
+
+.live-doctor-book-link {
+    justify-self: end;
+    padding: 12px 16px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #f5fbff;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.live-doctor-stage {
+    display: grid;
+    grid-template-rows: minmax(42vh, 54vh) minmax(0, 1fr);
+    gap: 18px;
+}
+
+.live-doctor-camera {
+    position: relative;
+    overflow: hidden;
+    border-radius: 34px;
+    min-height: 42vh;
+    background:
+        radial-gradient(circle at top, rgba(56, 189, 248, 0.24), transparent 32%),
+        linear-gradient(160deg, #d8f0f8 0%, #c8ece3 100%);
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.1);
+}
+
+.live-doctor-camera video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #d7edf7;
+}
+
+.live-doctor-camera__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(7, 18, 24, 0.06) 0%, rgba(7, 18, 24, 0.24) 100%);
+}
+
+.live-doctor-camera__overlay {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    display: grid;
+    gap: 10px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(18px);
+}
+
+.live-doctor-camera__status {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-weight: 700;
+    color: #143743;
+}
+
+.live-doctor-camera__overlay p {
+    margin: 0;
+    color: #48646f;
+}
+
+.live-doctor-console {
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    border-radius: 34px;
+    background:
+        radial-gradient(circle at left top, rgba(184, 230, 255, 0.42), transparent 26%),
+        linear-gradient(180deg, rgba(252, 254, 255, 0.98) 0%, rgba(239, 248, 250, 0.98) 100%);
+    border: 1px solid rgba(196, 217, 225, 0.9);
+    box-shadow: 0 22px 54px rgba(15, 23, 42, 0.08);
+}
+
+.live-doctor-console__hero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    align-items: center;
+}
+
+.live-doctor-avatar {
+    width: 66px;
+    height: 66px;
+    display: grid;
+    place-items: center;
+    border-radius: 22px;
+    background: linear-gradient(135deg, #0f766e 0%, #38bdf8 100%);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    box-shadow: 0 18px 34px rgba(15, 118, 110, 0.24);
+}
+
+.live-doctor-kicker {
+    margin: 0 0 6px;
+    color: #0f766e;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.live-doctor-console h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 3vw, 2.5rem);
+    line-height: 1.1;
+    color: #16323a;
+}
+
+.live-doctor-wave-card {
+    display: grid;
+    grid-template-columns: minmax(140px, 220px) 1fr;
+    gap: 18px;
+    align-items: center;
+    padding: 18px 20px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(204, 220, 226, 0.88);
+}
+
+.live-doctor-wave {
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.live-doctor-wave span {
+    width: 8px;
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0f766e 0%, #38bdf8 100%);
+    transform-origin: center bottom;
+    animation: liveDoctorIdle 1.3s ease-in-out infinite;
+    animation-play-state: paused;
+}
+
+.live-doctor-wave.is-active span {
+    animation-play-state: running;
+}
+
+.live-doctor-wave span:nth-child(2) { animation-delay: 0.08s; }
+.live-doctor-wave span:nth-child(3) { animation-delay: 0.16s; }
+.live-doctor-wave span:nth-child(4) { animation-delay: 0.24s; }
+.live-doctor-wave span:nth-child(5) { animation-delay: 0.32s; }
+.live-doctor-wave span:nth-child(6) { animation-delay: 0.4s; }
+.live-doctor-wave span:nth-child(7) { animation-delay: 0.48s; }
+
+@keyframes liveDoctorIdle {
+    0%, 100% { transform: scaleY(0.5); opacity: 0.48; }
+    50% { transform: scaleY(2.8); opacity: 1; }
+}
+
+.live-doctor-wave-card__text strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #18353d;
+    font-size: 1rem;
+}
+
+.live-doctor-wave-card__text p {
+    margin: 0;
+    color: #52707a;
+    line-height: 1.6;
+}
+
+.live-doctor-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.live-doctor-start,
+.live-doctor-end,
+.live-doctor-emergency__button {
+    min-height: 58px;
+    padding: 0.95rem 1.4rem;
+    border-radius: 20px;
+    border: 0;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.live-doctor-start {
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+    color: #fff;
+    box-shadow: 0 22px 38px rgba(15, 118, 110, 0.24);
+}
+
+.live-doctor-end {
+    background: #fff;
+    color: #164e63;
+    border: 1px solid rgba(22, 78, 99, 0.16);
+}
+
+.live-doctor-emergency {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    padding: 16px 18px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(254, 242, 242, 0.98) 0%, rgba(255, 228, 228, 0.98) 100%);
+    border: 1px solid rgba(248, 113, 113, 0.32);
+}
+
+.live-doctor-emergency strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #991b1b;
+}
+
+.live-doctor-emergency p {
+    margin: 0;
+    color: #7f1d1d;
+    line-height: 1.6;
+}
+
+.live-doctor-emergency__button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+}
+
+.live-doctor-transcript {
+    display: grid;
+    gap: 12px;
+    min-height: 180px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.live-doctor-line {
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid rgba(215, 228, 234, 0.92);
+}
+
+.live-doctor-line--doctor {
+    background: rgba(223, 252, 239, 0.74);
+}
+
+.live-doctor-line--patient {
+    background: rgba(219, 234, 254, 0.7);
+}
+
+.live-doctor-line--system {
+    background: rgba(255, 247, 237, 0.78);
+}
+
+.live-doctor-line span {
+    display: block;
+    margin-bottom: 6px;
+    color: #18404b;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.live-doctor-line p {
+    margin: 0;
+    color: #385660;
+    line-height: 1.7;
+}
+
+.live-doctor-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.live-doctor-footer__item {
+    padding: 16px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid rgba(213, 227, 233, 0.9);
+}
+
+.live-doctor-footer__label {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: #0f766e;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.live-doctor-footer__item p {
+    margin: 0;
+    color: #45616b;
+    line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+    .live-doctor-topbar {
+        grid-template-columns: 1fr;
+    }
+
+    .live-doctor-book-link {
+        justify-self: start;
+    }
+
+    .live-doctor-wave-card,
+    .live-doctor-footer,
+    .live-doctor-emergency {
+        grid-template-columns: 1fr;
+    }
+
+    .live-doctor-console {
+        padding: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .live-doctor-stage {
+        grid-template-rows: minmax(38vh, 42vh) minmax(0, 1fr);
+    }
+
+    .live-doctor-camera,
+    .live-doctor-console {
+        border-radius: 26px;
+    }
+
+    .live-doctor-camera__overlay {
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.AI_DOCTOR_LIVE_CONFIG = {
+        websocketUrl: "{{ '/ws/ai-doctor' }}",
+        appointmentUrl: "{{ book_appointment_url }}",
+        emergencyPhone: "911"
+    };
+</script>
+<script defer src="{{ url_for('static', path='js/ai_doctor_live.js') }}"></script>
+{% endblock %}

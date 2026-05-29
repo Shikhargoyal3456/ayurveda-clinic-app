@@ -34,6 +34,23 @@ def ai_doctor_page(request: Request, user: User = Depends(require_portal_roles("
     )
 
 
+@router.get("/ai-doctor-live")
+def ai_doctor_live_page(request: Request, user: User = Depends(require_portal_roles("patient"))):
+    return render_template(
+        templates,
+        request,
+        "ai_doctor_live.html",
+        {
+            "active_page": "consult",
+            "user_name": user.full_name or "Patient",
+            "user_role": "AI Doctor Live",
+            "avatar_label": "DR",
+            "page_hint": "Single-tap live AI doctor consultation",
+            "book_appointment_url": "/telemedicine/book",
+        },
+    )
+
+
 @router.websocket("/ws/ai-doctor")
 async def ai_doctor_websocket(websocket: WebSocket):
     user = await _authenticate_patient_socket(websocket)
