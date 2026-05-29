@@ -1756,10 +1756,11 @@ def add_medicine_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "admin/add_medicine.html",
-        {"request": request, **_admin_template_context(request)},
+        _admin_template_context(request),
     )
 
 
@@ -1769,10 +1770,11 @@ def bulk_upload_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "admin/bulk_upload.html",
-        {"request": request, **_admin_template_context(request)},
+        _admin_template_context(request),
     )
 
 
@@ -1782,10 +1784,11 @@ def master_medicine_db_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "admin/master_medicine_db.html",
-        {"request": request, **_admin_template_context(request)},
+        _admin_template_context(request),
     )
 
 
@@ -1795,10 +1798,11 @@ def activity_dashboard_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "admin/activity_dashboard.html",
-        {"request": request, **_admin_template_context(request)},
+        _admin_template_context(request),
     )
 
 
@@ -1808,10 +1812,11 @@ def complete_admin_page(
     doctor: Doctor = Depends(get_current_doctor),
 ):
     _require_admin(doctor)
-    return templates.TemplateResponse(
+    return render_template(
+        templates,
         request,
         "admin/complete_admin.html",
-        {"request": request, **_admin_template_context(request)},
+        _admin_template_context(request),
     )
 
 
@@ -2405,11 +2410,11 @@ def admin_users_page(
         for item in patients:
             rows.append((_as_aware(item.created_at) or fallback_dt, _recent_user_payload(item, "Patient")))
         rows.sort(key=lambda pair: pair[0], reverse=True)
-        return templates.TemplateResponse(
+        return render_template(
+            templates,
             request,
             "admin_users.html",
             {
-                "request": request,
                 "doctor": doctor,
                 "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                 "users": [payload for _, payload in rows[:50]],
@@ -2417,11 +2422,11 @@ def admin_users_page(
         )
     except Exception as exc:
         logger.exception("Admin users page failed: %s", exc)
-        return templates.TemplateResponse(
+        return render_template(
+            templates,
             request,
             "admin_users.html",
             {
-                "request": request,
                 "doctor": doctor,
                 "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                 "users": [],
@@ -2438,11 +2443,11 @@ def admin_orders_page(
     doctor = _require_admin(doctor)
     try:
         orders = db.query(MedicineOrder).order_by(MedicineOrder.created_at.desc(), MedicineOrder.id.desc()).limit(50).all()
-        return templates.TemplateResponse(
+        return render_template(
+            templates,
             request,
             "admin_orders.html",
             {
-                "request": request,
                 "doctor": doctor,
                 "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                 "orders": [_recent_order_payload(order) for order in orders],
@@ -2450,11 +2455,11 @@ def admin_orders_page(
         )
     except Exception as exc:
         logger.exception("Admin orders page failed: %s", exc)
-        return templates.TemplateResponse(
+        return render_template(
+            templates,
             request,
             "admin_orders.html",
             {
-                "request": request,
                 "doctor": doctor,
                 "today_date": datetime.now(timezone.utc).strftime("%B %d, %Y"),
                 "orders": [],
