@@ -5,6 +5,29 @@
 {% set display_name = patient_name | default(user_name, true) | default('Patient', true) %}
 {% set display_date = today_date | default('Today', true) %}
 <div class="patient-modern-home">
+    <section class="patient-ai-doctor-feature">
+        <div class="patient-ai-doctor-feature__copy">
+            <span class="patient-ai-doctor-feature__badge">🤖 AI DOCTOR - LIVE</span>
+            <h2>Talk naturally. Show symptoms via camera. Get instant voice guidance.</h2>
+            <p>
+                Dr. Kash listens to your voice, reviews what you show on camera, and responds with calm, compassionate medical guidance in real time.
+            </p>
+            <div class="patient-ai-doctor-feature__actions">
+                <a href="/ai-doctor-live" class="btn-modern patient-ai-doctor-feature__button">🎤 Start Live Consultation</a>
+                <a href="/telemedicine/book" class="btn-modern btn-modern--secondary">Book Real Doctor</a>
+            </div>
+            <div class="patient-ai-doctor-feature__footer">✨ Real-time voice + camera • Always calm, always available</div>
+        </div>
+        <div class="patient-ai-doctor-feature__visual" aria-hidden="true">
+            <div class="patient-ai-orb"></div>
+            <div class="patient-ai-visual-card">
+                <span>Live voice + camera consultation</span>
+                <strong>Talk. Show. Get guidance.</strong>
+                <p>Emergency detection • Calm responses • Real doctor handoff</p>
+            </div>
+        </div>
+    </section>
+
     <section class="patient-hero glass-card">
         <div class="patient-hero__copy">
             <span class="hero-badge"><span class="hero-badge__dot"></span>Personal health command center</span>
@@ -36,29 +59,6 @@
                     <span class="hero-stat__value">1x</span>
                     <span class="hero-stat__label">Unified health journey</span>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="patient-ai-doctor-feature">
-        <div class="patient-ai-doctor-feature__copy">
-            <span class="patient-ai-doctor-feature__badge">🤖 AI DOCTOR - NEW!</span>
-            <h2>Talk naturally. Show symptoms via camera. Get instant guidance.</h2>
-            <p>
-                Dr. Kash can listen to your concerns, review visible symptoms on camera, and respond with calm, compassionate medical guidance 24/7.
-            </p>
-            <div class="patient-ai-doctor-feature__actions">
-                <a href="/ai-doctor" class="btn-modern patient-ai-doctor-feature__button">🎤 Start AI Consultation</a>
-                <a href="/telemedicine/book" class="btn-modern btn-modern--secondary">Book Real Doctor</a>
-            </div>
-            <div class="patient-ai-doctor-feature__footer">✨ Calm, caring, and always available</div>
-        </div>
-        <div class="patient-ai-doctor-feature__visual" aria-hidden="true">
-            <div class="patient-ai-orb"></div>
-            <div class="patient-ai-visual-card">
-                <span>Camera-assisted symptom review</span>
-                <strong>Voice + Vision + Reassurance</strong>
-                <p>Compassionate support first, clear escalation when something sounds urgent.</p>
             </div>
         </div>
     </section>
@@ -300,13 +300,13 @@
     padding: 28px;
     border-radius: 30px;
     overflow: hidden;
-    border: 1px solid rgba(125, 182, 170, 0.28);
+    border: 1px solid rgba(96, 165, 250, 0.18);
     background:
-        radial-gradient(circle at top left, rgba(45, 212, 191, 0.22), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.22), transparent 24%),
-        linear-gradient(135deg, rgba(15, 76, 92, 0.97) 0%, rgba(26, 127, 107, 0.94) 48%, rgba(126, 214, 180, 0.9) 100%);
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.28), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.22), transparent 24%),
+        linear-gradient(135deg, rgba(10, 15, 30, 0.99) 0%, rgba(15, 23, 42, 0.98) 52%, rgba(17, 24, 39, 0.96) 100%);
     color: white;
-    box-shadow: 0 24px 54px rgba(15, 76, 92, 0.2);
+    box-shadow: 0 24px 54px rgba(2, 6, 23, 0.34);
 }
 
 .patient-ai-doctor-feature__copy,
@@ -319,7 +319,7 @@
     display: inline-flex;
     padding: 9px 14px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(96, 165, 250, 0.16);
     font-size: 0.84rem;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -348,8 +348,9 @@
 }
 
 .patient-ai-doctor-feature__button {
-    background: white;
-    color: var(--primary);
+    background: linear-gradient(135deg, #60a5fa 0%, #14b8a6 100%);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .patient-ai-doctor-feature__footer {
@@ -377,8 +378,8 @@
     width: min(100%, 290px);
     padding: 24px;
     border-radius: 26px;
-    background: rgba(255, 255, 255, 0.14);
-    border: 1px solid rgba(255, 255, 255, 0.26);
+    background: rgba(15, 23, 42, 0.46);
+    border: 1px solid rgba(148, 163, 184, 0.22);
     backdrop-filter: blur(16px);
     box-shadow: var(--shadow-xl);
 }

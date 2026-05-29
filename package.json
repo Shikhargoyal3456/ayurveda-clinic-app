@@ -11,6 +11,7 @@
     "check": "node --check src/app.js && node --check src/queues/reminderWorker.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.15.2",
     "better-sqlite3": "^11.9.1",
