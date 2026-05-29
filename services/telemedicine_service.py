@@ -107,12 +107,12 @@ class TelemedicineService:
 
     async def real_time_ai_assistant(self, session_id: str, conversation_text: list[str] | str) -> dict[str, Any]:
         text = "\n".join(conversation_text) if isinstance(conversation_text, list) else str(conversation_text or "")
-        key_points = self._extract_key_points(text)
+        key_points = await self._extract_key_points(text)
         insight = {
             "session_id": session_id,
-            "extracted_symptoms": key_points.get("symptoms", []),
-            "suggested_diagnosis": key_points.get("possible_diagnosis", []),
-            "suggested_medications": key_points.get("medications", []),
+            "extracted_symptoms": key_points,
+            "suggested_diagnosis": [],
+            "suggested_medications": [],
             "follow_up_questions": [
                 "How long have you experienced these symptoms?",
                 "What makes it better or worse?",
@@ -232,26 +232,15 @@ class TelemedicineService:
         return result
 
     def _symptom_fallback_payload(self, symptoms: str) -> dict[str, Any]:
-        text = str(symptoms or "").lower()
-        conditions: list[dict[str, Any]] = []
-        recommendations = ["Monitor symptoms and consult a doctor if they worsen."]
-        urgency = "medium"
-
-        if "fever" in text or "headache" in text:
-            conditions.append({"name": "Viral illness", "probability": "medium"})
-            recommendations.insert(0, "Rest, hydrate well, and track temperature trends.")
-            urgency = "medium"
-        if "cough" in text or "cold" in text:
-            conditions.append({"name": "Upper respiratory irritation", "probability": "medium"})
-        if "chest pain" in text or "breath" in text:
-            conditions.append({"name": "Urgent clinical review needed", "probability": "high"})
-            recommendations = ["Seek urgent medical evaluation, especially if breathing difficulty or worsening pain is present."]
-            urgency = "high"
-        if not conditions:
-            conditions.append({"name": "General symptom review needed", "probability": "medium"})
-            recommendations.insert(0, "AI triage is temporarily unavailable, so use a clinician review for a full assessment.")
-
-        return {"conditions": conditions, "urgency": urgency, "recommendations": recommendations}
+        """Return neutral fallback when AI is unavailable - no hardcoded diagnosis."""
+        return {
+            "conditions": [],
+            "urgency": "unknown",
+            "recommendations": [
+                "AI symptom analysis is temporarily unavailable.",
+                "Please consult a doctor for a proper assessment, especially if symptoms are worsening.",
+            ],
+        }
 
     async def handle_signaling(self, session_id: str, data: dict[str, Any], sender: Any | None = None) -> None:
         self.session_history.setdefault(session_id, []).append(
@@ -281,29 +270,46 @@ class TelemedicineService:
         if session_id in self.active_sessions:
             self.active_sessions[session_id]["status"] = "completed"
 
-    def _extract_key_points(self, conversation_text: str) -> dict[str, list[str]]:
-        text = str(conversation_text or "").lower()
-        symptoms = [token for token in ["fever", "headache", "cough", "pain", "acidity", "sleep", "fatigue"] if token in text]
-        possible_diagnosis = []
-        if "fever" in text and "cough" in text:
-            possible_diagnosis.append("Upper respiratory infection")
-        if "acidity" in text or "burning" in text:
-            possible_diagnosis.append("Acid-peptic irritation")
-        medications = []
-        if "pain" in text:
-            medications.append("Supportive pain management review")
-        if "sleep" in text:
-            medications.append("Sleep hygiene and calming support")
-        return {
-            "symptoms": symptoms,
-            "possible_diagnosis": possible_diagnosis or ["Further clinical evaluation needed"],
-            "medications": medications,
-        }
+    async def _extract_key_points(self, text: str) -> list[str]:
+        """Use AI to extract key medical points from patient description."""
+        clean_text = str(text or "").strip()
+        if len(clean_text) < 10:
+            return []
 
-    def _check_emergency(self, key_points: dict[str, list[str]]) -> bool:
-        red_flags = {"breathless", "chest pain", "fainting"}
-        symptom_set = set(key_points.get("symptoms", []))
-        return bool(symptom_set & red_flags)
+        try:
+            parsed, _provider = await call_ai_json_with_retry(
+                system_prompt=(
+                    "Extract the key medical points from a patient description. "
+                    "Return only JSON with a single key named points containing a list of 2 to 5 concise symptoms or concerns."
+                ),
+                user_prompt=(
+                    f"Extract the key medical points from this patient description.\n"
+                    f"Return only JSON with the format {{\"points\": [\"...\"]}}.\n"
+                    f"Description: {clean_text}"
+                ),
+                simpler_user_prompt=(
+                    f"Description: {clean_text}\n"
+                    'Return JSON: {"points": ["symptom 1", "symptom 2"]}.'
+                ),
+                temperature=0.1,
+                max_output_tokens=300,
+            )
+            if isinstance(parsed, dict):
+                points = parsed.get("points", [])
+            elif isinstance(parsed, list):
+                points = parsed
+            else:
+                points = []
+            if not isinstance(points, list):
+                return []
+            return [str(item).strip() for item in points if str(item).strip()][:5]
+        except Exception:
+            return [segment.strip() for segment in clean_text.split(".") if segment.strip()][:5]
+
+    def _check_emergency(self, key_points: list[str]) -> bool:
+        red_flags = ("breathless", "shortness of breath", "difficulty breathing", "chest pain", "fainting")
+        haystack = " ".join(str(point).lower() for point in key_points)
+        return any(flag in haystack for flag in red_flags)
 
     def _generate_diagnosis(self, session: dict[str, Any]) -> str:
         insights = session.get("ai_insights", {})

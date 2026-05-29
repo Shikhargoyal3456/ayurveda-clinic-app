@@ -89,7 +89,7 @@ class AIPrescriptionAnalyzer:
                     return text.strip()
             except Exception:
                 pass
-        return "Tab Paracetamol 500mg twice daily for 5 days\nCap Omeprazole 20mg once daily before food"
+        return ""
 
     def _build_analysis(self, db: Session, text: str) -> dict[str, Any]:
         medicines = self.extract_medicines_from_text(db, text)
@@ -204,44 +204,41 @@ class AIPrescriptionAnalyzer:
         return cache
 
     def find_medicine_info(self, medicine_name: str) -> dict[str, str]:
+        """Get medicine information using AI, not hardcoded text."""
         normalized = str(medicine_name or "").strip().lower()
+
+        if not normalized:
+            return {
+                "uses": "No medicine name provided.",
+                "side_effects": "Please consult a doctor.",
+                "alternatives": "",
+                "precautions": "Clinician review advised.",
+            }
+
         try:
             ai_info = pure_ai.get_medicine_info_sync(normalized, {})
             benefits = ai_info.get("benefits", []) if isinstance(ai_info.get("benefits"), list) else []
-            common_effects = []
-            if isinstance(ai_info.get("side_effects"), dict):
-                common_effects = ai_info["side_effects"].get("common", []) or []
+            side_effects = ai_info.get("side_effects", {}) if isinstance(ai_info.get("side_effects"), dict) else {}
+            common_effects = side_effects.get("common", []) if isinstance(side_effects.get("common"), list) else []
             alternatives = ai_info.get("alternatives", []) if isinstance(ai_info.get("alternatives"), list) else []
-            alternative_names = [str(item.get("name") or "").strip() for item in alternatives if isinstance(item, dict)]
-            precautions = ai_info.get("interactions", []) if isinstance(ai_info.get("interactions"), list) else []
+
             return {
-                "uses": "; ".join(str(item).strip() for item in benefits if str(item).strip()) or "AI-generated uses pending review.",
-                "side_effects": "; ".join(str(item).strip() for item in common_effects if str(item).strip()) or "AI-generated side effects pending review.",
-                "alternatives": ", ".join(item for item in alternative_names if item) or "AI-generated alternatives pending review.",
-                "precautions": "; ".join(str(item).strip() for item in precautions if str(item).strip()) or "Review with clinician before use.",
+                "uses": "; ".join(str(item).strip() for item in benefits if str(item).strip()) or "AI information temporarily unavailable.",
+                "side_effects": "; ".join(str(item).strip() for item in common_effects if str(item).strip()) or "Consult doctor for side effects.",
+                "alternatives": ", ".join(
+                    str(item.get("name") or "").strip()
+                    for item in alternatives
+                    if isinstance(item, dict) and str(item.get("name") or "").strip()
+                ),
+                "precautions": "Always consult your doctor before taking any medication.",
             }
         except Exception:
-            pass
-        if "paracetamol" in normalized or "acetaminophen" in normalized:
             return {
-                "uses": "Fever and pain relief support for short-term symptom management.",
-                "side_effects": "Usually well tolerated; misuse or overdose can affect the liver.",
-                "alternatives": "Dolo 650, Acetaminophen formulations",
-                "precautions": "Avoid exceeding the advised daily dose and review liver disease or alcohol use with a clinician.",
+                "uses": "AI medicine information temporarily unavailable.",
+                "side_effects": "Please consult a qualified clinician.",
+                "alternatives": "",
+                "precautions": "Medical advice required before use.",
             }
-        if "omeprazole" in normalized:
-            return {
-                "uses": "Acidity, reflux, and stomach-protection support.",
-                "side_effects": "May cause headache, nausea, or mild digestive upset.",
-                "alternatives": "Pantoprazole, Rabeprazole",
-                "precautions": "Use doctor review for long-term use or persistent stomach symptoms.",
-            }
-        return {
-            "uses": "AI medicine guidance is temporarily unavailable.",
-            "side_effects": "Review medicine risks with a qualified clinician.",
-            "alternatives": "No AI alternatives available right now.",
-            "precautions": "Review pregnancy status, allergies, kidney and liver history with your clinician.",
-        }
 
     def get_medicine_info(self, db: Session, medicine_name: str) -> dict[str, Any]:
         cache = self._ensure_info_cache(db, medicine_name)

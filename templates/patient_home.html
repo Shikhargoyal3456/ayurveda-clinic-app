@@ -40,6 +40,29 @@
         </div>
     </section>
 
+    <section class="patient-ai-doctor-feature">
+        <div class="patient-ai-doctor-feature__copy">
+            <span class="patient-ai-doctor-feature__badge">🤖 AI DOCTOR - NEW!</span>
+            <h2>Talk naturally. Show symptoms via camera. Get instant guidance.</h2>
+            <p>
+                Dr. Kash can listen to your concerns, review visible symptoms on camera, and respond with calm, compassionate medical guidance 24/7.
+            </p>
+            <div class="patient-ai-doctor-feature__actions">
+                <a href="/ai-doctor" class="btn-modern patient-ai-doctor-feature__button">🎤 Start AI Consultation</a>
+                <a href="/telemedicine/book" class="btn-modern btn-modern--secondary">Book Real Doctor</a>
+            </div>
+            <div class="patient-ai-doctor-feature__footer">✨ Calm, caring, and always available</div>
+        </div>
+        <div class="patient-ai-doctor-feature__visual" aria-hidden="true">
+            <div class="patient-ai-orb"></div>
+            <div class="patient-ai-visual-card">
+                <span>Camera-assisted symptom review</span>
+                <strong>Voice + Vision + Reassurance</strong>
+                <p>Compassionate support first, clear escalation when something sounds urgent.</p>
+            </div>
+        </div>
+    </section>
+
     <section class="patient-actions-grid">
         <button onclick="location.href='/order-medicines'" class="patient-action-card patient-action-card--primary" type="button">
             <span class="patient-action-card__icon"><i class="fa-solid fa-capsules" aria-hidden="true"></i></span>
@@ -269,6 +292,116 @@
     gap: 20px;
 }
 
+.patient-ai-doctor-feature {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
+    gap: 24px;
+    padding: 28px;
+    border-radius: 30px;
+    overflow: hidden;
+    border: 1px solid rgba(125, 182, 170, 0.28);
+    background:
+        radial-gradient(circle at top left, rgba(45, 212, 191, 0.22), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.22), transparent 24%),
+        linear-gradient(135deg, rgba(15, 76, 92, 0.97) 0%, rgba(26, 127, 107, 0.94) 48%, rgba(126, 214, 180, 0.9) 100%);
+    color: white;
+    box-shadow: 0 24px 54px rgba(15, 76, 92, 0.2);
+}
+
+.patient-ai-doctor-feature__copy,
+.patient-ai-doctor-feature__visual {
+    position: relative;
+    z-index: 1;
+}
+
+.patient-ai-doctor-feature__badge {
+    display: inline-flex;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.patient-ai-doctor-feature h2 {
+    margin: 16px 0 10px;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(2rem, 3.4vw, 2.9rem);
+    line-height: 1.08;
+}
+
+.patient-ai-doctor-feature p {
+    margin: 0;
+    max-width: 640px;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.8;
+    font-size: 1rem;
+}
+
+.patient-ai-doctor-feature__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.patient-ai-doctor-feature__button {
+    background: white;
+    color: var(--primary);
+}
+
+.patient-ai-doctor-feature__footer {
+    margin-top: 18px;
+    color: rgba(255, 255, 255, 0.82);
+    font-weight: 700;
+}
+
+.patient-ai-doctor-feature__visual {
+    display: grid;
+    place-items: center;
+}
+
+.patient-ai-orb {
+    position: absolute;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0) 68%);
+    filter: blur(2px);
+}
+
+.patient-ai-visual-card {
+    position: relative;
+    width: min(100%, 290px);
+    padding: 24px;
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    backdrop-filter: blur(16px);
+    box-shadow: var(--shadow-xl);
+}
+
+.patient-ai-visual-card span {
+    display: block;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.76);
+}
+
+.patient-ai-visual-card strong {
+    display: block;
+    margin-top: 10px;
+    font-size: 1.35rem;
+}
+
+.patient-ai-visual-card p {
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.82);
+}
+
 .patient-actions-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -407,6 +540,7 @@
 
 @media (max-width: 1024px) {
     .patient-hero,
+    .patient-ai-doctor-feature,
     .patient-actions-grid,
     .patient-content-grid {
         grid-template-columns: 1fr;

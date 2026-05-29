@@ -1,0 +1,465 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}KASH AI - AI Doctor{% endblock %}
+
+{% block page %}
+<section class="doctor-live-shell">
+    <div class="doctor-disclaimer-banner" role="note" aria-label="Medical disclaimer">
+        <strong>AI Doctor Assistant</strong>
+        <span>I'm an AI doctor assistant. For final diagnosis and treatment, please consult a real doctor.</span>
+        <span>Audio and video are used in real time only and are not stored by this consultation screen.</span>
+    </div>
+
+    <div class="doctor-live-hero">
+        <div class="doctor-live-hero__copy">
+            <span class="doctor-live-badge">🤖 AI DOCTOR • 24/7 AVAILABLE</span>
+            <h1>Talk naturally. Show symptoms. Get calmer guidance right away.</h1>
+            <p>
+                Dr. Kash listens to your voice, reviews what you show on camera, asks careful clinical follow-up questions,
+                and explains likely possibilities and next steps while clearly telling you when a real doctor should take over.
+            </p>
+            <div class="doctor-live-hero__actions">
+                <button type="button" class="doctor-cta doctor-cta--primary" id="startConsultationButton">Start AI Consultation</button>
+                <a href="{{ book_appointment_url }}" class="doctor-cta doctor-cta--secondary">Book Real Doctor</a>
+            </div>
+            <div class="doctor-live-reassurance">
+                <span>✨ Calm, caring, and always available</span>
+                <span>🎥 Camera-assisted symptom review</span>
+                <span>🎤 Voice-first conversation</span>
+            </div>
+        </div>
+        <div class="doctor-live-hero__panel">
+            <div class="doctor-presence-card">
+                <div class="doctor-presence-card__status">
+                    <span class="doctor-presence-card__dot"></span>
+                    <strong id="connectionStatus">Connecting…</strong>
+                </div>
+                <p id="sessionMessage">Preparing your private AI consultation room.</p>
+                <button type="button" class="doctor-emergency-button" id="emergencyButton">
+                    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                    Emergency: Call 911
+                </button>
+                <a href="/telemedicine/book" class="doctor-mini-link">Need a real doctor after this? Book an appointment.</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="doctor-live-grid">
+        <section class="doctor-panel doctor-panel--camera">
+            <div class="doctor-panel__header">
+                <div>
+                    <h2>Camera View</h2>
+                    <p>Show the affected area in clear light. Frames are reviewed every 2 seconds.</p>
+                </div>
+                <span class="doctor-panel__pill" id="cameraStatus">Camera off</span>
+            </div>
+            <div class="doctor-camera-stage">
+                <video id="patientVideo" autoplay playsinline muted></video>
+                <div class="doctor-camera-overlay" id="cameraOverlay">Camera preview will appear here once access is granted.</div>
+            </div>
+        </section>
+
+        <section class="doctor-panel doctor-panel--conversation">
+            <div class="doctor-panel__header">
+                <div>
+                    <h2>Live Conversation</h2>
+                    <p>Speak freely. Your words will appear here in real time.</p>
+                </div>
+                <span class="doctor-panel__pill" id="micStatus">Mic off</span>
+            </div>
+
+            <div class="doctor-controls">
+                <button type="button" class="doctor-cta doctor-cta--primary" id="micToggleButton">
+                    <i class="fa-solid fa-microphone" aria-hidden="true"></i>
+                    Start Listening
+                </button>
+                <button type="button" class="doctor-cta doctor-cta--secondary" id="endConsultationButton">End Consultation</button>
+            </div>
+
+            <div class="doctor-transcript-box" id="transcriptBox" aria-live="polite">
+                <div class="doctor-message doctor-message--doctor">
+                    <strong>Dr. Kash</strong>
+                    <p>I'm an AI doctor assistant. For final diagnosis and treatment, please consult a real doctor. Tell me what’s going on, and I’ll start with the most important medical questions.</p>
+                </div>
+            </div>
+
+            <label class="doctor-text-input">
+                <span>Prefer typing?</span>
+                <textarea id="manualMessage" rows="3" placeholder="Describe your symptoms, mood, or medicine question here..."></textarea>
+            </label>
+            <button type="button" class="doctor-cta doctor-cta--secondary" id="sendMessageButton">Send Message</button>
+        </section>
+
+        <section class="doctor-panel doctor-panel--insights">
+            <div class="doctor-panel__header">
+                <div>
+                    <h2>Consultation Insights</h2>
+                    <p>Useful updates from camera review, medicine lookup, and safety checks.</p>
+                </div>
+            </div>
+            <div class="doctor-insights-stack">
+                <article class="doctor-insight-card doctor-insight-card--warm">
+                    <strong>Visual observations</strong>
+                    <p id="visionInsights">No camera-based observation yet.</p>
+                </article>
+                <article class="doctor-insight-card doctor-insight-card--cool">
+                    <strong>Medicine lookup</strong>
+                    <p id="medicineInsights">Ask about a medicine, dose, or side effects and I’ll bring in extra context.</p>
+                </article>
+                <article class="doctor-insight-card doctor-insight-card--alert">
+                    <strong>Safety guidance</strong>
+                    <p id="safetyInsights">If symptoms sound urgent, I’ll clearly tell you to seek immediate care.</p>
+                </article>
+            </div>
+            <div class="doctor-summary-card" id="consultationSummary" hidden>
+                <strong>Consultation wrap-up</strong>
+                <p id="consultationSummaryText"></p>
+                <div class="doctor-summary-card__actions">
+                    <a href="/telemedicine/book" class="doctor-cta doctor-cta--primary">Book Real Doctor</a>
+                    <a href="/appointments" class="doctor-cta doctor-cta--secondary">Appointments</a>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.doctor-live-shell {
+    display: grid;
+    gap: 24px;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 12px 0 40px;
+}
+
+.doctor-disclaimer-banner {
+    display: grid;
+    gap: 8px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(191, 219, 254, 0.8);
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.96) 0%, rgba(236, 253, 245, 0.96) 100%);
+    color: #17414c;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.05);
+}
+
+.doctor-disclaimer-banner strong {
+    font-size: 0.96rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.doctor-live-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.8fr);
+    gap: 24px;
+    padding: 32px;
+    border-radius: 32px;
+    background:
+        radial-gradient(circle at top left, rgba(123, 211, 186, 0.34), transparent 28%),
+        radial-gradient(circle at right center, rgba(129, 178, 255, 0.18), transparent 30%),
+        linear-gradient(135deg, rgba(248, 253, 251, 0.98) 0%, rgba(239, 248, 252, 0.98) 100%);
+    border: 1px solid rgba(184, 211, 221, 0.7);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+}
+
+.doctor-live-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(18, 101, 84, 0.1);
+    color: #126554;
+    font-size: 0.86rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.doctor-live-hero h1 {
+    margin: 18px 0 12px;
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    line-height: 1.05;
+    color: #16313b;
+}
+
+.doctor-live-hero p {
+    margin: 0;
+    max-width: 740px;
+    color: #49626b;
+    font-size: 1.02rem;
+    line-height: 1.8;
+}
+
+.doctor-live-hero__actions,
+.doctor-summary-card__actions,
+.doctor-controls,
+.doctor-live-reassurance {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.doctor-live-hero__actions { margin-top: 26px; }
+.doctor-live-reassurance { margin-top: 18px; color: #45616a; font-weight: 600; }
+
+.doctor-presence-card,
+.doctor-panel,
+.doctor-summary-card {
+    border-radius: 28px;
+    border: 1px solid rgba(186, 204, 214, 0.72);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 44px rgba(15, 23, 42, 0.07);
+}
+
+.doctor-presence-card {
+    padding: 24px;
+    height: 100%;
+    display: grid;
+    align-content: start;
+    gap: 16px;
+}
+
+.doctor-presence-card__status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.doctor-presence-card__dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2bbf84;
+    box-shadow: 0 0 0 8px rgba(43, 191, 132, 0.13);
+}
+
+.doctor-emergency-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 56px;
+    padding: 0.95rem 1.2rem;
+    border: 0;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #f97373 0%, #dc2626 100%);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.doctor-mini-link {
+    color: #0f766e;
+    font-weight: 700;
+}
+
+.doctor-live-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(290px, 0.8fr);
+    gap: 22px;
+}
+
+.doctor-panel {
+    padding: 24px;
+}
+
+.doctor-panel__header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.doctor-panel__header h2 {
+    margin: 0;
+    color: #18353d;
+    font-size: 1.3rem;
+}
+
+.doctor-panel__header p {
+    margin: 6px 0 0;
+    color: #5c727a;
+    line-height: 1.6;
+}
+
+.doctor-panel__pill {
+    white-space: nowrap;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #edf8f5;
+    color: #126554;
+    font-weight: 700;
+    font-size: 0.86rem;
+}
+
+.doctor-camera-stage {
+    position: relative;
+    min-height: 420px;
+    border-radius: 24px;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top, rgba(132, 204, 22, 0.14), transparent 28%),
+        linear-gradient(180deg, #dbeafe 0%, #e2f6f1 100%);
+    border: 1px solid rgba(177, 205, 218, 0.7);
+}
+
+.doctor-camera-stage video {
+    width: 100%;
+    height: 100%;
+    min-height: 420px;
+    object-fit: cover;
+    display: block;
+    background: #dbeafe;
+}
+
+.doctor-camera-overlay {
+    position: absolute;
+    inset: auto 18px 18px 18px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(14px);
+    color: #47616b;
+    font-weight: 600;
+}
+
+.doctor-cta {
+    min-height: 52px;
+    padding: 0.95rem 1.2rem;
+    border-radius: 18px;
+    border: 1px solid transparent;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.doctor-cta--primary {
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+    color: #fff;
+}
+
+.doctor-cta--secondary {
+    background: #fff;
+    color: #0f766e;
+    border-color: rgba(15, 118, 110, 0.18);
+}
+
+.doctor-transcript-box {
+    display: grid;
+    gap: 14px;
+    min-height: 320px;
+    max-height: 420px;
+    padding: 12px;
+    overflow-y: auto;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(249, 252, 252, 0.98) 0%, rgba(241, 248, 248, 0.98) 100%);
+    border: 1px solid rgba(214, 226, 230, 0.9);
+}
+
+.doctor-message {
+    padding: 14px 16px;
+    border-radius: 18px;
+}
+
+.doctor-message strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+.doctor-message p {
+    margin: 0;
+    line-height: 1.7;
+    color: #39565f;
+}
+
+.doctor-message--doctor {
+    background: rgba(220, 252, 231, 0.8);
+}
+
+.doctor-message--patient {
+    background: rgba(219, 234, 254, 0.72);
+}
+
+.doctor-message--system {
+    background: rgba(255, 247, 237, 0.82);
+}
+
+.doctor-text-input {
+    display: grid;
+    gap: 8px;
+    margin-top: 18px;
+    font-weight: 700;
+    color: #22444d;
+}
+
+.doctor-text-input textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(187, 205, 213, 0.9);
+    background: #fcfeff;
+    resize: vertical;
+}
+
+.doctor-insights-stack {
+    display: grid;
+    gap: 14px;
+}
+
+.doctor-insight-card {
+    padding: 18px;
+    border-radius: 20px;
+}
+
+.doctor-insight-card strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #17343d;
+}
+
+.doctor-insight-card p {
+    margin: 0;
+    color: #4f6770;
+    line-height: 1.7;
+}
+
+.doctor-insight-card--warm { background: #fff8eb; }
+.doctor-insight-card--cool { background: #edf8ff; }
+.doctor-insight-card--alert { background: #fef2f2; }
+
+.doctor-summary-card {
+    margin-top: 18px;
+    padding: 20px;
+}
+
+@media (max-width: 1120px) {
+    .doctor-live-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 860px) {
+    .doctor-live-hero {
+        grid-template-columns: 1fr;
+        padding: 24px;
+    }
+
+    .doctor-camera-stage,
+    .doctor-camera-stage video {
+        min-height: 280px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    window.AI_DOCTOR_CONFIG = {
+        websocketUrl: "{{ '/ws/ai-doctor' }}",
+        appointmentUrl: "{{ book_appointment_url }}",
+        emergencyPhone: "911"
+    };
+</script>
+<script defer src="{{ url_for('static', path='js/ai_doctor.js') }}"></script>
+{% endblock %}

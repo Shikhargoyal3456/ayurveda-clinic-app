@@ -80,6 +80,7 @@ from apps.patient.routes import router as patient_portal_router
 from apps.pharmacy.routes import router as pharmacy_portal_router
 from routers.admin import router as admin_router
 from routers.ai import router as ai_router
+from routers.ai_doctor import router as ai_doctor_router
 from routers.ai_dashboard import router as ai_dashboard_router
 from routers.ai_pharmacy import router as ai_pharmacy_router
 from routers.ai_features import router as ai_features_router
@@ -427,6 +428,7 @@ def create_app() -> FastAPI:
     application.include_router(contact_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
+    application.include_router(ai_doctor_router)
     application.include_router(ai_dashboard_router)
     application.include_router(ai_pharmacy_router)
     application.include_router(ai_features_router)

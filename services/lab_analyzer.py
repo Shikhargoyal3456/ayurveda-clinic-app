@@ -88,187 +88,103 @@ class LabReportAnalyzer:
             "hemoglobin": {
                 "aliases": ["hb", "haemoglobin", "hemoglobin"],
                 "range": {"male": (13.5, 17.5), "female": (12.0, 15.5), "unit": "g/dL"},
-                "low_meaning": "Low hemoglobin can suggest anemia, iron deficiency, blood loss, or chronic illness.",
-                "high_meaning": "High hemoglobin can happen with dehydration, smoking, lung disease, or other causes that need review.",
-                "low_recommendation": "Discuss anemia workup with your doctor and review iron, B12, folate, diet, and bleeding history.",
-                "high_recommendation": "Repeat the test with hydration and ask your doctor if smoking, altitude, or lung issues may be involved.",
             },
             "rbc": {
                 "aliases": ["rbc", "red blood cells"],
                 "range": {"male": (4.5, 5.9), "female": (4.0, 5.2), "unit": "million/uL"},
-                "low_meaning": "Low RBC count may support anemia or reduced red blood cell production.",
-                "high_meaning": "High RBC count may happen with dehydration or conditions that increase red blood cell production.",
-                "low_recommendation": "Review symptoms like fatigue or breathlessness and ask whether iron, B12, and folate testing is needed.",
-                "high_recommendation": "Stay hydrated and discuss whether this needs repeat testing or further evaluation.",
             },
             "wbc": {
                 "aliases": ["wbc", "white blood cells", "tlc", "total leukocyte count"],
                 "range": (4.5, 11.0),
                 "unit": "x10^3/uL",
-                "low_meaning": "Low white blood cells can reduce infection-fighting ability and may be seen with viral illness, medicines, or marrow suppression.",
-                "high_meaning": "High white blood cells often suggest infection, inflammation, stress response, or less commonly blood disorders.",
-                "low_recommendation": "Discuss medicine history, recent infections, and whether repeat CBC is needed.",
-                "high_recommendation": "Correlate with fever, infection symptoms, and ask your doctor whether additional workup is needed.",
             },
             "platelets": {
                 "aliases": ["platelets", "plt"],
                 "range": (150, 450),
                 "unit": "x10^3/uL",
-                "low_meaning": "Low platelets can increase bleeding risk depending on how low the count is.",
-                "high_meaning": "High platelets may happen after infection, inflammation, iron deficiency, or other conditions.",
-                "low_recommendation": "Seek timely medical review if you have bruising, bleeding, or very low counts.",
-                "high_recommendation": "Discuss whether this is reactive or if repeat CBC and iron studies are needed.",
             },
             "hematocrit": {
                 "aliases": ["hct", "hematocrit", "pcv"],
                 "range": {"male": (41, 53), "female": (36, 46), "unit": "%"},
-                "low_meaning": "Low hematocrit can support anemia, blood loss, or low red blood cell volume.",
-                "high_meaning": "High hematocrit may happen with dehydration or conditions that increase red cell concentration.",
-                "low_recommendation": "Review anemia symptoms and correlate this with hemoglobin, RBC count, and iron studies.",
-                "high_recommendation": "Repeat testing with hydration and discuss whether further evaluation is needed.",
             },
             "mcv": {
                 "aliases": ["mcv", "mean corpuscular volume"],
                 "range": (80, 100),
                 "unit": "fL",
-                "low_meaning": "Low MCV suggests smaller-than-usual red blood cells, often seen with iron deficiency or thalassemia traits.",
-                "high_meaning": "High MCV suggests larger-than-usual red blood cells and can happen with B12, folate, liver, or thyroid issues.",
-                "low_recommendation": "Review iron studies and anemia workup with your doctor.",
-                "high_recommendation": "Discuss B12, folate, liver, thyroid, and medicine review with your doctor.",
             },
             "mch": {
                 "aliases": ["mch", "mean corpuscular hemoglobin"],
                 "range": (27, 33),
                 "unit": "pg",
-                "low_meaning": "Low MCH suggests less hemoglobin per red blood cell, often seen with iron deficiency states.",
-                "high_meaning": "High MCH can happen when red blood cells are larger or when anemia patterns need correlation with MCV.",
-                "low_recommendation": "Review this with hemoglobin, MCV, ferritin, and iron studies.",
-                "high_recommendation": "Correlate with CBC indices and review with your doctor.",
             },
             "mchc": {
                 "aliases": ["mchc", "mean corpuscular hemoglobin concentration"],
                 "range": (32, 36),
                 "unit": "g/dL",
-                "low_meaning": "Low MCHC suggests lower hemoglobin concentration inside red blood cells and can support iron deficiency patterns.",
-                "high_meaning": "High MCHC is less common and should be interpreted carefully with the full blood count.",
-                "low_recommendation": "Review iron deficiency workup and CBC indices with your doctor.",
-                "high_recommendation": "Repeat the test if needed and discuss the full blood count with your doctor.",
             },
             "lymphocytes": {
                 "aliases": ["lymphocytes", "lymphocyte", "lymphocyte %", "lymphocytes %"],
                 "range": (20, 40),
                 "unit": "%",
-                "low_meaning": "Low lymphocytes may be seen with infections, stress response, steroid exposure, or immune-related issues.",
-                "high_meaning": "High lymphocytes may happen with viral infections or other immune responses.",
-                "low_recommendation": "Correlate with recent illness, medicines, and repeat CBC if advised.",
-                "high_recommendation": "Review with symptoms and the rest of the differential count.",
             },
             "esr": {
                 "aliases": ["esr", "erythrocyte sedimentation rate"],
                 "range": (0, 20),
                 "unit": "mm/hr",
-                "low_meaning": "Low ESR is usually not concerning on its own.",
-                "high_meaning": "High ESR can suggest inflammation, infection, autoimmune activity, or other conditions that need context.",
-                "low_recommendation": "Usually no action is needed if the rest of the report and symptoms are reassuring.",
-                "high_recommendation": "Discuss this with your doctor along with symptoms, CRP, infection history, or inflammatory conditions.",
             },
             "creatinine": {
                 "aliases": ["creatinine", "crea", "serum creatinine"],
                 "range": {"male": (0.7, 1.3), "female": (0.6, 1.1), "unit": "mg/dL"},
-                "low_meaning": "Low creatinine is usually less concerning and can be seen with low muscle mass.",
-                "high_meaning": "High creatinine may indicate reduced kidney function, dehydration, or medication effects.",
-                "low_recommendation": "Usually review only if it does not fit the clinical picture.",
-                "high_recommendation": "Review kidney function, hydration, blood pressure, diabetes status, and medications with your doctor.",
             },
             "blood_sugar": {
                 "aliases": ["blood sugar", "glucose", "fbs", "fasting blood sugar", "rbs", "random blood sugar"],
                 "range": (70, 140),
                 "unit": "mg/dL",
-                "low_meaning": "Low blood sugar can cause sweating, shakiness, confusion, and weakness.",
-                "high_meaning": "High blood sugar can suggest diabetes, prediabetes, stress response, or poor glucose control.",
-                "low_recommendation": "Review symptoms, diabetes medicines, and urgent care needs if low sugar symptoms are present.",
-                "high_recommendation": "Discuss HbA1c, diet, exercise, and whether repeat fasting or post-meal testing is needed.",
             },
             "cholesterol": {
                 "aliases": ["cholesterol", "total cholesterol"],
                 "range": (125, 200),
                 "unit": "mg/dL",
-                "low_meaning": "Low total cholesterol is usually less concerning unless there are nutrition or absorption issues.",
-                "high_meaning": "High total cholesterol can increase long-term cardiovascular risk.",
-                "low_recommendation": "Usually review in context of weight loss, nutrition, or chronic illness if relevant.",
-                "high_recommendation": "Discuss diet, exercise, weight, family history, and whether full lipid management is needed.",
             },
             "triglycerides": {
                 "aliases": ["triglycerides", "tg"],
                 "range": (30, 150),
                 "unit": "mg/dL",
-                "low_meaning": "Low triglycerides are usually not dangerous on their own.",
-                "high_meaning": "High triglycerides can be linked to diabetes, alcohol use, obesity, or metabolic syndrome.",
-                "low_recommendation": "Usually no treatment is needed unless there are broader nutrition concerns.",
-                "high_recommendation": "Review sugar intake, alcohol, weight, diabetes control, and repeat fasting lipids with your doctor.",
             },
             "hdl": {
                 "aliases": ["hdl", "good cholesterol"],
                 "range": (40, 60),
                 "unit": "mg/dL",
-                "low_meaning": "Low HDL means less protective cholesterol support for heart health.",
-                "high_meaning": "Higher HDL is usually favorable in standard interpretation.",
-                "low_recommendation": "Discuss exercise, smoking cessation, and overall lipid-risk reduction.",
-                "high_recommendation": "Usually continue heart-healthy lifestyle habits.",
             },
             "ldl": {
                 "aliases": ["ldl", "bad cholesterol"],
                 "range": (0, 100),
                 "unit": "mg/dL",
-                "low_meaning": "Lower LDL is generally favorable for cardiovascular risk.",
-                "high_meaning": "High LDL increases risk for heart disease and stroke over time.",
-                "low_recommendation": "Usually continue heart-healthy habits unless your doctor advises otherwise.",
-                "high_recommendation": "Review diet, exercise, family history, and whether lipid-lowering treatment is appropriate.",
             },
             "vitamin_d": {
                 "aliases": ["vitamin d", "25-oh vitamin d", "25 oh vitamin d"],
                 "range": (30, 100),
                 "unit": "ng/mL",
-                "low_meaning": "Low vitamin D can be associated with low bone support, muscle aches, and deficiency.",
-                "high_meaning": "Very high vitamin D may happen with over-supplementation and can be harmful.",
-                "low_recommendation": "Discuss supplementation, sun exposure, diet, and repeat testing plan with your doctor.",
-                "high_recommendation": "Review supplement doses and ask whether you should pause or adjust them.",
             },
             "b12": {
                 "aliases": ["vitamin b12", "cobalamin", "b12"],
                 "range": (200, 900),
                 "unit": "pg/mL",
-                "low_meaning": "Low B12 can contribute to anemia, numbness, tingling, fatigue, or nerve symptoms.",
-                "high_meaning": "High B12 is often due to supplements but should be interpreted with history.",
-                "low_recommendation": "Discuss diet, absorption issues, anemia symptoms, and whether supplementation is needed.",
-                "high_recommendation": "Review supplement use and overall clinical context with your doctor.",
             },
             "tsh": {
                 "aliases": ["tsh", "thyroid stimulating hormone"],
                 "range": (0.4, 4.0),
                 "unit": "uIU/mL",
-                "low_meaning": "Low TSH may suggest overactive thyroid or excess thyroid hormone treatment.",
-                "high_meaning": "High TSH may suggest underactive thyroid or insufficient thyroid replacement.",
-                "low_recommendation": "Discuss symptoms like palpitations, weight loss, tremor, or thyroid medicine dosing.",
-                "high_recommendation": "Discuss fatigue, weight gain, cold intolerance, and whether thyroid treatment is needed.",
             },
             "t3": {
                 "aliases": ["t3", "triiodothyronine"],
                 "range": (80, 200),
                 "unit": "ng/dL",
-                "low_meaning": "Low T3 can be seen in hypothyroidism or non-thyroidal illness.",
-                "high_meaning": "High T3 may suggest hyperthyroidism.",
-                "low_recommendation": "Interpret with TSH and T4 rather than alone.",
-                "high_recommendation": "Review thyroid symptoms and complete thyroid profile with your doctor.",
             },
             "t4": {
                 "aliases": ["t4", "thyroxine"],
                 "range": (5, 12),
                 "unit": "ug/dL",
-                "low_meaning": "Low T4 can support hypothyroidism when correlated with TSH.",
-                "high_meaning": "High T4 can support hyperthyroidism or excess thyroid replacement.",
-                "low_recommendation": "Interpret with TSH and symptoms.",
-                "high_recommendation": "Review thyroid symptoms and medication use with your doctor.",
             },
         }
 
@@ -594,16 +510,16 @@ class LabReportAnalyzer:
     def _evaluate_value(self, test_name: str, value: float, config: dict[str, Any]) -> dict[str, Any]:
         low, high, display_range = self._range_bounds(config)
         status = "normal"
-        meaning = "This value is within the usual reference range."
-        recommendation = "Continue regular follow-up and discuss the report with your doctor if you have symptoms."
+        meaning = "This value is within the reported reference range."
+        recommendation = "Review the full report with your doctor in the context of your symptoms and history."
         if value < low:
             status = "low"
-            meaning = config["low_meaning"]
-            recommendation = config["low_recommendation"]
+            meaning = "This value is below the reported reference range."
+            recommendation = "A clinician should interpret this result along with your symptoms, history, and any other tests."
         elif value > high:
             status = "high"
-            meaning = config["high_meaning"]
-            recommendation = config["high_recommendation"]
+            meaning = "This value is above the reported reference range."
+            recommendation = "A clinician should interpret this result along with your symptoms, history, and any other tests."
 
         return {
             "code": test_name,
