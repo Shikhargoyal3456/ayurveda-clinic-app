@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dr. Kash AI Live</title>
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --panel: #12131b;
+            --panel-soft: #171926;
+            --panel-muted: #1d2030;
+            --text: #f7f8fb;
+            --muted: #9ca3af;
+            --line: rgba(255, 255, 255, 0.08);
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --green: #22c55e;
+            --red: #ef4444;
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+            --radius: 24px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 24%),
+                var(--bg);
+            color: var(--text);
+        }
+
+        .page-shell {
+            width: min(100%, 820px);
+            margin: 0 auto;
+            padding: 20px 16px 32px;
+        }
+
+        .app-card {
+            background: rgba(18, 19, 27, 0.96);
+            border: 1px solid var(--line);
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .screen {
+            display: none;
+        }
+
+        .screen.is-visible {
+            display: block;
+        }
+
+        .start-screen {
+            padding: 30px 22px 36px;
+            text-align: center;
+        }
+
+        .start-screen h1,
+        .consultation-header h1 {
+            margin: 0;
+            font-size: clamp(1.4rem, 4vw, 2rem);
+        }
+
+        .start-screen p {
+            color: var(--muted);
+            line-height: 1.6;
+            margin: 14px auto 24px;
+            max-width: 34rem;
+        }
+
+        .hero-orb {
+            width: 108px;
+            height: 108px;
+            margin: 10px auto 22px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.94), rgba(139, 92, 246, 0.94));
+            box-shadow: 0 0 0 14px rgba(59, 130, 246, 0.08);
+            font-size: 2.6rem;
+        }
+
+        .consultation-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 18px 18px 10px;
+        }
+
+        .live-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.14);
+            color: #bbf7d0;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulseDot 1.3s infinite;
+        }
+
+        .consultation-body {
+            padding: 8px 18px 22px;
+        }
+
+        .camera-panel,
+        .waveform-panel,
+        .transcript-panel,
+        .diagnosis-panel,
+        .input-panel,
+        .controls-panel,
+        .status-banner {
+            background: var(--panel-soft);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+        }
+
+        .camera-panel {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+            margin-bottom: 14px;
+            background:
+                linear-gradient(180deg, rgba(59, 130, 246, 0.18), rgba(10, 10, 15, 0.6)),
+                #090b12;
+        }
+
+        #cameraPreview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            background: #090b12;
+        }
+
+        .camera-empty {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            color: var(--muted);
+            text-align: center;
+            padding: 20px;
+            pointer-events: none;
+        }
+
+        .waveform-panel {
+            padding: 18px 14px;
+            margin-bottom: 14px;
+        }
+
+        .waveform-panel h2,
+        .diagnosis-header h2 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+        }
+
+        .panel-copy {
+            margin: 0 0 16px;
+            color: var(--muted);
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .waveform {
+            height: 92px;
+            display: flex;
+            align-items: end;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .wave-bar {
+            width: 8px;
+            min-height: 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.18);
+            transform-origin: bottom center;
+            animation: idleWave 1.8s ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+
+        .waveform.listening .wave-bar {
+            background: var(--blue);
+            animation: listenWave 0.88s ease-in-out infinite;
+        }
+
+        .waveform.speaking .wave-bar {
+            background: var(--purple);
+            animation: speakWave 0.7s ease-in-out infinite;
+        }
+
+        .transcript-panel {
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+
+        .transcript-panel p {
+            margin: 0;
+        }
+
+        .transcript-label {
+            display: inline-block;
+            margin-bottom: 8px;
+            color: #d1d5db;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        #transcriptText {
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.04);
+            color: #c7cad3;
+            border-radius: 18px;
+            font-style: italic;
+            line-height: 1.6;
+            min-height: 76px;
+        }
+
+        .diagnosis-panel {
+            display: none;
+            padding: 16px;
+            margin-bottom: 14px;
+            transform: translateY(18px);
+            opacity: 0;
+        }
+
+        .diagnosis-panel.is-visible {
+            display: block;
+            animation: slideUp 0.36s ease forwards;
+        }
+
+        .diagnosis-header {
+            margin-bottom: 12px;
+        }
+
+        .diagnosis-header p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .diagnosis-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .diagnosis-item {
+            padding: 12px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .diagnosis-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .diagnosis-name {
+            font-weight: 700;
+        }
+
+        .diagnosis-confidence {
+            color: var(--muted);
+            font-size: 0.9rem;
+        }
+
+        .diagnosis-track {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+        }
+
+        .diagnosis-fill {
+            height: 100%;
+            border-radius: inherit;
+            transition: width 0.35s ease;
+        }
+
+        .status-banner {
+            display: none;
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            color: #fde68a;
+            background: rgba(245, 158, 11, 0.14);
+        }
+
+        .status-banner.is-visible {
+            display: block;
+        }
+
+        .input-panel {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            margin-bottom: 14px;
+        }
+
+        .text-input {
+            flex: 1;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #0f1118;
+            color: var(--text);
+            border-radius: 16px;
+            padding: 14px 16px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .text-input:focus {
+            border-color: rgba(59, 130, 246, 0.8);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
+        }
+
+        .icon-button,
+        .primary-button,
+        .secondary-button,
+        .danger-button {
+            border: 0;
+            border-radius: 18px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .icon-button:hover,
+        .primary-button:hover,
+        .secondary-button:hover,
+        .danger-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .icon-button:active,
+        .primary-button:active,
+        .secondary-button:active,
+        .danger-button:active {
+            transform: translateY(0);
+        }
+
+        .icon-button {
+            width: 52px;
+            height: 52px;
+            flex: 0 0 52px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text);
+            font-size: 1.25rem;
+        }
+
+        .icon-button.is-recording {
+            background: var(--red);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
+            animation: micPulse 1.2s infinite;
+        }
+
+        .primary-button {
+            min-width: 92px;
+            height: 52px;
+            padding: 0 16px;
+            background: linear-gradient(135deg, var(--blue), #2563eb);
+            color: white;
+        }
+
+        .secondary-button,
+        .danger-button {
+            flex: 1;
+            min-height: 52px;
+            padding: 0 16px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .danger-button {
+            background: rgba(239, 68, 68, 0.16);
+            color: #fecaca;
+        }
+
+        .controls-panel {
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+        }
+
+        .start-button {
+            width: 100%;
+            max-width: 320px;
+            min-height: 58px;
+            padding: 0 20px;
+            background: linear-gradient(135deg, var(--blue), var(--purple));
+            color: white;
+            border: 0;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+            box-shadow: 0 18px 40px rgba(59, 130, 246, 0.24);
+        }
+
+        .start-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .support-note {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.35); opacity: 0.55; }
+        }
+
+        @keyframes idleWave {
+            0%, 100% { transform: scaleY(0.45); opacity: 0.35; }
+            50% { transform: scaleY(1.15); opacity: 0.72; }
+        }
+
+        @keyframes listenWave {
+            0%, 100% { transform: scaleY(0.4); opacity: 0.55; }
+            50% { transform: scaleY(2.4); opacity: 1; }
+        }
+
+        @keyframes speakWave {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.65; }
+            50% { transform: scaleY(3); opacity: 1; }
+        }
+
+        @keyframes micPulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+            70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(18px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .page-shell {
+                padding: 12px 12px 24px;
+            }
+
+            .consultation-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .input-panel,
+            .controls-panel {
+                flex-wrap: wrap;
+            }
+
+            .icon-button,
+            .primary-button,
+            .secondary-button,
+            .danger-button {
+                width: 100%;
+            }
+
+            .icon-button {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page-shell">
+        <section class="app-card">
+            <div id="startScreen" class="screen start-screen is-visible">
+                <div class="hero-orb">🩺</div>
+                <h1>Dr. Kash AI Live</h1>
+                <p>Start a voice-first consultation with camera preview, instant AI guidance, and diagnosis confidence bars when Dr. Kash is ready.</p>
+                <button id="startConsultationButton" class="start-button" type="button">🎤 Start Consultation</button>
+                <p class="support-note">Best on Chrome or Edge. If voice features are unavailable, you can still continue with text chat.</p>
+            </div>
+
+            <div id="consultationScreen" class="screen">
+                <header class="consultation-header">
+                    <div>
+                        <h1>🩺 Dr. Kash AI</h1>
+                        <div class="live-row">
+                            <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+                            <span id="sessionStatus">Ready to begin.</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="consultation-body">
+                    <section class="camera-panel">
+                        <video id="cameraPreview" autoplay muted playsinline></video>
+                        <div id="cameraEmptyState" class="camera-empty">Camera preview will appear here once consultation starts.</div>
+                    </section>
+
+                    <section class="waveform-panel">
+                        <h2>Voice Activity</h2>
+                        <p class="panel-copy" id="activityHint">Idle now. Tap the mic or type your message to continue.</p>
+                        <div id="waveform" class="waveform" aria-hidden="true"></div>
+                    </section>
+
+                    <section class="transcript-panel" aria-live="polite">
+                        <span class="transcript-label">Doctor’s last reply</span>
+                        <p id="transcriptText">Dr. Kash will greet you as soon as the consultation starts.</p>
+                    </section>
+
+                    <section id="diagnosisPanel" class="diagnosis-panel">
+                        <div class="diagnosis-header">
+                            <h2>Possible Diagnoses</h2>
+                            <p>These confidence bars appear only when the doctor has enough information.</p>
+                        </div>
+                        <div id="diagnosisList" class="diagnosis-list"></div>
+                    </section>
+
+                    <section id="statusBanner" class="status-banner" aria-live="polite"></section>
+
+                    <section class="input-panel">
+                        <input id="messageInput" class="text-input" type="text" placeholder="Describe what you’re feeling..." autocomplete="off">
+                        <button id="micButton" class="icon-button" type="button" aria-label="Toggle microphone">🎙️</button>
+                        <button id="sendButton" class="primary-button" type="button">Send</button>
+                    </section>
+
+                    <section class="controls-panel">
+                        <button id="restartButton" class="secondary-button" type="button">Restart</button>
+                        <button id="endSessionButton" class="danger-button" type="button">End Session</button>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/js/doctor.js"></script>
+</body>
+</html>

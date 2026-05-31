@@ -1,15 +1,18 @@
 from __future__ import annotations
 import logging
+import os
 import re
 import uuid
 from contextlib import asynccontextmanager
 from threading import Thread
 from time import perf_counter
 
+import google.generativeai as genai
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -119,6 +122,12 @@ from utils.subscription_utils import (
     increment_subscription_usage as increment_usage,
 )
 
+# Configure Gemini
+load_dotenv()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -185,7 +194,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(self), geolocation=(self)"
+        response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=(self)"
         response.headers["Cache-Control"] = "no-store"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
@@ -468,7 +477,6 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    import os
     import uvicorn
 
     port = int(os.getenv("PORT", 8000))
