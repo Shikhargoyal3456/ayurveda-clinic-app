@@ -1,0 +1,15 @@
+[Unit]
+Description=Kash AI FastAPI Service
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/opt/kash-ai
+EnvironmentFile=/opt/kash-ai/.env
+ExecStart=/usr/bin/python3 /opt/kash-ai/run_server.py --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
