@@ -576,7 +576,7 @@ export default function DoctorLiveScreen() {
                 ) : null}
 
                 {showEmergency ? (
-                    <Pressable onPress={() => Linking.openURL("tel:911")} style={styles.emergencyCard}>
+                    <Pressable onPress={() => Linking.openURL("tel:112")} style={styles.emergencyCard}>
                         <Text style={styles.emergencyTitle}>Emergency support</Text>
                         <Text style={styles.emergencyText}>
                             This sounds concerning. Please call emergency services now or have someone take you to the ER.

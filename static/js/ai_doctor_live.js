@@ -33,7 +33,7 @@
         doctorLiveTranscript: document.getElementById("doctorLiveTranscript"),
         emergencyPanel: document.getElementById("emergencyPanel"),
         emergencyMessage: document.getElementById("emergencyMessage"),
-        call911Button: document.getElementById("call911Button"),
+        emergencyButton: document.getElementById("emergencyButton"),
     };
 
     function updateText(target, text) {
@@ -413,8 +413,8 @@
     function bindEvents() {
         elements.startButton?.addEventListener("click", startConsultation);
         elements.endButton?.addEventListener("click", stopConsultation);
-        elements.call911Button?.addEventListener("click", function () {
-            showEmergency("Stay calm. Help is on the way. If you can, tell someone nearby your location and call 911 now.");
+        elements.emergencyButton?.addEventListener("click", function () {
+            showEmergency("Stay calm. Help is on the way. If you can, tell someone nearby your location and call 112 now.");
         });
         window.addEventListener("beforeunload", stopConsultation);
     }

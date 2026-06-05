@@ -36,7 +36,7 @@
                 <p id="sessionMessage">Preparing your private AI consultation room.</p>
                 <button type="button" class="doctor-emergency-button" id="emergencyButton">
                     <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
-                    Emergency: Call 911
+                    Emergency: Call 112
                 </button>
                 <a href="/telemedicine/book" class="doctor-mini-link">Need a real doctor after this? Book an appointment.</a>
             </div>
@@ -458,7 +458,7 @@
     window.AI_DOCTOR_CONFIG = {
         websocketUrl: "{{ '/ws/ai-doctor' }}",
         appointmentUrl: "{{ book_appointment_url }}",
-        emergencyPhone: "911"
+        emergencyPhone: "112"
     };
 </script>
 <script defer src="{{ url_for('static', path='js/ai_doctor.js') }}"></script>

@@ -1,0 +1,276 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}AI Diet Analyzer | Kash AI{% endblock %}
+
+{% block page %}
+<section class="patient-tool-shell patient-tool-shell--diet">
+    <div class="patient-tool-hero glass-card">
+        <div>
+            <span class="patient-tool-badge">AI Diet Analyzer</span>
+            <h1>Analyze your meal with text or a food photo</h1>
+            <p>Describe what you ate or upload a meal photo. Gemini generates a fresh nutrition review with calorie estimates, nutritional quality, and ideas for your next meal.</p>
+        </div>
+        <div class="patient-tool-hero__aside">
+            <strong>Helpful for</strong>
+            <ul>
+                <li>Quick meal quality checks</li>
+                <li>Balanced next-meal suggestions</li>
+                <li>Understanding calorie and macro patterns</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="patient-tool-grid">
+        <section class="patient-tool-card glass-card">
+            <div class="patient-tool-card__header">
+                <div>
+                    <p class="patient-tool-eyebrow">Input</p>
+                    <h2>Your meal</h2>
+                </div>
+            </div>
+            <form id="dietAnalyzerForm" class="patient-tool-form" enctype="multipart/form-data">
+                <label for="mealDescription">Describe what you ate, roughly how much, and how it was cooked.</label>
+                <textarea id="mealDescription" name="meal_description" rows="7" placeholder="Example: 2 chapatis, dal, aloo sabzi, small bowl of curd, and one gulab jamun."></textarea>
+                <label class="patient-tool-upload" for="foodImage">
+                    <span>Optional: Upload a food photo</span>
+                    <input id="foodImage" name="food_image" type="file" accept="image/png,image/jpeg,image/webp">
+                </label>
+                <div class="patient-tool-actions">
+                    <button id="dietAnalyzeButton" class="btn-modern" type="submit">Analyze Meal</button>
+                    <button id="dietDemoButton" class="btn-modern btn-modern--secondary" type="button">Load Example</button>
+                </div>
+                <p class="patient-tool-helper">You can use text only, photo only, or both together.</p>
+            </form>
+        </section>
+
+        <aside class="patient-tool-card glass-card patient-tool-results">
+            <div class="patient-tool-card__header">
+                <div>
+                    <p class="patient-tool-eyebrow">Results</p>
+                    <h2>Nutrition guidance</h2>
+                </div>
+            </div>
+            <div id="dietResultsEmpty" class="patient-tool-empty">
+                Your diet analysis will appear here after you submit.
+            </div>
+            <div id="dietError" class="patient-tool-error" hidden></div>
+            <div id="dietResultsPanel" class="patient-tool-output" hidden>
+                <div class="patient-tool-summary">
+                    <h3>Summary</h3>
+                    <p id="dietSummary"></p>
+                </div>
+                <div class="patient-tool-stats">
+                    <div class="patient-tool-stat-card">
+                        <span>Calories</span>
+                        <strong id="dietCalories"></strong>
+                    </div>
+                    <div class="patient-tool-stat-card">
+                        <span>Quality</span>
+                        <strong id="dietQuality"></strong>
+                    </div>
+                </div>
+                <div>
+                    <h3>Health Impact</h3>
+                    <p id="dietImpact"></p>
+                </div>
+                <div>
+                    <h3>Nutritional Breakdown</h3>
+                    <ul id="dietBreakdown" class="patient-tool-list"></ul>
+                </div>
+                <div>
+                    <h3>Concerns</h3>
+                    <ul id="dietConcerns" class="patient-tool-list"></ul>
+                </div>
+                <div>
+                    <h3>Suggestions For Your Next Meal</h3>
+                    <ul id="dietRecommendations" class="patient-tool-list"></ul>
+                </div>
+                <p id="dietDisclaimer" class="patient-tool-disclaimer"></p>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.patient-tool-shell {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    gap: 24px;
+}
+.patient-tool-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
+    gap: 24px;
+    padding: 30px;
+    background:
+        radial-gradient(circle at top left, rgba(245, 158, 11, 0.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.16), transparent 22%),
+        linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(255,250,240,0.95) 100%);
+}
+.patient-tool-badge {
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.14);
+    color: #b45309;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.patient-tool-hero h1 {
+    margin: 16px 0 10px;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(2rem, 3.8vw, 3rem);
+    line-height: 1.08;
+}
+.patient-tool-hero p,
+.patient-tool-hero li {
+    color: var(--gray-600);
+    line-height: 1.8;
+}
+.patient-tool-hero__aside {
+    padding: 22px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(253, 230, 138, 0.9);
+}
+.patient-tool-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr);
+    gap: 24px;
+}
+.patient-tool-card {
+    padding: 24px;
+    background: rgba(255,255,255,0.94);
+}
+.patient-tool-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: start;
+}
+.patient-tool-eyebrow {
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gray-500);
+}
+.patient-tool-card h2,
+.patient-tool-output h3 {
+    margin: 0;
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+.patient-tool-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+.patient-tool-form label,
+.patient-tool-helper,
+.patient-tool-empty,
+.patient-tool-output p,
+.patient-tool-list li {
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+.patient-tool-form textarea,
+.patient-tool-upload input {
+    width: 100%;
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(203, 213, 225, 0.92);
+    background: #fff;
+    font: inherit;
+}
+.patient-tool-form textarea {
+    min-height: 190px;
+    resize: vertical;
+}
+.patient-tool-form textarea:focus,
+.patient-tool-upload input:focus {
+    outline: none;
+    border-color: rgba(217, 119, 6, 0.36);
+    box-shadow: 0 0 0 4px rgba(253, 186, 116, 0.2);
+}
+.patient-tool-upload {
+    display: grid;
+    gap: 10px;
+}
+.patient-tool-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.patient-tool-empty {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255,251,235,0.96), rgba(254,243,199,0.5));
+}
+.patient-tool-output {
+    display: grid;
+    gap: 18px;
+    margin-top: 18px;
+}
+.patient-tool-error {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 18px;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+.patient-tool-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.patient-tool-stat-card {
+    padding: 16px;
+    border-radius: 18px;
+    background: #fffbeb;
+    border: 1px solid rgba(253, 230, 138, 0.9);
+}
+.patient-tool-stat-card span {
+    display: block;
+    color: #92400e;
+    font-size: 0.84rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+.patient-tool-stat-card strong {
+    display: block;
+    margin-top: 8px;
+    color: #78350f;
+    font-size: 1.1rem;
+}
+.patient-tool-disclaimer {
+    font-size: 0.92rem;
+}
+@media (max-width: 980px) {
+    .patient-tool-hero,
+    .patient-tool-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 640px) {
+    .patient-tool-hero,
+    .patient-tool-card {
+        padding: 20px;
+        border-radius: 22px;
+    }
+    .patient-tool-actions,
+    .patient-tool-stats {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/patient_tools.js') }}"></script>
+{% endblock %}

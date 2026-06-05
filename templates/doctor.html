@@ -3,22 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dr. Kash AI Live</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="color-scheme" content="dark">
+    <title>Dr. Kash AI</title>
     <style>
         :root {
-            --bg: #0a0a0f;
-            --panel: #12131b;
-            --panel-soft: #171926;
-            --panel-muted: #1d2030;
-            --text: #f7f8fb;
-            --muted: #9ca3af;
-            --line: rgba(255, 255, 255, 0.08);
-            --blue: #3b82f6;
-            --purple: #8b5cf6;
-            --green: #22c55e;
-            --red: #ef4444;
-            --shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
-            --radius: 24px;
+            --bg: #f5efe4;
+            --ink: #1f2a1f;
+            --muted: #667264;
+            --panel: rgba(255, 252, 246, 0.92);
+            --panel-strong: #fff9ef;
+            --line: rgba(65, 88, 62, 0.14);
+            --sage: #2d7c68;
+            --sage-deep: #1c594a;
+            --amber: #b7791f;
+            --amber-soft: #fff0cf;
+            --blue: #2f6fdb;
+            --blue-soft: #e7f0ff;
+            --rose: #c2415d;
+            --rose-soft: #ffe5eb;
+            --shadow: 0 24px 60px rgba(74, 64, 38, 0.16);
+            --radius-lg: 28px;
+            --radius-md: 18px;
+            --keyboard-offset: 0px;
         }
 
         * {
@@ -28,26 +36,32 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: "Segoe UI", system-ui, sans-serif;
+            font-family: Georgia, "Times New Roman", serif;
+            color: var(--ink);
             background:
-                radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 24%),
-                var(--bg);
-            color: var(--text);
+                radial-gradient(circle at top left, rgba(45, 124, 104, 0.16), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(191, 145, 71, 0.16), transparent 24%),
+                linear-gradient(180deg, #f9f4ea 0%, #efe5d2 100%);
+        }
+
+        button,
+        input {
+            font: inherit;
         }
 
         .page-shell {
-            width: min(100%, 820px);
+            width: min(1100px, calc(100% - 24px));
             margin: 0 auto;
-            padding: 20px 16px 32px;
+            padding: 24px 0 40px;
         }
 
-        .app-card {
-            background: rgba(18, 19, 27, 0.96);
-            border: 1px solid var(--line);
-            border-radius: 30px;
+        .app-shell {
+            background: rgba(255, 249, 239, 0.84);
+            border: 1px solid rgba(94, 116, 79, 0.18);
+            border-radius: 32px;
             box-shadow: var(--shadow);
             overflow: hidden;
+            backdrop-filter: blur(18px);
         }
 
         .screen {
@@ -59,516 +73,944 @@
         }
 
         .start-screen {
-            padding: 30px 22px 36px;
+            padding: 56px 24px 64px;
             text-align: center;
         }
 
+        .hero-mark {
+            width: 116px;
+            height: 116px;
+            margin: 0 auto 24px;
+            border-radius: 32px;
+            display: grid;
+            place-items: center;
+            font-size: 2.8rem;
+            background:
+                linear-gradient(135deg, rgba(45, 124, 104, 0.95), rgba(191, 145, 71, 0.92));
+            color: white;
+            box-shadow: 0 20px 50px rgba(45, 124, 104, 0.28);
+        }
+
         .start-screen h1,
-        .consultation-header h1 {
+        .header-copy h1 {
             margin: 0;
-            font-size: clamp(1.4rem, 4vw, 2rem);
+            font-size: clamp(2rem, 5vw, 3.4rem);
+            font-weight: 700;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(45, 124, 104, 0.1);
+            color: var(--sage-deep);
+            font-size: 0.92rem;
+            letter-spacing: 0.04em;
         }
 
         .start-screen p {
+            max-width: 52rem;
+            margin: 14px auto 0;
+            line-height: 1.7;
             color: var(--muted);
-            line-height: 1.6;
-            margin: 14px auto 24px;
-            max-width: 34rem;
+            font-size: 1.04rem;
         }
 
-        .hero-orb {
-            width: 108px;
-            height: 108px;
-            margin: 10px auto 22px;
-            border-radius: 50%;
+        .start-actions {
+            margin-top: 32px;
+        }
+
+        .context-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 60;
             display: grid;
             place-items: center;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.94), rgba(139, 92, 246, 0.94));
-            box-shadow: 0 0 0 14px rgba(59, 130, 246, 0.08);
-            font-size: 2.6rem;
+            padding: 20px;
+            background: rgba(31, 42, 31, 0.36);
+            backdrop-filter: blur(10px);
+        }
+
+        .context-card {
+            width: min(520px, 100%);
+            padding: 24px;
+        }
+
+        .context-card h3 {
+            margin: 0 0 10px;
+            font-size: 1.5rem;
+        }
+
+        .context-card p {
+            margin: 0 0 18px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .context-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .context-grid input {
+            width: 100%;
+            min-height: 50px;
+            padding: 0 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(56, 67, 47, 0.12);
+            background: white;
+            color: var(--ink);
+            outline: none;
+        }
+
+        .context-grid input:focus {
+            border-color: rgba(45, 124, 104, 0.36);
+            box-shadow: 0 0 0 4px rgba(45, 124, 104, 0.12);
+        }
+
+        .context-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .start-button,
+        .primary-button,
+        .secondary-button,
+        .danger-button,
+        .ghost-button,
+        .icon-button,
+        .pill-button,
+        .mini-button,
+        .retry-button,
+        .summary-button {
+            border: 0;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+        }
+
+        .start-button:hover,
+        .primary-button:hover,
+        .secondary-button:hover,
+        .danger-button:hover,
+        .ghost-button:hover,
+        .icon-button:hover,
+        .pill-button:hover,
+        .mini-button:hover,
+        .retry-button:hover,
+        .summary-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .start-button {
+            min-width: 280px;
+            min-height: 60px;
+            padding: 0 28px;
+            background: linear-gradient(135deg, var(--sage), var(--amber));
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 700;
+            box-shadow: 0 18px 38px rgba(45, 124, 104, 0.22);
+        }
+
+        .support-note {
+            margin-top: 20px;
+            color: var(--muted);
+        }
+
+        .consultation-screen {
+            position: relative;
         }
 
         .consultation-header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
-            gap: 14px;
-            padding: 18px 18px 10px;
+            gap: 18px;
+            padding: 24px 24px 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .header-copy p {
+            margin: 10px 0 0;
+            color: var(--muted);
+            line-height: 1.6;
         }
 
         .live-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 8px;
-            color: var(--muted);
-            font-size: 0.95rem;
+            gap: 12px;
+            margin-top: 14px;
+            flex-wrap: wrap;
         }
 
         .live-badge {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 999px;
-            background: rgba(34, 197, 94, 0.14);
-            color: #bbf7d0;
-            font-size: 0.78rem;
+            font-size: 0.82rem;
             font-weight: 700;
             letter-spacing: 0.08em;
+        }
+
+        .live-badge.is-active {
+            background: rgba(45, 124, 104, 0.12);
+            color: var(--sage-deep);
+        }
+
+        .live-badge.is-ended {
+            background: rgba(102, 114, 100, 0.12);
+            color: var(--muted);
         }
 
         .live-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: var(--green);
-            animation: pulseDot 1.3s infinite;
+            background: currentColor;
+        }
+
+        .live-badge.is-active .live-dot {
+            animation: pulse 1.2s infinite;
+        }
+
+        .header-tools {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .language-toggle {
+            display: inline-flex;
+            padding: 4px;
+            border-radius: 999px;
+            background: rgba(45, 124, 104, 0.08);
+        }
+
+        .pill-button {
+            min-width: 58px;
+            min-height: 40px;
+            padding: 0 16px;
+            background: transparent;
+            color: var(--sage-deep);
+            font-weight: 700;
+        }
+
+        .pill-button.is-active {
+            background: white;
+            box-shadow: 0 8px 20px rgba(45, 124, 104, 0.12);
+        }
+
+        .icon-button {
+            width: 48px;
+            height: 48px;
+            background: white;
+            box-shadow: 0 12px 24px rgba(56, 67, 47, 0.12);
+            font-size: 1.12rem;
         }
 
         .consultation-body {
-            padding: 8px 18px 22px;
-        }
-
-        .camera-panel,
-        .waveform-panel,
-        .transcript-panel,
-        .diagnosis-panel,
-        .input-panel,
-        .controls-panel,
-        .status-banner {
-            background: var(--panel-soft);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-        }
-
-        .camera-panel {
-            position: relative;
-            overflow: hidden;
-            aspect-ratio: 16 / 9;
-            margin-bottom: 14px;
-            background:
-                linear-gradient(180deg, rgba(59, 130, 246, 0.18), rgba(10, 10, 15, 0.6)),
-                #090b12;
-        }
-
-        #cameraPreview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            background: #090b12;
-        }
-
-        .camera-empty {
-            position: absolute;
-            inset: 0;
             display: grid;
-            place-items: center;
-            color: var(--muted);
-            text-align: center;
-            padding: 20px;
-            pointer-events: none;
+            grid-template-columns: minmax(0, 1fr) 280px;
+            gap: 20px;
+            padding: 20px 24px 24px;
         }
 
-        .waveform-panel {
-            padding: 18px 14px;
-            margin-bottom: 14px;
+        .main-column,
+        .side-column {
+            min-width: 0;
         }
 
-        .waveform-panel h2,
-        .diagnosis-header h2 {
-            margin: 0 0 6px;
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 16px 30px rgba(74, 64, 38, 0.06);
+        }
+
+        .banner-stack {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .status-banner {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 18px;
+            border: 1px solid transparent;
+        }
+
+        .status-banner.warning {
+            background: var(--amber-soft);
+            border-color: rgba(183, 121, 31, 0.2);
+            color: #7f5714;
+        }
+
+        .status-banner.info {
+            background: var(--blue-soft);
+            border-color: rgba(47, 111, 219, 0.18);
+            color: #1f4f9f;
+        }
+
+        .status-banner-close {
+            background: transparent;
+            color: inherit;
+            font-size: 1rem;
+            padding: 0;
+        }
+
+        .chat-panel {
+            overflow: hidden;
+        }
+
+        .chat-scroller {
+            max-height: 58vh;
+            min-height: 420px;
+            overflow: auto;
+            padding: 18px;
+            display: grid;
+            gap: 14px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-message {
+            display: flex;
+        }
+
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+
+        .chat-message.assistant {
+            justify-content: flex-start;
+        }
+
+        .chat-bubble {
+            width: min(100%, 560px);
+            padding: 14px 16px 12px;
+            border-radius: 22px;
+            line-height: 1.65;
             font-size: 1rem;
         }
 
-        .panel-copy {
-            margin: 0 0 16px;
+        .chat-message.user .chat-bubble {
+            background: linear-gradient(135deg, var(--sage), #3a8f75);
+            color: white;
+            border-bottom-right-radius: 8px;
+        }
+
+        .chat-message.assistant .chat-bubble {
+            background: white;
+            color: var(--ink);
+            border: 1px solid rgba(56, 67, 47, 0.08);
+            border-bottom-left-radius: 8px;
+        }
+
+        .chat-body {
+            word-break: break-word;
+        }
+
+        .chat-body em {
+            display: block;
+            margin-top: 10px;
             color: var(--muted);
-            line-height: 1.5;
-            font-size: 0.95rem;
         }
 
-        .waveform {
-            height: 92px;
+        .chat-meta {
             display: flex;
-            align-items: end;
-            justify-content: center;
-            gap: 5px;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            color: rgba(31, 42, 31, 0.58);
+            font-size: 0.86rem;
         }
 
-        .wave-bar {
-            width: 8px;
-            min-height: 14px;
+        .chat-message.user .chat-meta {
+            color: rgba(255, 255, 255, 0.78);
+            justify-content: flex-end;
+        }
+
+        .speaker-button,
+        .retry-button {
+            padding: 6px 10px;
+            background: rgba(45, 124, 104, 0.08);
+            color: var(--sage-deep);
+            font-size: 0.88rem;
+        }
+
+        .typing-indicator {
+            padding: 0 18px 18px;
+        }
+
+        .typing-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.18);
-            transform-origin: bottom center;
-            animation: idleWave 1.8s ease-in-out infinite;
-            animation-delay: var(--delay);
+            background: rgba(45, 124, 104, 0.08);
+            color: var(--sage-deep);
+            font-size: 0.94rem;
         }
 
-        .waveform.listening .wave-bar {
-            background: var(--blue);
-            animation: listenWave 0.88s ease-in-out infinite;
+        .typing-dots {
+            display: inline-flex;
+            gap: 4px;
         }
 
-        .waveform.speaking .wave-bar {
-            background: var(--purple);
-            animation: speakWave 0.7s ease-in-out infinite;
+        .typing-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: bounce 1s infinite;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .summary-prompt {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 14px 16px;
+            margin: 0 18px 18px;
+            border-radius: 18px;
+            background: rgba(191, 145, 71, 0.1);
+            border: 1px solid rgba(191, 145, 71, 0.16);
+        }
+
+        .summary-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .summary-button {
+            min-height: 40px;
+            padding: 0 16px;
+            background: var(--sage);
+            color: white;
+            font-weight: 700;
+        }
+
+        .ghost-button {
+            min-height: 40px;
+            padding: 0 16px;
+            background: rgba(255, 255, 255, 0.66);
+            color: var(--ink);
+        }
+
+        .input-dock {
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+            padding-top: 16px;
+            padding-bottom: calc(10px + var(--keyboard-offset));
+            background: linear-gradient(180deg, rgba(245, 239, 228, 0) 0%, rgba(245, 239, 228, 0.92) 32%, rgba(245, 239, 228, 1) 100%);
+        }
+
+        .input-panel {
+            display: grid;
+            grid-template-columns: auto auto 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+        }
+
+        .text-input {
+            width: 100%;
+            min-height: 52px;
+            padding: 0 18px;
+            border-radius: 999px;
+            border: 1px solid rgba(56, 67, 47, 0.12);
+            background: white;
+            color: var(--ink);
+            outline: none;
+        }
+
+        .text-input:focus {
+            border-color: rgba(45, 124, 104, 0.36);
+            box-shadow: 0 0 0 4px rgba(45, 124, 104, 0.12);
+        }
+
+        .primary-button,
+        .secondary-button,
+        .danger-button {
+            min-height: 50px;
+            padding: 0 18px;
+            font-weight: 700;
+        }
+
+        .primary-button {
+            background: linear-gradient(135deg, var(--sage), #4aa389);
+            color: white;
+        }
+
+        .secondary-button {
+            background: white;
+            color: var(--ink);
+        }
+
+        .danger-button {
+            background: var(--rose-soft);
+            color: var(--rose);
+        }
+
+        .icon-button.is-recording {
+            background: var(--rose);
+            color: white;
+            animation: pulseRing 1.1s infinite;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .side-panel {
+            padding: 18px;
+        }
+
+        .side-panel h2 {
+            margin: 0 0 8px;
+            font-size: 1.16rem;
+        }
+
+        .side-panel p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.6;
         }
 
         .transcript-panel {
-            padding: 16px;
-            margin-bottom: 14px;
-        }
-
-        .transcript-panel p {
-            margin: 0;
+            margin-bottom: 16px;
         }
 
         .transcript-label {
             display: inline-block;
-            margin-bottom: 8px;
-            color: #d1d5db;
-            font-size: 0.85rem;
+            margin-bottom: 10px;
+            color: var(--sage-deep);
+            font-size: 0.9rem;
             font-weight: 700;
         }
 
-        #transcriptText {
+        .transcript-text {
+            min-height: 120px;
             padding: 14px 16px;
-            background: rgba(255, 255, 255, 0.04);
-            color: #c7cad3;
             border-radius: 18px;
-            font-style: italic;
-            line-height: 1.6;
-            min-height: 76px;
+            background: rgba(45, 124, 104, 0.06);
+            line-height: 1.7;
+            color: var(--ink);
+            white-space: pre-wrap;
         }
 
         .diagnosis-panel {
             display: none;
-            padding: 16px;
-            margin-bottom: 14px;
-            transform: translateY(18px);
-            opacity: 0;
         }
 
         .diagnosis-panel.is-visible {
             display: block;
-            animation: slideUp 0.36s ease forwards;
-        }
-
-        .diagnosis-header {
-            margin-bottom: 12px;
-        }
-
-        .diagnosis-header p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 0.92rem;
         }
 
         .diagnosis-list {
             display: grid;
             gap: 12px;
+            margin-top: 16px;
         }
 
         .diagnosis-item {
             padding: 12px;
             border-radius: 18px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.68);
+            border: 1px solid rgba(56, 67, 47, 0.08);
         }
 
-        .diagnosis-meta {
+        .diagnosis-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
+            gap: 10px;
             margin-bottom: 8px;
-        }
-
-        .diagnosis-name {
-            font-weight: 700;
-        }
-
-        .diagnosis-confidence {
-            color: var(--muted);
-            font-size: 0.9rem;
         }
 
         .diagnosis-track {
             width: 100%;
             height: 10px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.08);
             overflow: hidden;
+            background: rgba(56, 67, 47, 0.08);
         }
 
         .diagnosis-fill {
             height: 100%;
             border-radius: inherit;
-            transition: width 0.35s ease;
+            transition: width 0.25s ease;
         }
 
-        .status-banner {
-            display: none;
-            margin-bottom: 14px;
-            padding: 12px 14px;
-            color: #fde68a;
-            background: rgba(245, 158, 11, 0.14);
-        }
-
-        .status-banner.is-visible {
-            display: block;
-        }
-
-        .input-panel {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px;
-            margin-bottom: 14px;
-        }
-
-        .text-input {
-            flex: 1;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: #0f1118;
-            color: var(--text);
-            border-radius: 16px;
-            padding: 14px 16px;
-            font-size: 1rem;
-            outline: none;
-        }
-
-        .text-input:focus {
-            border-color: rgba(59, 130, 246, 0.8);
-            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
-        }
-
-        .icon-button,
-        .primary-button,
-        .secondary-button,
-        .danger-button {
-            border: 0;
+        .camera-wrap {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 30;
+            width: 160px;
             border-radius: 18px;
-            cursor: pointer;
-            font-weight: 700;
-            transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease;
+            overflow: hidden;
+            box-shadow: 0 18px 36px rgba(45, 124, 104, 0.2);
+            border: 1px solid rgba(45, 124, 104, 0.2);
+            background: rgba(17, 25, 21, 0.9);
+            touch-action: none;
         }
 
-        .icon-button:hover,
-        .primary-button:hover,
-        .secondary-button:hover,
-        .danger-button:hover {
-            transform: translateY(-1px);
+        .camera-wrap.is-minimized video,
+        .camera-wrap.is-minimized .camera-placeholder,
+        .camera-wrap.is-minimized .camera-toolbar {
+            display: none;
         }
 
-        .icon-button:active,
-        .primary-button:active,
-        .secondary-button:active,
-        .danger-button:active {
-            transform: translateY(0);
+        .camera-wrap.is-minimized {
+            width: auto;
+            background: transparent;
+            box-shadow: none;
+            border: 0;
         }
 
-        .icon-button {
-            width: 52px;
-            height: 52px;
-            flex: 0 0 52px;
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--text);
-            font-size: 1.25rem;
+        .camera-wrap.is-dragging {
+            cursor: grabbing;
         }
 
-        .icon-button.is-recording {
-            background: var(--red);
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45);
-            animation: micPulse 1.2s infinite;
+        .camera-toolbar {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 1;
+            display: flex;
+            gap: 6px;
         }
 
-        .primary-button {
-            min-width: 92px;
-            height: 52px;
-            padding: 0 16px;
-            background: linear-gradient(135deg, var(--blue), #2563eb);
+        .camera-action,
+        .camera-restore {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 0;
+            background: rgba(0, 0, 0, 0.55);
             color: white;
+            cursor: pointer;
         }
 
-        .secondary-button,
-        .danger-button {
-            flex: 1;
-            min-height: 52px;
-            padding: 0 16px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
+        .camera-restore {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 31;
+            width: 46px;
+            height: 46px;
         }
 
-        .danger-button {
-            background: rgba(239, 68, 68, 0.16);
-            color: #fecaca;
+        .camera-wrap video {
+            display: block;
+            width: 160px;
+            height: 120px;
+            object-fit: cover;
         }
 
-        .controls-panel {
+        .camera-placeholder {
+            width: 160px;
+            height: 120px;
+            display: grid;
+            place-items: center;
+            padding: 14px;
+            color: rgba(255, 255, 255, 0.78);
+            text-align: center;
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .stream-cursor {
+            display: inline-block;
+            margin-left: 2px;
+            animation: pulse 0.9s infinite;
+        }
+
+        .summary-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(31, 42, 31, 0.32);
+            backdrop-filter: blur(10px);
+        }
+
+        .summary-card {
+            width: min(720px, 100%);
+            max-height: 86vh;
+            overflow: auto;
+            padding: 22px;
+        }
+
+        .summary-card p {
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .summary-card-actions {
             display: flex;
             gap: 10px;
-            padding: 12px;
-        }
-
-        .start-button {
-            width: 100%;
-            max-width: 320px;
-            min-height: 58px;
-            padding: 0 20px;
-            background: linear-gradient(135deg, var(--blue), var(--purple));
-            color: white;
-            border: 0;
-            border-radius: 20px;
-            font-size: 1rem;
-            font-weight: 800;
-            cursor: pointer;
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
-            box-shadow: 0 18px 40px rgba(59, 130, 246, 0.24);
-        }
-
-        .start-button:hover {
-            transform: translateY(-1px);
-        }
-
-        .support-note {
+            flex-wrap: wrap;
             margin-top: 18px;
-            color: var(--muted);
-            font-size: 0.92rem;
         }
 
-        @keyframes pulseDot {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.35); opacity: 0.55; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(1.18); }
         }
 
-        @keyframes idleWave {
-            0%, 100% { transform: scaleY(0.45); opacity: 0.35; }
-            50% { transform: scaleY(1.15); opacity: 0.72; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.45; }
+            40% { transform: translateY(-4px); opacity: 1; }
         }
 
-        @keyframes listenWave {
-            0%, 100% { transform: scaleY(0.4); opacity: 0.55; }
-            50% { transform: scaleY(2.4); opacity: 1; }
+        @keyframes pulseRing {
+            0% { box-shadow: 0 0 0 0 rgba(194, 65, 93, 0.4); }
+            70% { box-shadow: 0 0 0 16px rgba(194, 65, 93, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(194, 65, 93, 0); }
         }
 
-        @keyframes speakWave {
-            0%, 100% { transform: scaleY(0.5); opacity: 0.65; }
-            50% { transform: scaleY(3); opacity: 1; }
-        }
-
-        @keyframes micPulse {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
-            70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(18px);
-                opacity: 0;
+        @media (max-width: 900px) {
+            .consultation-body {
+                grid-template-columns: 1fr;
             }
-            to {
-                transform: translateY(0);
-                opacity: 1;
+
+            .chat-scroller {
+                max-height: 52vh;
             }
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 720px) {
             .page-shell {
-                padding: 12px 12px 24px;
+                width: min(100%, calc(100% - 12px));
+                padding-top: 12px;
+            }
+
+            .consultation-header,
+            .consultation-body {
+                padding-left: 14px;
+                padding-right: 14px;
             }
 
             .consultation-header {
                 flex-direction: column;
-                align-items: flex-start;
             }
 
-            .input-panel,
-            .controls-panel {
-                flex-wrap: wrap;
+            .header-tools {
+                width: 100%;
+                justify-content: space-between;
             }
 
-            .icon-button,
+            .input-panel {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .text-input {
+                grid-column: 1 / -1;
+            }
+
+            .controls-row,
+            .summary-prompt,
+            .summary-card-actions {
+                flex-direction: column;
+            }
+
             .primary-button,
             .secondary-button,
-            .danger-button {
+            .danger-button,
+            .summary-button,
+            .ghost-button {
                 width: 100%;
-            }
-
-            .icon-button {
-                flex-basis: 100%;
             }
         }
     </style>
 </head>
-<body>
+<body data-app="doctor-live">
+    <noscript>
+        <div style="padding:16px;background:#231713;color:#fff3d4;text-align:center;font-family:Georgia,serif;">
+            JavaScript is required for Dr. Kash AI live consultation.
+        </div>
+    </noscript>
     <main class="page-shell">
-        <section class="app-card">
-            <div id="startScreen" class="screen start-screen is-visible">
-                <div class="hero-orb">🩺</div>
-                <h1>Dr. Kash AI Live</h1>
-                <p>Start a voice-first consultation with camera preview, instant AI guidance, and diagnosis confidence bars when Dr. Kash is ready.</p>
-                <button id="startConsultationButton" class="start-button" type="button">🎤 Start Consultation</button>
-                <p class="support-note">Best on Chrome or Edge. If voice features are unavailable, you can still continue with text chat.</p>
-            </div>
+        <section class="app-shell">
+            <section id="startScreen" class="screen start-screen is-visible">
+                <div class="eyebrow">AI Medical Consultation</div>
+                <div class="hero-mark">🩺</div>
+                <h1>Dr. Kash AI</h1>
+                <p id="startDescription">Start a bilingual consultation with streaming replies, voice input, and calm spoken guidance from Dr. Kash.</p>
+                <div class="start-actions">
+                    <button id="startConsultationButton" class="start-button" type="button">Start Consultation</button>
+                </div>
+                <p id="supportNote" class="support-note">Best on Chrome, Edge, and Safari. Text chat still works if voice or camera is unavailable.</p>
+            </section>
 
-            <div id="consultationScreen" class="screen">
+            <section id="consultationScreen" class="screen consultation-screen">
                 <header class="consultation-header">
-                    <div>
-                        <h1>🩺 Dr. Kash AI</h1>
+                    <div class="header-copy">
+                        <h1>Dr. Kash AI Clinic</h1>
+                        <p>Dynamic Gemini-powered medical guidance with full session memory, streaming answers, and bilingual voice support.</p>
                         <div class="live-row">
-                            <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+                            <span id="liveBadge" class="live-badge is-ended">
+                                <span class="live-dot"></span>
+                                <span id="liveBadgeText">ENDED</span>
+                            </span>
                             <span id="sessionStatus">Ready to begin.</span>
                         </div>
+                    </div>
+                    <div class="header-tools">
+                        <div class="language-toggle" aria-label="Language toggle">
+                            <button type="button" class="pill-button" data-language="en">EN</button>
+                            <button type="button" class="pill-button" data-language="hi">HI</button>
+                        </div>
+                        <button id="muteToggle" type="button" class="icon-button" aria-label="Mute toggle">🔊</button>
                     </div>
                 </header>
 
                 <div class="consultation-body">
-                    <section class="camera-panel">
-                        <video id="cameraPreview" autoplay muted playsinline></video>
-                        <div id="cameraEmptyState" class="camera-empty">Camera preview will appear here once consultation starts.</div>
-                    </section>
+                    <div class="main-column">
+                        <div id="statusBanners" class="banner-stack" aria-live="polite"></div>
 
-                    <section class="waveform-panel">
-                        <h2>Voice Activity</h2>
-                        <p class="panel-copy" id="activityHint">Idle now. Tap the mic or type your message to continue.</p>
-                        <div id="waveform" class="waveform" aria-hidden="true"></div>
-                    </section>
+                        <section class="panel chat-panel">
+                            <div id="chatScroller" class="chat-scroller">
+                                <div id="chatMessages"></div>
+                                <div id="typingIndicator" class="typing-indicator" hidden>
+                                    <div class="typing-chip">
+                                        <span>Dr. Kash is thinking...</span>
+                                        <span class="typing-dots" aria-hidden="true">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div id="summaryPrompt" class="summary-prompt" hidden>
+                                    <span id="summaryPromptText">Would you like a consultation summary before we close the session?</span>
+                                    <div class="summary-actions">
+                                        <button id="summaryGenerateButton" type="button" class="summary-button">Generate Summary</button>
+                                        <button id="summaryLaterButton" type="button" class="ghost-button">Later</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
-                    <section class="transcript-panel" aria-live="polite">
-                        <span class="transcript-label">Doctor’s last reply</span>
-                        <p id="transcriptText">Dr. Kash will greet you as soon as the consultation starts.</p>
-                    </section>
+                        <div id="inputDock" class="input-dock">
+                            <section class="panel side-panel transcript-panel">
+                                <span id="transcriptLabel" class="transcript-label">Doctor's latest reply</span>
+                                <div id="transcriptText" class="transcript-text"></div>
+                            </section>
 
-                    <section id="diagnosisPanel" class="diagnosis-panel">
-                        <div class="diagnosis-header">
-                            <h2>Possible Diagnoses</h2>
-                            <p>These confidence bars appear only when the doctor has enough information.</p>
+                            <section class="panel side-panel">
+                                <h2>Session Status</h2>
+                                <p id="activityHint">Type or speak your symptoms. Dr. Kash responds in your selected language.</p>
+                            </section>
+
+                            <div style="background:#f0fdf4; border-left:4px solid #22c55e; padding:15px; margin:16px 0; border-radius:8px;">
+                              <strong>🩺 Dr. Kash Quality Promise</strong>
+                              <ul style="margin:8px 0 0 0; padding-left:20px; font-size:0.9rem;">
+                                <li>We prioritize accuracy over speed</li>
+                                <li>We always recommend seeing a real doctor</li>
+                                <li>We never guess — if unsure, we say so</li>
+                                <li>Emergency numbers are India-specific (use 112 for emergencies)</li>
+                                <li>Every response includes a safety reminder</li>
+                              </ul>
+                            </div>
+
+                            <section class="panel input-panel">
+                                <div class="language-toggle" aria-label="Language toggle near mic">
+                                    <button type="button" class="pill-button" data-language="en">EN</button>
+                                    <button type="button" class="pill-button" data-language="hi">HI</button>
+                                </div>
+                                <button id="micButton" class="icon-button" type="button" aria-label="Speak">🎙️</button>
+                                <input id="messageInput" class="text-input" type="text" autocomplete="off" placeholder="Describe your symptoms here...">
+                                <button id="sendButton" class="primary-button" type="button">Send</button>
+                            </section>
+
+                            <div class="controls-row">
+                                <button id="restartButton" class="secondary-button" type="button">Restart</button>
+                                <button id="endSessionButton" class="danger-button" type="button">End Session</button>
+                            </div>
                         </div>
-                        <div id="diagnosisList" class="diagnosis-list"></div>
-                    </section>
+                    </div>
 
-                    <section id="statusBanner" class="status-banner" aria-live="polite"></section>
-
-                    <section class="input-panel">
-                        <input id="messageInput" class="text-input" type="text" placeholder="Describe what you’re feeling..." autocomplete="off">
-                        <button id="micButton" class="icon-button" type="button" aria-label="Toggle microphone">🎙️</button>
-                        <button id="sendButton" class="primary-button" type="button">Send</button>
-                    </section>
-
-                    <section class="controls-panel">
-                        <button id="restartButton" class="secondary-button" type="button">Restart</button>
-                        <button id="endSessionButton" class="danger-button" type="button">End Session</button>
-                    </section>
+                    <aside class="side-column">
+                        <section id="diagnosisPanel" class="panel side-panel diagnosis-panel">
+                            <h2 id="diagnosisTitle">Preliminary Assessment</h2>
+                            <p id="diagnosisHint">These possible conditions appear only after enough context is collected.</p>
+                            <div id="diagnosisList" class="diagnosis-list"></div>
+                        </section>
+                    </aside>
                 </div>
-            </div>
+            </section>
         </section>
     </main>
+
+    <div id="cameraWrap" class="camera-wrap" hidden>
+        <div class="camera-toolbar">
+            <button id="cameraMinimize" class="camera-action" type="button" aria-label="Minimize camera">−</button>
+        </div>
+        <video id="cameraPreview" autoplay muted playsinline></video>
+        <div id="cameraPlaceholder" class="camera-placeholder">Camera preview appears here when permission is granted.</div>
+    </div>
+    <button id="cameraRestore" class="camera-restore" type="button" hidden aria-label="Restore camera">📷</button>
+
+    <div id="summaryModal" class="summary-modal" hidden>
+        <section class="panel summary-card">
+            <h2 id="summaryTitle">Consultation Summary</h2>
+            <p id="summaryContent"></p>
+            <div class="summary-card-actions">
+                <button id="copySummaryButton" class="secondary-button" type="button">Copy Summary</button>
+                <button id="shareSummaryButton" class="primary-button" type="button">Share on WhatsApp</button>
+                <button id="closeSummaryButton" class="ghost-button" type="button">Close</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="patientContextModal" class="context-modal" hidden>
+        <section class="panel context-card">
+            <h3 id="patientContextTitle">Before we start, a few questions for better advice</h3>
+            <p id="patientContextHint">These details are sent with each doctor message so Gemini can tailor guidance to the patient context.</p>
+            <div class="context-grid">
+                <input type="number" id="patientAge" placeholder="Your age (years)">
+                <input type="number" id="patientWeight" placeholder="Weight (kg, optional)" step="0.1">
+                <input type="text" id="patientAllergies" placeholder="Any allergies? (e.g. penicillin, nuts)">
+                <input type="text" id="patientMedications" placeholder="Current medications?">
+            </div>
+            <div class="context-actions">
+                <button id="savePatientContextButton" class="primary-button" type="button">Start Consultation</button>
+                <button id="skipPatientContextButton" class="ghost-button" type="button">Skip for now</button>
+            </div>
+        </section>
+    </div>
 
     <script src="/static/js/doctor.js"></script>
 </body>

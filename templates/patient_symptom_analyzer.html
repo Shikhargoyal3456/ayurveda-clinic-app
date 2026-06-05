@@ -1,0 +1,292 @@
+{% extends "patient_simple_base.html" %}
+{% block title %}AI Symptom Checker | Kash AI{% endblock %}
+
+{% block page %}
+<section class="patient-tool-shell patient-tool-shell--symptom">
+    <div class="patient-tool-hero glass-card">
+        <div>
+            <span class="patient-tool-badge">AI Symptom Checker</span>
+            <h1>Describe what you are feeling and get Gemini-powered guidance</h1>
+            <p>The analysis is generated live for your exact symptoms. It highlights likely conditions, urgency, next steps, and safe home-care ideas.</p>
+        </div>
+        <div class="patient-tool-hero__aside">
+            <strong>What you get</strong>
+            <ul>
+                <li>Likely conditions with confidence ranges</li>
+                <li>Urgency level: emergency, urgent, or routine</li>
+                <li>Recommended actions and doctor follow-up guidance</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="patient-tool-grid">
+        <section class="patient-tool-card glass-card">
+            <div class="patient-tool-card__header">
+                <div>
+                    <p class="patient-tool-eyebrow">Input</p>
+                    <h2>Your symptoms</h2>
+                </div>
+                <button id="symptomVoiceButton" class="patient-tool-voice" type="button">🎙️ Speak</button>
+            </div>
+            <form id="symptomAnalyzerForm" class="patient-tool-form">
+                <label for="symptomInput">Tell Dr. Kash what symptoms you have, how long they have been going on, and anything that makes them better or worse.</label>
+                <textarea id="symptomInput" name="symptoms" rows="8" placeholder="Example: I have fever, sore throat, body ache, and dry cough since yesterday evening."></textarea>
+                <div class="patient-tool-actions">
+                    <button id="symptomAnalyzeButton" class="btn-modern" type="submit">Analyze Symptoms</button>
+                    <button id="symptomDemoButton" class="btn-modern btn-modern--secondary" type="button">Load Example</button>
+                </div>
+                <p id="symptomVoiceStatus" class="patient-tool-helper">Voice input works best in Chrome or Edge. You can always type instead.</p>
+            </form>
+        </section>
+
+        <aside class="patient-tool-card glass-card patient-tool-results">
+            <div class="patient-tool-card__header">
+                <div>
+                    <p class="patient-tool-eyebrow">Results</p>
+                    <h2>AI guidance</h2>
+                </div>
+            </div>
+            <div id="symptomResultsEmpty" class="patient-tool-empty">
+                Your symptom analysis will appear here after you submit.
+            </div>
+            <div id="symptomError" class="patient-tool-error" hidden></div>
+            <div id="symptomResultsPanel" class="patient-tool-output" hidden>
+                <div class="patient-tool-summary">
+                    <h3>Summary</h3>
+                    <p id="symptomSummary"></p>
+                </div>
+                <div class="patient-tool-urgency">
+                    <h3>Urgency</h3>
+                    <div id="symptomUrgencyBadge" class="patient-tool-urgency-badge"></div>
+                </div>
+                <div>
+                    <h3>Likely Conditions</h3>
+                    <div id="symptomConditions" class="patient-tool-condition-list"></div>
+                </div>
+                <div>
+                    <h3>Recommended Actions</h3>
+                    <ul id="symptomActions" class="patient-tool-list"></ul>
+                </div>
+                <div>
+                    <h3>When To See A Doctor</h3>
+                    <ul id="symptomSeeDoctor" class="patient-tool-list"></ul>
+                </div>
+                <div>
+                    <h3>Home Care Tips</h3>
+                    <ul id="symptomHomeCare" class="patient-tool-list"></ul>
+                </div>
+                <p id="symptomDisclaimer" class="patient-tool-disclaimer"></p>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.patient-tool-shell {
+    max-width: 1160px;
+    margin: 0 auto;
+    display: grid;
+    gap: 24px;
+}
+.patient-tool-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr);
+    gap: 24px;
+    padding: 30px;
+    background:
+        radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(245, 158, 11, 0.15), transparent 22%),
+        linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(245,250,248,0.94) 100%);
+}
+.patient-tool-badge {
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(15, 118, 110, 0.12);
+    color: #0f766e;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+.patient-tool-hero h1 {
+    margin: 16px 0 10px;
+    font-family: "Plus Jakarta Sans", sans-serif;
+    font-size: clamp(2rem, 3.8vw, 3rem);
+    line-height: 1.08;
+}
+.patient-tool-hero p,
+.patient-tool-hero li {
+    color: var(--gray-600);
+    line-height: 1.8;
+}
+.patient-tool-hero__aside {
+    padding: 22px;
+    border-radius: 24px;
+    background: rgba(255,255,255,0.82);
+    border: 1px solid rgba(203, 213, 225, 0.7);
+}
+.patient-tool-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 0.95fr);
+    gap: 24px;
+}
+.patient-tool-card {
+    padding: 24px;
+    background: rgba(255,255,255,0.94);
+}
+.patient-tool-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: start;
+}
+.patient-tool-eyebrow {
+    margin: 0 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gray-500);
+}
+.patient-tool-card h2,
+.patient-tool-output h3 {
+    margin: 0;
+    font-family: "Plus Jakarta Sans", sans-serif;
+}
+.patient-tool-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+}
+.patient-tool-form label,
+.patient-tool-helper,
+.patient-tool-empty,
+.patient-tool-output p,
+.patient-tool-list li {
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+.patient-tool-form textarea {
+    width: 100%;
+    min-height: 210px;
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(203, 213, 225, 0.92);
+    background: #fff;
+    resize: vertical;
+    font: inherit;
+}
+.patient-tool-form textarea:focus,
+.patient-tool-upload input:focus {
+    outline: none;
+    border-color: rgba(14, 116, 144, 0.4);
+    box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.18);
+}
+.patient-tool-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.patient-tool-voice {
+    min-height: 46px;
+    padding: 0.75rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    background: white;
+    color: var(--gray-900);
+    font-weight: 700;
+}
+.patient-tool-voice.is-listening {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+.patient-tool-results {
+    align-self: start;
+}
+.patient-tool-empty {
+    margin-top: 18px;
+    padding: 18px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(248,250,252,0.96), rgba(241,245,249,0.94));
+}
+.patient-tool-output {
+    display: grid;
+    gap: 18px;
+    margin-top: 18px;
+}
+.patient-tool-error {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 18px;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+.patient-tool-summary,
+.patient-tool-urgency,
+.patient-tool-condition,
+.patient-tool-list {
+    margin: 0;
+}
+.patient-tool-urgency-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 999px;
+    font-weight: 800;
+}
+.patient-tool-urgency-badge[data-urgency="EMERGENCY"] {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+.patient-tool-urgency-badge[data-urgency="URGENT"] {
+    background: #fef3c7;
+    color: #b45309;
+}
+.patient-tool-urgency-badge[data-urgency="ROUTINE"] {
+    background: #dcfce7;
+    color: #15803d;
+}
+.patient-tool-condition-list {
+    display: grid;
+    gap: 12px;
+}
+.patient-tool-condition {
+    padding: 16px;
+    border-radius: 18px;
+    background: #f8fafc;
+    border: 1px solid rgba(226, 232, 240, 0.95);
+}
+.patient-tool-condition__meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.patient-tool-disclaimer {
+    font-size: 0.92rem;
+}
+@media (max-width: 980px) {
+    .patient-tool-hero,
+    .patient-tool-grid {
+        grid-template-columns: 1fr;
+    }
+}
+@media (max-width: 640px) {
+    .patient-tool-hero,
+    .patient-tool-card {
+        padding: 20px;
+        border-radius: 22px;
+    }
+    .patient-tool-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/patient_tools.js') }}"></script>
+{% endblock %}

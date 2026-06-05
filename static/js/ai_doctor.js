@@ -104,7 +104,7 @@
                     elements.safetyInsights.textContent = event.text;
                 }
                 appendMessage("system", event.text);
-                alert("This sounds urgent. Please call emergency services (911) immediately or go to the nearest hospital.");
+                alert("This sounds urgent. Please call emergency services in India (112) immediately or go to the nearest hospital.");
                 break;
             case "consultation_summary":
                 if (elements.consultationSummary && elements.consultationSummaryText) {
@@ -338,10 +338,10 @@
 
         elements.emergencyButton?.addEventListener("click", function () {
             if (elements.safetyInsights) {
-                elements.safetyInsights.textContent = "Emergency support requested. Call 911 immediately if there is chest pain, trouble breathing, severe bleeding, seizure, or suicidal thoughts.";
+                elements.safetyInsights.textContent = "Emergency support requested. Call 112 (India Emergency) immediately if there is chest pain, trouble breathing, severe bleeding, seizure, or suicidal thoughts.";
             }
-            alert("If this is an emergency, call 911 immediately or go to the nearest hospital.");
-            window.location.href = `tel:${config.emergencyPhone || "911"}`;
+            alert("If this is an emergency, call 112 (India Emergency) immediately or go to the nearest hospital.");
+            window.location.href = `tel:${config.emergencyPhone || "112"}`;
         });
 
         elements.endConsultationButton?.addEventListener("click", stopConsultation);

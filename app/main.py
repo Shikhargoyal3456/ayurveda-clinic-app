@@ -100,6 +100,7 @@ from routers.lab_analyzer import router as lab_analyzer_router
 from routers.marketplace import router as marketplace_router
 from routers.medicine_info import router as medicine_info_router
 from routers.patients import router as patients_router
+from routers.patient_tools import router as patient_tools_router
 from routers.order_medicines import router as order_medicines_router
 from routers.pharmacy_owner import router as pharmacy_owner_router
 from routers.pharmacy import router as pharmacy_router
@@ -174,6 +175,8 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request.state.request_id = request_id
         request.state.request_started_at = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
         start = perf_counter()
+        forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+        is_secure_request = forwarded_proto == "https"
         try:
             ensure_https_request(request)
             response = await call_next(request)
@@ -196,9 +199,10 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(self), microphone=(self), geolocation=(self)"
         response.headers["Cache-Control"] = "no-store"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-site"
+        if is_secure_request:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+        response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
@@ -418,7 +422,8 @@ def create_app() -> FastAPI:
     async def https_redirect_middleware(request: Request, call_next):
         if settings.https_redirect_enabled and settings.is_production:
             forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-            if forwarded_proto != "https":
+            host = request.headers.get("host", "")
+            if forwarded_proto != "https" and "." in host and not host.replace(".", "").isdigit():
                 secure_url = str(request.url.replace(scheme="https"))
                 return RedirectResponse(url=secure_url, status_code=307)
         return await call_next(request)
@@ -433,6 +438,7 @@ def create_app() -> FastAPI:
     application.include_router(health_router)
     application.include_router(auth_router)
     application.include_router(patients_router)
+    application.include_router(patient_tools_router)
     application.include_router(cases_router)
     application.include_router(contact_router)
     application.include_router(appointments_router)

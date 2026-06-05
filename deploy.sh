@@ -1,62 +1,69 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# KASH-AI-DEPLOY-FINAL: One-command Kash AI Cloud Run deployment.
-PROJECT_ID="${PROJECT_ID:-your-kash-ai-gcp-project}"
-SERVICE_NAME="${SERVICE_NAME:-kash-ai}"
-DOMAIN="${DOMAIN:-kashai.in}"
-REGION="${REGION:-us-central1}"
-IMAGE="gcr.io/${PROJECT_ID}/${SERVICE_NAME}:latest"
+VM_NAME="kash-ai-prod"
+ZONE="asia-south1-b"
+REMOTE_ROOT="${REMOTE_ROOT:-~/ayurveda_project}"
+SERVICE_NAME="${SERVICE_NAME:-ayurveda-clinic}"
+ENABLE_NGINX="${ENABLE_NGINX:-false}"
 
-echo "KASH AI v1.0 -> PRODUCTION LIVE"
+echo "Deploying Dr. Kash AI files to ${VM_NAME} (${ZONE})"
 
-if [ "$PROJECT_ID" = "your-kash-ai-gcp-project" ]; then
-  echo "Set PROJECT_ID first: PROJECT_ID=your-real-gcp-project ./deploy.sh"
-  exit 1
+gcloud compute scp "routers/ai_doctor.py" "${VM_NAME}:${REMOTE_ROOT}/routers/ai_doctor.py" --zone "${ZONE}"
+gcloud compute scp "static/js/doctor.js" "${VM_NAME}:${REMOTE_ROOT}/static/js/doctor.js" --zone "${ZONE}"
+gcloud compute scp "templates/doctor.html" "${VM_NAME}:${REMOTE_ROOT}/templates/doctor.html" --zone "${ZONE}"
+gcloud compute scp "app/main.py" "${VM_NAME}:${REMOTE_ROOT}/app/main.py" --zone "${ZONE}"
+gcloud compute scp "app/security.py" "${VM_NAME}:${REMOTE_ROOT}/app/security.py" --zone "${ZONE}"
+
+gcloud compute ssh "${VM_NAME}" --zone "${ZONE}" --command "
+set -e
+cd ${REMOTE_ROOT}
+chmod 644 routers/ai_doctor.py static/js/doctor.js templates/doctor.html app/main.py app/security.py
+sudo systemctl daemon-reload
+sudo systemctl restart ${SERVICE_NAME}
+sudo systemctl --no-pager --full status ${SERVICE_NAME} | head -n 20
+curl -fsS http://127.0.0.1:8000/api/doctor/health
+curl -fsS http://127.0.0.1:8000/ai-doctor-live >/dev/null
+"
+
+if [[ \"${ENABLE_NGINX}\" == \"true\" ]]; then
+  gcloud compute ssh "${VM_NAME}" --zone "${ZONE}" --command "
+set -e
+sudo apt-get update
+sudo apt-get install -y nginx
+sudo tee /etc/nginx/sites-available/kash-ai >/dev/null <<'EOF'
+server {
+    listen 80 default_server;
+    server_name _;
+
+    location /static/ {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \"upgrade\";
+        proxy_read_timeout 120s;
+    }
+}
+EOF
+sudo ln -sf /etc/nginx/sites-available/kash-ai /etc/nginx/sites-enabled/kash-ai
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl enable nginx
+sudo systemctl restart nginx
+curl -fsS http://127.0.0.1/api/doctor/health
+"
 fi
 
-if [ ! -f ".env.production" ]; then
-  echo ".env.production missing. Create it from .env.production.example or the checked-in template."
-  exit 1
-fi
-
-echo "Testing..."
-pytest -v
-
-echo "Migrating local/deploy database..."
-python scripts/migrate.py
-
-echo "Building and pushing container..."
-gcloud builds submit --tag "$IMAGE"
-
-echo "Deploying to Cloud Run..."
-# KASH-AI-DEPLOY-FINAL: Load non-comment production env values from .env.production.
-ENV_VARS="$(grep -v '^#' .env.production | grep '=' | sed 's/[[:space:]]*#.*$//' | xargs | tr ' ' ',')"
-gcloud run deploy "$SERVICE_NAME" \
-  --image "$IMAGE" \
-  --platform managed \
-  --region "$REGION" \
-  --memory 512Mi \
-  --concurrency 80 \
-  --max-instances 10 \
-  --cpu 1 \
-  --set-env-vars "$ENV_VARS" \
-  --allow-unauthenticated \
-  --ingress all \
-  --tag "$DOMAIN"
-
-echo "Mapping ${DOMAIN}..."
-gcloud run domains add-managed "$DOMAIN" "$SERVICE_NAME" --region "$REGION" || true
-gcloud run domain-mappings create --service "$SERVICE_NAME" --domain "$DOMAIN" --region "$REGION" || true
-echo "DNS records:"
-gcloud run domain-mappings describe "$DOMAIN" --region "$REGION" --format="table(status.resourceRecords)" || true
-
-echo "Smoke testing production..."
-sleep 30
-URL="$(gcloud run services describe "$SERVICE_NAME" --region "$REGION" --format='value(status.url)')"
-curl -f "$URL/healthz"
-python scripts/smoke.py --base-url "$URL"
-
-echo "KASH AI LIVE TARGET: https://${DOMAIN}/healthz"
-echo "Add the DNS records above at your registrar, then wait 5-60 minutes."
-echo "Monitor: gcloud logs tail --service=${SERVICE_NAME} --region=${REGION}"
+echo "Deployment complete."

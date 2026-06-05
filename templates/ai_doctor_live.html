@@ -55,7 +55,7 @@
                 <button id="startButton" class="doctor-live-button doctor-live-button--primary" type="button">🎤 Start Consultation</button>
                 <button id="muteButton" class="doctor-live-button doctor-live-button--secondary" type="button" hidden>Mute Mic</button>
                 <button id="endButton" class="doctor-live-button doctor-live-button--secondary" type="button" hidden>End</button>
-                <a href="tel:911" id="emergencyButton" class="doctor-live-button doctor-live-button--danger">Call 911</a>
+                <a href="tel:112" id="emergencyButton" class="doctor-live-button doctor-live-button--danger">Call 112</a>
             </div>
 
             <div id="emergencyPanel" class="doctor-live-emergency" hidden>
@@ -542,7 +542,7 @@
     function checkEmergency(text) {
         const haystack = String(text || "").toLowerCase();
         if (emergencyPatterns.some((pattern) => haystack.includes(pattern))) {
-            showEmergency("This sounds concerning. Please seek immediate medical attention. Stay calm and call 911 now.");
+            showEmergency("This sounds concerning. Please seek immediate medical attention. Stay calm and call 112 now.");
         }
     }
 

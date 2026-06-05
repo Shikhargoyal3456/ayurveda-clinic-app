@@ -67,7 +67,7 @@
         .pill { padding: 1rem; border-radius: 1rem; }
         .pill strong { display: block; font-size: 1.2rem; }
         .pill span { color: var(--color-text-secondary); }
-        .bottom-nav { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(760px, calc(100% - 1rem)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--color-border); border-radius: 1.5rem; background: rgba(255,255,255,.94); backdrop-filter: blur(18px); box-shadow: var(--shadow-lg); z-index: var(--z-sticky); }
+        .bottom-nav { position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); width: min(860px, calc(100% - 1rem)); display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--color-border); border-radius: 1.5rem; background: rgba(255,255,255,.94); backdrop-filter: blur(18px); box-shadow: var(--shadow-lg); z-index: var(--z-sticky); }
         .nav-link { padding: 0.8rem 0.4rem; text-align: center; border-radius: 1rem; color: var(--color-text-secondary); font-weight: 600; }
         .nav-link.active { background: var(--color-primary-lighter); color: var(--color-primary-light); }
         .help-sheet { position: fixed; inset: auto 1rem 6.5rem auto; width: min(380px, calc(100vw - 2rem)); z-index: var(--z-popover); display: none; }
@@ -116,6 +116,7 @@
                     {% if portal_session_role == 'patient' %}
                     <a class="portal-link" href="/patient">Home</a>
                     <a class="portal-link" href="/telemedicine/book">Consult</a>
+                    <a class="portal-link" href="/patient/symptom-analyzer">AI Tools</a>
                     <a class="portal-link" href="/order-medicines">Search Medicines</a>
                     <a class="portal-link" href="/orders">Orders</a>
                     <form method="post" action="/auth/logout" class="portal-link-form">
@@ -214,6 +215,7 @@
     <nav class="bottom-nav" aria-label="Main navigation">
         <a class="nav-link {% if simple_nav == 'home' %}active{% endif %}" href="{{ patient_home_href }}">Home</a>
         <a class="nav-link {% if simple_nav == 'search' %}active{% endif %}" href="/order-medicines">Medicines</a>
+        <a class="nav-link {% if simple_nav == 'tools' %}active{% endif %}" href="/patient/symptom-analyzer">AI Tools</a>
         <a class="nav-link {% if simple_nav == 'orders' %}active{% endif %}" href="/orders">Orders</a>
         <a class="nav-link {% if simple_nav == 'contact' %}active{% endif %}" href="/contact">Support</a>
     </nav>

@@ -115,6 +115,28 @@
         </a>
     </section>
 
+    <section class="patient-surface-card patient-tools-showcase">
+        <div class="section-heading">
+            <span class="section-heading__icon"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></span>
+            <div>
+                <h2>AI Health Tools</h2>
+                <p>Use Gemini-powered tools directly from your home portal.</p>
+            </div>
+        </div>
+        <div class="patient-tools-grid">
+            <a href="/patient/symptom-analyzer" class="patient-tool-spotlight">
+                <span class="patient-tool-spotlight__icon">🤒</span>
+                <strong>Symptom Checker</strong>
+                <p>Check your symptoms and get AI-powered guidance with urgency and next-step suggestions.</p>
+            </a>
+            <a href="/patient/diet-analyzer" class="patient-tool-spotlight">
+                <span class="patient-tool-spotlight__icon">🥗</span>
+                <strong>Diet Analyzer</strong>
+                <p>Analyze your meals with text or photos and get personalized nutrition guidance.</p>
+            </a>
+        </div>
+    </section>
+
     {% if last_order %}
     <section class="patient-surface-card patient-last-order">
         <div class="section-heading">
@@ -534,6 +556,59 @@
     gap: 16px;
 }
 
+.patient-tools-showcase {
+    display: grid;
+    gap: 20px;
+}
+
+.patient-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.patient-tool-spotlight {
+    display: block;
+    padding: 22px;
+    border-radius: 24px;
+    text-decoration: none;
+    color: inherit;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
+    border: 1px solid rgba(226, 232, 240, 0.95);
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition);
+}
+
+.patient-tool-spotlight:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.patient-tool-spotlight__icon {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    margin-bottom: 16px;
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(251, 191, 36, 0.18));
+}
+
+.patient-tool-spotlight strong {
+    display: block;
+    font-size: 1.1rem;
+    color: var(--gray-900);
+}
+
+.patient-tool-spotlight p {
+    margin: 10px 0 0;
+    color: var(--gray-600);
+    line-height: 1.7;
+}
+
 @keyframes pulse-dot {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.8); }
@@ -568,6 +643,10 @@
     .patient-last-order__body {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .patient-tools-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>

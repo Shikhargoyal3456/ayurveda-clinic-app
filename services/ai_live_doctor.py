@@ -64,7 +64,7 @@ EMERGENCY_RESPONSE = (
     f"{OPENING_DISCLAIMER} "
     "⚠️ I'm concerned. Please seek immediate medical attention. "
     "⏰ Do not wait. Go to the emergency room now. "
-    "📞 Call emergency services (911) right away. "
+    "📞 Call emergency services in India (112) right away. "
     "If someone is with you, ask them to stay nearby and help right now. "
     f"{FINAL_DISCLAIMER}"
 )
