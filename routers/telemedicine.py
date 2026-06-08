@@ -159,6 +159,17 @@ def telemedicine_room_page(request: Request, session_id: str):
     )
 
 
+@router.get("/telemedicine/video-consult")
+async def telemedicine_video_consult_alias(request: Request, session_id: str | None = Query(default=None)):
+    _ensure_telemedicine_enabled()
+    resolved_session_id = str(session_id or "").strip()
+    if resolved_session_id:
+        return RedirectResponse(url=f"/telemedicine/room/{resolved_session_id}", status_code=303)
+
+    preview_session = await telemedicine_service.create_consultation_session(patient_id=0, doctor_id=0, session_type="video")
+    return RedirectResponse(url=preview_session["room_url"], status_code=303)
+
+
 @router.get("/telemedicine/summary/{session_id}")
 async def telemedicine_summary_page(request: Request, session_id: str):
     _ensure_telemedicine_enabled()

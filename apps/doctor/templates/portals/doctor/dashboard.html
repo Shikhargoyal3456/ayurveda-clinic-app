@@ -6,6 +6,8 @@
 {% set display_doctor_name = doctor_name | default(doctor.name if doctor is defined and doctor and doctor.name is defined else user_name, true) | default("Doctor", true) %}
 {% set display_recent_patients = recent_patients | default([], true) %}
 <div class="doctor-workspace">
+    <div class="neural-top-banner">Neural-grade doctor workspace with faster patient flow, calmer oversight, and AI-guided daily priorities.</div>
+
     <section class="ai-hero glass-card" id="aiHero">
         <div class="ai-hero__copy">
             <span class="workspace-kicker">AI Doctor Workspace</span>
@@ -226,6 +228,28 @@
     padding: 24px;
 }
 
+.doctor-workspace,
+.doctor-workspace * {
+    font-family: "UntitledSans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.neural-top-banner {
+    margin-bottom: 24px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+    color: #ffffff;
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    box-shadow: 0 18px 40px rgba(192, 106, 143, 0.24);
+}
+
+.portal-sidebar {
+    background: #000000;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .ai-hero {
     position: relative;
     display: grid;
@@ -234,13 +258,13 @@
     align-items: start;
     padding: 30px 32px;
     margin-bottom: 24px;
-    border-radius: 30px;
+    border-radius: 20px;
     color: white;
     overflow: hidden;
     background:
         radial-gradient(circle at top right, rgba(255, 255, 255, 0.22), transparent 22%),
-        radial-gradient(circle at bottom left, rgba(99, 102, 241, 0.28), transparent 26%),
-        linear-gradient(135deg, #0f4c5c 0%, #145a65 45%, #1a7f6b 75%, #2bae66 100%);
+        radial-gradient(circle at bottom left, rgba(228, 134, 171, 0.22), transparent 26%),
+        linear-gradient(135deg, #000000 0%, #1a1a1a 44%, #3d2333 74%, #c06a8f 100%);
     box-shadow: var(--shadow-xl);
 }
 
@@ -249,7 +273,7 @@
     align-items: center;
     padding: 8px 14px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(228, 134, 171, 0.18);
     text-transform: uppercase;
     letter-spacing: 0.14em;
     font-size: 0.72rem;
@@ -333,11 +357,22 @@
 
 .card {
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(251, 253, 252, 0.96) 100%);
-    border: 1px solid rgba(229, 231, 235, 0.9);
-    border-radius: 26px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 20px;
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     margin-bottom: 24px;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.card:hover,
+.patient-item:hover,
+.stack-item:hover,
+.action-item:hover,
+.alert-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 46px rgba(0, 0, 0, 0.12);
+    border-color: rgba(192, 106, 143, 0.2);
 }
 
 .card-header {
@@ -362,11 +397,11 @@
 .title-icon {
     width: 44px;
     height: 44px;
-    border-radius: 16px;
+    border-radius: 20px;
     display: inline-grid;
     place-items: center;
-    background: linear-gradient(135deg, rgba(15, 76, 92, 0.1) 0%, rgba(99, 102, 241, 0.12) 100%);
-    color: var(--primary);
+    background: linear-gradient(135deg, rgba(228, 134, 171, 0.14) 0%, rgba(192, 106, 143, 0.14) 100%);
+    color: #c06a8f;
     font-size: 0.8rem;
     font-weight: 800;
 }
@@ -379,7 +414,7 @@
 }
 
 .score-value {
-    color: var(--primary);
+    color: #c06a8f;
     font-size: 3rem;
     line-height: 1;
 }
@@ -401,9 +436,29 @@
 .action-item,
 .alert-item {
     padding: 16px 18px;
-    border-radius: 18px;
+    border-radius: 20px;
     background: var(--gray-50);
     border: 1px solid var(--gray-200);
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-outline,
+.view-patient-btn {
+    border-radius: 80px;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+}
+
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-outline:hover,
+.view-patient-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 18px 38px rgba(0, 0, 0, 0.14);
 }
 
 .action-item,

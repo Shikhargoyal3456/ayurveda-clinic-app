@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 from threading import Thread
 from time import perf_counter
 
-import google.generativeai as genai
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -123,12 +122,7 @@ from utils.subscription_utils import (
     increment_subscription_usage as increment_usage,
 )
 
-# Configure Gemini
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -427,6 +421,10 @@ def create_app() -> FastAPI:
                 secure_url = str(request.url.replace(scheme="https"))
                 return RedirectResponse(url=secure_url, status_code=307)
         return await call_next(request)
+
+    @application.get("/favicon.ico", include_in_schema=False)
+    async def favicon_redirect():
+        return RedirectResponse(url="/static/images/favicon.svg", status_code=307)
 
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
     application.mount("/shared-static", StaticFiles(directory=settings.shared_static_dir), name="shared-static")

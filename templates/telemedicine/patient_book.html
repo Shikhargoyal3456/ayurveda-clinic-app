@@ -4,6 +4,7 @@
 
 {% block page %}
 <div class="consult-modern-page">
+    <div class="tele-neural-banner">Neural-grade patient booking with calmer doctor discovery, cleaner time selection, and faster session launch.</div>
     <section class="consult-hero glass-card">
         <div class="consult-hero__copy">
             <span class="consult-kicker"><i class="fa-solid fa-wave-square" aria-hidden="true"></i> AI-guided consultations</span>
@@ -151,7 +152,12 @@
 {% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="/static/css/neuralink.css">
 <style>
+.tele-neural-banner{margin-bottom:24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}
+.consult-hero,.consult-surface-card,.doctor-card,.slot-chip,.consult-mini-card{border-radius:20px!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.consult-hero:hover,.consult-surface-card:hover,.doctor-card:hover,.slot-chip:hover,.consult-mini-card:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12)}
+.btn-modern,.btn-modern--secondary,.btn,.primary-btn,.secondary-btn{border-radius:80px!important}
 .consult-modern-page {
     max-width: 1240px;
     margin: 0 auto;

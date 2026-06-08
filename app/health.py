@@ -27,12 +27,12 @@ def database_health() -> dict[str, Any]:
 
 def ai_health() -> dict[str, Any]:
     fallback = fallback_health_status(probe_remote=False)
-    gemini_configured = bool(settings.gemini_api_key)
+    gemini_configured = bool(settings.vertex_ai_project)
     groq_configured = bool(GROQ_API_KEY)
     primary_provider = "gemini" if gemini_configured else ("groq" if groq_configured else "none")
     ai_available = gemini_configured or groq_configured
     status_message = (
-        "Gemini is configured as the primary AI provider."
+        "Vertex AI Gemini is configured as the primary AI provider."
         if gemini_configured
         else ("Groq is configured as the AI provider." if groq_configured else "No remote AI provider is configured.")
     )

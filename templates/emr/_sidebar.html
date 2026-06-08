@@ -42,10 +42,10 @@
 <style>
 .emr-sidebar {
     background:
-        radial-gradient(circle at top right, rgba(43, 174, 102, 0.08), transparent 32%),
-        linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
-    border: 1px solid rgba(229, 231, 235, 0.9);
-    border-radius: 22px;
+        radial-gradient(circle at top right, rgba(228, 134, 171, 0.18), transparent 28%),
+        linear-gradient(180deg, #000000 0%, #111111 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
     padding: 18px;
     box-shadow: var(--shadow-lg);
 }
@@ -53,7 +53,7 @@
 .emr-sidebar__top {
     margin-bottom: 14px;
     padding: 10px 8px 16px;
-    border-bottom: 1px solid var(--gray-200);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .emr-sidebar__eyebrow {
@@ -62,19 +62,19 @@
     letter-spacing: 0.12em;
     font-size: 0.72rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #e486ab;
 }
 
 .emr-sidebar__title {
     margin: 0 0 6px;
     font-family: "Plus Jakarta Sans", sans-serif;
     font-size: 1.05rem;
-    color: var(--gray-800);
+    color: #ffffff;
 }
 
 .emr-sidebar__copy {
     margin: 0;
-    color: var(--gray-500);
+    color: rgba(255, 255, 255, 0.68);
     font-size: 0.88rem;
     line-height: 1.45;
 }
@@ -94,8 +94,8 @@
     align-items: center;
     gap: 12px;
     padding: 13px 14px;
-    border-radius: 16px;
-    color: var(--gray-700);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
     font-weight: 700;
     transition: var(--transition);
@@ -108,15 +108,15 @@
 }
 
 .emr-sidebar a:hover {
-    background: linear-gradient(90deg, var(--primary-soft) 0%, rgba(255, 255, 255, 0.92) 100%);
-    color: var(--primary-dark);
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
     transform: translateX(2px);
 }
 
 .emr-sidebar a.active {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
     color: white;
-    box-shadow: 0 16px 22px -18px rgba(26, 127, 107, 0.95);
+    box-shadow: 0 16px 22px -18px rgba(192, 106, 143, 0.95);
 }
 
 @media (max-width: 768px) {

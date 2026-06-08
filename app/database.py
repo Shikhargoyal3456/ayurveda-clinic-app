@@ -403,6 +403,8 @@ def _ensure_admin_seed_data() -> None:
     # CTO-FIX-1: Keep env-configured admin usernames actually usable by syncing a known password locally.
     admin_usernames = [item.strip().lower() for item in settings.admin_usernames if item.strip()]
     bootstrap_password = settings.admin_bootstrap_password.strip()
+    if not bootstrap_password and not settings.is_production:
+        bootstrap_password = "LocalAdmin123!"
     if not admin_usernames or not bootstrap_password:
         return
 

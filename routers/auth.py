@@ -802,8 +802,10 @@ def smart_login_page(request: Request, role: str | None = Query(default=None), d
 
 
 @router.post("/auth/login")
+@router.post("/auth/login/{role_slug}")
 def portal_login(
     request: Request,
+    role_slug: str | None = None,
     identifier: str = Form(...),
     password: str = Form(...),
     role: str = Form(""),
@@ -813,7 +815,7 @@ def portal_login(
     ___: None = Depends(auth_backoff_dependency()),
     __: None = Depends(verify_csrf),
 ):
-    chosen_role = slug_to_role(role.strip()) if role.strip() else ""
+    chosen_role = slug_to_role(role_slug.strip()) if role_slug and role_slug.strip() else (slug_to_role(role.strip()) if role.strip() else "")
     users = [_find_portal_user(db, identifier, chosen_role)] if chosen_role else _find_portal_users(db, identifier)
     users = [user for user in users if user is not None]
     matched_users = [user for user in users if verify_user_password(user, password)]
@@ -912,6 +914,7 @@ def portal_register_page(request: Request, role_slug: str):
     )
 
 
+@router.post("/auth/register")
 @router.post("/api/auth/register")
 async def portal_register(
     request: Request,
@@ -970,6 +973,14 @@ async def portal_register(
 
     normalized_email = normalize_identifier(email)
     normalized_phone = normalize_phone(phone)
+    if not settings.is_testing and normalized_email.endswith("@example.com"):
+        return JSONResponse(
+            {
+                "success": False,
+                "error": "Please use a real email address. Placeholder domains like @example.com cannot receive verification emails.",
+            },
+            status_code=400,
+        )
     existing = db.query(User.id).filter(or_(User.email == normalized_email, User.phone == normalized_phone)).first()
     if existing:
         return JSONResponse({"success": False, "error": "An account with this email or phone already exists."}, status_code=400)
@@ -1260,6 +1271,15 @@ def logout(request: Request, _: None = Depends(verify_csrf)):
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
+@router.get("/logout")
+def logout_get(request: Request):
+    redirect_url = _session_logout_redirect(request)
+    write_audit_event("logout_get", request)
+    clear_portal_session(request)
+    invalidate_current_session(request)
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
 @router.post("/logout-all-devices")
 def logout_all_devices(
     request: Request,
@@ -1279,6 +1299,14 @@ def logout_all_devices(
 
 @router.post("/auth/logout")
 def portal_logout(request: Request, _: None = Depends(verify_csrf)):
+    redirect_url = _session_logout_redirect(request)
+    clear_portal_session(request)
+    invalidate_current_session(request)
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
+@router.get("/auth/logout")
+def portal_logout_get(request: Request):
     redirect_url = _session_logout_redirect(request)
     clear_portal_session(request)
     invalidate_current_session(request)

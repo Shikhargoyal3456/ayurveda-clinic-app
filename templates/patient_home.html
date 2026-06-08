@@ -5,6 +5,8 @@
 {% set display_name = patient_name | default(user_name, true) | default('Patient', true) %}
 {% set display_date = today_date | default('Today', true) %}
 <div class="patient-modern-home">
+    <div class="neural-top-banner">Neural-grade patient portal with calmer navigation, AI-assisted care tools, and one-tap access to your next step.</div>
+
     <section class="patient-ai-doctor-feature">
         <div class="patient-ai-doctor-feature__copy">
             <span class="patient-ai-doctor-feature__badge">🤖 AI DOCTOR - LIVE</span>
@@ -160,12 +162,98 @@
 
 {% block extra_head %}
 <style>
+.top-bar {
+    background: rgba(0, 0, 0, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 22px 48px rgba(0, 0, 0, 0.18);
+}
+
+.app-brand strong,
+.app-brand small,
+.portal-link,
+.portal-link-button,
+.mini-btn,
+.profile-switcher,
+.nav-link,
+.help-btn,
+.feedback-btn {
+    color: #ffffff;
+}
+
+.portal-link,
+.mini-btn,
+.profile-switcher,
+.help-btn,
+.feedback-btn,
+.secondary-btn,
+.danger-btn,
+.primary-btn,
+.btn-modern,
+.nav-link {
+    border-radius: 80px;
+}
+
+.portal-link,
+.portal-link-button,
+.mini-btn,
+.profile-switcher,
+.help-btn,
+.feedback-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.portal-link:hover,
+.portal-link-button:hover,
+.mini-btn:hover,
+.profile-switcher:hover,
+.help-btn:hover,
+.feedback-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+    color: #ffffff;
+}
+
+.profile-dropdown,
+.help-sheet-card {
+    border-radius: 20px;
+}
+
+.bottom-nav {
+    background: rgba(0, 0, 0, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.18);
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.nav-link.active {
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+    color: #ffffff;
+}
+
 .patient-modern-home {
     max-width: 1180px;
     margin: 0 auto;
     padding: 28px 20px 48px;
     display: grid;
     gap: 24px;
+}
+
+.neural-top-banner {
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+    color: #ffffff;
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    box-shadow: 0 18px 40px rgba(192, 106, 143, 0.24);
 }
 
 .patient-hero {
@@ -175,9 +263,10 @@
     gap: 24px;
     padding: 32px;
     overflow: hidden;
+    border-radius: 20px;
     background:
-        radial-gradient(circle at top right, rgba(99, 102, 241, 0.14), transparent 30%),
-        linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(247, 251, 249, 0.92) 100%);
+        radial-gradient(circle at top right, rgba(228, 134, 171, 0.18), transparent 30%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 245, 245, 0.94) 100%);
 }
 
 .patient-hero::after {
@@ -187,7 +276,7 @@
     width: 280px;
     height: 280px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(43, 174, 102, 0.16), transparent 70%);
+    background: radial-gradient(circle, rgba(228, 134, 171, 0.16), transparent 70%);
     pointer-events: none;
 }
 
@@ -203,8 +292,8 @@
     gap: 10px;
     padding: 8px 14px;
     border-radius: 999px;
-    background: rgba(99, 102, 241, 0.1);
-    color: var(--ai-indigo);
+    background: rgba(228, 134, 171, 0.12);
+    color: #8d4b6d;
     font-size: 0.86rem;
     font-weight: 700;
 }
@@ -249,24 +338,67 @@
     margin-top: 26px;
 }
 
+.btn-modern,
+.secondary-btn,
+.danger-btn,
+.primary-btn {
+    min-height: 52px;
+    padding: 0.95rem 1.4rem;
+    border-radius: 80px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.btn-modern {
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+    box-shadow: 0 18px 38px rgba(192, 106, 143, 0.2);
+}
+
+.btn-modern:hover,
+.secondary-btn:hover,
+.danger-btn:hover,
+.primary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14);
+}
+
 .btn-modern--secondary {
     background: white;
-    color: var(--primary);
-    border: 1px solid rgba(15, 76, 92, 0.14);
+    color: #000000;
+    border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow: none;
 }
 
 .hero-panel-card,
-.hero-stat {
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow: var(--shadow-lg);
+.hero-stat,
+.patient-surface-card,
+.patient-tool-spotlight,
+.list-row,
+.pill,
+.simple-card {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-md);
     backdrop-filter: blur(14px);
+    border-radius: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .hero-panel-card {
     padding: 20px 22px;
-    border-radius: 24px;
+}
+
+.hero-panel-card:hover,
+.hero-stat:hover,
+.patient-action-card:hover,
+.patient-surface-card:hover,
+.patient-tool-spotlight:hover,
+.patient-ai-visual-card:hover,
+.list-row:hover,
+.pill:hover,
+.simple-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 46px rgba(0, 0, 0, 0.12);
+    border-color: rgba(192, 106, 143, 0.2);
 }
 
 .hero-panel-card strong {
@@ -290,14 +422,13 @@
 
 .hero-stat {
     padding: 18px 16px;
-    border-radius: 20px;
 }
 
 .hero-stat__value {
     display: block;
     font-size: 1.3rem;
     font-weight: 800;
-    color: var(--primary);
+    color: #c06a8f;
 }
 
 .hero-stat__label {
@@ -320,15 +451,15 @@
     grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.9fr);
     gap: 24px;
     padding: 28px;
-    border-radius: 30px;
+    border-radius: 20px;
     overflow: hidden;
-    border: 1px solid rgba(96, 165, 250, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.28), transparent 26%),
-        radial-gradient(circle at bottom right, rgba(20, 184, 166, 0.22), transparent 24%),
-        linear-gradient(135deg, rgba(10, 15, 30, 0.99) 0%, rgba(15, 23, 42, 0.98) 52%, rgba(17, 24, 39, 0.96) 100%);
+        radial-gradient(circle at top left, rgba(228, 134, 171, 0.24), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(192, 106, 143, 0.18), transparent 24%),
+        linear-gradient(135deg, rgba(0, 0, 0, 0.99) 0%, rgba(18, 18, 18, 0.98) 52%, rgba(26, 26, 26, 0.96) 100%);
     color: white;
-    box-shadow: 0 24px 54px rgba(2, 6, 23, 0.34);
+    box-shadow: 0 24px 54px rgba(0, 0, 0, 0.32);
 }
 
 .patient-ai-doctor-feature__copy,
@@ -341,7 +472,7 @@
     display: inline-flex;
     padding: 9px 14px;
     border-radius: 999px;
-    background: rgba(96, 165, 250, 0.16);
+    background: rgba(228, 134, 171, 0.18);
     font-size: 0.84rem;
     font-weight: 800;
     letter-spacing: 0.08em;
@@ -370,7 +501,7 @@
 }
 
 .patient-ai-doctor-feature__button {
-    background: linear-gradient(135deg, #60a5fa 0%, #14b8a6 100%);
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
     color: white;
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -399,11 +530,12 @@
     position: relative;
     width: min(100%, 290px);
     padding: 24px;
-    border-radius: 26px;
-    background: rgba(15, 23, 42, 0.46);
-    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(16px);
     box-shadow: var(--shadow-xl);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .patient-ai-visual-card span {
@@ -435,8 +567,8 @@
 
 .patient-action-card,
 .patient-surface-card {
-    border-radius: 26px;
-    border: 1px solid rgba(229, 231, 235, 0.9);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
     transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition);
 }
 
@@ -448,20 +580,20 @@
     padding: 26px;
     text-align: left;
     cursor: pointer;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.96) 100%);
     box-shadow: var(--shadow-md);
 }
 
 .patient-action-card:hover,
 .patient-surface-card:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-    border-color: rgba(99, 102, 241, 0.16);
+    box-shadow: 0 24px 46px rgba(0, 0, 0, 0.12);
+    border-color: rgba(192, 106, 143, 0.2);
 }
 
 .patient-action-card--primary {
     background:
-        linear-gradient(135deg, rgba(15, 76, 92, 0.98) 0%, rgba(26, 127, 107, 0.96) 65%, rgba(43, 174, 102, 0.94) 100%);
+        linear-gradient(135deg, rgba(0, 0, 0, 0.98) 0%, rgba(32, 18, 28, 0.96) 55%, rgba(192, 106, 143, 0.94) 100%);
     color: white;
 }
 
@@ -474,12 +606,12 @@
 .patient-action-card__icon {
     width: 58px;
     height: 58px;
-    border-radius: 18px;
+    border-radius: 20px;
     display: grid;
     place-items: center;
     font-size: 1.3rem;
-    color: var(--primary);
-    background: rgba(15, 76, 92, 0.08);
+    color: #c06a8f;
+    background: rgba(228, 134, 171, 0.12);
 }
 
 .patient-action-card--primary .patient-action-card__icon {
@@ -499,8 +631,6 @@
 }
 
 .patient-surface-card {
-    background: rgba(255, 255, 255, 0.92);
-    box-shadow: var(--shadow-md);
     padding: 24px;
 }
 
@@ -513,11 +643,11 @@
 .section-heading__icon {
     width: 48px;
     height: 48px;
-    border-radius: 16px;
+    border-radius: 20px;
     display: grid;
     place-items: center;
-    background: linear-gradient(135deg, rgba(15, 76, 92, 0.1) 0%, rgba(99, 102, 241, 0.12) 100%);
-    color: var(--primary);
+    background: linear-gradient(135deg, rgba(228, 134, 171, 0.14) 0%, rgba(192, 106, 143, 0.12) 100%);
+    color: #c06a8f;
     font-weight: 800;
 }
 
@@ -544,7 +674,7 @@
 
 .patient-tool-card__link {
     margin-top: 20px;
-    color: var(--ai-indigo);
+    color: #c06a8f;
     font-weight: 700;
 }
 
@@ -570,20 +700,9 @@
 .patient-tool-spotlight {
     display: block;
     padding: 22px;
-    border-radius: 24px;
     text-decoration: none;
     color: inherit;
-    background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%);
-    border: 1px solid rgba(226, 232, 240, 0.95);
-    box-shadow: var(--shadow-md);
-    transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition);
-}
-
-.patient-tool-spotlight:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-xl);
-    border-color: rgba(99, 102, 241, 0.2);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 245, 245, 0.95) 100%);
 }
 
 .patient-tool-spotlight__icon {
@@ -591,10 +710,10 @@
     place-items: center;
     width: 58px;
     height: 58px;
-    border-radius: 18px;
+    border-radius: 20px;
     margin-bottom: 16px;
     font-size: 1.6rem;
-    background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(251, 191, 36, 0.18));
+    background: linear-gradient(135deg, rgba(228, 134, 171, 0.14), rgba(192, 106, 143, 0.16));
 }
 
 .patient-tool-spotlight strong {
@@ -628,11 +747,16 @@
         padding: 18px 14px 32px;
     }
 
+    .neural-top-banner {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
     .patient-hero,
     .patient-action-card,
     .patient-surface-card {
         padding: 20px;
-        border-radius: 22px;
+        border-radius: 20px;
     }
 
     .hero-stat-grid {

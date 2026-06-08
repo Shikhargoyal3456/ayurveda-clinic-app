@@ -2,6 +2,7 @@
 {% from "components/cards.html" import metric_card, nav_card %}
 {% block title %}Pharmacy Dashboard | {{ APP_NAME }}{% endblock %}
 {% block portal_content %}
+<div class="neural-top-banner">Neural-grade pharmacy operations with cleaner inventory visibility, calmer order flow, and AI-guided business insights.</div>
 <section class="surface-card pharmacy-hero-card">
     <div class="section-heading">
         <div>
@@ -309,6 +310,11 @@ document.addEventListener("DOMContentLoaded", function () {
 </script>
 
 <style>
+.neural-top-banner{margin-bottom:24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}
+.portal-content,.portal-content *{font-family:"UntitledSans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.portal-sidebar{background:#000;border-right:1px solid rgba(255,255,255,.08)}
+.hero-actions .btn,.ghost-button{border-radius:80px}
+.btn-primary{background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);border-color:transparent}
 .ai-pharmacy-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -365,14 +371,14 @@ document.addEventListener("DOMContentLoaded", function () {
     display: grid;
     gap: 4px;
     padding: 12px 14px;
-    border-radius: 16px;
+    border-radius: 20px;
     background: rgba(248, 250, 252, 0.96);
     border: 1px solid #e5e7eb;
 }
 
 .insight-alert {
     padding: 12px 14px;
-    border-radius: 16px;
+    border-radius: 20px;
     background: #fef2f2;
     color: #b42318;
     border: 1px solid #fecaca;
@@ -388,7 +394,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 .trending-row {
     padding: 12px 14px;
-    border-radius: 16px;
+    border-radius: 20px;
     background: rgba(230, 244, 241, 0.72);
 }
 
@@ -436,6 +442,9 @@ document.addEventListener("DOMContentLoaded", function () {
     line-height: 1.5;
 }
 
+.surface-card,.metric-card,.stack-item,.insight-meta-item,.trending-row,.insight-alert{transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease}
+.surface-card:hover,.metric-card:hover,.stack-item:hover,.insight-meta-item:hover,.trending-row:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12);border-color:rgba(192,106,143,.2)}
+
 @media (max-width: 1100px) {
     .ai-pharmacy-grid,
     .ai-pharmacy-grid--triple {
@@ -444,9 +453,8 @@ document.addEventListener("DOMContentLoaded", function () {
 }
 </style>
 <style>
-.pharmacy-hero-card{background:radial-gradient(circle at top right, rgba(99,102,241,.1), transparent 34%),linear-gradient(135deg, rgba(255,255,255,.96) 0%, rgba(246,250,249,.94) 100%);border-radius:28px;box-shadow:var(--shadow-lg)}
-.pharmacy-quick-grid .surface-card,.pharmacy-ops-grid .surface-card{border-radius:24px;box-shadow:var(--shadow-lg)}
-.ai-card-surface{border-radius:24px;box-shadow:var(--shadow-lg)}
-.stack-item{border-radius:18px}
+.pharmacy-hero-card{background:radial-gradient(circle at top right, rgba(228,134,171,.16), transparent 34%),linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(245,245,245,.94) 100%);border-radius:20px;box-shadow:var(--shadow-lg)}
+.pharmacy-quick-grid .surface-card,.pharmacy-ops-grid .surface-card,.ai-card-surface{border-radius:20px;box-shadow:var(--shadow-lg)}
+.stack-item{border-radius:20px}
 </style>
 {% endblock %}

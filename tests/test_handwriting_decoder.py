@@ -104,3 +104,38 @@ async def test_handwriting_decoder_api_returns_mocked_decode_result(client, monk
     assert payload["success"] is True
     assert payload["data"]["doctor_name"] == "Dr Test"
     assert payload["data"]["medicines"][0]["medicine_name"] == "Paracetamol 500mg"
+
+
+async def test_handwriting_decoder_retries_with_relaxed_prompt_on_invalid_json(client, monkeypatch):
+    service = prescription_ocr.ocr_service
+    enhancement = {
+        "image_data": "data:image/png;base64,ZmFrZQ==",
+        "mime_type": "image/png",
+        "image_quality_breakdown": {},
+        "applied_steps": [],
+        "source_image_quality": 82,
+    }
+    calls: list[bool] = []
+
+    def fake_enhance_data_url(_image_data: str, _mime_type: str):
+        return enhancement
+
+    async def fake_call(prompt: str, image_data: str, mime_type: str, *, strict_json: bool):
+        assert prompt
+        assert image_data == enhancement["image_data"]
+        assert mime_type == enhancement["mime_type"]
+        calls.append(strict_json)
+        if strict_json:
+            return "```json\n{\"doctor_name\": \"Retry Test\"}\n```"
+        return (
+            '{"doctor_name":"Retry Test","patient_name":"","date":"","medicines":[],'
+            '"raw_decoded_text":"","unreadable_parts":[],"confidence_overall":61}'
+        )
+
+    monkeypatch.setattr(service._image_processor, "enhance_data_url", fake_enhance_data_url)
+    monkeypatch.setattr(service, "_call_gemini_with_image", fake_call)
+
+    payload = await service.decode_prescription("data:image/png;base64,ZmFrZQ==", "image/png")
+
+    assert calls == [True, False]
+    assert payload["doctor_name"] == "Retry Test"

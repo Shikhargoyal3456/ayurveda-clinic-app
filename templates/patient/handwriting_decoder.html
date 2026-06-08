@@ -12,6 +12,8 @@
     data-medicine-db-endpoint="/prescription/medicine-db"
     data-feedback-endpoint="/api/prescription/decoder-feedback"
 >
+    <div class="neural-top-banner">Neural-grade prescription decoding with safer OCR review, clearer medicine matching, and upload-to-order continuity.</div>
+
     <section class="decoder-hero glass-card">
         <div>
             <span class="decoder-kicker"><i class="fa-solid fa-pen-fancy" aria-hidden="true"></i> AI handwriting decoder</span>
@@ -102,14 +104,26 @@
     gap: 24px;
 }
 
+.neural-top-banner {
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+    color: #ffffff;
+    text-align: center;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    box-shadow: 0 18px 40px rgba(192, 106, 143, 0.24);
+}
+
 .decoder-hero {
     display: grid;
     grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.95fr);
     gap: 24px;
     padding: 32px;
     background:
-        radial-gradient(circle at top right, rgba(17, 94, 89, 0.14), transparent 34%),
-        linear-gradient(145deg, rgba(255, 251, 245, 0.96), rgba(246, 252, 250, 0.96));
+        radial-gradient(circle at top right, rgba(228, 134, 171, 0.16), transparent 34%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 245, 245, 0.95));
+    border-radius: 20px;
 }
 
 .decoder-kicker {
@@ -120,7 +134,7 @@
     letter-spacing: 0.12em;
     font-size: 0.78rem;
     font-weight: 800;
-    color: #0f766e;
+    color: #8d4b6d;
 }
 
 .decoder-hero h1,
@@ -154,6 +168,27 @@
     margin-top: 20px;
 }
 
+.btn-modern,
+.btn-modern--secondary {
+    border-radius: 80px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.btn-modern {
+    background: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+    box-shadow: 0 18px 38px rgba(192, 106, 143, 0.2);
+}
+
+.btn-modern:hover,
+.btn-modern--secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.14);
+}
+
+.btn-modern--secondary {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
 .decoder-actions--tight {
     margin-top: 0;
 }
@@ -178,9 +213,23 @@
 .editor-card,
 .quality-card {
     background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(229, 231, 235, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     box-shadow: var(--shadow-md);
-    border-radius: 24px;
+    border-radius: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.decoder-stat-card:hover,
+.decoder-surface-card:hover,
+.medicine-card:hover,
+.decoded-meta-card:hover,
+.unreadable-note:hover,
+.preview-card:hover,
+.editor-card:hover,
+.quality-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 46px rgba(0, 0, 0, 0.12);
+    border-color: rgba(192, 106, 143, 0.2);
 }
 
 .decoder-stat-card,
@@ -195,19 +244,23 @@
 }
 
 .upload-area {
-    border: 2px dashed var(--primary);
-    border-radius: 24px;
+    border: 2px dashed rgba(192, 106, 143, 0.38);
+    border-radius: 20px;
     padding: 40px;
     text-align: center;
     cursor: pointer;
-    background: var(--gray-50);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 245, 245, 0.94));
     transition: background var(--transition-slow), border-color var(--transition-slow), transform var(--transition-slow);
 }
 
 .upload-area:hover {
-    background: rgba(26, 127, 107, 0.08);
-    border-color: var(--primary-glow);
+    background: rgba(228, 134, 171, 0.08);
+    border-color: #c06a8f;
     transform: translateY(-2px);
+}
+
+.upload-area i {
+    color: #c06a8f;
 }
 
 .decoder-toolbar {
@@ -223,8 +276,8 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: rgba(15, 118, 110, 0.08);
-    color: #115e59;
+    background: rgba(228, 134, 171, 0.12);
+    color: #8d4b6d;
     border-radius: 999px;
     padding: 10px 14px;
     font-weight: 700;
@@ -242,7 +295,7 @@
     width: 100%;
     max-height: 360px;
     object-fit: contain;
-    border-radius: 18px;
+    border-radius: 20px;
     margin-top: 12px;
     background: #f8fafc;
 }
@@ -266,7 +319,7 @@
 .medicine-name {
     font-size: 1.2rem;
     font-weight: 800;
-    color: var(--primary);
+    color: #c06a8f;
 }
 
 .detail-pill,
@@ -282,8 +335,8 @@
 
 .detail-pill,
 .match-chip {
-    background: rgba(15, 118, 110, 0.08);
-    color: #115e59;
+    background: rgba(228, 134, 171, 0.12);
+    color: #8d4b6d;
     margin-right: 8px;
     margin-bottom: 8px;
 }
@@ -307,7 +360,7 @@
 .editor-card textarea {
     width: 100%;
     border: 1px solid rgba(203, 213, 225, 0.95);
-    border-radius: 16px;
+    border-radius: 20px;
     padding: 12px 14px;
     font: inherit;
     background: white;
@@ -323,9 +376,9 @@
     gap: 12px;
     margin-top: 18px;
     padding: 16px 18px;
-    border-radius: 18px;
-    background: rgba(254, 242, 242, 0.85);
-    color: #7f1d1d;
+    border-radius: 20px;
+    background: rgba(228, 134, 171, 0.12);
+    color: #8d4b6d;
 }
 
 @media (max-width: 900px) {
@@ -333,6 +386,17 @@
     .preview-grid,
     .decoded-meta-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .handwriting-decoder-page {
+        padding: 18px 14px 32px;
+    }
+
+    .neural-top-banner {
+        padding-left: 14px;
+        padding-right: 14px;
     }
 }
 </style>

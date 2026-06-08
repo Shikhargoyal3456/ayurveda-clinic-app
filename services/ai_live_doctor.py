@@ -10,15 +10,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from models.user import User
-from services.ai_provider import AI_TIMEOUT, GEMINI_API_KEY, GEMINI_MODEL
+from services.ai_provider import (
+    GEMINI_MODEL,
+    build_gemini_part,
+    generate_gemini_content,
+    is_gemini_configured,
+)
 from services.medicine_api_service import MedicineAPIService
-
-try:
-    from google import genai
-    from google.genai import types
-except Exception:  # pragma: no cover - graceful runtime fallback
-    genai = None
-    types = None
 
 
 logger = logging.getLogger(__name__)
@@ -265,7 +263,7 @@ class AILiveDoctorService:
         prompt_sections.append("Respond as a clinically structured AI doctor assistant.")
         user_prompt = "\n\n".join(prompt_sections)
 
-        if genai is None or types is None or not GEMINI_API_KEY:
+        if not is_gemini_configured():
             return self._fallback_text(user_text, emotional_support=emotional_support, visual_summary=visual_summary, medicine_context=medicine_context)
 
         try:
@@ -275,23 +273,19 @@ class AILiveDoctorService:
             return self._fallback_text(user_text, emotional_support=emotional_support, visual_summary=visual_summary, medicine_context=medicine_context)
 
     def _gemini_text_completion(self, user_prompt: str) -> str:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
-                system_instruction=AI_DOCTOR_SYSTEM_PROMPT,
-                temperature=0.3,
-                max_output_tokens=700,
-            ),
+        response_text = generate_gemini_content(
+            user_prompt,
+            system_instruction=AI_DOCTOR_SYSTEM_PROMPT,
+            temperature=0.3,
+            max_output_tokens=700,
+            model_name=GEMINI_MODEL,
         )
-        return self._ensure_disclaimer((response.text or "").strip() or FALLBACK_RESPONSE)
+        return self._ensure_disclaimer(response_text or FALLBACK_RESPONSE)
 
     async def _analyze_visual_context(self, session: LiveDoctorSession) -> str:
         if session.last_frame_bytes is None:
             return ""
-        if genai is None or types is None or not GEMINI_API_KEY:
+        if not is_gemini_configured():
             return ""
         try:
             return await asyncio.to_thread(self._gemini_visual_completion, session.last_frame_bytes, session.last_frame_mime)
@@ -300,20 +294,16 @@ class AILiveDoctorService:
             return ""
 
     def _gemini_visual_completion(self, image_bytes: bytes, mime_type: str) -> str:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
-            contents=[
+        response_text = generate_gemini_content(
+            [
                 "Give a short visual observation for a telehealth intake. Mention only visible signs, uncertainty, and any red flags. Avoid overclaiming.",
-                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                build_gemini_part(image_bytes, mime_type),
             ],
-            config=types.GenerateContentConfig(
-                http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
-                temperature=0.2,
-                max_output_tokens=180,
-            ),
+            temperature=0.2,
+            max_output_tokens=180,
+            model_name=GEMINI_MODEL,
         )
-        return (response.text or "").strip()[:400]
+        return response_text.strip()[:400]
 
     async def _maybe_lookup_medicine(self, text: str) -> dict[str, Any] | None:
         match = MEDICINE_LOOKUP_PATTERN.search(text)
@@ -351,7 +341,7 @@ class AILiveDoctorService:
 
     async def _structured_interview_reply(self, patient_message: str, context: str) -> str:
         """Use AI for interview responses, not scripted text."""
-        if genai is None or types is None or not GEMINI_API_KEY:
+        if not is_gemini_configured():
             return "I understand your concern. Let me connect you with AI for proper guidance. (AI assistant - not a doctor)"
 
         visual_context = f"Previous visual context: {context}" if context else "Previous visual context: none"

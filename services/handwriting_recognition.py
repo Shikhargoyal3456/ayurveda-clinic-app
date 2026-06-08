@@ -13,21 +13,16 @@ from app.database import SessionLocal
 from models.medicine import MasterMedicine
 from services.ai_prescription_analyzer import AIPrescriptionAnalyzer
 from services.ai_provider import (
-    GEMINI_API_KEY,
     GEMINI_MODEL,
     ai_budget_fallback_message,
+    build_gemini_part,
     call_gemini,
+    generate_gemini_content,
+    is_gemini_configured,
     is_ai_budget_error,
     parse_json_response,
 )
 from services.image_preprocessor import ImagePreprocessor
-
-try:  # pragma: no cover
-    from google import genai
-    from google.genai import types
-except Exception:  # pragma: no cover
-    genai = None
-    types = None
 
 
 logger = logging.getLogger(__name__)
@@ -70,11 +65,9 @@ class HandwritingRecognitionService:
 
     async def decode_prescription(self, image_data: str, mime_type: str = "image/jpeg") -> dict[str, Any]:
         enhancement = self._image_processor.enhance_data_url(image_data, mime_type)
-        prompt = self._build_decoder_prompt()
 
         try:
-            response = await self._call_gemini_with_image(prompt, enhancement["image_data"], enhancement["mime_type"])
-            payload = self._normalize_payload(parse_json_response(response), enhancement)
+            payload = await self._decode_with_retry(enhancement)
         except Exception as exc:
             logger.warning("Handwriting decode fell back: %s", exc)
             if is_ai_budget_error(exc):
@@ -96,6 +89,60 @@ class HandwritingRecognitionService:
         payload["confidence_overall"] = self._calculate_overall_confidence(payload)
         payload["requires_verification"] = payload["confidence_overall"] < 70 or bool(payload["unreadable_parts"])
         return payload
+
+    async def _decode_with_retry(self, enhancement: dict[str, Any]) -> dict[str, Any]:
+        attempts = [
+            (self._build_decoder_prompt(), True),
+            (self._build_decoder_retry_prompt(), False),
+        ]
+        last_error: Exception | None = None
+        for prompt, strict_json in attempts:
+            try:
+                response = await self._call_gemini_with_image(
+                    prompt,
+                    enhancement["image_data"],
+                    enhancement["mime_type"],
+                    strict_json=strict_json,
+                )
+                parsed = parse_json_response(response)
+                if self._payload_requires_retry(parsed):
+                    raise ValueError("Gemini returned incomplete prescription JSON.")
+                return self._normalize_payload(parsed, enhancement)
+            except Exception as exc:
+                last_error = exc
+                logger.warning(
+                    "Handwriting decode attempt failed strict_json=%s: %s",
+                    strict_json,
+                    exc,
+                )
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("Handwriting decode did not complete.")
+
+    def _payload_requires_retry(self, payload: dict[str, Any]) -> bool:
+        required_top_level = {
+            "doctor_name",
+            "patient_name",
+            "date",
+            "medicines",
+            "raw_decoded_text",
+            "unreadable_parts",
+            "confidence_overall",
+        }
+        if not isinstance(payload, dict):
+            return True
+        if not required_top_level.issubset(payload.keys()):
+            return True
+        medicines = payload.get("medicines")
+        if not isinstance(medicines, list):
+            return True
+        for item in medicines:
+            if not isinstance(item, dict):
+                return True
+            if "dosage" in item and item.get("dosage") is not None and not isinstance(item.get("dosage"), dict):
+                return True
+        unreadable_parts = payload.get("unreadable_parts")
+        return not isinstance(unreadable_parts, list)
 
     async def enhance_with_medicine_info(self, medicines: list[dict[str, Any]]) -> list[dict[str, Any]]:
         enhanced: list[dict[str, Any]] = []
@@ -176,6 +223,8 @@ class HandwritingRecognitionService:
         return (
             "You are a careful medical prescription reading AI for India. Read this handwritten prescription image. "
             "Do not hallucinate certainty. Focus on medicine names, dosage amount, unit, frequency, duration, and instructions.\n\n"
+            "Return JSON only. Do not use markdown, code fences, commentary, or trailing text. "
+            "Every key must be present. Use empty strings, empty arrays, or 0 when unsure.\n\n"
             "Return only valid JSON with this exact schema:\n"
             "{\n"
             '  "doctor_name": "",\n'
@@ -200,25 +249,36 @@ class HandwritingRecognitionService:
             '  "confidence_overall": 0\n'
             "}\n\n"
             "Recognize abbreviations like OD, BD, TDS, QID, HS, SOS, PRN, stat. "
-            "If dosage details are written outside the medicine line, still attach them when reasonably likely."
+            "If dosage details are written outside the medicine line, still attach them when reasonably likely. "
+            "If a medicine is unclear, keep raw_line_text and add a note in unreadable_parts instead of inventing values."
         )
 
-    async def _call_gemini_with_image(self, prompt: str, image_data: str, mime_type: str) -> str:
-        if not GEMINI_API_KEY or genai is None or types is None:
+    def _build_decoder_retry_prompt(self) -> str:
+        return (
+            "Read the prescription image and return a compact JSON object only. "
+            "No markdown. No prose. No code fences. No explanation.\n\n"
+            "Required keys: doctor_name, patient_name, date, medicines, raw_decoded_text, unreadable_parts, confidence_overall.\n"
+            "medicines must be an array of objects with keys: medicine_name, dosage, raw_line_text, confidence.\n"
+            'dosage must be an object with keys: amount, unit, frequency, duration, instructions.\n\n'
+            "If you are uncertain, keep the field empty rather than guessing.\n"
+            "If you cannot read a line, preserve it in raw_line_text and mention it in unreadable_parts."
+        )
+
+    async def _call_gemini_with_image(self, prompt: str, image_data: str, mime_type: str, *, strict_json: bool) -> str:
+        if not is_gemini_configured():
             raise RuntimeError("Gemini image recognition is unavailable.")
 
         payload_mime, raw_bytes = self._decode_data_url(image_data, mime_type)
 
         def _generate() -> str:
-            client = genai.Client(api_key=GEMINI_API_KEY)
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=[
+            text = generate_gemini_content(
+                [
                     prompt,
-                    types.Part.from_bytes(data=raw_bytes, mime_type=payload_mime),
+                    build_gemini_part(raw_bytes, payload_mime),
                 ],
+                model_name=GEMINI_MODEL,
+                response_mime_type="application/json" if strict_json else None,
             )
-            text = str(getattr(response, "text", "") or "").strip()
             if not text:
                 raise RuntimeError("Gemini returned an empty handwriting response.")
             return text

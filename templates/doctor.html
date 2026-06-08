@@ -9,23 +9,29 @@
     <title>Dr. Kash AI</title>
     <style>
         :root {
-            --bg: #f5efe4;
-            --ink: #1f2a1f;
-            --muted: #667264;
-            --panel: rgba(255, 252, 246, 0.92);
-            --panel-strong: #fff9ef;
-            --line: rgba(65, 88, 62, 0.14);
-            --sage: #2d7c68;
-            --sage-deep: #1c594a;
-            --amber: #b7791f;
-            --amber-soft: #fff0cf;
-            --blue: #2f6fdb;
-            --blue-soft: #e7f0ff;
-            --rose: #c2415d;
-            --rose-soft: #ffe5eb;
-            --shadow: 0 24px 60px rgba(74, 64, 38, 0.16);
-            --radius-lg: 28px;
-            --radius-md: 18px;
+            --midnight-void: #000000;
+            --ash-gray: #bababa;
+            --soft-linen: #f5f5f5;
+            --canvas-white: #ffffff;
+            --neural-gradient: linear-gradient(135deg, #e486ab 0%, #c06a8f 100%);
+            --bg: #f5f5f5;
+            --ink: #000000;
+            --muted: #5e5e5e;
+            --panel: rgba(255, 255, 255, 0.92);
+            --panel-strong: #ffffff;
+            --line: rgba(0, 0, 0, 0.08);
+            --sage: #000000;
+            --sage-deep: #000000;
+            --amber: #c06a8f;
+            --amber-soft: rgba(228, 134, 171, 0.14);
+            --blue: #000000;
+            --blue-soft: rgba(245, 245, 245, 0.92);
+            --rose: #c06a8f;
+            --rose-soft: rgba(228, 134, 171, 0.12);
+            --shadow: 0 24px 60px rgba(0, 0, 0, 0.12);
+            --shadow-hover: 0 30px 70px rgba(0, 0, 0, 0.16);
+            --radius-lg: 20px;
+            --radius-md: 20px;
             --keyboard-offset: 0px;
         }
 
@@ -36,17 +42,36 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: Georgia, "Times New Roman", serif;
+            font-family: "UntitledSans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             color: var(--ink);
             background:
-                radial-gradient(circle at top left, rgba(45, 124, 104, 0.16), transparent 28%),
-                radial-gradient(circle at bottom right, rgba(191, 145, 71, 0.16), transparent 24%),
-                linear-gradient(180deg, #f9f4ea 0%, #efe5d2 100%);
+                radial-gradient(circle at top left, rgba(228, 134, 171, 0.16), transparent 28%),
+                radial-gradient(circle at 80% 20%, rgba(192, 106, 143, 0.12), transparent 24%),
+                linear-gradient(180deg, #0b0b0b 0%, #161616 18%, #f5f5f5 18%, #f5f5f5 100%);
         }
 
         button,
         input {
             font: inherit;
+        }
+
+        h1,
+        h2,
+        h3 {
+            letter-spacing: -0.05em;
+        }
+
+        .neural-top-banner {
+            width: min(1100px, calc(100% - 24px));
+            margin: 16px auto 0;
+            padding: 10px 18px;
+            border-radius: 999px;
+            background: var(--neural-gradient);
+            color: var(--canvas-white);
+            text-align: center;
+            font-size: 14px;
+            letter-spacing: -0.01em;
+            box-shadow: 0 18px 40px rgba(192, 106, 143, 0.24);
         }
 
         .page-shell {
@@ -55,10 +80,16 @@
             padding: 24px 0 40px;
         }
 
+        .page-shell::before {
+            content: "";
+            display: block;
+            height: 0;
+        }
+
         .app-shell {
-            background: rgba(255, 249, 239, 0.84);
-            border: 1px solid rgba(94, 116, 79, 0.18);
-            border-radius: 32px;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            border-radius: 24px;
             box-shadow: var(--shadow);
             overflow: hidden;
             backdrop-filter: blur(18px);
@@ -81,14 +112,13 @@
             width: 116px;
             height: 116px;
             margin: 0 auto 24px;
-            border-radius: 32px;
+            border-radius: 24px;
             display: grid;
             place-items: center;
             font-size: 2.8rem;
-            background:
-                linear-gradient(135deg, rgba(45, 124, 104, 0.95), rgba(191, 145, 71, 0.92));
+            background: var(--neural-gradient);
             color: white;
-            box-shadow: 0 20px 50px rgba(45, 124, 104, 0.28);
+            box-shadow: 0 20px 50px rgba(192, 106, 143, 0.24);
         }
 
         .start-screen h1,
@@ -105,10 +135,10 @@
             margin-bottom: 12px;
             padding: 8px 14px;
             border-radius: 999px;
-            background: rgba(45, 124, 104, 0.1);
-            color: var(--sage-deep);
+            background: rgba(228, 134, 171, 0.12);
+            color: #8d4b6d;
             font-size: 0.92rem;
-            letter-spacing: 0.04em;
+            letter-spacing: -0.01em;
         }
 
         .start-screen p {
@@ -130,7 +160,7 @@
             display: grid;
             place-items: center;
             padding: 20px;
-            background: rgba(31, 42, 31, 0.36);
+            background: rgba(0, 0, 0, 0.46);
             backdrop-filter: blur(10px);
         }
 
@@ -158,9 +188,9 @@
         .context-grid input {
             width: 100%;
             min-height: 50px;
-            padding: 0 16px;
-            border-radius: 16px;
-            border: 1px solid rgba(56, 67, 47, 0.12);
+            padding: 0 20px;
+            border-radius: 80px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
             background: white;
             color: var(--ink);
             outline: none;
@@ -189,9 +219,9 @@
         .retry-button,
         .summary-button {
             border: 0;
-            border-radius: 999px;
+            border-radius: 80px;
             cursor: pointer;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
         }
 
         .start-button:hover,
@@ -210,12 +240,12 @@
         .start-button {
             min-width: 280px;
             min-height: 60px;
-            padding: 0 28px;
-            background: linear-gradient(135deg, var(--sage), var(--amber));
+            padding: 16px 28px;
+            background: var(--neural-gradient);
             color: white;
             font-size: 1.05rem;
             font-weight: 700;
-            box-shadow: 0 18px 38px rgba(45, 124, 104, 0.22);
+            box-shadow: 0 18px 38px rgba(192, 106, 143, 0.22);
         }
 
         .support-note {
@@ -234,6 +264,9 @@
             gap: 18px;
             padding: 24px 24px 18px;
             border-bottom: 1px solid var(--line);
+            background:
+                linear-gradient(135deg, rgba(228, 134, 171, 0.1), rgba(192, 106, 143, 0.04)),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 245, 245, 0.92));
         }
 
         .header-copy p {
@@ -262,8 +295,8 @@
         }
 
         .live-badge.is-active {
-            background: rgba(45, 124, 104, 0.12);
-            color: var(--sage-deep);
+            background: rgba(228, 134, 171, 0.14);
+            color: #8d4b6d;
         }
 
         .live-badge.is-ended {
@@ -294,7 +327,8 @@
             display: inline-flex;
             padding: 4px;
             border-radius: 999px;
-            background: rgba(45, 124, 104, 0.08);
+            background: rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .pill-button {
@@ -302,21 +336,29 @@
             min-height: 40px;
             padding: 0 16px;
             background: transparent;
-            color: var(--sage-deep);
+            color: var(--ink);
             font-weight: 700;
         }
 
         .pill-button.is-active {
-            background: white;
-            box-shadow: 0 8px 20px rgba(45, 124, 104, 0.12);
+            background: var(--canvas-white);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
         }
 
         .icon-button {
             width: 48px;
             height: 48px;
-            background: white;
-            box-shadow: 0 12px 24px rgba(56, 67, 47, 0.12);
+            background: var(--canvas-white);
+            color: var(--ink);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
             font-size: 1.12rem;
+        }
+
+        .icon-button:hover,
+        .camera-action:hover,
+        .camera-restore:hover {
+            box-shadow: var(--shadow-hover);
         }
 
         .consultation-body {
@@ -335,7 +377,13 @@
             background: var(--panel);
             border: 1px solid var(--line);
             border-radius: var(--radius-lg);
-            box-shadow: 0 16px 30px rgba(74, 64, 38, 0.06);
+            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .panel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
         }
 
         .banner-stack {
@@ -356,14 +404,14 @@
 
         .status-banner.warning {
             background: var(--amber-soft);
-            border-color: rgba(183, 121, 31, 0.2);
-            color: #7f5714;
+            border-color: rgba(192, 106, 143, 0.2);
+            color: #8d4b6d;
         }
 
         .status-banner.info {
             background: var(--blue-soft);
-            border-color: rgba(47, 111, 219, 0.18);
-            color: #1f4f9f;
+            border-color: rgba(0, 0, 0, 0.08);
+            color: #1f1f1f;
         }
 
         .status-banner-close {
@@ -375,6 +423,10 @@
 
         .chat-panel {
             overflow: hidden;
+            background:
+                radial-gradient(circle at top right, rgba(228, 134, 171, 0.18), transparent 26%),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.98), rgba(16, 16, 16, 0.96));
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .chat-scroller {
@@ -402,22 +454,28 @@
         .chat-bubble {
             width: min(100%, 560px);
             padding: 14px 16px 12px;
-            border-radius: 22px;
+            border-radius: 20px;
             line-height: 1.65;
             font-size: 1rem;
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
 
         .chat-message.user .chat-bubble {
-            background: linear-gradient(135deg, var(--sage), #3a8f75);
-            color: white;
-            border-bottom-right-radius: 8px;
+            background: var(--canvas-white);
+            color: var(--ink);
+            border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .chat-message.assistant .chat-bubble {
-            background: white;
+            background: var(--soft-linen);
             color: var(--ink);
-            border: 1px solid rgba(56, 67, 47, 0.08);
-            border-bottom-left-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .chat-message:hover .chat-bubble {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.2);
         }
 
         .chat-body {
@@ -435,20 +493,20 @@
             align-items: center;
             gap: 10px;
             margin-top: 10px;
-            color: rgba(31, 42, 31, 0.58);
+            color: rgba(0, 0, 0, 0.56);
             font-size: 0.86rem;
         }
 
         .chat-message.user .chat-meta {
-            color: rgba(255, 255, 255, 0.78);
+            color: rgba(0, 0, 0, 0.52);
             justify-content: flex-end;
         }
 
         .speaker-button,
         .retry-button {
             padding: 6px 10px;
-            background: rgba(45, 124, 104, 0.08);
-            color: var(--sage-deep);
+            background: rgba(0, 0, 0, 0.06);
+            color: var(--ink);
             font-size: 0.88rem;
         }
 
@@ -462,8 +520,8 @@
             gap: 10px;
             padding: 10px 14px;
             border-radius: 999px;
-            background: rgba(45, 124, 104, 0.08);
-            color: var(--sage-deep);
+            background: rgba(228, 134, 171, 0.12);
+            color: #8d4b6d;
             font-size: 0.94rem;
         }
 
@@ -495,9 +553,9 @@
             gap: 14px;
             padding: 14px 16px;
             margin: 0 18px 18px;
-            border-radius: 18px;
-            background: rgba(191, 145, 71, 0.1);
-            border: 1px solid rgba(191, 145, 71, 0.16);
+            border-radius: 20px;
+            background: rgba(228, 134, 171, 0.12);
+            border: 1px solid rgba(192, 106, 143, 0.16);
         }
 
         .summary-actions {
@@ -509,7 +567,7 @@
         .summary-button {
             min-height: 40px;
             padding: 0 16px;
-            background: var(--sage);
+            background: var(--neural-gradient);
             color: white;
             font-weight: 700;
         }
@@ -517,8 +575,9 @@
         .ghost-button {
             min-height: 40px;
             padding: 0 16px;
-            background: rgba(255, 255, 255, 0.66);
+            background: rgba(255, 255, 255, 0.88);
             color: var(--ink);
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         .input-dock {
@@ -527,7 +586,7 @@
             z-index: 10;
             padding-top: 16px;
             padding-bottom: calc(10px + var(--keyboard-offset));
-            background: linear-gradient(180deg, rgba(245, 239, 228, 0) 0%, rgba(245, 239, 228, 0.92) 32%, rgba(245, 239, 228, 1) 100%);
+            background: linear-gradient(180deg, rgba(245, 245, 245, 0) 0%, rgba(245, 245, 245, 0.9) 32%, rgba(245, 245, 245, 1) 100%);
         }
 
         .input-panel {
@@ -536,22 +595,26 @@
             gap: 10px;
             align-items: center;
             padding: 12px;
+            background:
+                linear-gradient(135deg, rgba(228, 134, 171, 0.08), rgba(255, 255, 255, 0.96)),
+                rgba(255, 255, 255, 0.9);
         }
 
         .text-input {
             width: 100%;
-            min-height: 52px;
-            padding: 0 18px;
-            border-radius: 999px;
-            border: 1px solid rgba(56, 67, 47, 0.12);
+            min-height: 56px;
+            padding: 0 22px;
+            border-radius: 80px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
             background: white;
             color: var(--ink);
             outline: none;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
         }
 
         .text-input:focus {
-            border-color: rgba(45, 124, 104, 0.36);
-            box-shadow: 0 0 0 4px rgba(45, 124, 104, 0.12);
+            border-color: rgba(192, 106, 143, 0.36);
+            box-shadow: 0 0 0 4px rgba(228, 134, 171, 0.14);
         }
 
         .primary-button,
@@ -563,18 +626,20 @@
         }
 
         .primary-button {
-            background: linear-gradient(135deg, var(--sage), #4aa389);
+            background: var(--neural-gradient);
             color: white;
         }
 
         .secondary-button {
             background: white;
             color: var(--ink);
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         .danger-button {
             background: var(--rose-soft);
             color: var(--rose);
+            border: 1px solid rgba(192, 106, 143, 0.12);
         }
 
         .icon-button.is-recording {
@@ -611,7 +676,7 @@
         .transcript-label {
             display: inline-block;
             margin-bottom: 10px;
-            color: var(--sage-deep);
+            color: var(--ink);
             font-size: 0.9rem;
             font-weight: 700;
         }
@@ -619,8 +684,8 @@
         .transcript-text {
             min-height: 120px;
             padding: 14px 16px;
-            border-radius: 18px;
-            background: rgba(45, 124, 104, 0.06);
+            border-radius: 20px;
+            background: rgba(245, 245, 245, 0.9);
             line-height: 1.7;
             color: var(--ink);
             white-space: pre-wrap;
@@ -642,9 +707,9 @@
 
         .diagnosis-item {
             padding: 12px;
-            border-radius: 18px;
-            background: rgba(255, 255, 255, 0.68);
-            border: 1px solid rgba(56, 67, 47, 0.08);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         .diagnosis-row {
@@ -675,11 +740,11 @@
             bottom: 18px;
             z-index: 30;
             width: 160px;
-            border-radius: 18px;
+            border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 18px 36px rgba(45, 124, 104, 0.2);
-            border: 1px solid rgba(45, 124, 104, 0.2);
-            background: rgba(17, 25, 21, 0.9);
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.16);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: rgba(255, 255, 255, 0.92);
             touch-action: none;
         }
 
@@ -715,9 +780,10 @@
             height: 30px;
             border-radius: 50%;
             border: 0;
-            background: rgba(0, 0, 0, 0.55);
+            background: rgba(0, 0, 0, 0.7);
             color: white;
             cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
 
         .camera-restore {
@@ -761,7 +827,7 @@
             display: grid;
             place-items: center;
             padding: 20px;
-            background: rgba(31, 42, 31, 0.32);
+            background: rgba(0, 0, 0, 0.24);
             backdrop-filter: blur(10px);
         }
 
@@ -782,6 +848,32 @@
             gap: 10px;
             flex-wrap: wrap;
             margin-top: 18px;
+        }
+
+        .quality-promise {
+            padding: 16px 18px;
+            margin: 16px 0;
+            border-radius: 20px;
+            background:
+                linear-gradient(135deg, rgba(228, 134, 171, 0.14), rgba(255, 255, 255, 0.92)),
+                var(--canvas-white);
+            border: 1px solid rgba(192, 106, 143, 0.16);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.05);
+        }
+
+        .quality-promise strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .quality-promise ul {
+            margin: 8px 0 0;
+            padding-left: 20px;
+            font-size: 0.92rem;
+            line-height: 1.7;
+            color: var(--muted);
         }
 
         @keyframes pulse {
@@ -811,6 +903,11 @@
         }
 
         @media (max-width: 720px) {
+            .neural-top-banner {
+                width: min(100%, calc(100% - 12px));
+                margin-top: 10px;
+            }
+
             .page-shell {
                 width: min(100%, calc(100% - 12px));
                 padding-top: 12px;
@@ -845,6 +942,10 @@
                 flex-direction: column;
             }
 
+            .quality-promise {
+                margin-bottom: 12px;
+            }
+
             .primary-button,
             .secondary-button,
             .danger-button,
@@ -861,6 +962,7 @@
             JavaScript is required for Dr. Kash AI live consultation.
         </div>
     </noscript>
+    <div class="neural-top-banner">Neural-grade AI consultation with streaming replies, live voice, and a clinician-first interface.</div>
     <main class="page-shell">
         <section class="app-shell">
             <section id="startScreen" class="screen start-screen is-visible">
@@ -934,9 +1036,9 @@
                                 <p id="activityHint">Type or speak your symptoms. Dr. Kash responds in your selected language.</p>
                             </section>
 
-                            <div style="background:#f0fdf4; border-left:4px solid #22c55e; padding:15px; margin:16px 0; border-radius:8px;">
+                            <div class="quality-promise">
                               <strong>🩺 Dr. Kash Quality Promise</strong>
-                              <ul style="margin:8px 0 0 0; padding-left:20px; font-size:0.9rem;">
+                              <ul>
                                 <li>We prioritize accuracy over speed</li>
                                 <li>We always recommend seeing a real doctor</li>
                                 <li>We never guess — if unsure, we say so</li>

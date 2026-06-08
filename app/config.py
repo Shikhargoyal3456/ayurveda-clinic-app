@@ -121,6 +121,8 @@ class Settings:
     ollama_keep_alive: str
     gemini_api_key: str
     gemini_model: str
+    vertex_ai_project: str
+    vertex_ai_location: str
     # Google Maps API key for Places & Distance Matrix
     google_maps_api_key: str
     razorpay_key_id: str
@@ -265,8 +267,10 @@ def _build_settings() -> Settings:
         ollama_max_retries=_get_int("OLLAMA_MAX_RETRIES", 2),
         ollama_soft_timeout_seconds=_get_int("OLLAMA_SOFT_TIMEOUT_SECONDS", 18),
         ollama_keep_alive=os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
-        gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
+        gemini_api_key="",
         gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        vertex_ai_project=os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip(),
+        vertex_ai_location=os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1",
         google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", ""),
         razorpay_key_id=os.getenv("RAZORPAY_KEY_ID", ""),
         razorpay_key_secret=os.getenv("RAZORPAY_KEY_SECRET", ""),

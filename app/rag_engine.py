@@ -240,7 +240,7 @@ class AyurvedaRAGEngine:
 
     def warm_up_llm(self) -> dict[str, Any]:
         if GEMINI_API_KEY:
-            return {"llm_warmed": True, "message": "Gemini API key is configured.", "provider": "gemini"}
+            return {"llm_warmed": True, "message": "Vertex AI Gemini is configured.", "provider": "gemini"}
         if GROQ_API_KEY:
             return {"llm_warmed": True, "message": "Groq API key is configured.", "provider": "groq"}
         return {"llm_warmed": False, "message": "No remote AI provider is configured.", "provider": "fallback"}

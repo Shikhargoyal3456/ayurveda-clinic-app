@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 const { config } = require('../config');
 
 const GEMINI_MODELS = [
@@ -14,8 +14,8 @@ const GEMINI_MODELS = [
   'gemini-1.5-flash-8b',
 ];
 
-let genAI;
 const spendLedgerPath = path.join(__dirname, '..', '..', 'logs', 'node_ai_spend_guard.json');
+let genAIClient;
 
 const PRESCRIPTION_IMAGE_PROMPT = `You are Kash AI, a medical assistant for Kash AI Smart Clinic Platform.
 Analyze this prescription image and provide:
@@ -93,33 +93,177 @@ function enforceAiBudget() {
   fs.writeFileSync(spendLedgerPath, JSON.stringify(state, null, 2));
 }
 
-function getGeminiClient() {
-  if (!config.geminiApiKey) {
-    throw new Error('GEMINI_API_KEY is not configured.');
-  }
-  enforceAiBudget();
-  if (!genAI) {
-    genAI = new GoogleGenerativeAI(config.geminiApiKey);
-  }
-  return genAI;
+function isVertexAiConfigured() {
+  return Boolean(config.vertexAiProject);
 }
 
-async function tryGeminiWithFallback(contents) {
-  const client = getGeminiClient();
+function getGenAIClient() {
+  if (!isVertexAiConfigured()) {
+    throw new Error('VERTEX_AI_PROJECT is not configured.');
+  }
 
-  for (const modelName of GEMINI_MODELS) {
-    try {
-      const model = client.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(contents);
-      console.log(`Gemini responded using model ${modelName}`);
-      return result.response.text();
-    } catch (err) {
-      console.warn(`⚠️ Model ${modelName} failed: ${err.message}`);
-      continue;
+  if (!genAIClient) {
+    genAIClient = new GoogleGenAI({
+      vertexai: true,
+      project: config.vertexAiProject,
+      location: config.vertexAiLocation,
+    });
+  }
+
+  return genAIClient;
+}
+
+function buildPart(item) {
+  if (typeof item === 'string') {
+    return item;
+  }
+
+  if (item && typeof item === 'object' && item.inlineData) {
+    return {
+      inlineData: {
+        mimeType: item.inlineData.mimeType || 'image/jpeg',
+        data: item.inlineData.data,
+      },
+    };
+  }
+
+  if (item && typeof item === 'object' && item.text) {
+    return String(item.text);
+  }
+
+  return item;
+}
+
+function buildContents(input) {
+  if (typeof input === 'string') {
+    return input;
+  }
+
+  if (Array.isArray(input)) {
+    return input.map(buildPart);
+  }
+
+  if (input && typeof input === 'object' && Array.isArray(input.contents)) {
+    return input.contents;
+  }
+
+  return input;
+}
+
+function buildRequest(contents, options = {}) {
+  return {
+    model: options.model || config.geminiModel,
+    contents: buildContents(contents),
+  };
+}
+
+function extractTextFromResponse(response) {
+  if (!response) {
+    return '';
+  }
+
+  if (typeof response.text === 'string' && response.text.trim()) {
+    return response.text.trim();
+  }
+
+  const candidates = Array.isArray(response.candidates) ? response.candidates : [];
+  const parts = [];
+
+  for (const candidate of candidates) {
+    const contentParts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    for (const part of contentParts) {
+      if (part?.text) {
+        parts.push(String(part.text));
+      }
     }
   }
 
-  throw new Error('All Gemini models unavailable. Please try again later.');
+  return parts.join('\n').trim();
+}
+
+async function generateContent(contents, options = {}) {
+  enforceAiBudget();
+  const client = getGenAIClient();
+  const response = await client.models.generateContent(buildRequest(contents, options));
+  return response;
+}
+
+function createAggregateResponse(chunks) {
+  const text = chunks
+    .map((chunk) => extractTextFromResponse(chunk))
+    .filter(Boolean)
+    .join('')
+    .trim();
+
+  return {
+    text,
+    candidates: chunks.flatMap((chunk) => (Array.isArray(chunk?.candidates) ? chunk.candidates : [])),
+    chunks,
+  };
+}
+
+async function streamContent(contents, options = {}) {
+  enforceAiBudget();
+  const client = getGenAIClient();
+  const rawStream = await client.models.generateContentStream(buildRequest(contents, options));
+  const seenChunks = [];
+  let resolveResponse;
+  let rejectResponse;
+
+  const response = new Promise((resolve, reject) => {
+    resolveResponse = resolve;
+    rejectResponse = reject;
+  });
+
+  async function* wrappedStream() {
+    try {
+      for await (const chunk of rawStream) {
+        seenChunks.push(chunk);
+        yield chunk;
+      }
+      resolveResponse(createAggregateResponse(seenChunks));
+    } catch (error) {
+      rejectResponse(error);
+      throw error;
+    }
+  }
+
+  return {
+    stream: wrappedStream(),
+    response,
+  };
+}
+
+async function tryGeminiWithFallback(contents, options = {}) {
+  if (!isVertexAiConfigured()) {
+    throw new Error('VERTEX_AI_PROJECT is not configured.');
+  }
+
+  let lastError;
+  const modelNames = [
+    options.model,
+    config.geminiModel,
+    config.geminiVisionModel,
+    config.geminiVisionFallbackModel,
+    ...GEMINI_MODELS,
+  ].filter((value, index, array) => value && array.indexOf(value) === index);
+
+  for (const modelName of modelNames) {
+    try {
+      const response = await generateContent(contents, { ...options, model: modelName });
+      const text = extractTextFromResponse(response);
+      if (!text) {
+        throw new Error(`Empty response from model ${modelName}`);
+      }
+      console.log(`Vertex AI Gemini responded using model ${modelName}`);
+      return text;
+    } catch (err) {
+      lastError = err;
+      console.warn(`Model ${modelName} failed: ${err.message}`);
+    }
+  }
+
+  throw new Error(`All Gemini models unavailable. ${lastError ? lastError.message : 'Please try again later.'}`);
 }
 
 async function answerPatientQuery({ patient, message }) {
@@ -138,7 +282,9 @@ ${message}
 }
 
 async function generateAIReply(contents) {
-  const text = await tryGeminiWithFallback(contents);
+  const text = await tryGeminiWithFallback(contents, {
+    model: config.geminiModel,
+  });
   return text.trim();
 }
 
@@ -147,15 +293,20 @@ async function analyzePrescriptionImage(imageBase64, mimeType) {
     throw new Error('Prescription image is required.');
   }
 
-  const text = await tryGeminiWithFallback([
-    PRESCRIPTION_IMAGE_PROMPT,
-    {
-      inlineData: {
-        data: imageBase64,
-        mimeType: mimeType || 'image/jpeg',
+  const text = await tryGeminiWithFallback(
+    [
+      PRESCRIPTION_IMAGE_PROMPT,
+      {
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType || 'image/jpeg',
+        },
       },
+    ],
+    {
+      model: config.geminiVisionModel || config.geminiModel,
     },
-  ]);
+  );
 
   return text.trim();
 }
@@ -164,6 +315,10 @@ module.exports = {
   GEMINI_MODELS,
   analyzePrescriptionImage,
   answerPatientQuery,
+  extractTextFromResponse,
   generateAIReply,
+  generateContent,
+  isVertexAiConfigured,
+  streamContent,
   tryGeminiWithFallback,
 };

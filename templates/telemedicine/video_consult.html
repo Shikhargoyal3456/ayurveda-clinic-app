@@ -1,7 +1,12 @@
 {% extends "patient_simple_base.html" %}
 {% block title %}Doctor Call{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/neuralink.css">
+<style>.tele-neural-banner{margin:0 0 24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}.simple-card,.notice,.ai-side-panel{border-radius:20px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.simple-card:hover,.notice:hover,.ai-side-panel:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12)}.primary-btn,.secondary-btn,.danger-btn,.btn{border-radius:80px}.video-shell video{border-radius:20px!important}</style>
+{% endblock %}
 {% block page %}
 {% from "components/skeletons.html" import card_list %}
+<div class="tele-neural-banner">Neural-grade video consultation with calmer controls, cleaner panels, and uninterrupted live care flow.</div>
 <section class="simple-card">
     <h1 class="title">Doctor Call</h1>
     <p class="subtitle">You are speaking with Dr. {{ doctor_name }}.</p>

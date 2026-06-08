@@ -105,8 +105,20 @@ def root(request: Request, db: Session = Depends(get_db)):
             ctx = patient_dashboard_context(request, portal_user)
             return render_template(templates, request, "patient_home.html", ctx)
         return RedirectResponse(url=dashboard_path_for_role(role_value), status_code=303)
-    ctx = patient_dashboard_context(request)
-    return render_template(templates, request, "patient_home.html", ctx)
+    return render_template(
+        templates,
+        request,
+        "landing.html",
+        {
+            "seo_title": "Kash AI | Healthcare intelligence powered by AI",
+            "seo_description": "Order medicines, consult doctors, analyze reports, and manage your health journey in one calm, intelligent platform.",
+            "active_page": "home",
+            "is_guest_user": True,
+            "user_name": "Visitor",
+            "user_role": "AI-powered healthcare",
+            "avatar_label": "KA",
+        },
+    )
 
 
 @router.get("/my-health")

@@ -3,7 +3,14 @@
 {% block page %}
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
-    <section class="page-content">
+    <section class="page-content">        <div class="emr-neural-banner">Neural-grade EMR workspace with calmer records, cleaner actions, and faster clinical flow.</div>
+        <style class="emr-neural-inline">
+        .emr-neural-banner{margin:0 0 24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}
+        .page-content .card,.page-content .metric-card,.page-content .responsive-table-card,.page-content .page-header,.page-content .emr-hero-card,.page-content .emr-mini-panel,.page-content .appointment-row,.page-content .info-chip,.page-content .checkbox-card,.page-content .feature-card,.page-content .list-row,.page-content .filter-bar,.page-content .patient-registry-card,.page-content .simple-registration-card,.page-content .surface-tint{border-radius:20px !important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+        .page-content .card:hover,.page-content .metric-card:hover,.page-content .responsive-table-card:hover,.page-content .page-header:hover,.page-content .emr-hero-card:hover,.page-content .emr-mini-panel:hover,.page-content .appointment-row:hover,.page-content .info-chip:hover,.page-content .checkbox-card:hover,.page-content .feature-card:hover,.page-content .list-row:hover,.page-content .filter-bar:hover,.page-content .patient-registry-card:hover,.page-content .simple-registration-card:hover,.page-content .surface-tint:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12);border-color:rgba(192,106,143,.2)}
+        .page-content .btn,.page-content .btn-pill,.page-content button{border-radius:80px !important}
+        .page-content table tbody tr:hover{background:rgba(228,134,171,.06)}
+        </style>
         <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Panchakarma Scheduler</h1><p>Plan procedures, assign staff, and document progress in one treatment calendar.</p></div></div>
         <section class="card surface-tint mb-4">
             <div class="page-header mb-3">
@@ -42,3 +49,5 @@
 .panchakarma-calendar{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}.schedule-cell{min-height:220px;align-content:start}.schedule-cell hr{border:0;border-top:1px solid #e2e8f0;margin:10px 0 14px}
 </style>
 {% endblock %}
+
+

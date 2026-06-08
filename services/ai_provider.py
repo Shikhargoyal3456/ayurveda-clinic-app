@@ -26,13 +26,16 @@ class AIProvider(Enum):
 
 logger = logging.getLogger("ai_provider")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip()
+VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "30"))
 _AI_SPEND_LOCK = Lock()
 _AI_SPEND_LEDGER = BASE_DIR / "logs" / "ai_spend_guard.json"
+_GENAI_CLIENT_LOCK = Lock()
+_GENAI_CLIENT: genai.Client | None = None
 
 _PHI_FIELDS = {
     "patient_name",
@@ -101,6 +104,131 @@ def ai_budget_fallback_message() -> str:
     return "AI service is currently unavailable. Please try again later or use manual entry."
 
 
+def is_gemini_configured() -> bool:
+    return bool(VERTEX_AI_PROJECT)
+
+
+def _get_genai_client() -> genai.Client:
+    global _GENAI_CLIENT
+    if _GENAI_CLIENT is not None:
+        return _GENAI_CLIENT
+    if not VERTEX_AI_PROJECT:
+        raise RuntimeError("VERTEX_AI_PROJECT is not configured.")
+    with _GENAI_CLIENT_LOCK:
+        if _GENAI_CLIENT is None:
+            _GENAI_CLIENT = genai.Client(
+                vertexai=True,
+                project=VERTEX_AI_PROJECT,
+                location=VERTEX_AI_LOCATION,
+                http_options=types.HttpOptions(api_version="v1"),
+            )
+        return _GENAI_CLIENT
+
+
+GEMINI_API_KEY = ""
+
+
+def build_gemini_part(data: bytes, mime_type: str) -> types.Part:
+    return types.Part.from_bytes(data=data, mime_type=mime_type)
+
+
+def _model_candidates(explicit_model: str | None = None, model_candidates: list[str] | None = None) -> list[str]:
+    models: list[str] = []
+    for candidate in [explicit_model, *(model_candidates or []), GEMINI_MODEL]:
+        model_name = str(candidate or "").strip()
+        if model_name and model_name not in models:
+            models.append(model_name)
+    return models or [GEMINI_MODEL]
+
+
+def generate_gemini_content(
+    contents: str | list[Any],
+    *,
+    system_instruction: str = "",
+    temperature: float = 0.3,
+    response_mime_type: str | None = None,
+    max_output_tokens: int = 2048,
+    model_name: str | None = None,
+    model_candidates: list[str] | None = None,
+) -> str:
+    if not is_gemini_configured():
+        raise RuntimeError("Vertex AI Gemini is not configured.")
+    _enforce_ai_budget()
+    client = _get_genai_client()
+
+    last_error: Exception | None = None
+    for candidate in _model_candidates(model_name, model_candidates):
+        try:
+            config_kwargs: dict[str, Any] = {
+                "temperature": temperature,
+                "max_output_tokens": max_output_tokens,
+                "system_instruction": system_instruction or None,
+                "http_options": types.HttpOptions(timeout=AI_TIMEOUT * 1000),
+            }
+            if response_mime_type:
+                config_kwargs["response_mime_type"] = response_mime_type
+            response = client.models.generate_content(
+                model=candidate,
+                contents=contents,
+                config=types.GenerateContentConfig(**config_kwargs),
+            )
+            text = str(getattr(response, "text", "") or "").strip()
+            if text:
+                return text
+            raise RuntimeError(f"Gemini returned an empty response for model {candidate}.")
+        except Exception as exc:
+            last_error = exc
+            continue
+    if last_error is not None:
+        raise RuntimeError(f"Vertex AI Gemini request failed: {last_error}") from last_error
+    raise RuntimeError("Vertex AI Gemini request failed.")
+
+
+def generate_gemini_content_stream(
+    contents: str | list[Any],
+    *,
+    system_instruction: str = "",
+    temperature: float = 0.3,
+    max_output_tokens: int = 2048,
+    model_name: str | None = None,
+    model_candidates: list[str] | None = None,
+) -> Iterator[str]:
+    if not is_gemini_configured():
+        raise RuntimeError("Vertex AI Gemini is not configured.")
+    _enforce_ai_budget()
+    client = _get_genai_client()
+
+    last_error: Exception | None = None
+    for candidate in _model_candidates(model_name, model_candidates):
+        try:
+            config_kwargs: dict[str, Any] = {
+                "temperature": temperature,
+                "max_output_tokens": max_output_tokens,
+                "system_instruction": system_instruction or None,
+                "http_options": types.HttpOptions(timeout=AI_TIMEOUT * 1000),
+            }
+            stream = client.models.generate_content_stream(
+                model=candidate,
+                contents=contents,
+                config=types.GenerateContentConfig(**config_kwargs),
+            )
+            yielded = False
+            for chunk in stream:
+                text = str(getattr(chunk, "text", "") or "")
+                if text:
+                    yielded = True
+                    yield text
+            if yielded:
+                return
+            raise RuntimeError(f"Gemini stream returned no content for model {candidate}.")
+        except Exception as exc:
+            last_error = exc
+            continue
+    if last_error is not None:
+        raise RuntimeError(f"Vertex AI Gemini stream failed: {last_error}") from last_error
+    raise RuntimeError("Vertex AI Gemini stream failed.")
+
+
 def chat_with_gemini(
     system_prompt: str | List[Dict[str, str]],
     user_prompt: str = "",
@@ -109,13 +237,9 @@ def chat_with_gemini(
     max_output_tokens: int = 2048,
 ) -> str:
     """
-    Call Gemini via google-genai. Returns response text.
+    Call Gemini via Vertex AI. Returns response text.
     Raises RuntimeError if the call fails.
     """
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY is not configured.")
-    _enforce_ai_budget()
-
     if isinstance(system_prompt, list):
         prompt_parts = []
         for message in system_prompt:
@@ -132,29 +256,16 @@ def chat_with_gemini(
         system_prompt = ""
         user_prompt = "\n\n".join(prompt_parts)
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
-
     start_time = time.time()
-    config_kwargs = {
-        "http_options": types.HttpOptions(timeout=AI_TIMEOUT * 1000),
-        "system_instruction": system_prompt,
-        "temperature": temperature,
-        "max_output_tokens": max_output_tokens,
-    }
-    if response_mime_type:
-        config_kwargs["response_mime_type"] = response_mime_type
-
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=user_prompt,
-        config=types.GenerateContentConfig(**config_kwargs),
+    text = generate_gemini_content(
+        user_prompt,
+        system_instruction=system_prompt,
+        temperature=temperature,
+        response_mime_type=response_mime_type,
+        max_output_tokens=max_output_tokens,
     )
     elapsed = time.time() - start_time
     logger.info("Gemini responded in %.2fs using model=%s", elapsed, GEMINI_MODEL)
-
-    text = response.text or ""
-    if not text.strip():
-        raise RuntimeError("Gemini returned an empty response.")
     return text.strip()
 
 
@@ -164,10 +275,6 @@ def stream_with_gemini(
     temperature: float = 0.3,
     max_output_tokens: int = 2048,
 ) -> Iterator[str]:
-    if not GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY is not configured.")
-    _enforce_ai_budget()
-
     if isinstance(system_prompt, list):
         prompt_parts = []
         for message in system_prompt:
@@ -184,21 +291,12 @@ def stream_with_gemini(
         system_prompt = ""
         user_prompt = "\n\n".join(prompt_parts)
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    stream = client.models.generate_content_stream(
-        model=GEMINI_MODEL,
-        contents=user_prompt,
-        config=types.GenerateContentConfig(
-            http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
-            system_instruction=system_prompt,
-            temperature=temperature,
-            max_output_tokens=max_output_tokens,
-        ),
+    yield from generate_gemini_content_stream(
+        user_prompt,
+        system_instruction=system_prompt,
+        temperature=temperature,
+        max_output_tokens=max_output_tokens,
     )
-    for chunk in stream:
-        text = str(getattr(chunk, "text", "") or "")
-        if text:
-            yield text
 
 
 def chat_with_groq(
@@ -250,7 +348,7 @@ def chat_with_fallback(
     Use the configured remote AI provider without falling back to Ollama.
     Gemini is preferred when configured; Groq is used as the secondary provider.
     """
-    if GEMINI_API_KEY:
+    if is_gemini_configured():
         return chat_with_gemini(
             system_prompt,
             user_prompt,
@@ -260,7 +358,7 @@ def chat_with_fallback(
         ), AIProvider.GEMINI
     if GROQ_API_KEY:
         return chat_with_groq(system_prompt, user_prompt, temperature), AIProvider.GROQ
-    raise RuntimeError("Neither GEMINI_API_KEY nor GROQ_API_KEY is configured. AI provider is unavailable.")
+    raise RuntimeError("Neither Vertex AI Gemini nor Groq is configured. AI provider is unavailable.")
 
 
 @cache_result(ttl=3600)

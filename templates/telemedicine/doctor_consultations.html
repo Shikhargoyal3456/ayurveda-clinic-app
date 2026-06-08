@@ -2,6 +2,7 @@
 {% block title %}My Consultations{% endblock %}
 {% block page %}
 <section class="doctor-consultations-shell">
+    <div class="tele-neural-banner">Neural-grade doctor telemedicine queue with clearer session priority, calmer status tracking, and faster launch controls.</div>
     <div class="consultations-hero">
         <div>
             <p class="eyebrow">Telemedicine workspace</p>
@@ -75,7 +76,12 @@
 </section>
 {% endblock %}
 {% block extra_head %}
+<link rel="stylesheet" href="/static/css/neuralink.css">
 <style>
+.tele-neural-banner{margin-bottom:24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}
+.consultations-hero,.stat-card,.consultation-card{border-radius:20px!important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+.consultations-hero:hover,.stat-card:hover,.consultation-card:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12)}
+.hero-actions .btn,.consultation-actions .btn{border-radius:80px!important}
 .doctor-consultations-shell {
     max-width: 1180px;
     margin: 0 auto;

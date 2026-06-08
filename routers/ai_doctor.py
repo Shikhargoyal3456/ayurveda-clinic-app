@@ -5,12 +5,12 @@ import uuid
 from collections import defaultdict
 from time import time
 
-import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from services.ai_provider import generate_gemini_content, is_gemini_configured
 from shared.template_engine import render_template, templates
 
 
@@ -18,13 +18,10 @@ load_dotenv()
 
 router = APIRouter(tags=["ai-doctor"])
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
 
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
-FALLBACK_GEMINI_MODEL = "gemini-2.5-flash-exp"
+FALLBACK_GEMINI_MODEL = "gemini-2.5-flash"
 MAX_HISTORY_MESSAGES = 100
 MAX_MESSAGE_CHARS = 2000
 INDIA_EMERGENCY_NUMBERS = """
@@ -129,36 +126,34 @@ def _chunk_text(text: str, size: int = 180) -> list[str]:
     clean = str(text or "")
     return [clean[index:index + size] for index in range(0, len(clean), size)] or [""]
 
-def _generate_gemini_content(prompt: str):
-    models_to_try = [GEMINI_MODEL, DEFAULT_GEMINI_MODEL, FALLBACK_GEMINI_MODEL]
-    for model_name in models_to_try:
-        try:
-            model = genai.GenerativeModel(model_name)
-            return model.generate_content(prompt)
-        except Exception:
-            continue
-    raise HTTPException(status_code=502, detail="Gemini request failed")
+def _generate_gemini_content(prompt: str) -> str:
+    try:
+        return generate_gemini_content(
+            prompt,
+            model_name=GEMINI_MODEL,
+            model_candidates=[DEFAULT_GEMINI_MODEL, FALLBACK_GEMINI_MODEL],
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Gemini request failed: {exc}") from exc
 
 @router.post("/api/doctor/chat", response_model=ChatResponse)
 async def doctor_chat(payload: ChatRequest, request: Request):
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in .env")
+    if not is_gemini_configured():
+        raise HTTPException(status_code=500, detail="Vertex AI Gemini is not configured. Set VERTEX_AI_PROJECT and authenticate with ADC.")
     
     prompt = f"{SYSTEM_PROMPT}\n\nPatient: {payload.message}\n\nDr. Kash:"
-    response = _generate_gemini_content(prompt)
-    raw_text = getattr(response, "text", "") or ""
+    raw_text = _generate_gemini_content(prompt)
     reply, diagnosis = _extract_reply_and_diagnosis(raw_text)
     reply = _append_safety_disclaimer(reply)
     return {"reply": reply, "diagnosis": diagnosis}
 
 @router.post("/api/doctor/chat/stream")
 async def doctor_chat_stream(payload: ChatRequest, request: Request):
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in .env")
+    if not is_gemini_configured():
+        raise HTTPException(status_code=500, detail="Vertex AI Gemini is not configured. Set VERTEX_AI_PROJECT and authenticate with ADC.")
     
     prompt = f"{SYSTEM_PROMPT}\n\nPatient: {payload.message}\n\nDr. Kash:"
-    response = _generate_gemini_content(prompt)
-    raw_text = getattr(response, "text", "") or ""
+    raw_text = _generate_gemini_content(prompt)
     reply, diagnosis = _extract_reply_and_diagnosis(raw_text)
     reply = _append_safety_disclaimer(reply)
     

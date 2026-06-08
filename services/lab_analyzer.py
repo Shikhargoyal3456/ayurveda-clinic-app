@@ -35,14 +35,13 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
     fitz = None
 
-try:  # pragma: no cover
-    from google import genai
-    from google.genai import types
-except Exception:  # pragma: no cover
-    genai = None
-    types = None
-
-from services.ai_provider import GEMINI_API_KEY, GEMINI_MODEL, AI_TIMEOUT, call_ai_json_with_retry
+from services.ai_provider import (
+    GEMINI_MODEL,
+    build_gemini_part,
+    call_ai_json_with_retry,
+    generate_gemini_content,
+    is_gemini_configured,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -316,30 +315,23 @@ class LabReportAnalyzer:
         return bool(shutil.which("tesseract"))
 
     def _extract_text_with_gemini_vision(self, file_bytes: bytes, file_type: str = "") -> str:
-        if genai is None or types is None:
-            logger.warning("Gemini OCR fallback unavailable because google-genai is not importable.")
-            return ""
-        if not GEMINI_API_KEY:
-            logger.warning("Gemini OCR fallback unavailable because GEMINI_API_KEY is not configured.")
+        if not is_gemini_configured():
+            logger.warning("Gemini OCR fallback unavailable because Vertex AI Gemini is not configured.")
             return ""
         mime_type = file_type.strip() or "image/png"
         if "/" not in mime_type:
             mime_type = "image/png"
         try:
-            client = genai.Client(api_key=GEMINI_API_KEY)
-            response = client.models.generate_content(
-                model=GEMINI_MODEL,
-                contents=[
+            response_text = generate_gemini_content(
+                [
                     "Extract all readable text from this lab report image. Preserve line breaks and test/value pairs. Return only the extracted text.",
-                    types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
+                    build_gemini_part(file_bytes, mime_type),
                 ],
-                config=types.GenerateContentConfig(
-                    http_options=types.HttpOptions(timeout=AI_TIMEOUT * 1000),
-                    temperature=0.0,
-                    max_output_tokens=4096,
-                ),
+                temperature=0.0,
+                max_output_tokens=4096,
+                model_name=GEMINI_MODEL,
             )
-            cleaned = self._normalize_extracted_text(response.text or "")
+            cleaned = self._normalize_extracted_text(response_text or "")
             if not cleaned:
                 logger.warning("Gemini OCR fallback returned no readable text.")
             return cleaned

@@ -278,7 +278,7 @@ def _structured_case_value(value: object) -> str:
                 return extracted
         return ""
 
-    if isinstance(parsed, list):
+    if isinstance(parsed, (list, tuple, set)):
         values = [_structured_case_value(item) for item in parsed]
         return ", ".join(item for item in values if item)
 
@@ -323,6 +323,13 @@ def _case_ai_payload(case: CaseSheet) -> dict[str, object]:
     }
 
 
+def _normalize_case_ai_payload(payload: dict[str, object]) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for key, value in payload.items():
+        normalized[str(key)] = _structured_case_value(value)
+    return normalized
+
+
 def _patient_context_text(case: CaseSheet) -> str:
     patient = case.patient
     return (
@@ -365,7 +372,7 @@ def _answer_needs_retry(answer: object) -> bool:
 def _build_case_ai_answer(case: CaseSheet, request: Request | None = None, override_mode: str | None = None) -> dict[str, object]:
     doctor = getattr(case.patient, "doctor", None)
     effective_mode = _doctor_prescription_mode(request, doctor, override_mode=override_mode)
-    payload = _case_ai_payload(case)
+    payload = _normalize_case_ai_payload(_case_ai_payload(case))
     result = generate_role_based_prescription_sync(payload, effective_mode)
     rendered = str(result.get("rendered_prescription") or "").strip()
     prescription_payload = result.get("prescription")

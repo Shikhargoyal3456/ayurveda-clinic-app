@@ -47,10 +47,10 @@ def main() -> int:
         print(f"[ERROR] Database connectivity: {exc}")
         return 1
 
-    if settings.gemini_api_key:
-        print("[OK] Gemini API key configured")
+    if settings.vertex_ai_project:
+        print(f"[OK] Vertex AI configured for project: {settings.vertex_ai_project}")
     else:
-        print("[WARN] Gemini API key is not configured")
+        print("[WARN] Vertex AI is not configured")
 
     if GROQ_API_KEY:
         print("[OK] Groq API key configured")

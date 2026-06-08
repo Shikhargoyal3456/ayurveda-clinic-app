@@ -16,6 +16,11 @@ from fastapi.concurrency import run_in_threadpool
 logger = logging.getLogger(__name__)
 
 
+def _is_placeholder_recipient(recipient: str) -> bool:
+    normalized = str(recipient or "").strip().lower()
+    return normalized.endswith("@example.com")
+
+
 def _support_phone() -> str:
     return os.getenv("SUPPORT_PHONE", "9350397175").strip() or "9350397175"
 
@@ -42,6 +47,20 @@ class EmailService:
     def is_configured(self) -> bool:
         return bool(self.sender_email and self.sender_password)
 
+    def missing_config_fields(self) -> list[str]:
+        missing: list[str] = []
+        if not self.sender_email:
+            missing.append("EMAIL_USER")
+        if not self.sender_password:
+            missing.append("EMAIL_PASSWORD")
+        return missing
+
+    def configuration_error_message(self) -> str:
+        missing = self.missing_config_fields()
+        if not missing:
+            return ""
+        return f"Email is not configured. Missing required setting(s): {', '.join(missing)}."
+
     def _send(
         self,
         subject: str,
@@ -53,9 +72,19 @@ class EmailService:
     ) -> dict[str, object]:
         if not recipient:
             return {"success": False, "skipped": True, "reason": "missing_recipient"}
+        if _is_placeholder_recipient(recipient):
+            logger.warning("Skipping email send to placeholder recipient: %s", recipient)
+            return {"success": False, "skipped": True, "reason": "placeholder_recipient"}
         if not self.is_configured():
-            logger.info("Email skipped because SMTP is not configured.")
-            return {"success": False, "skipped": True, "reason": "smtp_not_configured"}
+            error_message = self.configuration_error_message()
+            logger.warning("%s", error_message)
+            return {
+                "success": False,
+                "skipped": True,
+                "reason": "smtp_not_configured",
+                "error": error_message,
+                "missing_fields": self.missing_config_fields(),
+            }
 
         message = MIMEMultipart("mixed")
         message["Subject"] = subject

@@ -1,9 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}Data Quality | Kash AI{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/neuralink.css"><style>.emr-neural-banner{margin:0 0 24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}.page-content .card,.page-content .page-header,.page-content .info-chip{border-radius:20px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.page-content .card:hover,.page-content .page-header:hover,.page-content .info-chip:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12)}</style>{% endblock %}
 {% block page %}
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">
+        <div class="emr-neural-banner">Neural-grade EMR workspace with calmer records, cleaner actions, and faster clinical flow.</div>
         <div class="page-header"><div><p class="eyebrow">EMR module</p><h1 class="h2">Data Quality</h1><p>Flag missing demographics, duplicate records, and incomplete EMR profile coverage.</p></div></div>
         <div class="content-grid-2">
             <article class="card">

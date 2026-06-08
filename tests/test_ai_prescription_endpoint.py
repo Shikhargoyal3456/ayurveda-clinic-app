@@ -78,6 +78,24 @@ async def test_case_generate_ai_handles_structured_dict_payloads(
     assert "Charaka Samhita" in payload["ai_view"]["sources"]
 
 
+def test_case_generate_ai_normalizes_list_payloads_without_type_errors():
+    payload = cases_router._normalize_case_ai_payload(
+        {
+            "prakriti": ["vata", "pitta"],
+            "diagnosis": ["Migraine", "Tension headache"],
+            "symptoms": ["Headache", {"complaint": "Nausea"}],
+            "notes": {"notes": ["Sensitive to light", "Poor sleep"]},
+            "followup_notes": ["Review in 5 days"],
+        }
+    )
+
+    assert payload["prakriti"] == "vata, pitta"
+    assert payload["diagnosis"] == "Migraine, Tension headache"
+    assert payload["symptoms"] == "Headache, Nausea"
+    assert payload["notes"] == "Sensitive to light, Poor sleep"
+    assert payload["followup_notes"] == "Review in 5 days"
+
+
 async def test_ai_prescription_endpoint_routes_mode_override(
     authenticated_client,
     db_session,

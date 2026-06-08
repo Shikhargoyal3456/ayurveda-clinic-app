@@ -5,14 +5,8 @@ import wave
 
 import requests
 from dotenv import load_dotenv
-
-try:
-    import google.generativeai as genai
-except Exception as exc:  # pragma: no cover - import failure is reported at runtime
-    genai = None
-    GEMINI_IMPORT_ERROR = exc
-else:
-    GEMINI_IMPORT_ERROR = None
+from google import genai
+from google.genai import types
 
 
 def print_success(name: str) -> None:
@@ -38,17 +32,22 @@ def create_silent_wav_base64(duration_ms: int = 250, sample_rate: int = 16000) -
 
 
 def test_gemini() -> None:
-    name = "GEMINI_API_KEY"
+    name = "VERTEX_AI_PROJECT"
     try:
-        api_key = os.getenv(name)
-        if not api_key:
+        project = os.getenv(name) or os.getenv("GOOGLE_CLOUD_PROJECT")
+        location = os.getenv("VERTEX_AI_LOCATION", "us-central1")
+        if not project:
             raise RuntimeError("Missing environment variable")
-        if genai is None:
-            raise RuntimeError(f"google-generativeai import failed: {GEMINI_IMPORT_ERROR}")
-
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-2.5-flash")
-        response = model.generate_content("Say hello")
+        client = genai.Client(
+            vertexai=True,
+            project=project,
+            location=location,
+            http_options=types.HttpOptions(api_version="v1"),
+        )
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents="Say hello",
+        )
         text = getattr(response, "text", "") or ""
         if not text.strip():
             raise RuntimeError("Empty response from Gemini")

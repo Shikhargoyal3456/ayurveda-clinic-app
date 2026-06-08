@@ -34,6 +34,8 @@ class ImagePreprocessor:
 
     def enhance_data_url(self, image_data: str, mime_type: str = "image/jpeg") -> dict[str, Any]:
         payload_mime, raw_bytes = self._decode_data_url(image_data, mime_type)
+        if Image is None:
+            return self._passthrough_payload(raw_bytes, payload_mime, applied_steps=["passthrough"])
         image_bytes, image = self._load_image_bytes(raw_bytes, payload_mime)
         quality_before = self._score_image_quality(image)
 
@@ -60,6 +62,26 @@ class ImagePreprocessor:
                 "roi_detection",
                 "deskew",
             ],
+        }
+
+    def _passthrough_payload(self, raw_bytes: bytes, mime_type: str, *, applied_steps: list[str]) -> dict[str, Any]:
+        encoded = base64.b64encode(raw_bytes).decode("utf-8")
+        fallback_score = {
+            "overall_score": 60,
+            "contrast_score": 60,
+            "sharpness_score": 60,
+            "brightness_score": 60,
+            "noise_score": 60,
+            "handwriting_clarity_score": 60,
+        }
+        return {
+            "mime_type": mime_type,
+            "image_data": f"data:{mime_type};base64,{encoded}",
+            "image_base64": encoded,
+            "source_image_quality": fallback_score["overall_score"],
+            "image_quality_breakdown": fallback_score,
+            "quality_before": fallback_score,
+            "applied_steps": applied_steps,
         }
 
     def _decode_data_url(self, image_data: str, fallback_mime: str) -> tuple[str, bytes]:

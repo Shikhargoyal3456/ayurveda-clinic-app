@@ -4,12 +4,12 @@ import re
 from collections import defaultdict
 from time import time
 
-import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from app.auth import ensure_csrf_token, pop_flash, verify_csrf
+from services.ai_provider import build_gemini_part, generate_gemini_content, is_gemini_configured
 from shared.template_engine import render_template, templates
 
 
@@ -17,17 +17,12 @@ load_dotenv()
 
 router = APIRouter(tags=["patient-tools"])
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
 DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
-FALLBACK_GEMINI_MODEL = "gemini-2.5-flash-exp"
+FALLBACK_GEMINI_MODEL = "gemini-2.5-flash"
 MAX_TEXT_CHARS = 2500
 MAX_IMAGE_BYTES = 8 * 1024 * 1024
 JSON_BLOCK_PATTERN = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL | re.IGNORECASE)
-
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-
 
 SYMPTOM_ANALYZER_PROMPT = """You are Dr. Kash, an AI symptom checker. Analyze the patient's symptoms and provide:
 
@@ -193,33 +188,38 @@ def _normalize_diet_payload(payload: dict) -> dict:
     }
 
 
-def _generate_content(parts):
-    last_error: Exception | None = None
-    for model_name in _pick_models():
-        try:
-            model = genai.GenerativeModel(model_name)
-            return model.generate_content(parts)
-        except Exception as exc:
-            last_error = exc
-            continue
-    detail = "Gemini request failed"
-    if last_error:
-        detail = f"{detail}: {last_error}"
-    raise HTTPException(status_code=502, detail=detail)
+def _diet_image_fallback_payload(has_description: bool) -> dict:
+    summary = (
+        "We could not confidently read the uploaded meal photo, so this assessment is based on your written meal description only."
+        if has_description
+        else "We could not confidently identify the meal from the uploaded photo. Please upload a clearer image or add a short meal description."
+    )
+    recommendations = (
+        ["Retake the meal photo in good lighting.", "Add a quick written description for a more accurate nutrition estimate."]
+        if not has_description
+        else ["Retake the meal photo in good lighting if you want image-based analysis.", "Use the written nutrition guidance below as a general estimate."]
+    )
+    return {
+        "summary": summary,
+        "calorie_estimate": "Not enough visual detail",
+        "nutritional_quality": "Needs Review",
+        "health_impact": "A clearer image or short description is needed for a reliable meal assessment.",
+        "nutritional_breakdown": [],
+        "concerns": ["Uploaded meal image could not be interpreted confidently."],
+        "recommendations": recommendations,
+        "disclaimer": "AI nutrition guidance only — please consult a qualified clinician or dietitian for medical dietary advice.",
+    }
 
 
-def _extract_text_from_response(response) -> str:
-    raw_text = getattr(response, "text", "") or ""
-    if raw_text:
-        return raw_text.strip()
-    parts: list[str] = []
-    for candidate in getattr(response, "candidates", []) or []:
-        candidate_content = getattr(candidate, "content", None)
-        for part in getattr(candidate_content, "parts", []) or []:
-            part_text = getattr(part, "text", "")
-            if part_text:
-                parts.append(part_text)
-    return "\n".join(parts).strip()
+def _generate_content(parts: str | list[object]) -> str:
+    try:
+        return generate_gemini_content(
+            parts,
+            model_name=GEMINI_MODEL,
+            model_candidates=_pick_models(),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Gemini request failed: {exc}") from exc
 
 
 def _common_page_context(request: Request) -> dict[str, object]:
@@ -252,8 +252,8 @@ async def patient_symptom_analyze(
     symptoms: str = Form(...),
     _: None = Depends(verify_csrf),
 ):
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in .env")
+    if not is_gemini_configured():
+        raise HTTPException(status_code=500, detail="Vertex AI Gemini is not configured. Set VERTEX_AI_PROJECT and authenticate with ADC.")
 
     _ensure_rate_limit(request)
     cleaned = _sanitize_text(symptoms)
@@ -265,8 +265,7 @@ async def patient_symptom_analyze(
 Patient symptoms:
 {cleaned}
 """
-    response = _generate_content(prompt)
-    payload = _extract_json_object(_extract_text_from_response(response))
+    payload = _extract_json_object(_generate_content(prompt))
     return JSONResponse(_normalize_symptom_payload(payload))
 
 
@@ -277,8 +276,8 @@ async def patient_diet_analyze(
     food_image: UploadFile | None = File(default=None),
     _: None = Depends(verify_csrf),
 ):
-    if not GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is missing in .env")
+    if not is_gemini_configured():
+        raise HTTPException(status_code=500, detail="Vertex AI Gemini is not configured. Set VERTEX_AI_PROJECT and authenticate with ADC.")
 
     _ensure_rate_limit(request)
     cleaned = _sanitize_text(meal_description)
@@ -298,10 +297,27 @@ async def patient_diet_analyze(
         mime_type = (food_image.content_type or "").strip().lower()
         if mime_type not in {"image/jpeg", "image/png", "image/webp"}:
             raise HTTPException(status_code=400, detail="Use a JPG, PNG, or WEBP image.")
-        parts.append({"mime_type": mime_type, "data": file_bytes})
+        parts.append(build_gemini_part(file_bytes, mime_type))
         if not cleaned:
             parts.append("The patient uploaded only a food photo. Infer the likely meal content conservatively and state uncertainty inside the JSON summary if needed.")
+    try:
+        payload = _extract_json_object(_generate_content(parts))
+        return JSONResponse(_normalize_diet_payload(payload))
+    except HTTPException:
+        if food_image is None:
+            raise
+        if cleaned:
+            retry_prompt = f"""{DIET_ANALYZER_PROMPT}
 
-    response = _generate_content(parts)
-    payload = _extract_json_object(_extract_text_from_response(response))
-    return JSONResponse(_normalize_diet_payload(payload))
+Meal description: {cleaned}
+
+Note: The uploaded meal image could not be analyzed confidently. Base the response on the written meal description only, and mention that limitation briefly in the JSON summary.
+"""
+            payload = _extract_json_object(_generate_content(retry_prompt))
+            normalized = _normalize_diet_payload(payload)
+            if normalized["summary"]:
+                normalized["summary"] = f"{normalized['summary']} Photo analysis was unavailable, so this assessment is based on the meal description."
+            else:
+                normalized["summary"] = _diet_image_fallback_payload(True)["summary"]
+            return JSONResponse(normalized)
+        return JSONResponse(_diet_image_fallback_payload(False))

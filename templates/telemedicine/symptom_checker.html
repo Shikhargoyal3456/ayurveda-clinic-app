@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block title %}AI Symptom Checker | Kash AI{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/neuralink.css">
+<style>.tele-neural-banner{margin:0 0 24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}.modern-header,.modern-card,.feature-card,.result-card,.care-card,.doctor-card{border-radius:20px;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}.modern-header:hover,.modern-card:hover,.feature-card:hover,.result-card:hover,.care-card:hover,.doctor-card:hover{transform:translateY(-2px);box-shadow:0 24px 46px rgba(0,0,0,.12)}.btn,.primary-btn,.secondary-btn,.danger-btn{border-radius:80px}</style>
+{% endblock %}
 {% block page %}
 <div class="site-container section-stack fade-in-up">
+    <div class="tele-neural-banner">Neural-grade symptom triage with calmer intake, cleaner urgency guidance, and smoother next-step routing.</div>
     <section class="page-header modern-header">
         <div>
             <p class="eyebrow">AI triage</p>
