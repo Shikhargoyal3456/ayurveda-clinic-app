@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 import textwrap
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, Form, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
@@ -25,10 +25,9 @@ from app.prescription_library import (
     get_prescription_templates,
 )
 from models.prescription import Prescription
-from services.communication import send_patient_message
-from services.email_service import EmailService
+from services.email_service import EmailService, send_email, send_prescription_email
 from services.pure_ai_core import pure_ai
-from services.sms_service import SMSService
+from services.whatsapp import build_prescription_whatsapp_message, build_whatsapp_link
 from shared.template_engine import render_template
 from utils.subscription_utils import (
     build_paywall_response,
@@ -41,7 +40,6 @@ templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["prescriptions"])
 PRESCRIPTION_ORDER_SALT = "prescription-order"
 email_service = EmailService()
-sms_service = SMSService()
 
 
 def _prescription_order_token(prescription_id: int) -> str:
@@ -210,6 +208,17 @@ def _send_prescription_email_only(
     )
 
 
+def _prescription_payload(prescription: Prescription) -> dict[str, object]:
+    created_at = prescription.created_at or datetime.now()
+    return {
+        "date": created_at.strftime("%d/%m/%Y"),
+        "diagnosis": prescription.diagnosis or "",
+        "medicines": prescription.medicines or [],
+        "advice": prescription.advice or "",
+        "follow_up_days": prescription.follow_up_days or 15,
+    }
+
+
 @router.get("/patients/{patient_id}/prescriptions/new")
 def prescription_form(
     patient_id: int,
@@ -244,6 +253,7 @@ def prescription_form(
 
 
 @router.post("/prescriptions/create")
+@router.post("/prescriptions/new")
 def create_prescription(
     request: Request,
     patient_id: int = Form(...),
@@ -287,12 +297,6 @@ def create_prescription(
     commit_with_retry(db)
     increment_usage(doctor, "prescription")
 
-    send_patient_message(
-        patient.phone,
-        patient.email,
-        f"Your prescription is ready. Order medicines here: {_prescription_order_url(request, prescription.id)}",
-        subject="Your Kash AI prescription is ready",
-    )
     write_audit_event(
         "prescription_created",
         request,
@@ -318,6 +322,15 @@ def view_prescription(
         {
             "prescription": prescription,
             "prescription_token": _prescription_order_token(prescription.id),
+            "whatsapp_link": build_whatsapp_link(
+                prescription.patient.phone or "",
+                build_prescription_share_message(
+                    patient_name=prescription.patient.name,
+                    diagnosis=prescription.diagnosis,
+                    medicines=prescription.medicines or [],
+                    advice=prescription.advice or "",
+                ),
+            ),
             "patient": prescription.patient,
             "doctor": doctor,
             "flash": pop_flash(request),
@@ -325,6 +338,7 @@ def view_prescription(
             "csrf_token": ensure_csrf_token(request),
             "clinic_name": settings.clinic_name,
             "current_datetime": datetime.now(),
+            "prescription_data": _prescription_payload(prescription),
             "recommended_followup_date": (
                 prescription.created_at + timedelta(days=prescription.follow_up_days)
                 if prescription.created_at and prescription.follow_up_days
@@ -370,45 +384,21 @@ def share_prescription(
         advice=prescription.advice or "",
     )
     share_message = f"{share_message}\n\nOrder your medicines here: {_prescription_order_url(request, prescription.id)}"
-    email_result = _send_prescription_email_only(prescription, doctor)
+    whatsapp_link = build_whatsapp_link(prescription.patient.phone or "", share_message)
 
-    patient_result = send_patient_message(
-        prescription.patient.phone,
-        prescription.patient.email,
-        share_message,
-        subject="Your Kash AI prescription",
-    )
-
-    if prescription.patient.phone:
-        import asyncio
-
-        sms_service_result = asyncio.run(
-            sms_service.send_prescription_alert(
-                prescription.patient.phone,
-                prescription.patient.name,
-                _doctor_display_name(doctor),
-            )
-        )
-        if sms_service_result.get("success"):
-            patient_result["sms"] = True
-            patient_result["whatsapp"] = True
+    if not whatsapp_link:
+        set_flash(request, "Add the patient's phone number before sharing on WhatsApp.", "danger")
+        return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
 
     write_audit_event(
-        "prescription_shared_email_sms",
+        "prescription_shared_whatsapp_link",
         request,
         prescription_id=prescription.id,
         patient_id=prescription.patient_id,
         doctor_id=doctor.id,
-        email_sent=bool(email_result.get("success")),
-        sms_sent=bool(patient_result.get("sms")),
+        share_mode="wa_me",
     )
-    if email_result.get("success") or patient_result.get("sms"):
-        set_flash(request, "Prescription sent to the patient by email and SMS.", "success")
-    elif prescription.patient.email or prescription.patient.phone:
-        set_flash(request, "Prescription saved, but delivery could not be completed right now.", "danger")
-    else:
-        set_flash(request, "Add patient email or phone to send this prescription.", "danger")
-    return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
+    return RedirectResponse(url=whatsapp_link, status_code=303)
 
 
 @router.post("/prescriptions/{prescription_id}/share/email")
@@ -441,3 +431,94 @@ def share_prescription_via_email(
         set_flash(request, "Email could not be sent right now. Please try again.", "danger")
 
     return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
+
+
+@router.post("/prescriptions/{prescription_id}/share-email")
+async def share_prescription_via_email_api(
+    prescription_id: int,
+    request: Request,
+    payload: dict[str, str] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    prescription = _prescription_for_doctor(db, doctor.id, prescription_id)
+    to_email = str(payload.get("patient_email") or prescription.patient.email or "").strip()
+    if not to_email:
+        return JSONResponse({"success": False, "message": "Patient email not available."}, status_code=400)
+
+    result = await send_prescription_email(
+        patient_email=to_email,
+        patient_name=prescription.patient.name,
+        doctor_name=_doctor_display_name(doctor),
+        prescription_data=_prescription_payload(prescription),
+    )
+    write_audit_event(
+        "prescription_shared_email_api",
+        request,
+        prescription_id=prescription.id,
+        patient_id=prescription.patient_id,
+        doctor_id=doctor.id,
+        email_sent=bool(result.get("success")),
+    )
+    if result.get("success"):
+        return JSONResponse({"success": True, "message": "Prescription sent via email."})
+    return JSONResponse(
+        {
+            "success": False,
+            "message": "Failed to send email.",
+            "error": str(result.get("error") or result.get("reason") or "unknown_error"),
+        },
+        status_code=400,
+    )
+
+
+@router.post("/prescriptions/{prescription_id}/share-whatsapp")
+def share_prescription_via_whatsapp_api(
+    prescription_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    prescription = _prescription_for_doctor(db, doctor.id, prescription_id)
+    if not prescription.patient.phone:
+        return JSONResponse({"success": False, "message": "Patient phone number not available."}, status_code=400)
+
+    message = build_prescription_whatsapp_message(
+        _prescription_payload(prescription),
+        _doctor_display_name(doctor),
+        prescription.patient.name,
+    )
+    whatsapp_link = build_whatsapp_link(prescription.patient.phone, message)
+    write_audit_event(
+        "prescription_shared_whatsapp_api",
+        request,
+        prescription_id=prescription.id,
+        patient_id=prescription.patient_id,
+        doctor_id=doctor.id,
+        share_mode="wa_me",
+    )
+    return JSONResponse(
+        {
+            "success": bool(whatsapp_link),
+            "method": "wa_me_link",
+            "whatsapp_link": whatsapp_link,
+            "message": "Click the link to share prescription via WhatsApp" if whatsapp_link else "Unable to build WhatsApp link.",
+        },
+        status_code=200 if whatsapp_link else 400,
+    )
+
+
+@router.get("/test-email")
+async def test_email_endpoint(
+    request: Request,
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    result = await send_email(
+        to_email="goyalshikhar67@gmail.com",
+        subject="Kash AI Email Test",
+        body=f"If you're reading this, email is working correctly for Dr. {_doctor_display_name(doctor)}.",
+        is_html=False,
+    )
+    write_audit_event("email_test_triggered", request, doctor_id=doctor.id, success=bool(result.get("success")))
+    return JSONResponse(result)

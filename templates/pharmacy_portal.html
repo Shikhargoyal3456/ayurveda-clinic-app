@@ -68,12 +68,12 @@
                 </div>
                 {% if order.status == "pending" %}
                 <form method="post" action="/pharmacy/order/{{ order.id }}/confirm">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                     <button class="btn btn-primary w-100" type="submit" onclick="this.disabled=true; this.innerText='Processing...'; this.form.submit();">Confirm Order</button>
                 </form>
                 {% elif order.status == "confirmed" %}
                 <form method="post" action="/pharmacy/order/{{ order.id }}/dispatch">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                     <button class="btn btn-dark w-100" type="submit" onclick="this.disabled=true; this.innerText='Processing...'; this.form.submit();">Mark as Dispatched</button>
                 </form>
                 {% elif order.status == "dispatched" %}

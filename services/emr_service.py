@@ -343,6 +343,13 @@ def seed_emr_from_existing_records(db: Session) -> dict[str, int]:
 def get_doctor_dashboard_data(db: Session, doctor: Doctor) -> dict[str, Any]:
     today = date.today()
     patients = db.query(Patient).filter(Patient.doctor_id == doctor.id).all()
+    recent_patients = (
+        db.query(Patient)
+        .filter(Patient.doctor_id == doctor.id)
+        .order_by(Patient.created_at.desc(), Patient.id.desc())
+        .limit(8)
+        .all()
+    )
     consultations = db.query(EMRConsultation).filter(EMRConsultation.doctor_id == doctor.id).all()
     vitals = db.query(EMRVital).filter(EMRVital.doctor_id == doctor.id).order_by(EMRVital.recorded_at.desc()).limit(8).all()
     labs = db.query(EMRLabOrder).filter(EMRLabOrder.doctor_id == doctor.id).order_by(EMRLabOrder.ordered_at.desc()).limit(8).all()
@@ -352,10 +359,17 @@ def get_doctor_dashboard_data(db: Session, doctor: Doctor) -> dict[str, Any]:
         .filter(Appointment.date == today)
         .join(Patient, Patient.id == Appointment.patient_id)
         .filter(Patient.doctor_id == doctor.id)
+        .order_by(Appointment.time.asc(), Appointment.id.asc())
         .all()
     )
     pending_labs = [lab for lab in labs if lab.status != "completed"]
-    followups_due = [consult for consult in consultations if consult.followup_date and consult.followup_date <= today]
+    pending_followups = (
+        db.query(CaseSheet)
+        .join(Patient, Patient.id == CaseSheet.patient_id)
+        .filter(Patient.doctor_id == doctor.id, CaseSheet.followup_date.is_not(None), CaseSheet.followup_date <= today)
+        .order_by(CaseSheet.followup_date.asc(), CaseSheet.created_at.desc())
+        .all()
+    )
     revenue_today = (
         db.query(func.coalesce(func.sum(Payment.amount), 0))
         .join(Patient, Patient.id == Payment.patient_id)
@@ -365,9 +379,10 @@ def get_doctor_dashboard_data(db: Session, doctor: Doctor) -> dict[str, Any]:
     )
     return {
         "today_appointments": today_appointments,
-        "recent_patients": patients[:8],
+        "recent_patients": recent_patients,
         "pending_labs": pending_labs,
-        "followups_due": followups_due[:8],
+        "followups_due": pending_followups[:8],
+        "pending_followups": pending_followups[:8],
         "recent_vitals": vitals,
         "clinical_stats": {
             "total_patients": len(patients),

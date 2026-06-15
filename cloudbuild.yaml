@@ -1,29 +1,71 @@
+substitutions:
+  _REGION: asia-south1
+  _SERVICE: kash-ai
+  _REPOSITORY: kash-ai-repo
+  _IMAGE: kash-ai
+  _SERVICE_ACCOUNT: kash-ai-runner
+  _MIGRATION_JOB: kash-ai-migrate
+  _CLOUDSQL_INSTANCE: ""
+
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/kash-ai', '-f', 'Dockerfile.gcp', '.']
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/kash-ai']
-
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+  - name: gcr.io/cloud-builders/docker
     args:
-      - 'run'
-      - 'deploy'
-      - 'kash-ai'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/kash-ai'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--memory'
-      - '2Gi'
-      - '--cpu'
-      - '2'
-      - '--port'
-      - '8080'
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID
+      - -t
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -Eeuo pipefail
+        IMAGE="${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID"
+        PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+        RUNTIME_SA="${_SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com"
+
+        gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com cloudbuild.googleapis.com sqladmin.googleapis.com --project "$PROJECT_ID"
+
+        gcloud artifacts repositories describe "${_REPOSITORY}" --location "${_REGION}" --project "$PROJECT_ID" >/dev/null 2>&1 || \
+          gcloud artifacts repositories create "${_REPOSITORY}" --repository-format docker --location "${_REGION}" --project "$PROJECT_ID"
+
+        gcloud iam service-accounts describe "${RUNTIME_SA}" --project "$PROJECT_ID" >/dev/null 2>&1 || \
+          gcloud iam service-accounts create "${_SERVICE_ACCOUNT}" --project "$PROJECT_ID" --display-name "Kash AI Cloud Run runtime"
+
+        DEPLOY_ARGS=(
+          run deploy "${_SERVICE}"
+          --project "$PROJECT_ID"
+          --region "${_REGION}"
+          --platform managed
+          --image "$IMAGE"
+          --service-account "$RUNTIME_SA"
+          --allow-unauthenticated
+          --port 8080
+          --memory 1Gi
+          --cpu 1
+          --concurrency 80
+          --timeout 300
+        )
+
+        if [ -n "${_CLOUDSQL_INSTANCE}" ]; then
+          DEPLOY_ARGS+=(--add-cloudsql-instances "${PROJECT_ID}:${_REGION}:${_CLOUDSQL_INSTANCE}")
+        fi
+
+        gcloud "${DEPLOY_ARGS[@]}"
 
 images:
-  - 'gcr.io/$PROJECT_ID/kash-ai'
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:$BUILD_ID
+  - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/${_IMAGE}:latest

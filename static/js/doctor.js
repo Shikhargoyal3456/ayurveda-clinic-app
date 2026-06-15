@@ -8,6 +8,7 @@
     const DISCLAIMER_PATTERN = /(?:⚠️\s*)?I am an AI assistant, not a licensed doctor\.[\s\S]*/i;
     const DIAGNOSIS_PATTERN = /\|\|\|DIAGNOSIS\|\|\|(.*?)\|\|\|END\|\|\|/s;
     const PATIENT_CONTEXT_STORAGE_KEY = "doctorPatientContext";
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "";
 
     const UI_TEXT = {
         en: {
@@ -667,6 +668,13 @@
             this.scrollChatToBottom();
         }
 
+        appendStreamingText(messageNode, text) {
+            if (!messageNode) {
+                return;
+            }
+            this.updateMessageBody(messageNode, text, true);
+        }
+
         renderTypingIndicator(show) {
             if (!this.elements.typingIndicator) {
                 return;
@@ -1023,7 +1031,15 @@
             let lastError = null;
             for (let attempt = 0; attempt <= REQUEST_RETRY_LIMIT; attempt += 1) {
                 try {
-                    const response = await fetch(url, options);
+                    const requestOptions = {
+                        credentials: "same-origin",
+                        ...(options || {}),
+                        headers: {
+                            "X-CSRF-Token": CSRF_TOKEN,
+                            ...((options && options.headers) || {}),
+                        },
+                    };
+                    const response = await fetch(url, requestOptions);
                     const payload = await response.json().catch(() => ({}));
                     if (!response.ok) {
                         throw new Error(payload.detail || payload.error || DOCTOR_UNAVAILABLE_MESSAGE);
@@ -1131,7 +1147,8 @@
             this.state.currentStreamAbort = new AbortController();
             const response = await fetch("/api/doctor/chat/stream", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                credentials: "same-origin",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": CSRF_TOKEN },
                 body: JSON.stringify({
                     message: message,
                     messages: historyBeforeSend,
@@ -1171,7 +1188,7 @@
                         this.renderTypingIndicator(false);
                         rawReply += payload.chunk;
                         const extracted = this.extractDiagnosis(rawReply);
-                        this.updateMessageBody(placeholderNode, extracted.reply, true);
+                        this.appendStreamingText(placeholderNode, extracted.reply);
                     }
                     if (payload.error) {
                         streamError = payload.error;

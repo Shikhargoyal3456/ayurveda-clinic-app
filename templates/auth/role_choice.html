@@ -9,7 +9,7 @@
         <h1>Choose your account</h1>
         <p>Pick the workspace you want to open right now. Each card tells you what you can do after sign-in.</p>
         <form method="post" action="/auth/choose-role" class="role-choice-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
             {% for card in role_cards %}
             <button class="role-option {% if card.role in ['doctor', 'patient'] %}is-featured{% endif %}" type="submit" name="selected_role" value="{{ card.role }}">
                 <span class="role-option-topline">

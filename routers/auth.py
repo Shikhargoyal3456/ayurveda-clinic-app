@@ -297,6 +297,10 @@ def _render_smart_login_page(csrf_token: str, preferred_role: str = "", flash: d
             </div>
             <button type="submit" class="login-btn">Login</button>
             <div class="divider"><span>or</span></div>
+            <a class="guest-btn" href="/auth/google/login{('?role=' + safe_role) if safe_role else ''}" style="background:#fff;border:1px solid #dbe3ef;color:#0f172a;">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#fff;border:1px solid #e2e8f0;font-weight:800;color:#4285f4;">G</span>
+                <span style="margin-left:10px;">Continue with Google</span>
+            </a>
             <a class="guest-btn" href="/">Continue as Guest</a>
         </form>
         <div class="quick-portal-grid">
@@ -397,14 +401,108 @@ def _logout_redirect_for_role(role: str | None) -> str:
 
 
 def _session_logout_redirect(request: Request) -> str:
-    _portal_role = request.session.get("portal_user_role")
-    if request.session.get("doctor_id"):
-        return "/portal"
-    return "/portal"
+    return "/auth/login"
 
 
 def _preview_payload(extra: dict[str, str]) -> dict[str, str]:
     return extra if settings.is_testing or not settings.is_production else {}
+
+
+async def _extract_registration_payload(request: Request) -> tuple[dict[str, str], UploadFile | None, UploadFile | None]:
+    content_type = request.headers.get("content-type", "").lower()
+    if "application/json" in content_type:
+        payload = await request.json()
+        if not isinstance(payload, dict):
+            payload = {}
+        normalized = {str(key): str(value or "") for key, value in payload.items()}
+        return normalized, None, None
+
+    form = await request.form()
+    normalized: dict[str, str] = {}
+    id_proof: UploadFile | None = None
+    certificate: UploadFile | None = None
+    for key in form:
+        value = form.get(key)
+        if isinstance(value, UploadFile):
+            if key == "id_proof":
+                id_proof = value
+            elif key == "certificate":
+                certificate = value
+            continue
+        normalized[str(key)] = str(value or "")
+    return normalized, id_proof, certificate
+
+
+def _set_doctor_session_defaults(request: Request, doctor: Doctor) -> None:
+    request.session["doctor_id"] = doctor.id
+    request.session["doctor_type"] = normalize_doctor_type(None, doctor.specialty)
+    request.session["portal_doctor_type"] = request.session["doctor_type"]
+    request.session["full_name"] = (doctor.full_name or doctor.username or "Doctor").strip()
+
+
+def _register_clinic_doctor_api(
+    request: Request,
+    db: Session,
+    *,
+    email: str,
+    password: str,
+    full_name: str,
+    phone: str,
+    doctor_type: str,
+) -> JSONResponse:
+    normalized_email = normalize_identifier(email)
+    normalized_phone = normalize_phone(phone) or None
+    display_name = (full_name or "").strip()
+    resolved_doctor_type = normalize_doctor_type(doctor_type, doctor_type)
+
+    if not normalized_email:
+        return JSONResponse({"success": False, "error": "Email is required."}, status_code=400)
+    if not password.strip():
+        return JSONResponse({"success": False, "error": "Password is required."}, status_code=400)
+    if not display_name:
+        return JSONResponse({"success": False, "error": "Full name is required."}, status_code=400)
+    password_errors = validate_portal_password(password)
+    if password_errors:
+        return JSONResponse({"success": False, "error": " ".join(password_errors)}, status_code=400)
+
+    existing_user_query = db.query(User.id).filter(User.email == normalized_email)
+    if normalized_phone:
+        existing_user_query = db.query(User.id).filter(or_(User.email == normalized_email, User.phone == normalized_phone))
+    existing_user = existing_user_query.first()
+    if existing_user:
+        return JSONResponse({"success": False, "error": "An account with this email or phone already exists."}, status_code=400)
+
+    doctor_username = normalized_username(normalized_email)
+    existing_doctor = db.query(Doctor.id).filter(Doctor.username == doctor_username).first()
+    if existing_doctor:
+        return JSONResponse({"success": False, "error": "A doctor account with this email already exists."}, status_code=400)
+
+    user = create_user(
+        db,
+        full_name=display_name,
+        email=normalized_email,
+        phone=normalized_phone,
+        password=password,
+        role=UserRole.doctor.value,
+        documents={"verification_document_path": None, "professional_document_path": None},
+        profile_data=_role_specific_profile_data(
+            UserRole.doctor.value,
+            {"doctor_type": resolved_doctor_type, "specialization": resolved_doctor_type},
+        ),
+    )
+    user.is_verified = True
+    user.is_active = True
+    commit_with_retry(db)
+
+    legacy_doctor = ensure_legacy_doctor_for_portal_user(db, user)
+    if legacy_doctor is None:
+        raise RuntimeError("Doctor workspace could not be created.")
+
+    initialize_login_session(request, legacy_doctor, db)
+    _set_doctor_session_defaults(request, legacy_doctor)
+    write_audit_event("clinic_api_register_success", request, doctor_id=legacy_doctor.id, email=normalized_email)
+    track_event("clinic_api_register", doctor_id=legacy_doctor.id, doctor_type=resolved_doctor_type)
+    return JSONResponse({"success": True, "redirect_url": "/dashboard"})
 
 
 def _portal_redirect_for_user(request: Request, user: User) -> str:
@@ -638,9 +736,9 @@ def login_page(request: Request, db: Session = Depends(get_db)):
         doctor = getattr(request.state, "user", None)
         redirect_url = _legacy_dashboard_path(doctor) if isinstance(doctor, Doctor) else "/dashboard"
         return RedirectResponse(url=redirect_url, status_code=303)
-    return render_template(templates, request,
-        "login.html",
-        {"request": request, "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)},
+    return _render_smart_login_page(
+        ensure_csrf_token(request),
+        flash=pop_flash(request),
     )
 
 
@@ -652,7 +750,6 @@ def login(
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("login", limit=10, window_seconds=60)),
     ___: None = Depends(auth_backoff_dependency()),
-    __: None = Depends(verify_csrf),
 ):
     portal_users = _find_portal_users(db, username)
     portal_matches = [user for user in portal_users if verify_user_password(user, password)]
@@ -687,6 +784,8 @@ def login(
     if doctor is None or not verify_password(password, doctor.password_hash):
         message = register_login_failure(doctor, normalized, request, db if doctor is not None else None)
         write_audit_event("login_failed", request, username=normalized)
+        if "invalid username or password" in message.lower():
+            message = "Invalid username or password. Please try again."
         set_flash(request, message, "danger")
         return RedirectResponse(url="/login", status_code=303)
 
@@ -695,6 +794,9 @@ def login(
         commit_with_retry(db)
 
     initialize_login_session(request, doctor, db)
+    request.session["doctor_type"] = normalize_doctor_type(None, doctor.specialty)
+    request.session["portal_doctor_type"] = request.session["doctor_type"]
+    request.session["full_name"] = (doctor.full_name or doctor.username or "Doctor").strip()
     doctor.last_login_at = datetime.now(timezone.utc)
     commit_with_retry(db)
     write_audit_event("login_success", request, doctor_id=doctor.id, username=doctor.username)
@@ -706,6 +808,7 @@ def login(
 
 
 @router.get("/signup")
+@router.get("/register")
 def signup_page(request: Request, db: Session = Depends(get_db)):
     if not _signup_allowed(db):
         set_flash(request, "Public signup is disabled. Contact your administrator.", "warning")
@@ -721,6 +824,7 @@ def signup_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.post("/signup")
+@router.post("/register")
 def signup(
     request: Request,
     username: str = Form(..., min_length=3, max_length=120),
@@ -730,7 +834,6 @@ def signup(
     selected_plan: str = Form(""),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("signup", limit=5, window_seconds=300)),
-    __: None = Depends(verify_csrf),
 ):
     if not _signup_allowed(db):
         write_audit_event("signup_blocked", request, username=username.strip().lower(), reason="public_signup_disabled")
@@ -763,13 +866,14 @@ def signup(
     commit_with_retry(db)
     write_audit_event("signup_success", request, username=normalized, doctor_id=doctor.id)
     track_event("doctor_signup", doctor_id=doctor.id, username=doctor.username, specialty=doctor.specialty)
-    valid_plans = {"pro", "enterprise"}
-    if selected_plan.strip().lower() in valid_plans:
-        set_flash(request, f"Account created! Complete your {selected_plan.title()} plan payment to activate.", "success")
-        return RedirectResponse(url=f"/pricing?plan={selected_plan.strip().lower()}", status_code=303)
-
-    set_flash(request, "Account created. Please log in.", "success")
-    return RedirectResponse(url="/login", status_code=303)
+    initialize_login_session(request, doctor, db)
+    request.session["doctor_type"] = normalize_doctor_type(None, doctor.specialty)
+    request.session["portal_doctor_type"] = request.session["doctor_type"]
+    request.session["full_name"] = (doctor.full_name or doctor.username or "Doctor").strip()
+    if selected_plan.strip():
+        request.session["selected_plan"] = selected_plan.strip().lower()
+    set_flash(request, "Clinic account created successfully.", "success")
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 
 @router.get("/auth/login/{role_slug}")
@@ -813,7 +917,6 @@ def portal_login(
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-login", limit=10, window_seconds=60)),
     ___: None = Depends(auth_backoff_dependency()),
-    __: None = Depends(verify_csrf),
 ):
     chosen_role = slug_to_role(role_slug.strip()) if role_slug and role_slug.strip() else (slug_to_role(role.strip()) if role.strip() else "")
     users = [_find_portal_user(db, identifier, chosen_role)] if chosen_role else _find_portal_users(db, identifier)
@@ -918,45 +1021,31 @@ def portal_register_page(request: Request, role_slug: str):
 @router.post("/api/auth/register")
 async def portal_register(
     request: Request,
-    full_name: str = Form(...),
-    email: str = Form(...),
-    phone: str = Form(...),
-    password: str = Form(...),
-    role: str = Form(...),
-    doctor_type: str | None = Form(default=None),
-    registration_number: str | None = Form(default=None),
-    specialization: str | None = Form(default=None),
-    qualification: str | None = Form(default=None),
-    experience_years: str | None = Form(default=None),
-    consultation_fee: str | None = Form(default=None),
-    pharmacy_name: str | None = Form(default=None),
-    gst_number: str | None = Form(default=None),
-    license_number: str | None = Form(default=None),
-    lab_name: str | None = Form(default=None),
-    accreditation_number: str | None = Form(default=None),
-    vehicle_type: str | None = Form(default=None),
-    vehicle_number: str | None = Form(default=None),
-    dl_number: str | None = Form(default=None),
-    address: str | None = Form(default=None),
-    delivery_radius_km: str | None = Form(default=None),
-    minimum_order_amount: str | None = Form(default=None),
-    latitude: str | None = Form(default=None),
-    longitude: str | None = Form(default=None),
-    available_days: str | None = Form(default=None),
-    about: str | None = Form(default=None),
-    emergency_contact_name: str | None = Form(default=None),
-    emergency_contact_phone: str | None = Form(default=None),
-    medical_conditions: str | None = Form(default=None),
-    allergies: str | None = Form(default=None),
-    blood_group: str | None = Form(default=None),
-    is_home_collection_available: str | None = Form(default=None),
-    id_proof: UploadFile | None = File(default=None),
-    certificate: UploadFile | None = File(default=None),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-register", limit=5, window_seconds=300)),
-    __: None = Depends(verify_csrf),
 ):
-    role = slug_to_role(role)
+    form_data, id_proof, certificate = await _extract_registration_payload(request)
+    if request.headers.get("x-csrf-token") or form_data.get("csrf_token"):
+        await verify_csrf(request)
+
+    full_name = str(form_data.get("full_name", "")).strip()
+    email = str(form_data.get("email", "")).strip()
+    phone = str(form_data.get("phone", "")).strip()
+    password = str(form_data.get("password", "")).strip()
+    role = slug_to_role(str(form_data.get("role", "doctor")).strip() or "doctor")
+    doctor_type = str(form_data.get("doctor_type", "ayurveda")).strip() or "ayurveda"
+
+    if request.url.path.endswith("/api/auth/register") and role == UserRole.doctor.value:
+        return _register_clinic_doctor_api(
+            request,
+            db,
+            email=email,
+            password=password,
+            full_name=full_name,
+            phone=phone,
+            doctor_type=doctor_type,
+        )
+
     allowed_registration_roles = {
         UserRole.patient.value,
         UserRole.doctor.value,
@@ -989,32 +1078,32 @@ async def portal_register(
     professional_document_path = save_upload(certificate, "certificates")
     form_data = {
         "doctor_type": doctor_type or "",
-        "registration_number": registration_number or "",
-        "specialization": specialization or "",
-        "qualification": qualification or "",
-        "experience_years": experience_years or "",
-        "consultation_fee": consultation_fee or "",
-        "pharmacy_name": pharmacy_name or "",
-        "gst_number": gst_number or "",
-        "license_number": license_number or "",
-        "lab_name": lab_name or "",
-        "accreditation_number": accreditation_number or "",
-        "vehicle_type": vehicle_type or "",
-        "vehicle_number": vehicle_number or "",
-        "dl_number": dl_number or "",
-        "address": address or "",
-        "delivery_radius_km": delivery_radius_km or "",
-        "minimum_order_amount": minimum_order_amount or "",
-        "latitude": latitude or "",
-        "longitude": longitude or "",
-        "available_days": available_days or "",
-        "about": about or "",
-        "emergency_contact_name": emergency_contact_name or "",
-        "emergency_contact_phone": emergency_contact_phone or "",
-        "medical_conditions": medical_conditions or "",
-        "allergies": allergies or "",
-        "blood_group": blood_group or "",
-        "is_home_collection_available": is_home_collection_available or "",
+        "registration_number": str(form_data.get("registration_number", "")),
+        "specialization": str(form_data.get("specialization", "")),
+        "qualification": str(form_data.get("qualification", "")),
+        "experience_years": str(form_data.get("experience_years", "")),
+        "consultation_fee": str(form_data.get("consultation_fee", "")),
+        "pharmacy_name": str(form_data.get("pharmacy_name", "")),
+        "gst_number": str(form_data.get("gst_number", "")),
+        "license_number": str(form_data.get("license_number", "")),
+        "lab_name": str(form_data.get("lab_name", "")),
+        "accreditation_number": str(form_data.get("accreditation_number", "")),
+        "vehicle_type": str(form_data.get("vehicle_type", "")),
+        "vehicle_number": str(form_data.get("vehicle_number", "")),
+        "dl_number": str(form_data.get("dl_number", "")),
+        "address": str(form_data.get("address", "")),
+        "delivery_radius_km": str(form_data.get("delivery_radius_km", "")),
+        "minimum_order_amount": str(form_data.get("minimum_order_amount", "")),
+        "latitude": str(form_data.get("latitude", "")),
+        "longitude": str(form_data.get("longitude", "")),
+        "available_days": str(form_data.get("available_days", "")),
+        "about": str(form_data.get("about", "")),
+        "emergency_contact_name": str(form_data.get("emergency_contact_name", "")),
+        "emergency_contact_phone": str(form_data.get("emergency_contact_phone", "")),
+        "medical_conditions": str(form_data.get("medical_conditions", "")),
+        "allergies": str(form_data.get("allergies", "")),
+        "blood_group": str(form_data.get("blood_group", "")),
+        "is_home_collection_available": str(form_data.get("is_home_collection_available", "")),
     }
 
     user = create_user(
@@ -1088,7 +1177,6 @@ def send_otp(
     payload: dict[str, str] = Body(...),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-otp", limit=5, window_seconds=300)),
-    __: None = Depends(verify_csrf),
 ):
     identifier = str(payload.get("identifier", "")).strip()
     role = slug_to_role(str(payload.get("role", "")).strip())
@@ -1145,7 +1233,6 @@ def verify_otp_login(
     payload: dict[str, str] = Body(...),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-otp-verify", limit=8, window_seconds=300)),
-    __: None = Depends(verify_csrf),
 ):
     identifier = str(payload.get("identifier", "")).strip()
     otp = str(payload.get("otp", "")).strip()
@@ -1230,7 +1317,6 @@ def reset_password(
     password: str = Form(...),
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-reset-password", limit=5, window_seconds=300)),
-    __: None = Depends(verify_csrf),
 ):
     try:
         payload = serializer_loads(token, RESET_MAX_AGE_SECONDS)

@@ -125,6 +125,9 @@ class Settings:
     vertex_ai_location: str
     # Google Maps API key for Places & Distance Matrix
     google_maps_api_key: str
+    google_client_id: str
+    google_client_secret: str
+    google_redirect_uri: str
     razorpay_key_id: str
     razorpay_key_secret: str
     razorpay_mode: str
@@ -272,6 +275,12 @@ def _build_settings() -> Settings:
         vertex_ai_project=os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip(),
         vertex_ai_location=os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1",
         google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", ""),
+        google_client_id=os.getenv("GOOGLE_CLIENT_ID", "").strip(),
+        google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET", "").strip(),
+        google_redirect_uri=(
+            os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback").strip()
+            or "http://localhost:8000/auth/google/callback"
+        ),
         razorpay_key_id=os.getenv("RAZORPAY_KEY_ID", ""),
         razorpay_key_secret=os.getenv("RAZORPAY_KEY_SECRET", ""),
         razorpay_mode=resolve_razorpay_mode(environment, os.getenv("RAZORPAY_MODE", "")),

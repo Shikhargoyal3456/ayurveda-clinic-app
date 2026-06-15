@@ -21,7 +21,7 @@
         </section>
 
         <form id="patientRegistrationForm" class="card form-stack simple-registration-card" method="post" action="/emr/patient-registration" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
             <div class="simple-registration-intro">
                 <div class="intro-badge">Step 1</div>
                 <div>

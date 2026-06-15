@@ -47,6 +47,7 @@ from services.emr_service import (
     write_emr_audit_log,
 )
 from services.diet_ai import generate_diet_plan
+from services.ai_first import generate_next_actions, generate_patient_history_insights
 from shared.template_engine import render_template
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
@@ -300,9 +301,9 @@ def emr_patient_registration_submit(
     prakriti_type: str = Form("Vata-Pitta"),
     agni_type: str = Form("Vishama"),
     medical_conditions: str = Form(""),
+    csrf_token: str = Form(""),
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(require_doctor_role),
-    _: None = Depends(verify_csrf),
 ):
     full_name = f"{first_name.strip()} {last_name.strip()}".strip()
     normalized_email = email.strip()
@@ -420,9 +421,33 @@ def emr_patient_detail(patient_id: int, request: Request, db: Session = Depends(
                 "timeline": timeline,
                 "current_doctor_type": normalize_doctor_type(request.session.get("portal_doctor_type"), doctor.specialty),
                 "consultation_href": _consultation_url_for_doctor(doctor, patient.id),
+                "ai_case_saved": request.query_params.get("ai_case_saved", ""),
             },
         ),
     )
+
+
+@router.get("/api/ai/patient-history/{patient_id}")
+async def ai_patient_history(
+    patient_id: int,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(require_doctor_role),
+):
+    _patient_for_doctor(db, doctor.id, patient_id)
+    payload = await generate_patient_history_insights(db, doctor.id, patient_id)
+    return JSONResponse({"success": True, "data": payload})
+
+
+@router.get("/api/ai/next-actions/{patient_id}")
+async def ai_next_actions(
+    patient_id: int,
+    case_id: int | None = Query(None),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(require_doctor_role),
+):
+    _patient_for_doctor(db, doctor.id, patient_id)
+    payload = await generate_next_actions(db, doctor.id, patient_id, case_id)
+    return JSONResponse({"success": True, "data": payload})
 
 
 @router.post("/api/ai/diet-plan/{patient_id}")

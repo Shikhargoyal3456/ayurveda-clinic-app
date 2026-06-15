@@ -26,6 +26,26 @@
             </div>
         </section>
 
+        <section class="card emr-surface-card ai-history-card" id="aiHistoryCard" aria-live="polite">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                <div>
+                    <p class="eyebrow mb-1">Kash AI insights</p>
+                    <h2 class="h4 mb-1">Auto-generated patient context</h2>
+                    <p class="mb-0 text-muted" id="aiHistorySummary">Reviewing this patient's recent history in the background.</p>
+                </div>
+                <div class="ai-history-actions">
+                    <a class="btn btn-outline-dark btn-pill btn-sm" id="aiHistoryFullLink" href="/patients/{{ patient.id }}/cases">View full history</a>
+                    <a class="btn btn-primary btn-pill btn-sm" id="aiHistoryConsultLink" href="{{ consultation_href }}">Start follow-up consultation</a>
+                </div>
+            </div>
+            <div class="ai-history-duration" id="aiHistoryDuration" hidden></div>
+            <div class="stack-sm ai-history-list" id="aiHistoryList">
+                <div class="ai-history-skeleton"></div>
+                <div class="ai-history-skeleton"></div>
+                <div class="ai-history-skeleton"></div>
+            </div>
+        </section>
+
         <div class="tab-strip mb-4">
             <span class="tab-pill is-active">Demographics</span>
             <span class="tab-pill">Medical history</span>
@@ -125,6 +145,11 @@
         </div>
     </section>
 </div>
+<aside class="ai-next-actions" id="aiNextActions" hidden aria-live="polite">
+    <div class="ai-next-actions__title">🤖 What would you like to do next?</div>
+    <div class="ai-next-actions__reason" id="aiNextActionsReason"></div>
+    <div class="ai-next-actions__buttons" id="aiNextActionsButtons"></div>
+</aside>
 {% endblock %}
 {% block extra_head %}
 <style>
@@ -137,12 +162,24 @@
 .timeline-entry{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:flex-start;padding:16px 18px;border-radius:18px;background:var(--gray-50);border:1px solid var(--gray-200)}
 .timeline-dot{width:10px;height:10px;border-radius:50%;background:var(--primary);margin-top:7px}
 .info-chip{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:16px;background:var(--gray-50);border:1px solid var(--gray-200)}
+.ai-history-card{background:linear-gradient(135deg,#f7fbff 0%,#ffffff 100%);border:1px solid #dae7fb}
+.ai-history-actions{display:flex;gap:10px;flex-wrap:wrap}
+.ai-history-list{display:grid;gap:10px}
+.ai-history-bullet{padding:14px 16px;border-radius:16px;background:#fff;border:1px solid #e0ebfb;color:#233347}
+.ai-history-skeleton{height:54px;border-radius:16px;background:linear-gradient(90deg,#eaf1fb 0%,#f6f9fe 50%,#eaf1fb 100%);background-size:200% 100%;animation:historyPulse 1.4s ease-in-out infinite}
+.ai-history-duration{padding:12px 14px;border-radius:14px;background:#e8f5e9;color:#1d5f38;font-weight:600}
+.ai-next-actions{position:fixed;right:20px;bottom:20px;z-index:30;max-width:320px;padding:16px;border-radius:20px;background:rgba(255,255,255,.96);border:1px solid rgba(203,213,225,.9);box-shadow:0 20px 44px rgba(15,23,42,.16)}
+.ai-next-actions__title{font-weight:700;color:#15263c}
+.ai-next-actions__reason{margin-top:6px;color:#516074;font-size:.92rem}
+.ai-next-actions__buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ai-next-actions__buttons a{display:inline-flex;align-items:center;justify-content:center;padding:10px 12px;border-radius:999px;background:#f6f9ff;border:1px solid #d7e5ff;color:#21436d;text-decoration:none;font-weight:600;font-size:.92rem}
 .diet-plan{padding:18px;border-radius:18px;background:var(--gray-50);border:1px solid var(--gray-200)}
 .loading,.error{padding:14px 16px;border-radius:16px}
 .loading{background:var(--gray-50);color:var(--gray-600)}
 .error{background:#FEF2F2;color:#B91C1C}
+@keyframes historyPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}
 @media (max-width:1024px){.emr-hero-card{grid-template-columns:1fr}}
-@media (max-width:720px){.emr-hero-card,.emr-surface-card{padding:20px}}
+@media (max-width:720px){.emr-hero-card,.emr-surface-card{padding:20px}.ai-next-actions{left:16px;right:16px;bottom:16px;max-width:none}}
 </style>
 {% endblock %}
 {% block extra_scripts %}
@@ -288,8 +325,18 @@ async function saveDietPlan() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    const patientId = {{ patient.id | tojson }};
+    const savedCaseId = {{ ai_case_saved | default('', true) | tojson }};
     const timelineContainer = document.getElementById("patientTimeline");
     const historyContainer = document.getElementById("patientHistory");
+    const aiHistoryList = document.getElementById("aiHistoryList");
+    const aiHistorySummary = document.getElementById("aiHistorySummary");
+    const aiHistoryDuration = document.getElementById("aiHistoryDuration");
+    const aiHistoryFullLink = document.getElementById("aiHistoryFullLink");
+    const aiHistoryConsultLink = document.getElementById("aiHistoryConsultLink");
+    const aiNextActions = document.getElementById("aiNextActions");
+    const aiNextActionsReason = document.getElementById("aiNextActionsReason");
+    const aiNextActionsButtons = document.getElementById("aiNextActionsButtons");
     const timeline = {{ timeline | default([]) | tojson }};
     const pastConditions = {{ patient_record.medical_history.past_conditions | default([]) | tojson }};
     const allergies = {{ patient_record.allergies | default([]) | tojson }};
@@ -317,6 +364,73 @@ document.addEventListener("DOMContentLoaded", () => {
             historyContainer.appendChild(stack);
         }, 280);
     }
+
+    const loadAIHistory = async () => {
+        if (!aiHistoryList) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/ai/patient-history/${patientId}`, { credentials: "same-origin" });
+            const payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.detail || "AI history unavailable.");
+            }
+            const data = payload.data || {};
+            aiHistorySummary.textContent = "Kash AI reviewed the most recent visits, prescriptions, and follow-up patterns.";
+            clearNode(aiHistoryList);
+            (data.bullets || []).forEach((item) => {
+                const bullet = document.createElement("div");
+                bullet.className = "ai-history-bullet";
+                bullet.textContent = `• ${item}`;
+                aiHistoryList.appendChild(bullet);
+            });
+            if (data.consultation_minutes) {
+                aiHistoryDuration.hidden = false;
+                aiHistoryDuration.textContent = `🤖 Based on patient history, this consultation may take about ${data.consultation_minutes} minutes.`;
+            }
+            if (data.cta_primary?.url) {
+                aiHistoryConsultLink.href = data.cta_primary.url;
+                aiHistoryConsultLink.textContent = data.cta_primary.label || aiHistoryConsultLink.textContent;
+            }
+            if (data.cta_secondary?.url) {
+                aiHistoryFullLink.href = data.cta_secondary.url;
+                aiHistoryFullLink.textContent = data.cta_secondary.label || aiHistoryFullLink.textContent;
+            }
+        } catch (error) {
+            aiHistorySummary.textContent = error.message || "AI history is temporarily unavailable.";
+            clearNode(aiHistoryList);
+            const bullet = document.createElement("div");
+            bullet.className = "ai-history-bullet";
+            bullet.textContent = "You can continue normally while Kash AI catches up.";
+            aiHistoryList.appendChild(bullet);
+        }
+    };
+
+    const loadNextActions = async () => {
+        if (!aiNextActions || !savedCaseId) {
+            return;
+        }
+        try {
+            const response = await fetch(`/api/ai/next-actions/${patientId}?case_id=${encodeURIComponent(savedCaseId)}`, {
+                credentials: "same-origin",
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.detail || "Next actions unavailable.");
+            }
+            const data = payload.data || {};
+            aiNextActions.hidden = false;
+            aiNextActionsReason.textContent = data.reason || "";
+            aiNextActionsButtons.innerHTML = (data.actions || []).map((action) => (
+                `<a href="${action.url}" title="${action.description || ''}">${action.icon || "•"} ${action.label}</a>`
+            )).join("");
+        } catch (_error) {
+            aiNextActions.hidden = true;
+        }
+    };
+
+    void loadAIHistory();
+    void loadNextActions();
 });
 </script>
 {% endblock %}

@@ -160,3 +160,43 @@ def build_whatsapp_link(phone: str, message: str) -> str:
     if not normalized_phone:
         return ""
     return f"https://wa.me/{normalized_phone}?text={quote((message or '').strip())}"
+
+
+def build_prescription_whatsapp_message(
+    prescription_data: dict[str, object],
+    doctor_name: str,
+    patient_name: str,
+) -> str:
+    medicines = prescription_data.get("medicines", []) if isinstance(prescription_data.get("medicines"), list) else []
+    lines = [
+        "Kash AI Prescription",
+        "",
+        f"Doctor: Dr. {doctor_name}",
+        f"Patient: {patient_name}",
+        f"Date: {prescription_data.get('date', 'Today')}",
+        "",
+        "Diagnosis",
+        str(prescription_data.get("diagnosis") or "Not specified"),
+        "",
+        "Medicines",
+    ]
+    for medicine in medicines:
+        if not isinstance(medicine, dict):
+            continue
+        lines.append(f"- {medicine.get('name') or 'Medicine'}")
+        lines.append(f"  Dosage: {medicine.get('dosage') or 'As advised'}")
+        lines.append(f"  Frequency: {medicine.get('frequency') or 'As advised'}")
+        lines.append(f"  Duration: {medicine.get('duration') or 'As advised'} days")
+    advice = str(prescription_data.get("advice") or "").strip()
+    if advice:
+        lines.extend(["", "Advice", advice])
+    lines.extend(
+        [
+            "",
+            "Follow-up",
+            f"Please follow up in {int(prescription_data.get('follow_up_days') or 15)} days.",
+            "",
+            "- Kash AI",
+        ]
+    )
+    return "\n".join(lines)

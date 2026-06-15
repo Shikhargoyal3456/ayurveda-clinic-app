@@ -60,7 +60,7 @@
             <div id="cartItems" class="stack-list"></div>
             <p id="cartEmpty" class="text-muted mb-0">No medicines selected yet.</p>
             <form id="orderForm" method="post" action="/patient/order/create" class="section-stack mt-4">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <input type="hidden" id="medicines_json" name="medicines_json">
                 <input type="hidden" id="pharmacyId" name="pharmacy_id">
                 <input type="hidden" name="order_source" value="{{ prefill_order_source | default('') }}">

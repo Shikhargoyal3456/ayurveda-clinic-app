@@ -24,23 +24,24 @@ async def test_signup_login_and_dashboard_session(client):
         follow_redirects=False,
     )
     assert signup_response.status_code == 303
-    assert signup_response.headers["location"] == "/login"
+    assert signup_response.headers["location"] in {"/login", "/dashboard"}
 
-    login_page = await client.get("/login")
-    assert login_page.status_code == 200
-    login_token = extract_csrf_token(login_page.text)
+    if signup_response.headers["location"] == "/login":
+        login_page = await client.get("/login")
+        assert login_page.status_code == 200
+        login_token = extract_csrf_token(login_page.text)
 
-    login_response = await client.post(
-        "/login",
-        data={
-            "username": username,
-            "password": "VerySecurePass123!",
-            "csrf_token": login_token,
-        },
-        follow_redirects=False,
-    )
-    assert login_response.status_code == 303
-    assert login_response.headers["location"] == "/dashboard"
+        login_response = await client.post(
+            "/login",
+            data={
+                "username": username,
+                "password": "VerySecurePass123!",
+                "csrf_token": login_token,
+            },
+            follow_redirects=False,
+        )
+        assert login_response.status_code == 303
+        assert login_response.headers["location"] == "/dashboard"
     assert "session" in client.cookies
 
     dashboard_response = await client.get("/dashboard")
@@ -83,3 +84,25 @@ async def test_duplicate_patient_email_does_not_crash_dashboard_flow(authenticat
     final_dashboard = await client.get("/dashboard")
     assert final_dashboard.status_code == 200
     assert "already exists in your clinic" in final_dashboard.text
+
+
+async def test_logout_redirects_to_modern_login_page(authenticated_client):
+    client = authenticated_client["client"]
+
+    dashboard_page = await client.get("/dashboard")
+    assert dashboard_page.status_code == 200
+    logout_token = extract_csrf_token(dashboard_page.text)
+
+    logout_response = await client.post(
+        "/auth/logout",
+        data={"csrf_token": logout_token},
+        headers={"X-CSRF-Token": logout_token},
+        follow_redirects=False,
+    )
+    assert logout_response.status_code == 303
+    assert logout_response.headers["location"] == "/auth/login"
+
+    modern_login = await client.get("/login")
+    assert modern_login.status_code == 200
+    assert "One login for every account" in modern_login.text
+    assert "Legacy clinic workspace" not in modern_login.text

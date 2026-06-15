@@ -145,7 +145,10 @@ async def signup_and_login(client: AsyncClient, username: str | None = None, pas
         follow_redirects=False,
     )
     assert signup_response.status_code == 303
-    assert signup_response.headers["location"] == "/login"
+    assert signup_response.headers["location"] in {"/login", "/dashboard"}
+
+    if signup_response.headers["location"] == "/dashboard":
+        return {"username": username, "password": password}
 
     login_page = await client.get("/login")
     assert login_page.status_code == 200

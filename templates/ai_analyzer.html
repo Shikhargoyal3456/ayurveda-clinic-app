@@ -65,7 +65,7 @@
                 <button type="button" class="btn btn-outline-success btn-sm demo-chip" data-demo-symptoms="Heavy feeling in the chest, productive cough, sluggish digestion, lethargy, excessive sleepiness, mild congestion.">Kapha respiratory case</button>
             </div>
             <form id="ai-analyzer-form" method="post" action="/api/ai/analyze" class="section-stack">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <input type="hidden" name="mode" id="aiModeInput" value="samhita">
                 <div class="glass-panel">
                     <h3>AI Mode</h3>

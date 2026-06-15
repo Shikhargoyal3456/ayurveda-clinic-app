@@ -23,7 +23,7 @@
 
         <div id="manualTab" class="tab-content active">
             <form id="manualMedicineForm" class="section-stack" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <div class="form-grid two-up">
                     <label class="field"><span>Medicine Name *</span><input type="text" name="name" required placeholder="e.g., Paracetamol 500mg"></label>
                     <label class="field"><span>Brand / Manufacturer</span><input type="text" name="brand" placeholder="e.g., Cipla, Dabur"></label>

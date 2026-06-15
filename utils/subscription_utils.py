@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -96,6 +97,7 @@ PLAN_SUGGESTIONS = {
     "patients": "pro",
     "prescription": "pro",
 }
+PILOT_BYPASS_SUBSCRIPTIONS = os.getenv("PILOT_BYPASS_SUBSCRIPTIONS", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def utc_now() -> datetime:
@@ -280,6 +282,14 @@ def get_active_subscription(db: Session, user: Doctor) -> ClinicSubscription:
 
 def check_subscription_access(user, feature: str) -> dict:
     normalized_feature = (feature or "").strip().lower()
+    if PILOT_BYPASS_SUBSCRIPTIONS:
+        return {
+            "allowed": True,
+            "reason": "pilot_bypass",
+            "limit": -1,
+            "used": 0,
+            "upgrade_required": False,
+        }
     if normalized_feature not in USAGE_FIELD_MAP:
         return {
             "allowed": False,

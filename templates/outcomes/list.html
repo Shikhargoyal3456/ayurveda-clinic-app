@@ -140,7 +140,7 @@
         <aside class="form-panel no-print">
             <p class="eyebrow mb-2">Add outcome</p>
             <form method="post" action="/outcomes/add" data-loading-form class="section-stack">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <input type="hidden" name="patient_id" value="{{ patient.id }}">
                 <div class="form-row">
                     <label class="form-label">Improvement</label>

@@ -20,7 +20,7 @@
                             <a href="/dashboard" class="btn btn-outline-secondary">Back</a>
                         </div>
                         <form method="post" action="/patients/{{ patient.id }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                             <div class="mb-3">
                                 <label class="form-label" for="name">Name</label>
                                 <input class="form-control" id="name" name="name" value="{{ patient.name }}" required>

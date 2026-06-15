@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -27,7 +27,7 @@ async def ai_analyzer(request: Request):
 
 @router.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
-    return templates.TemplateResponse(request, "login.html", {"request": request})
+    return RedirectResponse(url="/auth/login", status_code=303)
 
 
 @router.get("/signup", response_class=HTMLResponse)

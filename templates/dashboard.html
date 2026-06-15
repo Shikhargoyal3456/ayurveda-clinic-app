@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% set active_page = 'profile' %}
+{% set active_page = 'dashboard' %}
 {% set show_sidebar = true %}
 {% set user_name = doctor.full_name or doctor.username %}
 {% set user_role = clinic_name %}
@@ -8,8 +8,8 @@
 {% block title %}Kash AI | Clinic Workspace{% endblock %}
 
 {% block header_actions %}
-<a href="/medicines" class="btn btn-outline-success btn-sm">Marketplace</a>
-<a href="#add-patient" class="btn btn-primary btn-sm">Add patient</a>
+<a href="/ai-doctor-live" class="btn btn-outline-dark btn-sm">AI consultation</a>
+<a href="#add-patient" class="btn btn-primary btn-sm">New patient</a>
 {% endblock %}
 
 {% block page %}
@@ -19,9 +19,10 @@
             <p class="eyebrow mb-3">Navigation</p>
             <nav class="sidebar-nav">
                 <a href="/dashboard" class="is-active"><i class="fa-solid fa-house-chimney-medical"></i>Overview</a>
-                <a href="#add-patient"><i class="fa-solid fa-user-plus"></i>Add patient</a>
+                <a href="#add-patient"><i class="fa-solid fa-user-plus"></i>New patient</a>
                 <a href="/appointments"><i class="fa-solid fa-calendar-days"></i>Appointments</a>
                 <a href="/followups"><i class="fa-solid fa-clock-rotate-left"></i>Follow-ups</a>
+                <a href="/ai-doctor-live"><i class="fa-solid fa-wave-square"></i>AI consultation</a>
                 <a href="/ai-analyzer"><i class="fa-solid fa-stethoscope"></i>AI analyzer</a>
                 <a href="/emr/doctor-dashboard"><i class="fa-solid fa-notes-medical"></i>EMR suite</a>
                 <a href="/medicines"><i class="fa-solid fa-capsules"></i>Medicines</a>
@@ -58,9 +59,9 @@
 
         {% if demo_mode_active %}
         <section class="alert alert-info">
-            <strong>Demo Mode is active.</strong> Sample patients and visits are loaded for this account.
+            <strong>Demo mode is active.</strong> Training records are loaded for this account.
             <form method="post" action="/demo/reset" data-confirm-submit="Reset demo data for this account?" data-loading-form class="ms-auto">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <button class="btn btn-outline-danger btn-sm" data-loading-text="Resetting...">Reset Demo Data</button>
             </form>
         </section>
@@ -69,6 +70,59 @@
         {% if flash %}
         <div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>
         {% endif %}
+
+        <section class="hero-card morning-brief-card" id="morningBriefCard">
+            <div class="morning-brief__header">
+                <div>
+                    <p class="eyebrow">AI Morning Brief</p>
+                    <h2 class="mb-2">Your day at a glance</h2>
+                </div>
+                <div class="ai-shell__loading morning-brief__loading" id="morningBriefLoading">
+                    <div class="ai-spinner"></div>
+                    <span>Dr. Kash is preparing your brief...</span>
+                </div>
+            </div>
+            <p class="mb-0 morning-brief__text" id="morningBriefText">Reviewing today's appointments, overdue follow-ups, and new patients.</p>
+            <p class="mb-0 morning-brief__meta" id="morningBriefMeta"></p>
+        </section>
+
+        <section class="card mt-4" id="patientAgentAlertsCard">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Patient Agent Alerts</p>
+                    <h2 class="h4 mb-0">Urgent patient messages</h2>
+                </div>
+                <span class="badge text-bg-warning" id="patientAgentAlertCount">Checking...</span>
+            </div>
+            <div class="stack-list" id="patientAgentAlertsList">
+                <div class="stack-item"><p class="mb-0">Reviewing recent patient agent escalations.</p></div>
+            </div>
+        </section>
+
+        <section class="card mt-4 pending-reviews" id="pendingReviewsCard">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Doctor review gate</p>
+                    <h2 class="h4 mb-0">⏳ Pending AI Responses</h2>
+                </div>
+                <span class="badge text-bg-warning" id="pendingCount">0</span>
+            </div>
+            <div class="stack-list" id="pendingReviewsList">
+                <div class="stack-item"><p class="mb-0">No pending reviews. Kash AI is waiting for your input.</p></div>
+            </div>
+        </section>
+
+        <section class="card mt-4 risk-section">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">AI risk radar</p>
+                    <h2 class="h4 mb-0">AI-identified risk patients</h2>
+                </div>
+            </div>
+            <div class="stack-list" id="aiRiskList">
+                <div class="stack-item"><p class="mb-0">Kash AI is reviewing follow-up patterns and repeated symptom clusters.</p></div>
+            </div>
+        </section>
 
         <section class="hero-card ai-dashboard-shell" id="legacyAiHero">
             <div class="ai-shell__header">
@@ -164,7 +218,7 @@
             <article class="table-panel">
                 <div class="page-header mb-3">
                     <div>
-                        <p class="eyebrow">Upcoming appointments</p>
+                        <p class="eyebrow">Today's appointments</p>
                         <h2>Next consultations</h2>
                     </div>
                     <a href="/appointments" class="btn btn-outline-dark btn-sm">Open schedule</a>
@@ -220,6 +274,29 @@
             <article class="table-panel">
                 <div class="page-header mb-3">
                     <div>
+                        <p class="eyebrow">Pending follow-ups</p>
+                        <h2>Patients to call back</h2>
+                    </div>
+                    <a href="/followups" class="btn btn-outline-dark btn-sm">Open follow-ups</a>
+                </div>
+                <div class="stack-list">
+                    {% for followup in due_followups %}
+                    <div class="stack-item d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <strong>{{ followup.patient.name }}</strong>
+                            <p class="mb-0">{{ followup.diagnosis or "Follow-up due" }}</p>
+                        </div>
+                        <span class="status-badge text-bg-warning">{{ followup.followup_date.strftime('%d %b') if followup.followup_date else 'Due' }}</span>
+                    </div>
+                    {% else %}
+                    <div class="stack-item"><p class="mb-0">No pending follow-ups are due right now.</p></div>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="table-panel">
+                <div class="page-header mb-3">
+                    <div>
                         <p class="eyebrow">Clinic registry</p>
                         <h2>Patients and next actions</h2>
                         <p class="mb-0">{{ patients | default([], true) | length }} visible records, {{ returning_patients }} returning patients, {{ total_cases }} total cases.</p>
@@ -267,10 +344,10 @@
 
             <aside id="add-patient" class="form-panel">
                 <p class="eyebrow">New patient</p>
-                <h2>Quick registration</h2>
+                <h2>New patient</h2>
                 <p class="text-muted">Add a patient and move them into case creation, prescriptions, or scheduling in one step.</p>
                 <form method="post" action="/patients" class="section-stack" data-loading-form>
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                     <div>
                         <label class="form-label">Name</label>
                         <input name="name" class="form-control" required>
@@ -330,6 +407,23 @@
     </div>
 </div>
 
+<aside class="kash-ai-assistant" id="kashAIAssistant">
+    <button class="assistant-bubble" id="assistantToggle" type="button">🤖 Ask Kash AI</button>
+    <div class="assistant-window" id="assistantWindow" hidden>
+        <div class="assistant-header">
+            <strong>Kash AI Assistant</strong>
+            <span>Ask for patient lists, symptom clusters, or follow-up blockers</span>
+        </div>
+        <div class="assistant-messages" id="assistantMessages">
+            <div class="assistant-message assistant-message--system">Try: "Show me all patients with high fever"</div>
+        </div>
+        <form class="assistant-form" id="assistantForm">
+            <input type="text" id="assistantInput" class="form-control" placeholder="Ask anything..." autocomplete="off">
+            <button class="btn btn-primary btn-sm" type="submit">Ask</button>
+        </form>
+    </div>
+</aside>
+
 <nav class="mobile-bottom-nav" aria-label="Mobile dashboard navigation">
     <a href="/dashboard" class="is-active"><i class="fa-solid fa-house"></i><span>Home</span></a>
     <a href="/appointments"><i class="fa-solid fa-calendar-days"></i><span>Visits</span></a>
@@ -342,6 +436,8 @@
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 <script>
 const legacyDoctorId = {{ ai_dashboard_doctor_id | default(doctor.id) | tojson }};
+const patientAgentDoctorId = {{ doctor.id | tojson }};
+const dashboardCsrfToken = {{ (request.state.csrf_token | default(csrf_token)) | tojson }};
 const legacyActionRoutes = {
     register_patient: "/emr/patient-registration",
     open_registry: "/emr/patient-registry",
@@ -394,9 +490,248 @@ function renderLegacyAlerts(alerts) {
     target.innerHTML = rows.length ? rows.join("") : `<div class="stack-item"><p class="mb-0">No urgent patient alerts were generated from current data.</p></div>`;
 }
 
+function renderRiskPatients(items) {
+    const target = document.getElementById("aiRiskList");
+    const rows = (items || []).map((item) => {
+        const tone = item.severity === "high" ? "risk-high" : "risk-medium";
+        const icon = item.severity === "high" ? "🔴" : "🟠";
+        return `
+            <div class="stack-item ${tone}">
+                <strong>${icon} ${item.patient_name}</strong>
+                <p class="mb-0">${item.reason}</p>
+            </div>
+        `;
+    });
+    target.innerHTML = rows.length ? rows.join("") : `<div class="stack-item"><p class="mb-0">No high-risk patients were flagged in today's scan.</p></div>`;
+}
+
+function renderPendingReviews(reviews) {
+    const container = document.getElementById("pendingReviewsList");
+    const countSpan = document.getElementById("pendingCount");
+    if (!container || !countSpan) {
+        return;
+    }
+    if (!reviews.length) {
+        container.innerHTML = `<div class="stack-item"><p class="mb-0">✅ All clear. No pending reviews.</p></div>`;
+        countSpan.textContent = "0";
+        return;
+    }
+
+    countSpan.textContent = String(reviews.length);
+    container.innerHTML = reviews.map((review) => `
+        <div class="review-item">
+            <div class="review-item__top">
+                <strong>👤 Patient: ${review.patient_name}</strong>
+                <span class="text-muted">${review.time_ago}</span>
+            </div>
+            <div class="review-block">
+                <span class="review-label">Patient asked</span>
+                <div class="review-question">"${review.question}"</div>
+            </div>
+            <div class="review-block">
+                <span class="review-label">🤖 AI draft</span>
+                <div class="review-draft">${review.ai_suggestion}</div>
+            </div>
+            <div class="review-block">
+                <span class="review-label">✏️ Edit response before sending</span>
+                <textarea id="edit-response-${review.id}" class="review-textarea">${review.ai_suggestion}</textarea>
+            </div>
+            <div class="review-actions">
+                <button type="button" class="btn btn-primary btn-sm" onclick="approveReview(${review.id})">✅ Approve & Send</button>
+                <button type="button" class="btn btn-outline-dark btn-sm" onclick="editAndSend(${review.id})">✏️ Edit & Send</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="rejectReview(${review.id})">❌ Reject</button>
+            </div>
+        </div>
+    `).join("");
+}
+
 function showLegacyFallback() {
     document.getElementById("legacyAiLoading").innerHTML = "<span>AI insight generation is temporarily unavailable. The live database metrics below are still current.</span>";
 }
+
+function showMorningBriefFallback(message) {
+    const loadingNode = document.getElementById("morningBriefLoading");
+    const textNode = document.getElementById("morningBriefText");
+    const metaNode = document.getElementById("morningBriefMeta");
+    if (loadingNode) {
+        loadingNode.innerHTML = "<span>Morning brief unavailable</span>";
+    }
+    if (textNode) {
+        textNode.textContent = message || "Your morning brief is taking a little longer than usual. You can continue using the dashboard normally.";
+    }
+    if (metaNode) {
+        metaNode.textContent = "";
+    }
+}
+
+function renderPatientAgentAlerts(alerts) {
+    const countNode = document.getElementById("patientAgentAlertCount");
+    const listNode = document.getElementById("patientAgentAlertsList");
+    const rows = (alerts || []).map((alert) => {
+        const severityClass = alert.severity === "emergency" ? "text-bg-danger" : "text-bg-warning";
+        const severityLabel = alert.severity === "emergency" ? "Emergency" : "Urgent";
+        const createdAt = alert.created_at ? new Date(alert.created_at).toLocaleString() : "Just now";
+        return `
+            <div class="stack-item d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <strong>${alert.patient_name}</strong>
+                        <span class="status-badge ${severityClass}">${severityLabel}</span>
+                    </div>
+                    <p class="mb-1">${alert.query_text}</p>
+                    <p class="mb-0 text-muted"><small>${createdAt} via ${alert.source_channel || "app"}</small></p>
+                </div>
+                <a class="btn btn-outline-success btn-sm" href="/patients/${alert.patient_id}/cases">Review</a>
+            </div>
+        `;
+    });
+    if (countNode) {
+        countNode.textContent = `${(alerts || []).length} active`;
+    }
+    if (listNode) {
+        listNode.innerHTML = rows.length ? rows.join("") : `<div class="stack-item"><p class="mb-0">No urgent patient agent alerts right now.</p></div>`;
+    }
+}
+
+async function loadPatientAgentAlerts() {
+    try {
+        const response = await fetch(`/api/doctor/${patientAgentDoctorId}/alerts`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || "Failed to load patient alerts");
+        }
+        renderPatientAgentAlerts(payload.alerts || []);
+    } catch (error) {
+        console.error("Patient agent alerts failed", error);
+        const listNode = document.getElementById("patientAgentAlertsList");
+        const countNode = document.getElementById("patientAgentAlertCount");
+        if (countNode) {
+            countNode.textContent = "Unavailable";
+        }
+        if (listNode) {
+            listNode.innerHTML = `<div class="stack-item"><p class="mb-0">Patient alerts are temporarily unavailable.</p></div>`;
+        }
+    }
+}
+
+async function loadMorningBrief() {
+    try {
+        const response = await fetch("/api/dashboard/morning-brief", { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || "Failed to load morning brief");
+        }
+        const data = payload.data || {};
+        document.getElementById("morningBriefLoading").style.display = "none";
+        document.getElementById("morningBriefText").textContent = data.brief || "";
+        document.getElementById("morningBriefMeta").textContent = `Patients today: ${data.appointments_count || 0} • Overdue follow-ups: ${data.overdue_count || 0}`;
+    } catch (error) {
+        console.error("Morning brief failed", error);
+        showMorningBriefFallback();
+    }
+}
+
+async function loadRiskPatients() {
+    try {
+        const response = await fetch("/api/dashboard/risk-patients", { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || "Failed to load risk patients");
+        }
+        renderRiskPatients(payload.data?.patients || []);
+    } catch (error) {
+        console.error("Risk patients failed", error);
+        renderRiskPatients([]);
+    }
+}
+
+async function loadPendingReviews() {
+    try {
+        const response = await fetch("/api/doctor/pending-reviews", { credentials: "same-origin" });
+        const reviews = await response.json();
+        if (!response.ok) {
+            throw new Error(reviews.detail || "Failed to load pending reviews");
+        }
+        renderPendingReviews(Array.isArray(reviews) ? reviews : []);
+    } catch (error) {
+        console.error("Pending reviews failed", error);
+        renderPendingReviews([]);
+    }
+}
+
+async function approveReview(reviewId, editedResponse = null) {
+    const response = await fetch(`/api/doctor/approve-review/${reviewId}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": dashboardCsrfToken,
+        },
+        body: JSON.stringify(editedResponse ? { edited_response: editedResponse } : {}),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+        throw new Error(payload.detail || "Could not approve review");
+    }
+    await loadPendingReviews();
+    if (typeof window.updateReviewBadge === "function") {
+        window.updateReviewBadge();
+    }
+    window.showToast(payload.sent_to_patient ? "Response approved and sent to patient." : "Response approved. Manual delivery may still be needed.", "success");
+}
+
+async function editAndSend(reviewId) {
+    const editedText = document.getElementById(`edit-response-${reviewId}`)?.value.trim() || "";
+    return approveReview(reviewId, editedText);
+}
+
+async function rejectReview(reviewId) {
+    if (!window.confirm("Reject this AI draft? The patient will be told the doctor will respond manually.")) {
+        return;
+    }
+    const response = await fetch(`/api/doctor/reject-review/${reviewId}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": dashboardCsrfToken,
+        },
+        body: JSON.stringify({ reason: "Doctor will respond manually." }),
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+        throw new Error(payload.detail || "Could not reject review");
+    }
+    await loadPendingReviews();
+    if (typeof window.updateReviewBadge === "function") {
+        window.updateReviewBadge();
+    }
+    window.showToast("Response rejected. Patient will wait for a manual doctor reply.", "warning");
+}
+
+window.approveReview = async (reviewId) => {
+    try {
+        await approveReview(reviewId);
+    } catch (error) {
+        window.showErrorToast(error.message || "Could not approve review.");
+    }
+};
+
+window.editAndSend = async (reviewId) => {
+    try {
+        await editAndSend(reviewId);
+    } catch (error) {
+        window.showErrorToast(error.message || "Could not send edited response.");
+    }
+};
+
+window.rejectReview = async (reviewId) => {
+    try {
+        await rejectReview(reviewId);
+    } catch (error) {
+        window.showErrorToast(error.message || "Could not reject review.");
+    }
+};
 
 async function loadLegacyAIDashboard() {
     try {
@@ -424,13 +759,141 @@ async function loadLegacyAIDashboard() {
     }
 }
 
-window.addEventListener("DOMContentLoaded", loadLegacyAIDashboard);
+function appendAssistantMessage(kind, text, matches) {
+    const target = document.getElementById("assistantMessages");
+    if (!target) {
+        return;
+    }
+    const bubble = document.createElement("div");
+    bubble.className = `assistant-message assistant-message--${kind}`;
+    bubble.textContent = text;
+    target.appendChild(bubble);
+    (matches || []).forEach((item) => {
+        const link = document.createElement("a");
+        link.className = "assistant-result";
+        link.href = `/emr/patient/${item.patient_id}`;
+        link.textContent = `${item.patient_name}: ${item.summary}`;
+        target.appendChild(link);
+    });
+    target.scrollTop = target.scrollHeight;
+}
+
+async function handleAssistantQuery(query) {
+    appendAssistantMessage("user", query);
+    appendAssistantMessage("system", "Kash AI is checking your patient records...");
+    try {
+        const response = await fetch("/api/ai/assistant/query", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": "{{ request.state.csrf_token | default(csrf_token) }}",
+            },
+            body: JSON.stringify({ query }),
+        });
+        const payload = await response.json();
+        const target = document.getElementById("assistantMessages");
+        if (target?.lastElementChild?.textContent === "Kash AI is checking your patient records...") {
+            target.lastElementChild.remove();
+        }
+        if (!response.ok || !payload.success) {
+            throw new Error(payload.detail || "Assistant unavailable.");
+        }
+        appendAssistantMessage("assistant", payload.data?.answer || "Here is what I found.", payload.data?.matches || []);
+    } catch (error) {
+        const target = document.getElementById("assistantMessages");
+        if (target?.lastElementChild?.textContent === "Kash AI is checking your patient records...") {
+            target.lastElementChild.remove();
+        }
+        appendAssistantMessage("assistant", error.message || "Assistant unavailable right now.");
+    }
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    void loadMorningBrief();
+    void loadPatientAgentAlerts();
+    void loadPendingReviews();
+    void loadRiskPatients();
+    void loadLegacyAIDashboard();
+    window.setInterval(() => {
+        void loadPatientAgentAlerts();
+    }, 60000);
+    window.setInterval(() => {
+        void loadPendingReviews();
+    }, 30000);
+
+    const assistantToggle = document.getElementById("assistantToggle");
+    const assistantWindow = document.getElementById("assistantWindow");
+    const assistantForm = document.getElementById("assistantForm");
+    const assistantInput = document.getElementById("assistantInput");
+    assistantToggle?.addEventListener("click", () => {
+        if (!assistantWindow) {
+            return;
+        }
+        if (assistantWindow.hasAttribute("hidden")) {
+            assistantWindow.removeAttribute("hidden");
+            assistantInput?.focus();
+        } else {
+            assistantWindow.setAttribute("hidden", "hidden");
+        }
+    });
+    assistantForm?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const query = assistantInput?.value.trim() || "";
+        if (!query) {
+            return;
+        }
+        assistantInput.value = "";
+        void handleAssistantQuery(query);
+    });
+});
 </script>
 <style>
+.morning-brief-card {
+    background: linear-gradient(135deg, #f6fbf2 0%, #eef8f1 44%, #fff8e8 100%);
+    border: 1px solid rgba(31, 122, 69, 0.12);
+}
+
+.morning-brief__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.morning-brief__loading {
+    color: #1c5137;
+    background: rgba(43, 174, 102, 0.12);
+}
+
+.morning-brief__text {
+    font-size: 1.05rem;
+    color: #173527;
+}
+
+.morning-brief__meta {
+    margin-top: 0.75rem;
+    color: #476152;
+    font-size: 0.92rem;
+}
+
 .ai-dashboard-shell {
     background: linear-gradient(135deg, #0f4c5c 0%, #1a7f6b 58%, #2bae66 100%);
     color: white;
 }
+.risk-section .stack-item{border-left:4px solid transparent;border-radius:16px}
+.risk-high{border-left-color:#d32f2f;background:#fff6f6}
+.risk-medium{border-left-color:#ff9800;background:#fffaf2}
+.pending-reviews{border-left:4px solid #ff9800}
+.review-item{padding:16px;border:1px solid #e2e8f0;border-radius:18px;background:#fff}
+.review-item__top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.review-block{display:grid;gap:8px;margin-top:12px}
+.review-label{font-size:.84rem;font-weight:600;color:#64748b}
+.review-question{background:#f8fafc;padding:12px 14px;border-radius:14px}
+.review-draft{background:#eff6ff;padding:12px 14px;border-radius:14px;white-space:pre-wrap}
+.review-textarea{width:100%;min-height:100px;padding:12px 14px;border-radius:14px;border:1px solid #cbd5e1;background:#fff}
+.review-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
 
 .ai-shell__header {
     display: flex;
@@ -461,10 +924,26 @@ window.addEventListener("DOMContentLoaded", loadLegacyAIDashboard);
     to { transform: rotate(360deg); }
 }
 
+.kash-ai-assistant{position:fixed;right:20px;bottom:24px;z-index:35;display:grid;gap:10px}
+.assistant-bubble{border:none;border-radius:999px;padding:14px 18px;background:linear-gradient(135deg,#19385f 0%,#2b5f8f 100%);color:#fff;font-weight:700;box-shadow:0 18px 40px rgba(25,56,95,.26)}
+.assistant-window{width:min(340px,calc(100vw - 32px));height:420px;display:grid;grid-template-rows:auto 1fr auto;padding:14px;border-radius:20px;background:rgba(255,255,255,.98);border:1px solid rgba(203,213,225,.9);box-shadow:0 24px 54px rgba(15,23,42,.18)}
+.assistant-header{display:grid;gap:2px;padding-bottom:10px;border-bottom:1px solid #e2e8f0}
+.assistant-header span{font-size:.88rem;color:#64748b}
+.assistant-messages{overflow:auto;display:grid;gap:10px;padding:12px 2px}
+.assistant-message{padding:10px 12px;border-radius:14px;font-size:.93rem}
+.assistant-message--system{background:#f8fafc;color:#475569}
+.assistant-message--user{background:#e0efff;color:#16324f;justify-self:end;max-width:90%}
+.assistant-message--assistant{background:#eff6ff;color:#21436d}
+.assistant-result{display:block;padding:10px 12px;border-radius:12px;background:#fff;border:1px solid #d9e7fb;color:#21436d;text-decoration:none}
+.assistant-form{display:grid;grid-template-columns:1fr auto;gap:8px;padding-top:10px;border-top:1px solid #e2e8f0}
+
 @media (max-width: 768px) {
+    .morning-brief__header,
     .ai-shell__header {
         flex-direction: column;
     }
+    .kash-ai-assistant{left:16px;right:16px;bottom:82px}
+    .assistant-window{width:100%}
 }
 </style>
 {% endblock %}

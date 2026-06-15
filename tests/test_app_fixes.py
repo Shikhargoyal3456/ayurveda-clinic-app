@@ -14,7 +14,7 @@ def test_email_service_reports_missing_env(monkeypatch):
     monkeypatch.delenv("EMAIL_PASSWORD", raising=False)
 
     service = EmailService()
-    result = service._send("Subject", "<p>Body</p>", "patient@example.com")
+    result = service._send("Subject", "<p>Body</p>", "patient@clinic.test")
 
     assert result["success"] is False
     assert result["reason"] == "smtp_not_configured"

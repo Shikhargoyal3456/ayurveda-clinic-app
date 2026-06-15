@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 import requests
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -29,7 +29,10 @@ except Exception as exc:
     def get_rag_engine():
         raise RuntimeError(f"RAG engine unavailable: {_rag_import_error}")
 from models.prescription import Prescription
+from models.prescription import AIFeedback
+from services.ai_first import generate_case_prefill
 from services.ai_provider import generate_role_based_prescription_sync
+from services.cache_service import cache
 from services.diet_ai import generate_diet_plan, generate_whatsapp_message
 from services.voice_ai import structure_case_sheet, transcribe_audio
 from services.whatsapp import build_whatsapp_link
@@ -582,6 +585,17 @@ def add_case_page(
     )
 
 
+@router.get("/api/ai/case-prefill/{patient_id}")
+async def ai_case_prefill(
+    patient_id: int,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    _get_patient_or_404(db, doctor.id, patient_id)
+    payload = await generate_case_prefill(db, doctor.id, patient_id)
+    return JSONResponse({"success": True, "data": payload})
+
+
 @router.post("/patients/{patient_id}/cases/transcribe-audio")
 async def transcribe_case_audio(
     patient_id: int,
@@ -637,7 +651,6 @@ async def transcribe_live_audio(
     request: Request,
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
-    _: None = Depends(verify_csrf),
 ):
     """Accepts raw audio blob from browser microphone and returns transcript as JSON."""
     from fastapi.responses import JSONResponse
@@ -681,6 +694,7 @@ async def transcribe_live_audio(
 
 
 @router.post("/patients/{patient_id}/cases")
+@router.post("/patients/{patient_id}/cases/new")
 def save_case(
     patient_id: int,
     request: Request,
@@ -772,10 +786,46 @@ def save_case(
     )
     db.add(case)
     commit_with_retry(db)
+    cache.invalidate(f"ai:first:patient-history:{doctor.id}:{patient.id}")
+    cache.invalidate(f"ai:first:case-prefill:{doctor.id}:{patient.id}")
+    cache.invalidate(f"ai:first:next-actions:{doctor.id}:{patient.id}")
+    cache.invalidate(f"ai:first:risk-patients:{doctor.id}")
     write_audit_event("case_created", request, case_id=case.id, patient_id=patient.id, diagnosis=case.diagnosis)
     track_event("case_sheet_saved", doctor_id=doctor.id, patient_id=patient.id, case_id=case.id)
     set_flash(request, "Case sheet saved.", "success")
-    return RedirectResponse(url=f"/patients/{patient.id}/cases", status_code=303)
+    return RedirectResponse(url=f"/emr/patient/{patient.id}?ai_case_saved={case.id}", status_code=303)
+
+
+@router.post("/api/ai/feedback")
+async def ai_feedback_capture(
+    payload: dict = Body(...),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    patient_id = int(payload.get("patient_id") or 0) or None
+    field_name = str(payload.get("field") or payload.get("field_name") or "").strip()
+    ai_suggestion = str(payload.get("ai_suggestion") or "").strip()
+    doctor_correction = str(payload.get("doctor_correction") or "").strip()
+    case_id = int(payload.get("case_id") or 0) or None
+
+    if not field_name or not ai_suggestion or not doctor_correction or ai_suggestion == doctor_correction:
+        return JSONResponse({"success": True, "saved": False})
+
+    db.add(
+        AIFeedback(
+            doctor_id=doctor.id,
+            patient_id=patient_id,
+            case_id=case_id,
+            field_name=field_name[:80],
+            ai_suggestion=ai_suggestion[:4000],
+            doctor_correction=doctor_correction[:4000],
+            notes="field_correction",
+        )
+    )
+    commit_with_retry(db)
+    cache.invalidate(f"ai:first:case-prefill:{doctor.id}")
+    return JSONResponse({"success": True, "saved": True})
 
 
 @router.get("/patients/{patient_id}/cases")

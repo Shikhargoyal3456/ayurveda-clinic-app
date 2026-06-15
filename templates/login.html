@@ -6,60 +6,56 @@
 {% set user_role = 'Secure workspace' %}
 {% set avatar_label = 'DR' %}
 
-{% block title %}Kash AI | Doctor / Admin Workspace{% endblock %}
+{% block title %}Kash AI | Login{% endblock %}
 
 {% block header_actions %}
-<a href="/signup" class="btn btn-primary btn-sm">Create account</a>
+<a href="/auth/register/patient" class="btn btn-primary btn-sm">Create account</a>
 {% endblock %}
 
 {% block page %}
 <div class="site-container">
     <div class="auth-layout fade-in-up">
         <section class="auth-story">
-            <p class="eyebrow">Legacy clinic workspace</p>
-            <h1>Modern Ayurveda operations, with a warmer first impression.</h1>
-            <p>Appointments, patients, AI support, prescriptions, and follow-ups live in one focused clinical experience. Use this page only for legacy doctor or admin workspace accounts.</p>
+            <p class="eyebrow">Modern secure login</p>
+            <h1>One login for every Kash AI account.</h1>
+            <p>Use the modern login to access patient, doctor, pharmacy, lab, delivery, or admin accounts from one place.</p>
             <div class="auth-points">
                 <div class="auth-point">
-                    <strong>Retention first</strong>
-                    <p class="mb-0">Bring patients back on time with an interface built around continuity.</p>
+                    <strong>One secure entry</strong>
+                    <p class="mb-0">Doctors and teams can move through the same modern auth flow without guessing which page to use.</p>
                 </div>
                 <div class="auth-point">
-                    <strong>Doctor in control</strong>
-                    <p class="mb-0">AI supports reasoning and drafting, while the clinician remains the final authority.</p>
+                    <strong>Modern experience</strong>
+                    <p class="mb-0">The updated login page matches the current Kash AI design system and portal flow.</p>
                 </div>
                 <div class="auth-point">
-                    <strong>Built for Indian care journeys</strong>
-                    <p class="mb-0">Warm visuals, mobile responsiveness, and practical clinic workflows.</p>
+                    <strong>Safe fallback</strong>
+                    <p class="mb-0">If an old route reaches this template, doctors still get a clear path to the correct login page.</p>
                 </div>
             </div>
             <div class="auth-meta">
-                <span class="auth-badge"><i class="fa-solid fa-user-doctor"></i> Doctor dashboard</span>
-                <span class="auth-badge"><i class="fa-solid fa-wave-square"></i> AI analyzer</span>
-                <span class="auth-badge"><i class="fa-solid fa-calendar-days"></i> Follow-up tracking</span>
+                <span class="auth-badge"><i class="fa-solid fa-user-doctor"></i> Doctor access</span>
+                <span class="auth-badge"><i class="fa-solid fa-hospital-user"></i> Patient access</span>
+                <span class="auth-badge"><i class="fa-solid fa-shield-heart"></i> Unified auth</span>
             </div>
         </section>
 
         <section class="auth-card auth-panel">
-            <p class="eyebrow">Secure login</p>
-            <h2>Enter your clinic workspace</h2>
-            <p class="text-muted">Use your legacy doctor or admin credentials to continue into the clinic workspace.</p>
+            <p class="eyebrow">Continue</p>
+            <h2>Open the modern login page</h2>
+            <p class="text-muted">This route now points doctors and staff to the current Kash AI sign-in experience.</p>
             {% if flash %}
             <div class="alert alert-{{ flash.category }} mb-3">{{ flash.message }}</div>
             {% endif %}
-            <form method="post" action="/login" data-loading-form class="section-stack">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <div>
-                    <label class="form-label">Username</label>
-                    <input name="username" class="form-control" required>
-                </div>
-                <div>
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <button class="btn btn-primary w-100" data-loading-text="Logging in...">Login to dashboard</button>
-            </form>
-            <p class="mt-4 mb-0 text-muted">Need an account? <a href="/signup">Create one here</a></p>
+            <div class="section-stack">
+                <a href="/auth/google/login?role=doctor" class="btn btn-outline-dark w-100" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+                    <span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;border:1px solid #dbe3ef;color:#4285f4;font-weight:800;">G</span>
+                    <span>Continue with Google</span>
+                </a>
+                <a href="/auth/login" class="btn btn-primary w-100">Go to modern login</a>
+                <a href="/auth/login/doctor" class="btn btn-outline-dark w-100">Doctor login</a>
+            </div>
+            <p class="mt-4 mb-0 text-muted">Need an account? <a href="/auth/register/doctor">Create one here</a></p>
         </section>
     </div>
 </div>

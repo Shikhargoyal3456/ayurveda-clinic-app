@@ -55,6 +55,7 @@
       .toast--success { background: rgba(16, 185, 129, 0.95); }
       .toast--error { background: rgba(239, 68, 68, 0.95); }
       .toast--warning { background: rgba(245, 158, 11, 0.96); color: #111827; }
+      .review-badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; margin-left:6px; padding:0 6px; border-radius:999px; background:#ff9800; color:#fff; font-size:10px; font-weight:700; }
     </style>
     <script type="application/ld+json">
     {
@@ -142,7 +143,12 @@
                     <a href="/telemedicine/book" class="nav-link {% if active_page == 'consult' %}is-active{% endif %}">Consult</a>
                     <a href="/diagnostics/lab-booking" class="nav-link">Labs</a>
                     {% if not is_guest_user %}
-                    <a href="{{ nav_dashboard_href }}" class="nav-link {% if active_page == 'profile' %}is-active{% endif %}">Dashboard</a>
+                    <a href="{{ nav_dashboard_href }}" class="nav-link {% if active_page == 'profile' or active_page == 'dashboard' %}is-active{% endif %}">
+                        Dashboard
+                        {% if resolved_session_role == 'doctor' %}
+                        <span id="reviewBadge" class="review-badge" style="display:none;">0</span>
+                        {% endif %}
+                    </a>
                     {% endif %}
                 </div>
 
@@ -267,6 +273,7 @@
     <script src="/static/js/ws-manager.js?v=20260506-1"></script>
     <script>
     document.addEventListener("DOMContentLoaded", function () {
+        const doctorReviewRole = {{ (resolved_session_role == 'doctor') | tojson }};
         class ToastQueue {
             constructor(maxVisible = 3) {
                 this.maxVisible = maxVisible;
@@ -328,6 +335,34 @@
                 }
             }
         });
+
+        window.updateReviewBadge = async function updateReviewBadge() {
+            if (!doctorReviewRole) {
+                return;
+            }
+            const badge = document.getElementById("reviewBadge");
+            if (!badge) {
+                return;
+            }
+            try {
+                const response = await fetch("/api/doctor/pending-reviews", { credentials: "same-origin" });
+                const reviews = await response.json();
+                if (!response.ok || !Array.isArray(reviews) || reviews.length === 0) {
+                    badge.style.display = "none";
+                    badge.textContent = "0";
+                    return;
+                }
+                badge.textContent = String(reviews.length);
+                badge.style.display = "inline-flex";
+            } catch (_error) {
+                badge.style.display = "none";
+            }
+        };
+
+        if (doctorReviewRole) {
+            window.updateReviewBadge();
+            window.setInterval(window.updateReviewBadge, 30000);
+        }
     });
     </script>
     {% block extra_scripts %}{% endblock %}

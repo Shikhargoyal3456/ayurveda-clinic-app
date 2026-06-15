@@ -20,7 +20,7 @@
 
         <div class="card admin-form-shell">
             <form id="addMedicineForm" class="medicine-form content-stack" enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <div class="form-grid two-up">
                     <label class="field">
                         <span>Medicine Name *</span>

@@ -40,7 +40,7 @@
                 <button type="button" class="btn btn-outline-success btn-sm" data-demo-date-offset="7" data-demo-time="17:30" data-demo-reason="Lifestyle adherence check">1-week review</button>
             </div>
             <form method="post" action="/patients/{{ patient.id }}/appointments" data-loading-form class="section-stack">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <div class="split-grid">
                     <div>
                         <label class="form-label">Date</label>

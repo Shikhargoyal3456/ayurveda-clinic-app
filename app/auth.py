@@ -190,6 +190,10 @@ def initialize_login_session(request: Request, doctor: Doctor, db: Session) -> N
     request.session.clear()
     request.session["_csrf_token"] = ensure_csrf_token(request)
     issue_session_tokens(request, doctor.id, doctor.session_version)
+    request.session["doctor_id"] = doctor.id
+    request.session["full_name"] = (doctor.full_name or doctor.username or "Doctor").strip()
+    request.session["doctor_type"] = (doctor.specialty or "ayurveda").strip().lower() or "ayurveda"
+    request.session["portal_doctor_type"] = request.session["doctor_type"]
     doctor.last_login_at = doctor.last_login_at or None
     doctor.refresh_token_hash = hash_refresh_token(str(request.session.get("refresh_token", "")))
     doctor.failed_login_attempts = 0

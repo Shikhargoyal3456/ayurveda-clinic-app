@@ -82,7 +82,7 @@
 
                 <article class="form-panel">
                     <form method="post" action="/prescriptions/create" data-loading-form class="section-stack" aria-label="Prescription creation form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                         <input type="hidden" name="patient_id" value="{{ patient.id }}">
                         <div class="form-row">
                             <label class="form-label" for="diagnosis-input">Diagnosis</label>

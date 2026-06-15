@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import sys
 import contextvars
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -23,10 +24,16 @@ _REDACTION_PATTERNS = [
 
 
 def _redact_text(value: str) -> str:
-    redacted = str(value or "")
-    for pattern, replacement in _REDACTION_PATTERNS:
-        redacted = pattern.sub(replacement, redacted)
-    return redacted
+    original = str(value or "")
+    if sys.meta_path is None:
+        return original
+    try:
+        redacted = original
+        for pattern, replacement in _REDACTION_PATTERNS:
+            redacted = pattern.sub(replacement, redacted)
+        return redacted
+    except (ImportError, AttributeError):
+        return original
 
 
 class JSONFormatter(logging.Formatter):

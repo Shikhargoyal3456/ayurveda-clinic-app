@@ -21,6 +21,8 @@ from models.outcome import Outcome
 from models.payment import Payment
 from models.prescription import Prescription
 from services.superapp_service import get_dashboard_payload
+from services.emr_service import get_doctor_dashboard_data
+from services.ai_first import answer_doctor_assistant_query, generate_risk_patients
 from shared.template_engine import render_template
 from utils.subscription_utils import (
     build_paywall_response,
@@ -191,9 +193,10 @@ def pricing_page(request: Request):
     return render_template(templates, request, "pricing.html")
 
 
-@router.get("/investors")
-def investor_page(request: Request):
-    return render_template(templates, request, "investors.html")
+# FROZEN: not needed for clinic pilot v1
+# @router.get("/investors")
+# def investor_page(request: Request):
+#     return render_template(templates, request, "investors.html")
 
 
 @router.get("/dashboard")
@@ -204,45 +207,7 @@ def dashboard(
 ):
     today = date.today()
     current_datetime = datetime.now()
-    appointment_count_sq = (
-        db.query(func.count(Appointment.id))
-        .join(Patient, Patient.id == Appointment.patient_id)
-        .filter(Patient.doctor_id == doctor.id, Appointment.date == today)
-        .scalar_subquery()
-    )
-    patient_count_sq = (
-        db.query(func.count(Patient.id))
-        .filter(Patient.doctor_id == doctor.id, func.date(Patient.created_at) == today.isoformat())
-        .scalar_subquery()
-    )
-    earnings_sq = (
-        db.query(func.coalesce(func.sum(Payment.amount), 0))
-        .join(Patient, Patient.id == Payment.patient_id)
-        .filter(Patient.doctor_id == doctor.id, Payment.date == today, Payment.status == "paid")
-        .scalar_subquery()
-    )
-    pending_payments_sq = (
-        db.query(func.count(Payment.id))
-        .join(Patient, Patient.id == Payment.patient_id)
-        .filter(Patient.doctor_id == doctor.id, Payment.status == "unpaid")
-        .scalar_subquery()
-    )
-    followups_due_sq = (
-        db.query(func.count(CaseSheet.id))
-        .join(Patient, Patient.id == CaseSheet.patient_id)
-        .filter(Patient.doctor_id == doctor.id, CaseSheet.followup_date <= today)
-        .scalar_subquery()
-    )
-    dashboard_summary = (
-        db.query(
-            appointment_count_sq.label("todays_appointments"),
-            patient_count_sq.label("todays_patients"),
-            earnings_sq.label("todays_earnings"),
-            pending_payments_sq.label("pending_payments"),
-            followups_due_sq.label("followups_due"),
-        )
-        .one()
-    )
+    emr_dashboard = get_doctor_dashboard_data(db, doctor)
     patients = (
         db.query(Patient)
         .filter(Patient.doctor_id == doctor.id)
@@ -251,24 +216,9 @@ def dashboard(
         .all()
     )
     total_patients = db.query(func.count(Patient.id)).filter(Patient.doctor_id == doctor.id).scalar() or 0
-    upcoming_appointments = (
-        db.query(Appointment)
-        .join(Patient)
-        .options(joinedload(Appointment.patient))
-        .filter(Patient.doctor_id == doctor.id, Appointment.date == today)
-        .order_by(Appointment.time.asc())
-        .limit(5)
-        .all()
-    )
-    due_followups = (
-        db.query(CaseSheet)
-        .join(Patient)
-        .options(joinedload(CaseSheet.patient))
-        .filter(Patient.doctor_id == doctor.id, CaseSheet.followup_date <= today)
-        .order_by(CaseSheet.followup_date.asc(), CaseSheet.created_at.desc())
-        .limit(5)
-        .all()
-    )
+    recent_patients = list(emr_dashboard.get("recent_patients", []))
+    upcoming_appointments = list(emr_dashboard.get("today_appointments", []))[:5]
+    due_followups = list(emr_dashboard.get("followups_due", []))[:5]
     total_cases = (
         db.query(func.count(CaseSheet.id))
         .join(Patient)
@@ -348,14 +298,23 @@ def dashboard(
             "patients": patients,
             "total_patients": total_patients,
             "total_cases": total_cases,
-            "todays_appointments": int(dashboard_summary.todays_appointments or 0),
-            "todays_patients": int(dashboard_summary.todays_patients or 0),
-            "todays_earnings": float(dashboard_summary.todays_earnings or 0),
-            "pending_payments": int(dashboard_summary.pending_payments or 0),
-            "followups_due": int(dashboard_summary.followups_due or 0),
+            "todays_appointments": len(emr_dashboard.get("today_appointments", [])),
+            "todays_patients": len([patient for patient in recent_patients if getattr(patient, "created_at", None) and patient.created_at.date() == today]),
+            "todays_earnings": float(emr_dashboard.get("revenue_today", 0.0) or 0.0),
+            "pending_payments": int(
+                db.query(func.count(Payment.id))
+                .join(Patient, Patient.id == Payment.patient_id)
+                .filter(Patient.doctor_id == doctor.id, Payment.status == "unpaid")
+                .scalar()
+                or 0
+            ),
+            "followups_due": len(emr_dashboard.get("followups_due", [])),
             "returning_patients": returning_patients,
             "upcoming_appointments": upcoming_appointments,
             "due_followups": due_followups,
+            "today_appointments": emr_dashboard.get("today_appointments", []),
+            "recent_patients": recent_patients,
+            "pending_followups": emr_dashboard.get("followups_due", []),
             "latest_prescriptions": latest_prescriptions,
             "outstanding_payments": outstanding_payments,
             "next_visit_recommendations": next_visit_recommendations,
@@ -367,21 +326,42 @@ def dashboard(
     )
 
 
-@router.get("/demo")
-def demo_page(
-    request: Request,
+@router.get("/api/dashboard/risk-patients")
+async def dashboard_risk_patients(
+    db: Session = Depends(get_db),
     doctor: Doctor = Depends(get_current_doctor),
 ):
-    return render_template(
-        templates,
-        request,
-        "demo.html",
-        {
-            "doctor": doctor,
-            "flash": pop_flash(request),
-            "csrf_token": ensure_csrf_token(request),
-        },
-    )
+    payload = await generate_risk_patients(db, doctor.id)
+    return JSONResponse({"success": True, "data": payload})
+
+
+@router.post("/api/ai/assistant/query")
+async def ai_assistant_query(
+    payload: dict,
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    answer = await answer_doctor_assistant_query(db, doctor.id, str(payload.get("query") or ""))
+    return JSONResponse({"success": True, "data": answer})
+
+
+# FROZEN: not needed for clinic pilot v1
+# @router.get("/demo")
+# def demo_page(
+#     request: Request,
+#     doctor: Doctor = Depends(get_current_doctor),
+# ):
+#     return render_template(
+#         templates,
+#         request,
+#         "demo.html",
+#         {
+#             "doctor": doctor,
+#             "flash": pop_flash(request),
+#             "csrf_token": ensure_csrf_token(request),
+#         },
+#     )
 
 
 @router.get("/patient/{patient_id}/timeline")

@@ -8,7 +8,7 @@
         <p class="profile-form__subtitle">Create a separate health identity for a spouse, child, parent, or anyone else you order medicines for.</p>
 
         <form method="post" action="/api/profiles/add" class="profile-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
             <label class="field">
                 <span>Profile Name</span>
                 <input type="text" name="profile_name" required placeholder="Dad, Mom, Riya, Myself">

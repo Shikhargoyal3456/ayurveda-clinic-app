@@ -1,4 +1,5 @@
 from __future__ import annotations
+import atexit
 import logging
 import os
 import re
@@ -21,7 +22,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.analytics import track_event
-from app.auth import _apply_rate_limit
+from app.auth import _apply_rate_limit, ensure_csrf_token
 from app.config import settings
 from app.database import SessionLocal, init_db
 from app.exception_handlers import register_exception_handlers
@@ -107,11 +108,16 @@ from routers.prescription_ocr import router as prescription_ocr_router
 from routers.profiles import router as profiles_router
 from routers.pure_ai import router as pure_ai_router
 from routers.public_clinic import router as public_clinic_router
+from routers.patient_agent import router as patient_agent_router
+from routers.sales import router as sales_router
 from routers.startup import router as startup_router
 from routers.subscriptions import router as subscriptions_router
 from routers.telemedicine import router as telemedicine_router
 from routers.delivery import router as delivery_router
 from routers.debug import router as debug_router
+from routers.dashboard import router as dashboard_router
+from routers.doctor_review import router as doctor_review_router
+from routers.google_auth import router as google_auth_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
 from routes.payment import router as payment_router
@@ -121,12 +127,14 @@ from utils.subscription_utils import (
     check_subscription_access,
     increment_subscription_usage as increment_usage,
 )
+from services.ai_provider import close_genai_client
 
 load_dotenv()
 
 configure_logging()
 logger = logging.getLogger(__name__)
 patch_jinja2_templates()
+atexit.register(close_genai_client)
 
 
 def _masked_setting(name: str, value: str) -> str:
@@ -156,7 +164,7 @@ def _subscription_feature_for_request(request: Request) -> str | None:
     if path in {"/api/ai/analyze"}:
         return None
     if path.endswith("/cases/transcribe-audio") or path.endswith("/cases/transcribe-live"):
-        return "voice"
+        return None
     if re.fullmatch(r"/cases/\d+/generate-ai", path) or re.fullmatch(r"/cases/\d+/generate-diet", path):
         return "ai_call"
     return None
@@ -167,6 +175,10 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         set_request_id(request_id)
         request.state.request_id = request_id
+        try:
+            request.state.csrf_token = ensure_csrf_token(request)
+        except Exception:
+            request.state.csrf_token = ""
         request.state.request_started_at = __import__("datetime").datetime.now(__import__("datetime").timezone.utc)
         start = perf_counter()
         forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
@@ -320,6 +332,9 @@ class SubscriptionEnforcementMiddleware(BaseHTTPMiddleware):
 
 
 def _run_startup_warmups() -> None:
+    if not settings.startup_rag_warmup and not (settings.startup_llm_warmup and settings.ai_enabled):
+        logger.info("Startup warmups disabled by configuration.")
+        return
     try:
         rag_engine = get_rag_engine()
     except Exception as exc:
@@ -426,45 +441,67 @@ def create_app() -> FastAPI:
     async def favicon_redirect():
         return RedirectResponse(url="/static/images/favicon.svg", status_code=307)
 
+    @application.get("/portal", include_in_schema=False)
+    async def portal_redirect():
+        return RedirectResponse(url="/dashboard", status_code=302)
+
     application.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
     application.mount("/shared-static", StaticFiles(directory=settings.shared_static_dir), name="shared-static")
     public_dir = settings.base_dir / "public"
     if public_dir.exists():
         application.mount("/public", StaticFiles(directory=public_dir), name="public")
     application.include_router(public_clinic_router)
-    application.include_router(startup_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(startup_router)
     application.include_router(health_router)
     application.include_router(auth_router)
+    application.include_router(google_auth_router)
     application.include_router(patients_router)
     application.include_router(patient_tools_router)
+    application.include_router(patient_agent_router)
     application.include_router(cases_router)
     application.include_router(contact_router)
     application.include_router(appointments_router)
     application.include_router(ai_router)
     application.include_router(ai_doctor_router)
     application.include_router(ai_dashboard_router)
-    application.include_router(ai_pharmacy_router)
+    application.include_router(dashboard_router)
+    application.include_router(doctor_review_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(ai_pharmacy_router)
     application.include_router(ai_features_router)
     application.include_router(api_v1_router)
-    application.include_router(marketplace_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(marketplace_router)
     application.include_router(patient_portal_router)
     application.include_router(doctor_portal_router)
-    application.include_router(pharmacy_portal_router)
-    application.include_router(lab_portal_router)
-    application.include_router(delivery_portal_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(pharmacy_portal_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(lab_portal_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(delivery_portal_router)
     application.include_router(medicine_info_router)
-    application.include_router(delivery_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(delivery_router)
     application.include_router(debug_router)
-    application.include_router(pharmacy_owner_router)
-    application.include_router(lab_owner_router)
-    application.include_router(lab_analyzer_router)
-    application.include_router(pharmacy_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(pharmacy_owner_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(lab_owner_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(lab_analyzer_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(pharmacy_router)
     application.include_router(prescription_ocr_router)
     application.include_router(profiles_router)
     application.include_router(pure_ai_router)
-    application.include_router(ecommerce_router)
-    application.include_router(order_medicines_router)
-    application.include_router(subscriptions_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(ecommerce_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(order_medicines_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(emr_router)
     application.include_router(ambient_emr_router)
@@ -472,7 +509,9 @@ def create_app() -> FastAPI:
     application.include_router(prescription_router)
     application.include_router(payment_router)
     application.include_router(outcome_router)
-    application.include_router(demo_router)
+    # FROZEN: not needed for clinic pilot v1
+    # application.include_router(demo_router)
+    application.include_router(sales_router)
 
     return application
 

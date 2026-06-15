@@ -3,11 +3,11 @@ from __future__ import annotations
 import logging
 import os
 import smtplib
+from datetime import datetime
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from pathlib import Path
 from typing import Any
 
 from fastapi.concurrency import run_in_threadpool
@@ -292,7 +292,96 @@ class EmailService:
         )
 
 
-def send_email(recipient: str, subject: str, message: str) -> bool:
+async def send_email(to_email: str, subject: str, body: str, is_html: bool = False) -> dict[str, object]:
+    """Send email using the configured Gmail-compatible SMTP credentials."""
+    service = EmailService()
+    html_body = body if is_html else f"<pre style=\"font-family:Arial,sans-serif;white-space:pre-wrap;\">{body}</pre>"
+    text_body = body if not is_html else "Please view this message in HTML format."
+    return await service.send_html_email(
+        to_email=to_email,
+        subject=subject,
+        html_body=html_body,
+        text_body=text_body,
+    )
+
+
+async def send_prescription_email(
+    patient_email: str,
+    patient_name: str,
+    doctor_name: str,
+    prescription_data: dict[str, Any],
+) -> dict[str, object]:
+    """Send a polished HTML prescription email."""
+    subject = f"Your Prescription from Dr. {doctor_name} - Kash AI"
+    date_label = str(prescription_data.get("date") or datetime.now().strftime("%d/%m/%Y"))
+    medicines = prescription_data.get("medicines", []) if isinstance(prescription_data.get("medicines"), list) else []
+    medicines_html = "".join(
+        (
+            "<div class=\"medicine\">"
+            f"<strong>{str(item.get('name') or 'Medicine')}</strong><br>"
+            f"Dosage: {str(item.get('dosage') or 'As advised')}<br>"
+            f"Frequency: {str(item.get('frequency') or 'As advised')}<br>"
+            f"Duration: {str(item.get('duration') or 'As advised')} days"
+            "</div>"
+        )
+        for item in medicines
+        if isinstance(item, dict)
+    ) or '<div class="medicine">No medicines specified.</div>'
+
+    advice_html = ""
+    advice = str(prescription_data.get("advice") or "").strip()
+    if advice:
+        advice_html = f"<h3>Notes</h3><p>{advice}</p>"
+
+    body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+            .header {{ background: linear-gradient(135deg, #000000 0%, #e486ab 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+            .content {{ padding: 20px; background: #f5f5f5; }}
+            .footer {{ text-align: center; padding: 10px; font-size: 12px; color: #666; }}
+            .medicine {{ background: white; padding: 10px; margin: 10px 0; border-radius: 8px; }}
+            .diagnosis {{ background: #e486ab20; padding: 10px; border-radius: 8px; margin: 10px 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h2>Kash AI Prescription</h2>
+            </div>
+            <div class="content">
+                <p><strong>Patient:</strong> {patient_name}</p>
+                <p><strong>Doctor:</strong> Dr. {doctor_name}</p>
+                <p><strong>Date:</strong> {date_label}</p>
+
+                <div class="diagnosis">
+                    <h3>Diagnosis</h3>
+                    <p>{str(prescription_data.get('diagnosis') or 'Not specified')}</p>
+                </div>
+
+                <h3>Medicines</h3>
+                {medicines_html}
+
+                {advice_html}
+
+                <h3>Follow-up</h3>
+                <p>Please follow up in {int(prescription_data.get('follow_up_days') or 15)} days.</p>
+            </div>
+            <div class="footer">
+                <p>This is a doctor-issued prescription shared from Kash AI.</p>
+                <p>© 2026 Kash AI - AI-Powered Healthcare</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return await send_email(patient_email, subject, body, is_html=True)
+
+
+def send_email_sync(recipient: str, subject: str, message: str) -> bool:
     service = EmailService()
     result = service._send(subject, f"<p>{message}</p>", recipient, text_body=message)
     return bool(result.get("success"))

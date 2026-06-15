@@ -1,6 +1,7 @@
 const { findPatientByPhone } = require('../models/patientModel');
 const { logMessage } = require('../models/messageLogModel');
 const { answerPatientQuery } = require('../services/geminiService');
+const { config } = require('../config');
 const { GEMINI_UNAVAILABLE_MESSAGE, downloadTwilioMedia, analyzePrescriptionBuffer } = require('../services/prescriptionImageService');
 const { sendWhatsAppChunks } = require('../services/twilioService');
 
@@ -10,6 +11,36 @@ function maskPhoneNumber(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
   const lastFour = digits.slice(-4) || 'unknown';
   return `****${lastFour}`;
+}
+
+async function answerViaPythonPatientAgent({ patient, from, message }) {
+  if (!config.pythonPatientAgentUrl) {
+    throw new Error('Python patient agent URL is not configured.');
+  }
+
+  const response = await fetch(config.pythonPatientAgentUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      patient_phone: from,
+      patient_name: patient?.name || '',
+      message,
+      channel: 'whatsapp',
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Python patient agent failed with status ${response.status}`);
+  }
+
+  const payload = await response.json();
+  if (!payload || !payload.success || !payload.reply) {
+    throw new Error('Python patient agent returned an invalid payload.');
+  }
+  return {
+    answer: payload.reply,
+    severity: payload.severity || 'normal',
+  };
 }
 
 async function processPrescriptionImageWebhook({ payload, from, patient }) {
@@ -125,11 +156,19 @@ async function handleWhatsAppWebhook(req, res, next) {
     let answer;
     let answerStatus = 'ok';
     try {
-      answer = await answerPatientQuery({ patient, message: body });
+      const agentResult = await answerViaPythonPatientAgent({ patient, from, message: body });
+      answer = agentResult.answer;
+      answerStatus = `python_patient_agent_${agentResult.severity}`;
     } catch (error) {
-      console.error('Patient text analysis failed:', error);
-      answer = GEMINI_UNAVAILABLE_MESSAGE;
-      answerStatus = 'gemini_unavailable';
+      console.error('Python patient agent failed, falling back to Node Gemini:', error);
+      try {
+        answer = await answerPatientQuery({ patient, message: body });
+        answerStatus = 'node_gemini_fallback';
+      } catch (fallbackError) {
+        console.error('Patient text analysis failed:', fallbackError);
+        answer = GEMINI_UNAVAILABLE_MESSAGE;
+        answerStatus = 'gemini_unavailable';
+      }
     }
     const replies = await sendWhatsAppChunks({ to: from, body: `🤖 *Kash AI:*\n${answer}` });
     const successfulReplies = replies.filter((reply) => reply.success);

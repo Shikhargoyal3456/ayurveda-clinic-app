@@ -28,6 +28,8 @@ class Doctor(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     patients: Mapped[list["Patient"]] = relationship(back_populates="doctor", cascade="all, delete-orphan")
+    patient_queries: Mapped[list["PatientQuery"]] = relationship(back_populates="doctor", cascade="all, delete-orphan")
+    pending_reviews: Mapped[list["PendingReview"]] = relationship(back_populates="doctor", cascade="all, delete-orphan")
 
 
 class Patient(Base):
@@ -54,6 +56,8 @@ class Patient(Base):
         back_populates="patient",
         cascade="all, delete-orphan",
     )
+    patient_queries: Mapped[list["PatientQuery"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
+    pending_reviews: Mapped[list["PendingReview"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
 
 
 class CaseSheet(Base):
@@ -85,3 +89,47 @@ class Appointment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     patient: Mapped["Patient"] = relationship(back_populates="appointments")
+
+
+class PatientQuery(Base):
+    __tablename__ = "patient_queries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    source_channel: Mapped[str] = mapped_column(String(30), default="app", index=True)
+    query_text: Mapped[str] = mapped_column(Text)
+    ai_response: Mapped[str] = mapped_column(Text, default="")
+    severity: Mapped[str] = mapped_column(String(20), default="normal", index=True)
+    ai_tag: Mapped[str] = mapped_column(String(20), default="NORMAL")
+    fallback_tag: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    matched_keywords: Mapped[str | None] = mapped_column(Text, nullable=True)
+    alert_sent: Mapped[int] = mapped_column(Integer, default=0)
+    notified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+
+    patient: Mapped["Patient"] = relationship(back_populates="patient_queries")
+    doctor: Mapped["Doctor"] = relationship(back_populates="patient_queries")
+
+
+class PendingReview(Base):
+    __tablename__ = "pending_reviews"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    query_id: Mapped[int | None] = mapped_column(ForeignKey("patient_queries.id"), nullable=True, index=True)
+    question: Mapped[str] = mapped_column(Text)
+    ai_suggestion: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    approved_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rejection_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    delivery_channel: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    delivery_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reminder_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    patient: Mapped["Patient"] = relationship(back_populates="pending_reviews")
+    doctor: Mapped["Doctor"] = relationship(back_populates="pending_reviews")

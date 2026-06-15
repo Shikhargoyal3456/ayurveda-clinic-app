@@ -39,7 +39,7 @@
         <article class="form-panel no-print">
             <p class="eyebrow mb-2">Add payment</p>
             <form method="post" action="/payments/add" data-loading-form class="section-stack" aria-label="Add payment form">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 <div class="form-row">
                     <label class="form-label">Patient</label>
                     <select name="patient_id" class="form-select" required>

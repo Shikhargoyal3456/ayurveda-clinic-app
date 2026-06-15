@@ -48,6 +48,7 @@ const config = {
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN || '',
   twilioWhatsappNumber: sanitizeWhatsAppNumber(process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+14155238886'),
   twilioPrescriptionContentSid: process.env.TWILIO_PRESCRIPTION_CONTENT_SID || '',
+  pythonPatientAgentUrl: process.env.PYTHON_PATIENT_AGENT_URL || 'http://127.0.0.1:8000/api/patient-agent/ask',
   vertexAiProject: process.env.VERTEX_AI_PROJECT || process.env.GOOGLE_CLOUD_PROJECT || '',
   vertexAiLocation: process.env.VERTEX_AI_LOCATION || 'us-central1',
   geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',

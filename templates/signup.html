@@ -40,8 +40,14 @@
             {% if flash %}
             <div class="alert alert-{{ flash.category }} mb-3">{{ flash.message }}</div>
             {% endif %}
-            <form method="post" action="/signup" data-loading-form class="section-stack">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="section-stack" style="margin-bottom: 18px;">
+                <a href="/auth/google/login?role=doctor" class="btn btn-outline-dark w-100" style="display:flex;align-items:center;justify-content:center;gap:10px;">
+                    <span style="display:inline-grid;place-items:center;width:22px;height:22px;border-radius:999px;border:1px solid #dbe3ef;color:#4285f4;font-weight:800;">G</span>
+                    <span>Continue with Google</span>
+                </a>
+            </div>
+            <form method="post" action="/register" data-loading-form class="section-stack">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                 {% if request.query_params.get("plan") %}
                 <input type="hidden" name="selected_plan" value="{{ request.query_params.get('plan') }}">
                 {% endif %}

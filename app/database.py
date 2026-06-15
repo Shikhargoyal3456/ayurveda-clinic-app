@@ -169,7 +169,7 @@ def _activate_sqlite_fallback(exc: Exception) -> None:
 
 
 def init_db() -> None:
-    from app.models import Appointment, CaseSheet, Doctor, Patient  # noqa: F401
+    from app.models import Appointment, CaseSheet, Doctor, Patient, PatientQuery  # noqa: F401
     from models.ai_features import AIConversationHistory, AIPrediction, AIPrescriptionScan, MedicineInfoCache  # noqa: F401
     from models.emr import (  # noqa: F401
         EMRAssessment,
@@ -268,7 +268,11 @@ def _ensure_feature_schema() -> None:
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                         "prescription_id INTEGER, "
                         "case_id INTEGER, "
+                        "patient_id INTEGER, "
                         "doctor_id INTEGER NOT NULL, "
+                        "field_name VARCHAR(80), "
+                        "ai_suggestion TEXT, "
+                        "doctor_correction TEXT, "
                         "rating INTEGER CHECK (rating >= 1 AND rating <= 5), "
                         "accepted BOOLEAN, "
                         "notes TEXT, "
@@ -277,6 +281,81 @@ def _ensure_feature_schema() -> None:
                         "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
                     )
                 )
+        elif "ai_feedback" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("ai_feedback")}
+            with engine.begin() as connection:
+                if "patient_id" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN patient_id INTEGER"))
+                if "field_name" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN field_name VARCHAR(80)"))
+                if "ai_suggestion" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN ai_suggestion TEXT"))
+                if "doctor_correction" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN doctor_correction TEXT"))
+        if "patient_queries" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS patient_queries ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "patient_id INTEGER NOT NULL, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "source_channel VARCHAR(30) DEFAULT 'app', "
+                        "query_text TEXT NOT NULL, "
+                        "ai_response TEXT DEFAULT '', "
+                        "severity VARCHAR(20) DEFAULT 'normal', "
+                        "ai_tag VARCHAR(20) DEFAULT 'NORMAL', "
+                        "fallback_tag VARCHAR(20), "
+                        "matched_keywords TEXT, "
+                        "alert_sent INTEGER DEFAULT 0, "
+                        "notified_at DATETIME, "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id), "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
+                    )
+                )
+        if "pending_reviews" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS pending_reviews ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "patient_id INTEGER NOT NULL, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "query_id INTEGER, "
+                        "question TEXT NOT NULL, "
+                        "ai_suggestion TEXT NOT NULL, "
+                        "status VARCHAR(20) DEFAULT 'pending', "
+                        "approved_response TEXT, "
+                        "rejection_reason TEXT, "
+                        "delivery_channel VARCHAR(30), "
+                        "delivery_notes TEXT, "
+                        "reminder_sent_at DATETIME, "
+                        "reminder_count INTEGER DEFAULT 0, "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "approved_at DATETIME, "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id), "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id), "
+                        "FOREIGN KEY (query_id) REFERENCES patient_queries(id))"
+                    )
+                )
+        elif "pending_reviews" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("pending_reviews")}
+            with engine.begin() as connection:
+                if "query_id" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN query_id INTEGER"))
+                if "approved_response" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN approved_response TEXT"))
+                if "rejection_reason" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN rejection_reason TEXT"))
+                if "delivery_channel" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN delivery_channel VARCHAR(30)"))
+                if "delivery_notes" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN delivery_notes TEXT"))
+                if "reminder_sent_at" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN reminder_sent_at DATETIME"))
+                if "reminder_count" not in columns:
+                    connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN reminder_count INTEGER DEFAULT 0"))
         if "medicine_orders" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("medicine_orders")}
             with engine.begin() as connection:
@@ -380,6 +459,11 @@ def _ensure_feature_schema() -> None:
             with engine.begin() as connection:
                 if "doctor_type" not in columns:
                     connection.execute(text("ALTER TABLE doctor_profiles ADD COLUMN doctor_type VARCHAR(50)"))
+        if "users" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("users")}
+            with engine.begin() as connection:
+                if "google_id" not in columns:
+                    connection.execute(text("ALTER TABLE users ADD COLUMN google_id VARCHAR(255)"))
     except Exception as exc:  # pragma: no cover
         logger.warning("Feature schema compatibility check failed: %s", exc)
 

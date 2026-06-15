@@ -112,13 +112,26 @@
                 <a href="/order-medicines?source=prescription&prescription_id={{ prescription.id }}" class="btn btn-outline-success w-100">Reorder Medicines</a>
                 <a href="/pharmacy/order/{{ prescription_token }}" class="btn btn-outline-dark w-100">Share with Pharmacy</a>
                 <form method="post" action="/prescriptions/{{ prescription.id }}/share" data-loading-form>
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                     <button class="btn btn-outline-success w-100" data-loading-text="Sharing...">Send via WhatsApp</button>
                 </form>
                 <form method="post" action="/prescriptions/{{ prescription.id }}/share/email" data-loading-form>
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                     <button class="btn btn-outline-primary w-100" data-loading-text="Sending email...">Send via Gmail</button>
                 </form>
+                <div class="stack-item">
+                    <strong>Quick share</strong>
+                    <p class="text-muted mb-2">Use instant email or WhatsApp sharing without leaving this page.</p>
+                    <div class="sharing-section" style="display:flex; gap:12px; flex-wrap:wrap;">
+                        <button type="button" onclick="shareViaEmail()" class="btn btn-primary" style="background:#000000; border-color:#000000; flex:1 1 150px;">
+                            Send via Email
+                        </button>
+                        <button type="button" onclick="shareViaWhatsApp()" class="btn btn-primary" style="background:#25D366; border-color:#25D366; color:#ffffff; flex:1 1 150px;">
+                            Share via WhatsApp
+                        </button>
+                    </div>
+                    <p class="text-muted mb-0 mt-2" id="shareStatus"><small>Choose a channel to share this prescription with the patient.</small></p>
+                </div>
                 {% if not patient.email %}
                 <p class="text-muted mb-0"><small>Add the patient's email in their profile to enable Gmail delivery.</small></p>
                 {% endif %}
@@ -131,8 +144,82 @@
 {% block extra_scripts %}
 <script>
 window.prescriptionDetailConfig = {
-    csrfToken: {{ csrf_token | tojson }}
+    csrfToken: {{ csrf_token | tojson }},
+    prescriptionId: {{ prescription.id | tojson }},
+    defaultPatientEmail: {{ (patient.email or "") | tojson }}
 };
+
+function setShareStatus(message, type = "info") {
+    const node = document.getElementById("shareStatus");
+    if (!node) return;
+    const colors = {
+        info: "#6b7280",
+        success: "#0f766e",
+        error: "#b91c1c",
+    };
+    node.innerHTML = `<small style="color:${colors[type] || colors.info};">${message}</small>`;
+}
+
+function showLoading() {
+    setShareStatus("Kash AI is preparing the share action...", "info");
+}
+
+function hideLoading() {}
+
+async function shareViaEmail() {
+    const defaultEmail = window.prescriptionDetailConfig.defaultPatientEmail || "";
+    const patientEmail = window.prompt("Enter patient's email address:", defaultEmail);
+    if (!patientEmail) return;
+
+    showLoading();
+    try {
+        const response = await fetch(`/prescriptions/${window.prescriptionDetailConfig.prescriptionId}/share-email`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": window.prescriptionDetailConfig.csrfToken,
+            },
+            body: JSON.stringify({ patient_email: patientEmail }),
+            credentials: "same-origin",
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            setShareStatus("Prescription sent via email.", "success");
+            window.showToast?.("Prescription sent via email.", "success");
+            return;
+        }
+        setShareStatus(result.error || result.message || "Failed to send email.", "error");
+        window.showErrorToast?.(result.error || result.message || "Failed to send email.");
+    } catch (error) {
+        setShareStatus("Could not send email right now. Please try again.", "error");
+        window.showErrorToast?.("Could not send email right now.");
+    } finally {
+        hideLoading();
+    }
+}
+
+async function shareViaWhatsApp() {
+    showLoading();
+    try {
+        const response = await fetch(`/prescriptions/${window.prescriptionDetailConfig.prescriptionId}/share-whatsapp`, {
+            method: "POST",
+            credentials: "same-origin",
+        });
+        const result = await response.json();
+        if (response.ok && result.success && result.whatsapp_link) {
+            setShareStatus("Opening WhatsApp share link...", "success");
+            window.open(result.whatsapp_link, "_blank", "noopener");
+            return;
+        }
+        setShareStatus(result.message || "Failed to build WhatsApp link.", "error");
+        window.showErrorToast?.(result.message || "Failed to build WhatsApp link.");
+    } catch (error) {
+        setShareStatus("Could not open WhatsApp right now. Please try again.", "error");
+        window.showErrorToast?.("Could not open WhatsApp right now.");
+    } finally {
+        hideLoading();
+    }
+}
 </script>
 <script src="{{ url_for('static', path='js/prescription_detail.js') }}"></script>
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>

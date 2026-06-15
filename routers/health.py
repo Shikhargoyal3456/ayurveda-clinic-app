@@ -7,10 +7,13 @@ from pathlib import Path
 from fastapi import APIRouter
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from app.config import settings
+from app.database import SessionLocal
 from app.health import build_health_report, database_health, production_launch_metrics
 from app.monitoring import metrics
+from services.ai_provider import is_gemini_configured
 try:
     from services.cache_service import redis_ping
 except Exception:
@@ -36,11 +39,22 @@ async def healthz():
 
 @router.get("/health", summary="Simple production health check")
 async def health_check():
-    db = database_health()
+    db_status = "disconnected"
+    overall_status = "ok"
+    db = SessionLocal()
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "connected"
+    except Exception:
+        overall_status = "degraded"
+    finally:
+        db.close()
+
     return {
-        "status": "healthy" if db.get("status") == "ok" else "degraded",
+        "status": overall_status,
+        "db": db_status,
+        "ai": "configured" if is_gemini_configured() else "not configured",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "database": "connected" if db.get("status") == "ok" else "disconnected",
         "version": settings.app_version,
     }
 

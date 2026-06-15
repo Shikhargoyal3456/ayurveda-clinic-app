@@ -45,6 +45,7 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(SqlEnum(UserRole, native_enum=False), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    google_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     profile_picture: Mapped[str | None] = mapped_column(String(500), nullable=True)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0)

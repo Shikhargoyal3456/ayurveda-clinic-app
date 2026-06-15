@@ -4,16 +4,19 @@ import os
 import re
 import time
 import asyncio
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Any, Dict, Iterator, List
 from threading import Lock
 
 from google import genai
 from google.genai import types
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 
 from app.config import BASE_DIR, load_dotenv, settings
-from services.cache_service import cache_result
+from app.models import Appointment, CaseSheet, Doctor, Patient
+from services.cache_service import cache, cache_result
 
 
 load_dotenv(BASE_DIR / ".env")
@@ -36,6 +39,9 @@ _AI_SPEND_LOCK = Lock()
 _AI_SPEND_LEDGER = BASE_DIR / "logs" / "ai_spend_guard.json"
 _GENAI_CLIENT_LOCK = Lock()
 _GENAI_CLIENT: genai.Client | None = None
+_VERTEX_RATE_LIMIT_LOCK = Lock()
+_VERTEX_NEXT_ALLOWED_AT = 0.0
+_VERTEX_MIN_INTERVAL_SECONDS = 2.0
 
 _PHI_FIELDS = {
     "patient_name",
@@ -57,6 +63,14 @@ _AI_BUDGET_ERROR_MARKERS = (
     "quota",
     "resource exhausted",
     "billing",
+)
+
+_VERTEX_RETRYABLE_ERROR_MARKERS = (
+    "429",
+    "resource exhausted",
+    "quota",
+    "rate limit",
+    "too many requests",
 )
 
 
@@ -108,10 +122,64 @@ def is_gemini_configured() -> bool:
     return bool(VERTEX_AI_PROJECT)
 
 
+def _wait_for_vertex_slot() -> None:
+    global _VERTEX_NEXT_ALLOWED_AT
+    with _VERTEX_RATE_LIMIT_LOCK:
+        now = time.monotonic()
+        wait_seconds = max(0.0, _VERTEX_NEXT_ALLOWED_AT - now)
+        scheduled_at = max(now, _VERTEX_NEXT_ALLOWED_AT)
+        _VERTEX_NEXT_ALLOWED_AT = scheduled_at + _VERTEX_MIN_INTERVAL_SECONDS
+    if wait_seconds > 0:
+        time.sleep(wait_seconds)
+
+
+def _is_retryable_vertex_error(exc: Exception) -> bool:
+    message = str(exc or "").strip().lower()
+    return any(marker in message for marker in _VERTEX_RETRYABLE_ERROR_MARKERS)
+
+
+def _run_vertex_with_backoff(operation, *, operation_name: str) -> Any:
+    last_error: Exception | None = None
+    for attempt in range(4):
+        _wait_for_vertex_slot()
+        try:
+            return operation()
+        except Exception as exc:
+            last_error = exc
+            if not _is_retryable_vertex_error(exc) or attempt == 3:
+                raise
+            backoff_seconds = min(12.0, 1.5 * (2 ** attempt))
+            logger.warning(
+                "Vertex AI %s hit a retryable limit on attempt %s/4. Backing off for %.1fs.",
+                operation_name,
+                attempt + 1,
+                backoff_seconds,
+            )
+            time.sleep(backoff_seconds)
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"Vertex AI {operation_name} failed unexpectedly.")
+
+
 def _get_genai_client() -> genai.Client:
     global _GENAI_CLIENT
     if _GENAI_CLIENT is not None:
         return _GENAI_CLIENT
+
+
+def close_genai_client() -> None:
+    global _GENAI_CLIENT
+    with _GENAI_CLIENT_LOCK:
+        client = _GENAI_CLIENT
+        _GENAI_CLIENT = None
+    if client is None:
+        return
+    try:
+        close_method = getattr(client, "close", None)
+        if callable(close_method):
+            close_method()
+    except Exception:
+        logger.debug("Gemini client cleanup skipped during shutdown.", exc_info=True)
     if not VERTEX_AI_PROJECT:
         raise RuntimeError("VERTEX_AI_PROJECT is not configured.")
     with _GENAI_CLIENT_LOCK:
@@ -167,10 +235,13 @@ def generate_gemini_content(
             }
             if response_mime_type:
                 config_kwargs["response_mime_type"] = response_mime_type
-            response = client.models.generate_content(
-                model=candidate,
-                contents=contents,
-                config=types.GenerateContentConfig(**config_kwargs),
+            response = _run_vertex_with_backoff(
+                lambda: client.models.generate_content(
+                    model=candidate,
+                    contents=contents,
+                    config=types.GenerateContentConfig(**config_kwargs),
+                ),
+                operation_name=f"generate_content:{candidate}",
             )
             text = str(getattr(response, "text", "") or "").strip()
             if text:
@@ -207,10 +278,13 @@ def generate_gemini_content_stream(
                 "system_instruction": system_instruction or None,
                 "http_options": types.HttpOptions(timeout=AI_TIMEOUT * 1000),
             }
-            stream = client.models.generate_content_stream(
-                model=candidate,
-                contents=contents,
-                config=types.GenerateContentConfig(**config_kwargs),
+            stream = _run_vertex_with_backoff(
+                lambda: client.models.generate_content_stream(
+                    model=candidate,
+                    contents=contents,
+                    config=types.GenerateContentConfig(**config_kwargs),
+                ),
+                operation_name=f"generate_content_stream:{candidate}",
             )
             yielded = False
             for chunk in stream:
@@ -419,6 +493,157 @@ async def call_gemini_with_fallback(
         if is_ai_budget_error(exc):
             return ai_budget_fallback_message()
         raise
+
+
+def _brief_safe_text(value: object, fallback: str = "") -> str:
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    return text or fallback
+
+
+def _fallback_morning_brief(
+    doctor_name: str,
+    appointments_count: int,
+    overdue_details: list[dict[str, Any]],
+    new_patients: list[str],
+) -> str:
+    parts = [f"Good morning Dr. {doctor_name}. You have {appointments_count} patients today."]
+    if overdue_details:
+        top_item = overdue_details[0]
+        parts.append(
+            f"{top_item['patient_name']}'s follow-up is overdue by {top_item['days_overdue']} days"
+            f" and the last case showed {top_item['last_condition']}."
+        )
+    if new_patients:
+        if len(new_patients) == 1:
+            parts.append(f"{new_patients[0]} is new with no prior history.")
+        else:
+            parts.append(f"New patients today include {', '.join(new_patients[:2])}, with no prior history.")
+    elif not overdue_details:
+        parts.append("Your schedule looks steady, with no overdue follow-ups flagged right now.")
+    return " ".join(parts)
+
+
+async def generate_morning_brief(doctor_id: int, db: Session) -> dict[str, Any]:
+    today = date.today()
+    cache_key = f"dashboard:morning-brief:{doctor_id}:{today.isoformat()}"
+    cached_value = await cache.get_json_async(cache_key)
+    if isinstance(cached_value, dict) and cached_value.get("brief"):
+        return cached_value
+
+    doctor = db.get(Doctor, doctor_id)
+    if doctor is None:
+        raise RuntimeError("Doctor not found.")
+
+    appointments = (
+        db.query(Appointment)
+        .options(joinedload(Appointment.patient))
+        .join(Patient, Patient.id == Appointment.patient_id)
+        .filter(Patient.doctor_id == doctor_id, Appointment.date == today)
+        .order_by(Appointment.time.asc(), Appointment.id.asc())
+        .all()
+    )
+    appointments_count = len(appointments)
+    appointment_patient_ids = [appointment.patient_id for appointment in appointments]
+
+    overdue_rows = (
+        db.query(
+            CaseSheet.patient_id.label("patient_id"),
+            func.min(CaseSheet.followup_date).label("oldest_due_date"),
+        )
+        .join(Patient, Patient.id == CaseSheet.patient_id)
+        .filter(Patient.doctor_id == doctor_id, CaseSheet.followup_date.is_not(None), CaseSheet.followup_date < today)
+        .group_by(CaseSheet.patient_id)
+        .all()
+    )
+    overdue_patient_ids = [int(row.patient_id) for row in overdue_rows]
+    latest_case_map: dict[int, CaseSheet] = {}
+    if overdue_patient_ids:
+        latest_case_ids = (
+            db.query(CaseSheet.patient_id.label("patient_id"), func.max(CaseSheet.id).label("latest_case_id"))
+            .filter(CaseSheet.patient_id.in_(overdue_patient_ids))
+            .group_by(CaseSheet.patient_id)
+            .all()
+        )
+        latest_ids = [int(row.latest_case_id) for row in latest_case_ids if row.latest_case_id is not None]
+        if latest_ids:
+            latest_cases = (
+                db.query(CaseSheet)
+                .options(joinedload(CaseSheet.patient))
+                .filter(CaseSheet.id.in_(latest_ids))
+                .all()
+            )
+            latest_case_map = {int(case.patient_id): case for case in latest_cases}
+
+    overdue_details: list[dict[str, Any]] = []
+    for row in overdue_rows:
+        patient_id = int(row.patient_id)
+        latest_case = latest_case_map.get(patient_id)
+        patient_name = _brief_safe_text(getattr(getattr(latest_case, "patient", None), "name", ""), "A patient")
+        last_condition = _brief_safe_text(getattr(latest_case, "diagnosis", ""), "a follow-up review")
+        days_overdue = max(0, (today - row.oldest_due_date).days) if row.oldest_due_date else 0
+        overdue_details.append(
+            {
+                "patient_id": patient_id,
+                "patient_name": patient_name,
+                "days_overdue": days_overdue,
+                "last_condition": last_condition,
+            }
+        )
+    overdue_details.sort(key=lambda item: (-int(item["days_overdue"]), str(item["patient_name"])))
+
+    patients_with_cases = set()
+    if appointment_patient_ids:
+        patients_with_cases = {
+            int(patient_id)
+            for (patient_id,) in db.query(CaseSheet.patient_id)
+            .filter(CaseSheet.patient_id.in_(appointment_patient_ids))
+            .distinct()
+            .all()
+        }
+    new_patients = [
+        _brief_safe_text(appointment.patient.name, "New patient")
+        for appointment in appointments
+        if appointment.patient is not None and appointment.patient_id not in patients_with_cases
+    ]
+
+    follow_up_details = "; ".join(
+        f"{item['patient_name']} overdue by {item['days_overdue']} days, last case showed {item['last_condition']}"
+        for item in overdue_details[:4]
+    ) or "None."
+    new_patient_details = ", ".join(new_patients[:4]) or "None."
+    doctor_name = _brief_safe_text(doctor.full_name or doctor.username, "Doctor")
+    prompt = (
+        "You are Dr. Kash, an AI assistant for an Ayurvedic doctor. Generate a very short, warm morning brief.\n\n"
+        f"Today's patients: {appointments_count}\n"
+        f"Overdue follow-ups: {len(overdue_details)}\n"
+        f"Details: {follow_up_details}\n"
+        f"New patients without history: {new_patient_details}\n\n"
+        f'Write ONE short paragraph, friendly tone, starting with "Good morning Dr. {doctor_name}".'
+    )
+
+    try:
+        brief_text = await call_gemini(
+            prompt,
+            system_prompt="You are Dr. Kash, a warm but concise clinic copilot for doctors. Keep the morning brief to one short paragraph.",
+            temperature=0.2,
+            max_output_tokens=220,
+        )
+        brief = _brief_safe_text(brief_text) or _fallback_morning_brief(doctor_name, appointments_count, overdue_details, new_patients)
+        used_fallback = False
+    except Exception:
+        brief = _fallback_morning_brief(doctor_name, appointments_count, overdue_details, new_patients)
+        used_fallback = True
+
+    payload = {
+        "brief": brief,
+        "appointments_count": appointments_count,
+        "overdue_count": len(overdue_details),
+        "new_patients_count": len(new_patients),
+        "used_fallback": used_fallback,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await cache.set_json_async(cache_key, payload, ttl_seconds=3600)
+    return payload
 
 
 async def call_ai_with_retry(

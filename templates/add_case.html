@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% set active_page = 'profile' %}
+{% set active_page = 'dashboard' %}
 {% set user_name = 'Case creation' %}
 {% set user_role = 'Doctor workflow' %}
 {% set avatar_label = 'AC' %}
@@ -8,7 +8,7 @@
 
 {% block header_actions %}
 <a href="/patients/{{ patient.id }}/cases" class="btn btn-outline-success btn-sm">View cases</a>
-<a href="/doctor/dashboard" class="btn btn-primary btn-sm">Doctor portal</a>
+<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
 {% endblock %}
 
 {% block page %}
@@ -35,14 +35,14 @@
         <article class="card">
             <div class="page-header mb-3">
                 <div>
-                    <p class="eyebrow">Voice EMR test</p>
+                    <p class="eyebrow">AI voice capture</p>
                     <h2 class="h4 mb-1">Transcribe a case note before saving</h2>
-                    <p class="mb-0 text-muted">Use audio upload for the safest path, or try live recording if your browser supports microphone capture.</p>
+                    <p class="mb-0 text-muted">Use audio upload for the safest path, or tap a field microphone so Dr. Kash can listen and structure the note for you.</p>
                 </div>
             </div>
             <div class="voice-grid">
                 <form method="post" action="/patients/{{ patient.id }}/cases/transcribe-audio" enctype="multipart/form-data" data-loading-form class="card nested-card voice-card">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                     <div class="stack-sm">
                         <h3 class="h5 mb-0">Upload audio file</h3>
                         <p class="text-muted mb-0">Supported: WAV, FLAC, MP3, OGG, WEBM.</p>
@@ -68,7 +68,7 @@
                             <option value="en-IN">English</option>
                         </select>
                         <div class="voice-actions">
-                            <button type="button" class="btn btn-outline-success" id="voiceStartButton">Start recording</button>
+                            <button type="button" class="btn btn-outline-success" id="voiceStartButton" title="Click and speak - AI will fill this field">Start recording</button>
                             <button type="button" class="btn btn-outline-dark" id="voiceStopButton" disabled>Stop and transcribe</button>
                         </div>
                         <p class="voice-status text-muted mb-0" id="voiceStatus">Microphone idle.</p>
@@ -97,22 +97,47 @@
             </div>
         </article>
     </section>
+    <section class="card ai-prefill-card" id="aiPrefillCard" aria-live="polite">
+        <div class="ai-prefill-header">
+            <div>
+                <p class="eyebrow">Kash AI pre-fill</p>
+                <h2 class="h4 mb-1">A head start before you type</h2>
+                <p class="mb-0 text-muted" id="aiPrefillSummary">Reviewing the patient's last consultations in the background.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="applyAISuggestionsButton" disabled>Apply all →</button>
+        </div>
+        <div class="suggestions-grid" id="aiPrefillGrid">
+            <div class="suggestion-card is-skeleton"></div>
+            <div class="suggestion-card is-skeleton"></div>
+            <div class="suggestion-card is-skeleton"></div>
+        </div>
+        <div class="ai-consultation-insight" id="aiConsultationInsight" hidden></div>
+    </section>
     <section class="form-panel" id="addCaseManualPanel">
         <form id="addCaseForm" method="post" action="/patients/{{ patient.id }}/cases" data-loading-form class="section-stack">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
             <input type="hidden" name="specialty" value="{{ specialty }}">
             {% if specialty == "modern_medicine" %}
             <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
             <textarea name="symptoms" class="d-none" hidden>{{ prefill_case.get('symptoms', '') }}</textarea>
             <textarea name="notes" class="d-none" hidden>{{ prefill_case.get('notes', '') }}</textarea>
             <div>
-                <label class="form-label">Chief Complaint</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Chief Complaint</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="symptoms" data-target-field="chief_complaint" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="chief_complaint" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="symptoms"></div>
+                <div class="voice-ai-suggestions" id="symptomAiSuggestions" hidden></div>
             </div>
             <div class="split-grid">
                 <div>
-                    <label class="form-label">Diagnosis</label>
+                    <div class="field-label-row">
+                        <label class="form-label mb-0">Diagnosis</label>
+                        <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="diagnosis" data-target-field="diagnosis" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                    </div>
                     <input name="diagnosis" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}">
+                    <div class="voice-field-hint" data-voice-feedback="diagnosis"></div>
                 </div>
                 <div>
                     <label class="form-label">ICD-10 Code</label>
@@ -124,8 +149,12 @@
                 <input name="vitals" class="form-control">
             </div>
             <div>
-                <label class="form-label">Lab / Investigation Notes</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Lab / Investigation Notes</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="notes" data-target-field="lab_notes" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="lab_notes" class="form-control" rows="3">{{ prefill_case.get('notes', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="notes"></div>
             </div>
             {% elif specialty == "homeopathy" %}
             <textarea name="symptoms" class="d-none" hidden>{{ prefill_case.get('symptoms', '') }}</textarea>
@@ -133,13 +162,22 @@
             <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
             <textarea name="notes" class="d-none" hidden>{{ prefill_case.get('notes', '') }}</textarea>
             <div>
-                <label class="form-label">Chief Complaint</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Chief Complaint</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="symptoms" data-target-field="chief_complaint" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="chief_complaint" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="symptoms"></div>
+                <div class="voice-ai-suggestions" id="symptomAiSuggestions" hidden></div>
             </div>
             <div class="split-grid">
                 <div>
-                    <label class="form-label">Remedy</label>
+                    <div class="field-label-row">
+                        <label class="form-label mb-0">Remedy</label>
+                        <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="diagnosis" data-target-field="remedy" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                    </div>
                     <input name="remedy" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}">
+                    <div class="voice-field-hint" data-voice-feedback="diagnosis"></div>
                 </div>
                 <div>
                     <label class="form-label">Constitution</label>
@@ -147,8 +185,12 @@
                 </div>
             </div>
             <div>
-                <label class="form-label">Miasm / Case Notes</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Miasm / Case Notes</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="notes" data-target-field="miasm_notes" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="miasm_notes" class="form-control" rows="3">{{ prefill_case.get('notes', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="notes"></div>
             </div>
             {% elif specialty == "dental" %}
             <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
@@ -160,17 +202,30 @@
                     <input name="tooth_number" class="form-control">
                 </div>
                 <div>
-                    <label class="form-label">Procedure / Diagnosis</label>
+                    <div class="field-label-row">
+                        <label class="form-label mb-0">Procedure / Diagnosis</label>
+                        <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="diagnosis" data-target-field="procedure" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                    </div>
                     <input name="procedure" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}">
+                    <div class="voice-field-hint" data-voice-feedback="diagnosis"></div>
                 </div>
             </div>
             <div>
-                <label class="form-label">Chief Complaint</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Chief Complaint</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="symptoms" data-target-field="chief_complaint" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="chief_complaint" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="symptoms"></div>
+                <div class="voice-ai-suggestions" id="symptomAiSuggestions" hidden></div>
             </div>
             <div>
-                <label class="form-label">Clinical Notes</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Clinical Notes</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="notes" data-target-field="notes" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="notes" class="form-control" rows="3">{{ prefill_case.get('notes', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="notes"></div>
             </div>
             {% elif specialty == "physiotherapy" %}
             <input type="hidden" name="prakriti" value="{{ prefill_case.get('prakriti', '') }}">
@@ -181,17 +236,30 @@
                     <input name="pain_scale" type="number" min="0" max="10" class="form-control">
                 </div>
                 <div>
-                    <label class="form-label">Condition / Diagnosis</label>
+                    <div class="field-label-row">
+                        <label class="form-label mb-0">Condition / Diagnosis</label>
+                        <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="diagnosis" data-target-field="diagnosis" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                    </div>
                     <input name="diagnosis" class="form-control" required value="{{ prefill_case.get('diagnosis', '') }}">
+                    <div class="voice-field-hint" data-voice-feedback="diagnosis"></div>
                 </div>
             </div>
             <div>
-                <label class="form-label">Symptoms / Presentation</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Symptoms / Presentation</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="symptoms" data-target-field="symptoms" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="symptoms" class="form-control" rows="3" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="symptoms"></div>
+                <div class="voice-ai-suggestions" id="symptomAiSuggestions" hidden></div>
             </div>
             <div>
-                <label class="form-label">Rehabilitation Protocol</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Rehabilitation Protocol</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="notes" data-target-field="rehab_protocol" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="rehab_protocol" class="form-control" rows="4">{{ prefill_case.get('notes', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="notes"></div>
             </div>
             {% else %}
             <div class="split-grid">
@@ -200,17 +268,30 @@
                     <input name="prakriti" class="form-control" value="{{ prefill_case.get('prakriti', '') }}" required>
                 </div>
                 <div>
-                    <label class="form-label">Working Diagnosis</label>
+                    <div class="field-label-row">
+                        <label class="form-label mb-0">Working Diagnosis</label>
+                        <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="diagnosis" data-target-field="diagnosis" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                    </div>
                     <input name="diagnosis" class="form-control" value="{{ prefill_case.get('diagnosis', '') }}" required>
+                    <div class="voice-field-hint" data-voice-feedback="diagnosis"></div>
                 </div>
             </div>
             <div>
-                <label class="form-label">Symptoms</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Symptoms</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="symptoms" data-target-field="symptoms" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="symptoms" class="form-control" rows="4" required>{{ prefill_case.get('symptoms', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="symptoms"></div>
+                <div class="voice-ai-suggestions" id="symptomAiSuggestions" hidden></div>
             </div>
             <div>
-                <label class="form-label">Clinical Notes</label>
+                <div class="field-label-row">
+                    <label class="form-label mb-0">Clinical Notes</label>
+                    <button type="button" class="btn btn-outline-success btn-sm voice-field-button" data-voice-field="notes" data-target-field="notes" title="Click and speak - AI will fill this field" aria-label="Click and speak - AI will fill this field">Mic + AI</button>
+                </div>
                 <textarea name="notes" class="form-control" rows="4">{{ prefill_case.get('notes', '') }}</textarea>
+                <div class="voice-field-hint" data-voice-feedback="notes"></div>
             </div>
             {% endif %}
             <div class="split-grid">
@@ -234,8 +315,10 @@
 
 {% block extra_scripts %}
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script defer src="{{ url_for('static', path='js/voice_ai.js') }}"></script>
 <script>
 (() => {
+    const patientId = {{ patient.id | tojson }};
     const startButton = document.getElementById("voiceStartButton");
     const stopButton = document.getElementById("voiceStopButton");
     const statusNode = document.getElementById("voiceStatus");
@@ -244,6 +327,13 @@
     const resultsNode = document.getElementById("voiceResults");
     const liveLanguage = document.getElementById("voiceLanguageLive");
     const caseForm = document.getElementById("addCaseForm");
+    const csrfToken = caseForm?.querySelector('[name="csrf_token"]')?.value || "";
+    const symptomSuggestionNode = document.getElementById("symptomAiSuggestions");
+    const aiPrefillSummary = document.getElementById("aiPrefillSummary");
+    const aiPrefillGrid = document.getElementById("aiPrefillGrid");
+    const aiApplyButton = document.getElementById("applyAISuggestionsButton");
+    const aiConsultationInsight = document.getElementById("aiConsultationInsight");
+    const aiFieldBadge = '<div class="ai-suggestion-badge" title="AI-generated based on symptoms">AI suggestion</div>';
     if (!startButton || !stopButton || !statusNode || !transcriptNode || !structuredNode || !resultsNode || !liveLanguage || !caseForm) {
         return;
     }
@@ -251,18 +341,23 @@
     let mediaRecorder = null;
     let mediaStream = null;
     let recordedChunks = [];
+    let aiPrefillPayload = null;
 
     const setStatus = (message, kind = "info") => {
         statusNode.textContent = message;
         statusNode.dataset.state = kind;
     };
 
-    const setFieldValue = (name, value) => {
+    const setFieldValue = (name, value, options = {}) => {
         const field = caseForm.querySelector(`[name="${name}"]`);
         if (!field) {
             return;
         }
         field.value = value || "";
+        if (options.aiSuggestion) {
+            field.dataset.aiSuggestion = value || "";
+            field.classList.add("ai-field");
+        }
         field.dispatchEvent(new Event("input", { bubbles: true }));
         field.dispatchEvent(new Event("change", { bubbles: true }));
     };
@@ -280,6 +375,77 @@
         setFieldValue("constitution", prefill.prakriti || "");
         setFieldValue("procedure", prefill.diagnosis || "");
         setFieldValue("remedy", prefill.diagnosis || "");
+    };
+
+    const applyAISuggestions = () => {
+        const fields = aiPrefillPayload?.fields || {};
+        if (!Object.keys(fields).length) {
+            return;
+        }
+        setFieldValue("prakriti", fields.prakriti || "", { aiSuggestion: true });
+        setFieldValue("diagnosis", fields.diagnosis || "", { aiSuggestion: true });
+        setFieldValue("symptoms", fields.symptoms || "", { aiSuggestion: true });
+        setFieldValue("notes", fields.notes || "", { aiSuggestion: true });
+        setFieldValue("followup_notes", fields.followup_notes || "", { aiSuggestion: true });
+        setFieldValue("chief_complaint", fields.symptoms || "", { aiSuggestion: true });
+        setFieldValue("lab_notes", fields.notes || "", { aiSuggestion: true });
+        setFieldValue("miasm_notes", fields.notes || "", { aiSuggestion: true });
+        setFieldValue("rehab_protocol", fields.notes || "", { aiSuggestion: true });
+        setFieldValue("constitution", fields.prakriti || "", { aiSuggestion: true });
+        setFieldValue("procedure", fields.diagnosis || "", { aiSuggestion: true });
+        setFieldValue("remedy", fields.diagnosis || "", { aiSuggestion: true });
+        if (aiConsultationInsight) {
+            aiConsultationInsight.hidden = false;
+        }
+        window.showToast?.("Kash AI applied the suggested case context.", "success");
+    };
+
+    window.applyAISuggestions = applyAISuggestions;
+
+    const renderAIPrefill = (payload) => {
+        aiPrefillPayload = payload || {};
+        if (aiPrefillSummary) {
+            aiPrefillSummary.textContent = payload?.summary || "Kash AI is ready with the most likely starting context.";
+        }
+        if (aiPrefillGrid) {
+            const cards = Array.isArray(payload?.cards) ? payload.cards : [];
+            aiPrefillGrid.innerHTML = cards.length
+                ? cards.map((item) => `<div class="suggestion-card">${item}</div>`).join("")
+                : `<div class="suggestion-card">No strong history pattern yet. Start with a fresh clinical assessment.</div>`;
+        }
+        if (aiApplyButton) {
+            aiApplyButton.disabled = !payload?.fields || !Object.keys(payload.fields).length;
+        }
+        if (aiConsultationInsight) {
+            const minutes = Number(payload?.consultation_minutes || 0);
+            if (minutes > 0) {
+                aiConsultationInsight.hidden = false;
+                aiConsultationInsight.textContent = `🤖 Based on patient history, this consultation may take about ${minutes} minutes.`;
+            }
+        }
+    };
+
+    const loadAIPrefill = async () => {
+        try {
+            const response = await fetch(`/api/ai/case-prefill/${patientId}`, {
+                credentials: "same-origin",
+                headers: {
+                    "X-CSRF-Token": csrfToken,
+                },
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.detail || "AI pre-fill unavailable.");
+            }
+            renderAIPrefill(payload.data || {});
+        } catch (error) {
+            if (aiPrefillSummary) {
+                aiPrefillSummary.textContent = error.message || "AI pre-fill is temporarily unavailable. You can continue manually.";
+            }
+            if (aiPrefillGrid) {
+                aiPrefillGrid.innerHTML = `<div class="suggestion-card">You can continue with manual entry while Kash AI catches up.</div>`;
+            }
+        }
     };
 
     const resetRecorder = () => {
@@ -325,6 +491,11 @@
             structuredNode.textContent = JSON.stringify(payload.structured_case || {}, null, 2);
             resultsNode.classList.remove("is-empty");
             applyPrefill(payload.prefill || {});
+            renderSymptomSuggestions({
+                dosha: "",
+                prakriti_insight: payload.prefill?.prakriti || "",
+                vikriti: "",
+            });
             setStatus("Voice note transcribed. The case form was prefilled below.", "success");
             document.getElementById("addCaseManualPanel")?.scrollIntoView({ behavior: "smooth", block: "start" });
         } catch (error) {
@@ -334,50 +505,223 @@
         }
     };
 
+    const setFieldFeedback = (fieldName, message, kind = "info") => {
+        const node = caseForm.querySelector(`[data-voice-feedback="${fieldName}"]`);
+        if (!node) {
+            return;
+        }
+        node.textContent = message || "";
+        node.dataset.state = kind;
+    };
+
+    const renderSymptomSuggestions = (suggestions) => {
+        if (!symptomSuggestionNode) {
+            return;
+        }
+        const dosha = suggestions?.dosha || "";
+        const prakritiInsight = suggestions?.prakriti_insight || "";
+        const vikriti = suggestions?.vikriti || "";
+        if (!dosha && !prakritiInsight && !vikriti) {
+            symptomSuggestionNode.hidden = true;
+            symptomSuggestionNode.innerHTML = "";
+            return;
+        }
+        symptomSuggestionNode.hidden = false;
+        symptomSuggestionNode.innerHTML = `
+            ${aiFieldBadge}
+            <div class="suggestion-chip"><strong>Dosha</strong><span>${dosha || "Not suggested"}</span></div>
+            <div class="suggestion-chip"><strong>Prakriti insight</strong><span>${prakritiInsight || "Not suggested"}</span></div>
+            <div class="suggestion-chip"><strong>Vikriti</strong><span>${vikriti || "Not suggested"}</span></div>
+        `;
+        if (prakritiInsight && !caseForm.querySelector('[name="prakriti"]')?.value.trim()) {
+            setFieldValue("prakriti", prakritiInsight);
+            setFieldValue("constitution", prakritiInsight);
+        }
+    };
+
+    const applyStructuredField = (fieldName, structuredText, suggestions, targetFieldName) => {
+        const normalizedText = structuredText || "";
+        if (fieldName === "symptoms") {
+            setFieldValue("symptoms", normalizedText);
+            setFieldValue("chief_complaint", normalizedText.replace(/^- /gm, "").trim());
+            renderSymptomSuggestions(suggestions || {});
+        } else if (fieldName === "diagnosis") {
+            setFieldValue("diagnosis", normalizedText);
+            setFieldValue("remedy", normalizedText);
+            setFieldValue("procedure", normalizedText);
+        } else if (fieldName === "notes") {
+            setFieldValue("notes", normalizedText);
+            setFieldValue("lab_notes", normalizedText);
+            setFieldValue("miasm_notes", normalizedText);
+            setFieldValue("rehab_protocol", normalizedText);
+        }
+        if (targetFieldName) {
+            setFieldValue(targetFieldName, normalizedText);
+        }
+    };
+
+    const captureVoiceForField = async (fieldName, button, targetFieldName) => {
+        if (!window.KashVoiceAI || !window.KashVoiceAI.isSupported) {
+            setFieldFeedback(fieldName, "Voice input is not supported on this device. You can type manually.", "warning");
+            return;
+        }
+
+        const originalLabel = button.textContent;
+        button.disabled = true;
+        button.textContent = "Listening...";
+        button.classList.add("is-busy");
+        setFieldFeedback(fieldName, "Listening now. Speak naturally and pause when finished.", "info");
+
+        try {
+            const transcript = await window.KashVoiceAI.captureOnce({
+                language: liveLanguage.value || "en-IN",
+                timeoutMs: 18000,
+                onStateChange: (state) => {
+                    if (state === "processing") {
+                        button.textContent = "Structuring...";
+                        setFieldFeedback(fieldName, "Dr. Kash is structuring your note...", "info");
+                    }
+                },
+                onPartial: (partial) => {
+                    if (partial) {
+                        setFieldFeedback(fieldName, `Heard: ${partial}`, "info");
+                    }
+                },
+            });
+
+            button.textContent = "Structuring...";
+            const response = await fetch("/api/ai/structure-for-field", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-Token": csrfToken,
+                },
+                body: JSON.stringify({
+                    field_name: fieldName,
+                    transcribed_text: transcript,
+                    patient_id: patientId,
+                }),
+            });
+            const payload = await response.json();
+            if (!response.ok || !payload.success) {
+                throw new Error(payload.detail || "AI structuring failed.");
+            }
+
+            applyStructuredField(fieldName, payload.structured_text || transcript, payload.suggestions || {}, targetFieldName);
+            setFieldFeedback(fieldName, "AI filled this field. You can still edit it before saving.", "success");
+        } catch (error) {
+            setFieldFeedback(fieldName, error.message || "Could not understand. Please type manually or try again.", "error");
+        } finally {
+            button.disabled = false;
+            button.classList.remove("is-busy");
+            button.textContent = originalLabel;
+        }
+    };
+
     if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function" || typeof window.MediaRecorder === "undefined") {
         startButton.disabled = true;
         setStatus("This browser does not support live recording here. You can still upload an audio file.", "warning");
-        return;
     }
 
-    startButton.addEventListener("click", async () => {
-        startButton.disabled = true;
-        recordedChunks = [];
-        try {
-            mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(mediaStream);
-            mediaRecorder.addEventListener("dataavailable", (event) => {
-                if (event.data && event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                }
-            });
-            mediaRecorder.addEventListener("stop", () => {
-                void submitRecording();
-            }, { once: true });
-            mediaRecorder.start();
-            stopButton.disabled = false;
-            setStatus("Recording... click stop when the note is complete.", "info");
-        } catch (error) {
-            setStatus("Microphone access was not granted. You can still use audio upload.", "error");
-            resetRecorder();
-        }
+    if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function" && typeof window.MediaRecorder !== "undefined") {
+        startButton.addEventListener("click", async () => {
+            startButton.disabled = true;
+            recordedChunks = [];
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(mediaStream);
+                mediaRecorder.addEventListener("dataavailable", (event) => {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                });
+                mediaRecorder.addEventListener("stop", () => {
+                    void submitRecording();
+                }, { once: true });
+                mediaRecorder.start();
+                stopButton.disabled = false;
+                setStatus("Recording... click stop when the note is complete.", "info");
+            } catch (error) {
+                setStatus("Microphone access was not granted. You can still use audio upload.", "error");
+                resetRecorder();
+            }
+        });
+
+        stopButton.addEventListener("click", () => {
+            if (!mediaRecorder || mediaRecorder.state !== "recording") {
+                return;
+            }
+            setStatus("Finishing recording...", "info");
+            stopButton.disabled = true;
+            mediaRecorder.stop();
+        });
+    }
+
+    caseForm.querySelectorAll(".voice-field-button").forEach((button) => {
+        button.addEventListener("click", () => {
+            void captureVoiceForField(button.dataset.voiceField || "", button, button.dataset.targetField || "");
+        });
     });
 
-    stopButton.addEventListener("click", () => {
-        if (!mediaRecorder || mediaRecorder.state !== "recording") {
-            return;
-        }
-        setStatus("Finishing recording...", "info");
-        stopButton.disabled = true;
-        mediaRecorder.stop();
+    aiApplyButton?.addEventListener("click", applyAISuggestions);
+
+    caseForm.querySelectorAll("input, textarea, select").forEach((field) => {
+        field.addEventListener("change", async () => {
+            const aiSuggestion = field.dataset.aiSuggestion || "";
+            const doctorCorrection = field.value || "";
+            if (!field.name || !aiSuggestion || !doctorCorrection || aiSuggestion === doctorCorrection || field.dataset.aiFeedbackSent === doctorCorrection) {
+                return;
+            }
+            field.dataset.aiFeedbackSent = doctorCorrection;
+            try {
+                await fetch("/api/ai/feedback", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": csrfToken,
+                    },
+                    body: JSON.stringify({
+                        patient_id: patientId,
+                        field: field.name,
+                        ai_suggestion: aiSuggestion,
+                        doctor_correction: doctorCorrection,
+                    }),
+                });
+            } catch (_error) {
+                delete field.dataset.aiFeedbackSent;
+            }
+        });
     });
+
+    void loadAIPrefill();
 })();
 </script>
 <style>
 .voice-panel .card{border-radius:24px}
+.ai-prefill-card{display:grid;gap:16px;padding:22px;border:1px solid #d8e7ff;background:linear-gradient(135deg,#f4f9ff 0%,#fbfdff 100%)}
+.ai-prefill-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.suggestions-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.suggestion-card{padding:14px 16px;border-radius:18px;border:1px solid #d6e1f3;background:rgba(255,255,255,.86);color:#213247;min-height:84px;display:flex;align-items:flex-start}
+.suggestion-card.is-skeleton{position:relative;overflow:hidden;background:#e9f1fb}
+.suggestion-card.is-skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent);animation:aiShimmer 1.4s infinite}
+.ai-consultation-insight{padding:12px 14px;border-radius:14px;background:#e8f5e9;color:#1d5f38;font-weight:600}
 .voice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .voice-card{height:100%}
+.field-label-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.ai-field{border-color:#9dc2ff !important;background:#f7fbff}
+.voice-field-button.is-busy{opacity:.8;pointer-events:none}
 .voice-actions{display:flex;gap:12px;flex-wrap:wrap}
+.voice-field-hint{margin-top:8px;min-height:20px;font-size:.9rem;color:#516074}
+.voice-field-hint[data-state="success"]{color:#1f7a45}
+.voice-field-hint[data-state="error"]{color:#b42318}
+.voice-field-hint[data-state="warning"]{color:#9a6700}
+.voice-ai-suggestions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:12px}
+.ai-suggestion-badge{grid-column:1 / -1;display:inline-flex;align-items:center;width:max-content;padding:6px 10px;border-radius:999px;background:#eef6ff;color:#1f4b7a;font-size:.82rem;font-weight:700}
+.suggestion-chip{padding:12px 14px;border:1px solid #d8dee8;border-radius:16px;background:#f8fafc}
+.suggestion-chip strong{display:block;margin-bottom:4px;font-size:.85rem;color:#345}
+.suggestion-chip span{display:block;color:#243142}
 .voice-status[data-state="success"]{color:#1f7a45}
 .voice-status[data-state="error"]{color:#b42318}
 .voice-status[data-state="warning"]{color:#9a6700}
@@ -385,9 +729,12 @@
 .voice-results.is-empty{opacity:.78}
 .voice-result-block{display:grid;gap:10px}
 .voice-structured-preview{margin:0;min-height:204px;padding:14px 16px;border:1px solid #d8dee8;border-radius:16px;background:#f8fafc;color:#243142;white-space:pre-wrap;word-break:break-word;overflow:auto}
+@keyframes aiShimmer{100%{transform:translateX(100%)}}
 @media (max-width: 860px){
-    .voice-grid,.voice-results{grid-template-columns:1fr}
+    .voice-grid,.voice-results,.suggestions-grid{grid-template-columns:1fr}
     .voice-actions{flex-direction:column}
+    .field-label-row{flex-direction:column;align-items:flex-start}
+    .voice-ai-suggestions{grid-template-columns:1fr}
 }
 </style>
 {% endblock %}

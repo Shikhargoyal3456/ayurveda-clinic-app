@@ -24,7 +24,7 @@
         </div>
 
         <form class="smart-login-form" method="post" action="/auth/login">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
             <input type="hidden" name="role" value="{{ preferred_role | default('') }}">
 
             <label class="input-group">
