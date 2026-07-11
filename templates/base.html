@@ -21,15 +21,83 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkR4j8cgY0f4L1pG8A0YyY1wYx04dBf7N7hA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --text: #111827;
+            --text-muted: #6b7280;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+            --radius: 16px;
+            --font-sans: 'Inter', system-ui, sans-serif;
+            --font-display: 'Plus Jakarta Sans', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: var(--font-sans); color: var(--text); background: var(--bg); line-height: 1.6; }
+        .kash-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; padding: 1.25rem 2rem; background: rgba(255,255,255,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,0,0,0.05); transition: all 0.3s ease; }
+        .kash-nav-container { max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .kash-nav-logo { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.25rem; text-decoration: none; color: var(--text); }
+        .kash-nav-logo img { height: 32px; }
+        .kash-nav-links { display: flex; gap: 2rem; align-items: center; }
+        .kash-nav-link { text-decoration: none; color: var(--text-muted); font-weight: 500; transition: color 0.2s ease; }
+        .kash-nav-link:hover, .kash-nav-link.active { color: var(--primary); }
+        .kash-nav-cta { display: flex; gap: 0.75rem; }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 12px; font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: all 0.2s ease; cursor: pointer; border: none; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(37,99,235,0.3); }
+        .btn-outline { border: 2px solid var(--border); color: var(--text); background: transparent; }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .hero { padding-top: 120px; padding-bottom: 80px; position: relative; overflow: hidden; }
+        .hero-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at top, rgba(37,99,235,0.08), transparent 60%), radial-gradient(ellipse at bottom right, rgba(139,92,246,0.06), transparent 50%); pointer-events: none; }
+        .hero-container { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; position: relative; z-index: 1; }
+        .hero-content h1 { font-family: var(--font-display); font-size: 3.75rem; line-height: 1.1; font-weight: 800; margin-bottom: 1.5rem; color: var(--text); }
+        .hero-gradient { background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .hero-content p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 2rem; max-width: 540px; }
+        .hero-cta { display: flex; gap: 1rem; margin-bottom: 3rem; }
+        .hero-stats { display: flex; gap: 3rem; }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-value { font-size: 2rem; font-weight: 800; font-family: var(--font-display); color: var(--text); }
+        .stat-label { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
+        .hero-3d { height: 500px; border-radius: var(--radius); position: relative; }
+        #three-container { width: 100%; height: 100%; border-radius: var(--radius); overflow: hidden; background: linear-gradient(135deg, #1e293b, #0f172a); }
+        .features { padding: 100px 0; background: white; }
+        .section-header { text-align: center; max-width: 720px; margin: 0 auto 4rem; }
+        .section-header h2 { font-size: 2.75rem; font-family: var(--font-display); font-weight: 800; margin-bottom: 1rem; }
+        .section-header p { font-size: 1.125rem; color: var(--text-muted); }
+        .features-grid { max-width: 1280px; margin: 0 auto; padding: 0 2rem; display: grid; grid-template-columns: repeat(4,1fr); gap: 2rem; }
+        .feature-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; transition: all 0.3s ease; }
+        .feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); border-color: transparent; }
+        .feature-icon { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.25rem; }
+        .feature-icon.primary { background: rgba(37,99,235,0.1); color: var(--primary); }
+        .feature-icon.purple { background: rgba(139,92,246,0.1); color: var(--secondary); }
+        .feature-icon.cyan { background: rgba(6,182,212,0.1); color: var(--accent); }
+        .feature-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.75rem; }
+        .feature-card p { color: var(--text-muted); font-size: 0.95rem; }
+        .cta-section { padding: 100px 0; background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        .cta-container { max-width: 900px; margin: 0 auto; padding: 0 2rem; text-align: center; color: white; }
+        .cta-container h2 { font-size: 2.75rem; font-family: var(--font-display); font-weight: 800; margin-bottom: 1rem; }
+        .cta-container p { font-size: 1.125rem; margin-bottom: 2rem; opacity: 0.95; }
+        .cta-container .btn { background: white; color: var(--primary); padding: 1rem 2rem; font-size: 1rem; }
+        .cta-container .btn:hover { background: #f9fafb; transform: translateY(-2px); }
+        .footer { background: #0f172a; color: #94a3b8; padding: 3rem 0; }
+        .footer-container { max-width: 1280px; margin: 0 auto; padding: 0 2rem; text-align: center; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem; margin-top: 1.5rem; }
+        @media (max-width:1024px) { .hero-container { grid-template-columns: 1fr; } .features-grid { grid-template-columns: repeat(2,1fr); } }
+        @media (max-width:640px) { .hero-content h1 { font-size: 2.5rem; } .features-grid { grid-template-columns: 1fr; } }
+    </style>
     <link rel="stylesheet" href="/shared-static/css/variables.css">
     <link rel="stylesheet" href="/shared-static/css/components.css">
     <link rel="stylesheet" href="/shared-static/css/utilities.css">
     <link rel="stylesheet" href="/shared-static/css/layouts.css">
     <link rel="stylesheet" href="/shared-static/css/modern.css">
     <link rel="stylesheet" href="/shared-static/css/responsive.css">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/style.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/neuralink.css') }}">
     <script defer src="/shared-static/js/tooltips.js"></script>
     <script defer src="/shared-static/js/modern.js"></script>
     <script defer src="/static/js/onboarding.js?v=20260506-1"></script>

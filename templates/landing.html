@@ -1,6 +1,6 @@
 {% extends "base.html" %}
-{% set hide_header = false %}
-{% set hide_footer = false %}
+{% set hide_header = true %}
+{% set hide_footer = true %}
 {% set active_page = 'home' %}
 {% set is_guest_user = true %}
 {% set user_name = 'Visitor' %}
@@ -9,190 +9,256 @@
 
 {% block title %}Kash AI | Healthcare intelligence powered by AI{% endblock %}
 
-{% block body_class %}landing-page{% endblock %}
-
 {% block page %}
-<div class="neural-top-banner">Neural-grade clarity for modern healthcare, consultations, and medicine fulfillment.</div>
-<div class="modern-landing neural-landing">
-    <section class="hero-section modern-container">
-        <div class="hero-bg-gradient"></div>
+<nav class="kash-nav">
+    <div class="kash-nav-container">
+        <a href="/" class="kash-nav-logo">
+            <img src="{{ url_for('static', path='images/kash-ai-logo.svg') }}" alt="Kash AI">
+            <span>Kash AI</span>
+        </a>
+        <div class="kash-nav-links">
+            <a href="#features" class="kash-nav-link">Features</a>
+            <a href="/telemedicine/book" class="kash-nav-link">Consult</a>
+        </div>
+        <div class="kash-nav-cta">
+            <a href="/auth/login" class="btn btn-outline">Log in</a>
+            <a href="/auth/register/patient" class="btn btn-primary">Get Started</a>
+        </div>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-container">
         <div class="hero-content">
-            <div class="hero-badge">
-                <span class="badge-dot"></span>
-                AI-Powered Healthcare
-            </div>
-            <h1 class="hero-title">
-                Healthcare intelligence<br>
-                <span class="gradient-text">powered by AI</span>
-            </h1>
-            <p class="hero-subtitle">
-                Order medicines, consult doctors, analyze reports, and manage your health journey in one calm, intelligent platform built for modern India.
-            </p>
-            <div class="hero-buttons">
-                <a href="/auth/register/patient" class="btn-primary-large">Start Free Consultation →</a>
-                <a href="/order-medicines" class="btn-outline-large">Browse Medicines</a>
+            <h1>Healthcare Intelligence<br><span class="hero-gradient">Powered by AI</span></h1>
+            <p>Order medicines, consult doctors, analyze reports, and manage your health journey in one calm, intelligent platform built for modern India.</p>
+            <div class="hero-cta">
+                <a href="/auth/register/patient" class="btn btn-primary">Start Free Consultation</a>
+                <a href="/order-medicines" class="btn btn-outline">Browse Medicines</a>
             </div>
             <div class="hero-stats">
-                <div class="stat">
+                <div class="stat-item">
                     <span class="stat-value">10L+</span>
                     <span class="stat-label">Happy Users</span>
                 </div>
-                <div class="stat">
+                <div class="stat-item">
                     <span class="stat-value">500+</span>
                     <span class="stat-label">Partner Pharmacies</span>
                 </div>
-                <div class="stat">
+                <div class="stat-item">
                     <span class="stat-value">4.9</span>
                     <span class="stat-label">Platform Rating</span>
                 </div>
             </div>
         </div>
-        <div class="hero-visual">
-            <div class="hero-device">
-                <div class="hero-device-content">
-                    <div class="hero-device-top">
-                        <div class="hero-device-title">
-                            <strong>Kash AI Care Hub</strong>
-                            <span>One connected healthcare workspace</span>
-                        </div>
-                        <span class="hero-device-pill">Live AI</span>
-                    </div>
-                    <div class="hero-device-pills">
-                        <span class="hero-device-pill">Medicine delivery</span>
-                        <span class="hero-device-pill">Video consultation</span>
-                        <span class="hero-device-pill">Lab intelligence</span>
-                    </div>
-                    <div class="hero-device-grid">
-                        <div class="hero-device-card">
-                            <strong>Order Medicines</strong>
-                            <p>Search, compare, reorder, and track with verified pharmacies.</p>
-                        </div>
-                        <div class="hero-device-card">
-                            <strong>AI Scribe</strong>
-                            <p>Ambient documentation and structured consult support for clinics.</p>
-                        </div>
-                        <div class="hero-device-card">
-                            <strong>Lab Insights</strong>
-                            <p>Upload reports and get practical, easy-to-understand interpretation.</p>
-                        </div>
-                        <div class="hero-device-card">
-                            <strong>Care Dashboard</strong>
-                            <p>Manage patient, pharmacy, lab, and delivery journeys from one platform.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="floating-card card-1">
-                <i class="fas fa-prescription-bottle"></i>
-                <span>Order Medicines</span>
-            </div>
-            <div class="floating-card card-2">
-                <i class="fas fa-microphone-alt"></i>
-                <span>AI Scribe</span>
-            </div>
-            <div class="floating-card card-3">
-                <i class="fas fa-chart-line"></i>
-                <span>Health Insights</span>
-            </div>
+        <div class="hero-3d">
+            <div id="three-container"></div>
         </div>
-    </section>
+    </div>
+</section>
 
-    <section class="features-section reveal-on-scroll">
-        <div class="modern-container">
-            <div class="section-header">
-                <h2>Everything you need in one place</h2>
-                <p>Healthcare commerce, clinical tools, and intelligent automation designed to feel trustworthy, simple, and premium.</p>
+<section class="features" id="features">
+    <div class="section-header">
+        <h2>Everything you need in one place</h2>
+        <p>Healthcare commerce, clinical tools, and intelligent automation designed to feel trustworthy, simple, and premium.</p>
+    </div>
+    <div class="features-grid">
+        <article class="feature-card">
+            <div class="feature-icon primary">
+                <i class="fas fa-capsules"></i>
             </div>
-            <div class="features-grid">
-                <article class="feature-card-modern">
-                    <div class="feature-icon-modern"><i class="fa-solid fa-capsules"></i></div>
-                    <h3>Order Medicines</h3>
-                    <p>Search 20,000+ medicines, compare options, upload a prescription, and track every step.</p>
-                </article>
-                <article class="feature-card-modern">
-                    <div class="feature-icon-modern"><i class="fa-solid fa-file-waveform"></i></div>
-                    <h3>Upload Prescription</h3>
-                    <p>Let AI read your prescription and prefill medicine selections with faster checkout flows.</p>
-                </article>
-                <article class="feature-card-modern">
-                    <div class="feature-icon-modern"><i class="fa-solid fa-vial-circle-check"></i></div>
-                    <h3>AI Lab Analyzer</h3>
-                    <p>Upload reports and get structured interpretations, flags, and easy-to-understand next steps.</p>
-                </article>
-                <article class="feature-card-modern">
-                    <div class="feature-icon-modern"><i class="fa-solid fa-user-doctor"></i></div>
-                    <h3>Video Consult</h3>
-                    <p>Book doctors, join sessions, and keep follow-ups, prescriptions, and records connected.</p>
-                </article>
+            <h3>Order Medicines</h3>
+            <p>Search 20,000+ medicines, compare options, upload a prescription, and track every step.</p>
+        </article>
+        <article class="feature-card">
+            <div class="feature-icon purple">
+                <i class="fas fa-file-waveform"></i>
             </div>
-        </div>
-    </section>
+            <h3>Upload Prescription</h3>
+            <p>Let AI read your prescription and prefill medicine selections with faster checkout flows.</p>
+        </article>
+        <article class="feature-card">
+            <div class="feature-icon cyan">
+                <i class="fas fa-vial-circle-check"></i>
+            </div>
+            <h3>AI Lab Analyzer</h3>
+            <p>Upload reports and get structured interpretations, flags, and easy-to-understand next steps.</p>
+        </article>
+        <article class="feature-card">
+            <div class="feature-icon primary">
+                <i class="fas fa-user-doctor"></i>
+            </div>
+            <h3>Video Consult</h3>
+            <p>Book doctors, join sessions, and keep follow-ups, prescriptions, and records connected.</p>
+        </article>
+    </div>
+</section>
 
-    <section class="story-section reveal-on-scroll">
-        <div class="modern-container">
-            <div class="story-grid">
-                <article class="story-card">
-                    <div class="section-header">
-                        <h2>Built for patients</h2>
-                        <p>A streamlined experience for medicine ordering, consult booking, health tracking, and family care.</p>
-                    </div>
-                    <div class="story-list">
-                        <div class="story-list-item"><i class="fa-solid fa-check"></i> Fast search and reorder flows</div>
-                        <div class="story-list-item"><i class="fa-solid fa-check"></i> Live order and delivery visibility</div>
-                        <div class="story-list-item"><i class="fa-solid fa-check"></i> AI-assisted prescription and lab support</div>
-                    </div>
-                </article>
-                <article class="story-card">
-                    <div class="section-header">
-                        <h2>Built for care teams</h2>
-                        <p>Doctors, pharmacies, labs, and delivery partners each get focused operational workspaces with AI support.</p>
-                    </div>
-                    <div class="story-list">
-                        <div class="story-list-item"><i class="fa-solid fa-bolt"></i> Modern doctor and EMR workflows</div>
-                        <div class="story-list-item"><i class="fa-solid fa-bolt"></i> Inventory, diagnostics, and partner dashboards</div>
-                        <div class="story-list-item"><i class="fa-solid fa-bolt"></i> Real-time updates across the care journey</div>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </section>
+<section class="cta-section">
+    <div class="cta-container">
+        <h2>Start your healthcare journey with Kash AI</h2>
+        <p>Sign up as a patient, browse medicines as a guest, or open a professional workspace for your clinic or business.</p>
+        <a href="/auth/register/patient" class="btn">Create Account</a>
+    </div>
+</section>
 
-    <section class="trust-section reveal-on-scroll">
-        <div class="modern-container">
-            <div class="section-header">
-                <h2>A trustworthy healthcare feel, not a cluttered marketplace</h2>
-                <p>Designed with the confidence of a modern health platform and the warmth of a human care brand.</p>
-            </div>
-            <div class="trust-grid">
-                <article class="trust-card">
-                    <strong>Verified healthcare workflows</strong>
-                    <p>Prescription handling, consult flows, and patient operations shaped for real healthcare teams.</p>
-                </article>
-                <article class="trust-card">
-                    <strong>AI with practical value</strong>
-                    <p>Use AI for faster intake, report interpretation, care insights, and workflow acceleration.</p>
-                </article>
-                <article class="trust-card">
-                    <strong>One connected platform</strong>
-                    <p>Patients, doctors, pharmacies, labs, delivery partners, and admins stay connected in one system.</p>
-                </article>
-            </div>
+<footer class="footer">
+    <div class="footer-container">
+        <p>© 2026 Kash AI. All rights reserved.</p>
+        <div class="footer-bottom">
+            <p>Healthcare intelligence for modern India.</p>
         </div>
-    </section>
+    </div>
+</footer>
 
-    <section class="cta-section reveal-on-scroll">
-        <div class="modern-container">
-            <div class="cta-card">
-                <div>
-                    <h2>Start your healthcare journey with Kash AI</h2>
-                    <p>Sign up as a patient, browse medicines as a guest, or open a professional workspace for your clinic or business.</p>
-                </div>
-                <div class="cta-actions">
-                    <a href="/auth/register/patient" class="btn-primary-large">Create Account</a>
-                    <a href="/portal" class="btn-outline-large">Explore Workspaces</a>
-                </div>
-            </div>
-        </div>
-    </section>
-</div>
+<script type="module">
+    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+    let scene, camera, renderer, controls;
+    let heart, particles;
+
+    function init() {
+        const container = document.getElementById('three-container');
+        if (!container) return;
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f172a);
+
+        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 0, 6);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.enableZoom = false;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x2563eb, 1, 100);
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x8b5cf6, 1, 100);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        createHeart();
+        createParticles();
+
+        window.addEventListener('resize', onWindowResize);
+        animate();
+    }
+
+    function createHeart() {
+        const x = 0, y = 0;
+        const heartShape = new THREE.Shape();
+        heartShape.moveTo(x + 0, y + 0.5);
+        heartShape.bezierCurveTo(x + 0, y + 0.5, x + 0.4, y + 0.9, x + 0.8, y + 0.5);
+        heartShape.bezierCurveTo(x + 1.1, y + 0.2, x + 0.8, y - 0.1, x + 0.5, y - 0.2);
+        heartShape.lineTo(x + 0, y - 0.6);
+        heartShape.lineTo(x - 0.5, y - 0.2);
+        heartShape.bezierCurveTo(x - 0.8, y - 0.1, x - 1.1, y + 0.2, x - 0.8, y + 0.5);
+        heartShape.bezierCurveTo(x - 0.4, y + 0.9, x + 0, y + 0.5, x + 0, y + 0.5);
+
+        const extrudeSettings = {
+            depth: 0.3,
+            bevelEnabled: true,
+            bevelThickness: 0.1,
+            bevelSize: 0.1,
+            bevelOffset: 0,
+            bevelSegments: 8
+        };
+
+        const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0x2563eb,
+            metalness: 0.3,
+            roughness: 0.4,
+            transmission: 0.7,
+            transparent: true,
+            opacity: 0.9
+        });
+
+        heart = new THREE.Mesh(geometry, material);
+        heart.scale.set(1.5, 1.5, 1);
+        heart.position.set(0, 0, 0);
+        scene.add(heart);
+    }
+
+    function createParticles() {
+        const particleCount = 500;
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 20;
+            positions[i + 1] = (Math.random() - 0.5) * 20;
+            positions[i + 2] = (Math.random() - 0.5) * 20;
+
+            const color = new THREE.Color();
+            color.setHSL(0.6 + Math.random() * 0.2, 0.7, 0.6);
+            colors[i] = color.r;
+            colors[i + 1] = color.g;
+            colors[i + 2] = color.b;
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const material = new THREE.PointsMaterial({
+            size: 0.08,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+    }
+
+    function onWindowResize() {
+        const container = document.getElementById('three-container');
+        if (!container || !camera || !renderer) return;
+
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    let time = 0;
+    function animate() {
+        requestAnimationFrame(animate);
+        time += 0.01;
+
+        if (heart) {
+            heart.rotation.y += 0.01;
+            const scale = 1 + Math.sin(time * 3) * 0.1;
+            heart.scale.set(scale * 1.5, scale * 1.5, scale * 1.5);
+        }
+
+        if (particles) {
+            particles.rotation.y += 0.001;
+            particles.rotation.x += 0.0005;
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+</script>
 {% endblock %}
