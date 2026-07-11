@@ -1,17 +1,33 @@
 :root {
-    --primary: #2563eb;
-    --primary-dark: #1d4ed8;
-    --secondary: #8b5cf6;
-    --accent: #06b6d4;
-    --text: #111827;
-    --text-muted: #6b7280;
-    --bg: #f9fafb;
-    --card-bg: #ffffff;
-    --border: #e5e7eb;
-    --shadow: 0 10px 30px rgba(0,0,0,0.08);
-    --radius: 16px;
-    --font-sans: 'Inter', system-ui, sans-serif;
-    --font-display: 'Plus Jakarta Sans', sans-serif;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --secondary: #8b5cf6;
+  --accent: #06b6d4;
+  --text: #111827;
+  --text-muted: #6b7280;
+  --bg: #f9fafb;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --shadow: 0 10px 30px rgba(0,0,0,0.08);
+  --radius: 16px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  
+  /* Override shared variables */
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #8b5cf6;
+  --color-primary-lighter: rgba(37,99,235,0.1);
+  --color-secondary: #8b5cf6;
+  --color-secondary-dark: #7c3aed;
+  --color-secondary-light: rgba(139,92,246,0.1);
+  --color-ai: #2563eb;
+  --color-ai-dark: #1d4ed8;
+  --color-ai-light: rgba(37,99,235,0.1);
+  
+  /* Override shortcuts */
+  --brand: var(--primary);
+  --brand-strong: var(--primary-dark);
 }
 
 * {
