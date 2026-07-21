@@ -485,7 +485,12 @@ def create_app() -> FastAPI:
 
     @application.get("/", include_in_schema=False)
     async def root():
-        return RedirectResponse(url="/new", status_code=302)
+        return {
+            "message": "Kash AI API is running!",
+            "version": settings.app_version or "1.0.0",
+            "status": "healthy",
+            "docs": "/docs",
+        }
 
     @application.get("/index", include_in_schema=False)
     async def index_page():
