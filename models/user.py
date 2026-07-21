@@ -43,6 +43,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255))
     full_name: Mapped[str] = mapped_column(String(255))
     role: Mapped[UserRole] = mapped_column(SqlEnum(UserRole, native_enum=False), index=True)
+    account_type: Mapped[str] = mapped_column(String(20), default="patient", index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     google_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)

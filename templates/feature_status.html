@@ -1,0 +1,150 @@
+{% extends "new_base.html" %}
+
+{% block title %}Feature Status Dashboard | Kash AI{% endblock %}
+
+{% block content %}
+<div class="feature-status-container">
+    <section class="status-header glass">
+        <div>
+            <h1>📊 Feature Status Dashboard</h1>
+            <p>Auto-checks the core Kash AI features and lets you test each one on demand.</p>
+        </div>
+        <a href="/consultation/voice" class="btn-open-voice">🎤 Open Voice Consult</a>
+    </section>
+
+    <section class="status-summary glass" aria-label="Feature status summary">
+        <span class="badge working">✅ Working: <span id="workingCount">0</span></span>
+        <span class="badge checking">⏳ Checking: <span id="checkingCount">8</span></span>
+        <span class="badge failed">❌ Failed: <span id="failedCount">0</span></span>
+        <span class="badge total">📊 Total: <span id="totalCount">8</span></span>
+    </section>
+
+    <section class="status-table glass" aria-label="Feature checks">
+        <div class="status-row header">
+            <span>Feature</span>
+            <span>Status</span>
+            <span>Last Tested</span>
+            <span>Action</span>
+        </div>
+        {% set features = [
+            {'id': 'tongue', 'name': 'Tongue Diagnosis'},
+            {'id': 'chat', 'name': 'AI Doctor Chat'},
+            {'id': 'billing', 'name': 'Billing Codes'},
+            {'id': 'medicines', 'name': 'Medicine Recommendations'},
+            {'id': 'voice', 'name': 'Voice Extraction'},
+            {'id': 'churn', 'name': 'Churn Prediction'},
+            {'id': 'video', 'name': 'Video Consultation'},
+            {'id': 'device', 'name': 'Device Check'}
+        ] %}
+        {% for feature in features %}
+        <div class="status-row" id="row-{{ feature.id }}">
+            <span class="feature-name">{{ feature.name }}</span>
+            <span class="status-badge checking" id="status-{{ feature.id }}">⏳ Checking</span>
+            <span class="last-tested" id="tested-{{ feature.id }}">-</span>
+            <button class="test-btn" type="button" onclick="testFeature('{{ feature.id }}')">Test</button>
+        </div>
+        {% endfor %}
+    </section>
+</div>
+
+<script>
+async function testFeature(featureId) {
+    const statusEl = document.getElementById(`status-${featureId}`);
+    const testedEl = document.getElementById(`tested-${featureId}`);
+
+    statusEl.textContent = "⏳ Testing...";
+    statusEl.className = "status-badge checking";
+    updateSummary();
+
+    const endpoints = {
+        tongue: { url: "/api/tongue-analyze", method: "POST", data: { description: "white coated tongue with cracks" } },
+        chat: { url: "/api/ai-chat", method: "POST", data: { message: "What is Triphala?" } },
+        billing: { url: "/api/generate-billing-codes", method: "POST", data: { prescription_id: 1 } },
+        medicines: { url: "/api/recommend-medicines", method: "POST", data: { case_sheet_id: 1 } },
+        voice: { url: "/api/voice/extract", method: "POST", data: { transcript: "Patient has fever for 3 days" } },
+        churn: { url: "/api/predict-churn", method: "GET" },
+        video: { url: "/telemedicine/start", method: "GET" },
+        device: { url: "/api/device/check", method: "GET" }
+    };
+
+    const config = endpoints[featureId];
+    if (!config) {
+        statusEl.textContent = "❌ Not Found";
+        statusEl.className = "status-badge failed";
+        updateSummary();
+        return;
+    }
+
+    try {
+        const options = { method: config.method };
+        if (config.method === "POST" && config.data) {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || "";
+            options.headers = { "Content-Type": "application/json" };
+            if (csrfToken) {
+                options.headers["X-CSRF-Token"] = csrfToken;
+            }
+            options.body = JSON.stringify(config.data);
+        }
+
+        const response = await fetch(config.url, options);
+        testedEl.textContent = new Date().toLocaleString();
+
+        if (response.ok) {
+            statusEl.textContent = "✅ Working";
+            statusEl.className = "status-badge working";
+        } else {
+            statusEl.textContent = "❌ Not Working";
+            statusEl.className = "status-badge failed";
+        }
+    } catch (error) {
+        statusEl.textContent = "❌ Not Working";
+        statusEl.className = "status-badge failed";
+        testedEl.textContent = new Date().toLocaleString();
+    }
+
+    updateSummary();
+}
+
+function updateSummary() {
+    const working = document.querySelectorAll(".status-badge.working").length;
+    const checking = document.querySelectorAll(".status-badge.checking").length;
+    const failed = document.querySelectorAll(".status-badge.failed").length;
+
+    document.getElementById("workingCount").textContent = working;
+    document.getElementById("checkingCount").textContent = checking;
+    document.getElementById("failedCount").textContent = failed;
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    ["tongue", "chat", "billing", "medicines", "voice", "churn", "video", "device"].forEach((feature) => testFeature(feature));
+});
+</script>
+
+<style>
+.feature-status-container { max-width: 1200px; margin: 0 auto; padding: 30px 0; }
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; }
+.status-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.status-header h1 { font-size: 28px; margin: 0; color: #f8fbff; }
+.status-header p { color: rgba(255,255,255,0.6); margin: 6px 0 0; }
+.btn-open-voice { padding: 10px 20px; background: #4F46E5; color: white; border-radius: 8px; text-decoration: none; font-weight: 700; }
+.btn-open-voice:hover { background: #4338CA; }
+.status-summary { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.badge { padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 700; }
+.badge.working { background: rgba(52,211,153,0.2); color: #34D399; }
+.badge.checking { background: rgba(251,191,36,0.2); color: #FBBF24; }
+.badge.failed { background: rgba(248,113,113,0.2); color: #F87171; }
+.badge.total { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+.status-table { overflow: hidden; }
+.status-row { display: grid; grid-template-columns: 2fr 1fr 1.5fr 0.8fr; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; gap: 12px; }
+.status-row.header { font-weight: 700; color: rgba(255,255,255,0.48); font-size: 13px; background: rgba(255,255,255,0.02); }
+.feature-name { font-weight: 700; color: #f8fbff; }
+.status-badge { padding: 4px 12px; border-radius: 999px; font-size: 13px; width: fit-content; }
+.status-badge.working { background: rgba(52,211,153,0.2); color: #34D399; }
+.status-badge.checking { background: rgba(251,191,36,0.2); color: #FBBF24; }
+.status-badge.failed { background: rgba(248,113,113,0.2); color: #F87171; }
+.last-tested { color: rgba(255,255,255,0.48); font-size: 13px; }
+.test-btn { padding: 6px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: #E5E7EB; cursor: pointer; font-size: 13px; }
+.test-btn:hover { background: rgba(79,70,229,0.2); border-color: #4F46E5; }
+@media (max-width: 768px) { .status-row { grid-template-columns: 1fr 1fr; gap: 8px; } .status-row.header { display: none; } .status-row .last-tested { grid-column: 1 / -1; } }
+</style>
+{% endblock %}

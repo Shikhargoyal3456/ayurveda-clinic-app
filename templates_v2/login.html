@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Login | Kash AI v2{% endblock %}
+
+{% block content %}
+<div class="flex min-h-full flex-col justify-center py-12 sm:px-6 lg:px-8">
+  <div class="sm:mx-auto sm:w-full sm:max-w-md">
+    <img class="mx-auto h-16 w-auto" src="/static/images/kash-ai-logo.png" alt="Kash AI">
+    <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">Sign in to your account</h2>
+    <p class="mt-2 text-center text-sm text-gray-600">
+      For the v2 Clinical Experience
+    </p>
+  </div>
+
+  <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+    <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+      {% if error %}
+      <div class="mb-4 rounded-md bg-red-50 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <!-- Heroicon name: mini/x-circle -->
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">{{ error }}</h3>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <form class="space-y-6" action="/v2/login" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="identifier" class="block text-sm font-medium text-gray-700">Email or Username</label>
+          <div class="mt-1">
+            <input id="identifier" name="identifier" type="text" autocomplete="username" required class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-brand-green-500 focus:outline-none focus:ring-brand-green-500 sm:text-sm">
+          </div>
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+          <div class="mt-1">
+            <input id="password" name="password" type="password" autocomplete="current-password" required class="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-brand-green-500 focus:outline-none focus:ring-brand-green-500 sm:text-sm">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="text-sm">
+            <a href="/auth/forgot-password" class="font-medium text-brand-green-600 hover:text-brand-green-500">Forgot your password?</a>
+          </div>
+        </div>
+
+        <div>
+          <button type="submit" class="flex w-full justify-center rounded-md border border-transparent bg-brand-green-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-brand-green-700 focus:outline-none focus:ring-2 focus:ring-brand-green-500 focus:ring-offset-2">Sign in</button>
+        </div>
+      </form>
+
+      <div class="mt-6">
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-300"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="bg-white px-2 text-gray-500">Or</span>
+          </div>
+        </div>
+
+        <div class="mt-6">
+            <a href="/new/login" class="flex w-full justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-500 shadow-sm hover:bg-gray-50">Return to modern login</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

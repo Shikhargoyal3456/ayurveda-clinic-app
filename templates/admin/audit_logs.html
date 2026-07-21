@@ -1,0 +1,44 @@
+{% extends 'new_base.html' %}
+{% block title %}Audit Logs | Kash AI{% endblock %}
+{% block head %}
+{{ super() }}
+<script defer src="/static/js/audit.js"></script>
+{% endblock %}
+{% block content %}
+<section class="card" style="margin-top:24px;padding:28px;" data-audit-root>
+    <div class="topbar" style="padding:0 0 18px;">
+        <div>
+            <span class="chip">Compliance</span>
+            <h1 style="margin:10px 0 0;">Audit Logs</h1>
+        </div>
+        <a class="chip" href="/new/admin">Back to Admin</a>
+    </div>
+    <p class="muted">View who accessed or changed records, with a simple compliance trail.</p>
+    <div class="table-shell">
+        <table class="glass-table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Action</th>
+                    <th>Resource</th>
+                    <th>User</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody data-audit-list>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.created_at.strftime('%d %b %Y %H:%M') if log.created_at else '—' }}</td>
+                    <td>{{ log.action }}</td>
+                    <td>{{ log.resource or '—' }}</td>
+                    <td>{{ log.user_id or '—' }}</td>
+                    <td><pre style="white-space:pre-wrap;margin:0;">{{ log.details or {} }}</pre></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="muted">No audit logs found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -23,6 +23,7 @@
         </div>
         <a href="/dashboard" class="btn btn-outline-dark btn-sm">Dashboard</a>
     </section>
+    {% include 'partials/export_buttons.html' %}
 
     {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
     {% set case_items = cases | default([], true) %}

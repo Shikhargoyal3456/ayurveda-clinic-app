@@ -75,8 +75,8 @@ class Sanitizer:
 
 def validate_password_complexity(password: str) -> list[str]:
     issues: list[str] = []
-    if len(password) < 10:
-        issues.append("Password must be at least 10 characters long.")
+    if len(password) < 8:
+        issues.append("Password must be at least 8 characters long.")
     if not any(char.isupper() for char in password):
         issues.append("Password must include at least one uppercase letter.")
     if not any(char.islower() for char in password):
@@ -99,6 +99,14 @@ def record_failed_login(identifier: str) -> int:
 
 def clear_failed_login(identifier: str) -> None:
     _login_attempts.pop(identifier, None)
+
+
+def login_attempt_count(identifier: str, window_seconds: int = 900) -> int:
+    now = time.time()
+    bucket = _login_attempts[identifier]
+    while bucket and now - bucket[0] > window_seconds:
+        bucket.popleft()
+    return len(bucket)
 
 
 def is_bruteforce_blocked(identifier: str, limit: int = 8, window_seconds: int = 900) -> bool:
@@ -127,6 +135,16 @@ def failed_login_retry_after_seconds(
     elapsed_since_last_attempt = now - bucket[-1]
     remaining = int(delay - elapsed_since_last_attempt)
     return max(0, remaining)
+
+
+def login_lockout_remaining_seconds(identifier: str, *, window_seconds: int = 900, limit: int = 10) -> int:
+    now = time.time()
+    bucket = _login_attempts[identifier]
+    while bucket and now - bucket[0] > window_seconds:
+        bucket.popleft()
+    if len(bucket) < limit:
+        return 0
+    return max(0, int(window_seconds - (now - bucket[0])))
 
 
 def _session_timeout_seconds() -> int:
@@ -224,14 +242,26 @@ def audit_logged(event_name: str) -> Callable[[Callable[..., Any]], Callable[...
 
 
 def ensure_https_request(request: Request) -> None:
-    if not settings.https_redirect_enabled:
+    """
+    Ensure HTTPS for production requests only.
+    Allows HTTP for localhost/development.
+    """
+    header_host = request.headers.get("host", "").split(":", 1)[0]
+    if header_host in ["127.0.0.1", "localhost", "::1"]:
         return
-    forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    host = request.headers.get("host", "")
-    host_without_port = host.split(":", 1)[0]
-    is_ip_host = host_without_port.replace(".", "").isdigit()
-    if forwarded_proto != "https" and settings.is_production and not is_ip_host:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="HTTPS is required.")
+
+    if not settings.is_production or not settings.require_https_in_production:
+        return
+
+    forwarded_proto = request.headers.get("X-Forwarded-Proto")
+    if forwarded_proto and forwarded_proto.lower() == "https":
+        return
+
+    if request.url.scheme != "https":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="HTTPS is required for production.",
+        )
 
 
 class SecureModels:

@@ -1,0 +1,10 @@
+{
+  "name": "kash-ai-v2",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static_v2/src/input.css -o ./static_v2/dist/styles.css",
+    "watch:css": "tailwindcss -i ./static_v2/src/input.css -o ./static_v2/dist/styles.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.1"
+  }
+}

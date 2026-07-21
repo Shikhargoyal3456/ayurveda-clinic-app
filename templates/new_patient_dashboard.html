@@ -1,0 +1,82 @@
+{% extends 'new_base.html' %}
+{% block title %}Patient Dashboard | Kash AI{% endblock %}
+{% block content %}
+<section class="topbar glass dashboard-topbar">
+    <strong>Kash AI</strong>
+    <div class="toolbar">
+        <span class="chip">{{ active_profile_name or user.full_name or 'Patient Portal' }}</span>
+        <a class="chip" href="/new/ai-doctor">AI Assistant</a>
+        <a class="chip" href="/device-check">Device Check</a>
+        <a class="chip" href="/new/claim-patient">Claim Record</a>
+        <a class="chip" href="/patient">Legacy Portal</a>
+    </div>
+</section>
+
+<section class="dashboard-grid dashboard-layout">
+    <aside class="card sidebar">
+        <div class="chip">Patient Navigation</div>
+        <nav class="sidebar-nav">
+            <a class="active" href="/patient/dashboard">My Health</a>
+            <a href="/new/appointments">Appointments</a>
+            <a href="/new/prescriptions">Prescriptions</a>
+            <a href="/new/ai-doctor">AI Assistant</a>
+            <a href="/device-check">Device Check</a>
+        </nav>
+    </aside>
+    <main class="dashboard-main">
+        <div class="card dashboard-card--hero">
+            <h1 class="dashboard-title">Welcome Back, {{ active_profile_name or user.full_name or 'Patient' }} 👋</h1>
+            <p class="muted">{{ health_message }}</p>
+            <div class="toolbar dashboard-toolbar">
+                <a class="chip" href="/new/ai-doctor">AI Assistant</a>
+                <a class="chip" href="/device-check">Device Check</a>
+                <a class="chip" href="/telemedicine/book">Book Doctor</a>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="card metric"><strong>{{ health_score or 0 }}</strong><span class="muted">Health</span></div>
+            <div class="card metric"><strong>{{ appointments|length }}</strong><span class="muted">Appointments</span></div>
+            <div class="card metric"><strong>{{ prescriptions|length }}</strong><span class="muted">Recent Orders</span></div>
+        </div>
+        <div class="card dashboard-card--compact">
+            <h2 class="section-title dashboard-section-title">Upcoming Appointments</h2>
+            <div class="table-shell dashboard-table-shell">
+                <table>
+                    <thead><tr><th>Date</th><th>Doctor</th><th>Time</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for item in upcoming_appointments %}
+                        <tr>
+                            <td>{{ item.date or '—' }}</td>
+                            <td>{{ item.doctor_name or item.title or 'Care Team' }}</td>
+                            <td>{{ item.time or '—' }}</td>
+                            <td><a class="chip" href="/new/appointments">{{ item.action_label or 'View' }}</a></td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="muted">No upcoming appointments found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card dashboard-card--compact">
+            <h2 class="section-title dashboard-section-title">Recent Prescriptions</h2>
+            <div class="table-shell dashboard-table-shell">
+                <table>
+                    <thead><tr><th>Order</th><th>Status</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for order in prescriptions %}
+                        <tr>
+                            <td>{{ order.diagnosis or ('Prescription #' ~ order.id) }}</td>
+                            <td>{{ order.created_at.strftime('%d %b %Y') if order.created_at else 'active' }}</td>
+                            <td><a class="chip" href="/new/prescriptions">View</a></td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="muted">No recent prescriptions found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</section>
+{% endblock %}

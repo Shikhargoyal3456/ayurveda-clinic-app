@@ -30,7 +30,11 @@ from app.security import (
     session_timed_out,
 )
 
-PASSWORD_CONTEXT = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+PASSWORD_CONTEXT = CryptContext(
+    schemes=["bcrypt", "pbkdf2_sha256"],
+    deprecated="auto",
+    bcrypt__rounds=12,
+)
 _RATE_LIMIT_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 _RATE_LIMIT_LOCK = Lock()
 _RATE_LIMIT_LAST_SWEEP_AT = 0.0
@@ -77,13 +81,16 @@ def _verify_legacy_password(password: str, password_hash: str) -> bool:
 def verify_password(password: str, password_hash: str) -> bool:
     if not password_hash:
         return False
-    if password_hash.startswith("$pbkdf2-sha256$"):
-        return PASSWORD_CONTEXT.verify(password, password_hash)
+    if password_hash.startswith("$2") or password_hash.startswith("$pbkdf2-sha256$"):
+        try:
+            return PASSWORD_CONTEXT.verify(password, password_hash)
+        except Exception:
+            pass
     return _verify_legacy_password(password, password_hash)
 
 
 def needs_password_rehash(password_hash: str) -> bool:
-    return not password_hash.startswith("$pbkdf2-sha256$")
+    return not password_hash.startswith("$2")
 
 
 def ensure_csrf_token(request: Request) -> str:
@@ -154,28 +161,70 @@ def auth_backoff_dependency(bucket: str = "auth-backoff"):
 def get_current_doctor(request: Request, db: Session = Depends(get_db)) -> Doctor:
     doctor_id = request.session.get("doctor_id")
     if not doctor_id:
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/new/login"})
 
     doctor = db.get(Doctor, doctor_id)
     if doctor is None:
         invalidate_current_session(request)
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/new/login"})
 
     if session_timed_out(request):
         invalidate_current_session(request)
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/new/login"})
 
     if int(request.session.get("session_version", -1)) != int(doctor.session_version):
         invalidate_current_session(request)
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/new/login"})
 
     refresh_token = str(request.session.get("refresh_token", ""))
     if doctor.refresh_token_hash and not compare_refresh_token(refresh_token, doctor.refresh_token_hash):
         invalidate_current_session(request)
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/new/login"})
 
     refresh_session_if_needed(request)
     return doctor
+
+
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> dict[str, object] | None:
+    try:
+        from app.portal_auth import get_portal_user
+
+        portal_user = get_portal_user(request, db)
+        if portal_user is not None:
+            role = getattr(portal_user.role, "value", str(portal_user.role))
+            return {
+                "id": portal_user.id,
+                "email": portal_user.email,
+                "name": portal_user.full_name,
+                "role": role,
+                "source": "portal",
+            }
+    except Exception:
+        pass
+
+    doctor_id = request.session.get("doctor_id")
+    if not doctor_id:
+        return None
+
+    doctor = db.get(Doctor, int(doctor_id))
+    if doctor is None or session_timed_out(request):
+        invalidate_current_session(request)
+        return None
+
+    refresh_session_if_needed(request)
+    from app.config import settings
+
+    configured_admins = [item.strip().lower() for item in settings.admin_usernames if item.strip()]
+    is_admin = (doctor.username or "").strip().lower() in (configured_admins or ["admin@ayurveda.com"])
+    if not settings.is_production and int(getattr(doctor, "id", 0) or 0) == 1:
+        is_admin = True
+    return {
+        "id": doctor.id,
+        "email": doctor.username,
+        "name": doctor.full_name or doctor.username,
+        "role": "admin" if is_admin else request.session.get("role", "doctor"),
+        "source": "legacy",
+    }
 
 
 def set_flash(request: Request, message: str, category: str = "info") -> None:
@@ -191,6 +240,7 @@ def initialize_login_session(request: Request, doctor: Doctor, db: Session) -> N
     request.session["_csrf_token"] = ensure_csrf_token(request)
     issue_session_tokens(request, doctor.id, doctor.session_version)
     request.session["doctor_id"] = doctor.id
+    request.session["role"] = "doctor"
     request.session["full_name"] = (doctor.full_name or doctor.username or "Doctor").strip()
     request.session["doctor_type"] = (doctor.specialty or "ayurveda").strip().lower() or "ayurveda"
     request.session["portal_doctor_type"] = request.session["doctor_type"]
@@ -217,8 +267,8 @@ def register_login_failure(doctor: Doctor | None, identifier: str, request: Requ
     if doctor is not None:
         doctor.failed_login_attempts = int(doctor.failed_login_attempts or 0) + 1
         failures = doctor.failed_login_attempts
-        if failures >= 8:
-            doctor.locked_until = request.state.request_started_at + timedelta(minutes=15)
+        if failures >= 10:
+            doctor.locked_until = request.state.request_started_at + timedelta(minutes=30)
         if db is not None:
             commit_with_retry(db)
     if is_bruteforce_blocked(identifier):

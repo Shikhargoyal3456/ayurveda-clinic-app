@@ -133,3 +133,101 @@ class PendingReview(Base):
 
     patient: Mapped["Patient"] = relationship(back_populates="pending_reviews")
     doctor: Mapped["Doctor"] = relationship(back_populates="pending_reviews")
+
+
+class TongueAnalysis(Base):
+    __tablename__ = "tongue_analyses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    image_url: Mapped[str] = mapped_column(String(255), default="")
+    analysis_text: Mapped[str] = mapped_column(Text, default="")
+    prakriti_prediction: Mapped[str] = mapped_column(String(120), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class BillingCode(Base):
+    __tablename__ = "billing_codes"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    prescription_id: Mapped[int] = mapped_column(ForeignKey("prescriptions.id"), index=True)
+    icd_11_codes: Mapped[str] = mapped_column(Text, default="[]")
+    ayush_code: Mapped[str] = mapped_column(String(120), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class TelemedicineSession(Base):
+    __tablename__ = "telemedicine_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    session_url: Mapped[str] = mapped_column(String(255), default="")
+    provider: Mapped[str] = mapped_column(String(40), default="jitsi")
+    duration_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class ConsultationSession(Base):
+    __tablename__ = "consultation_sessions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(30), default="active")
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ConsultationMetric(Base):
+    __tablename__ = "consultation_metrics"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    consultation_id: Mapped[int] = mapped_column(ForeignKey("consultation_sessions.id"), index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    start_time: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    ai_used: Mapped[bool] = mapped_column(default=False)
+    ai_voice_enabled: Mapped[bool] = mapped_column(default=False)
+    ai_vision_enabled: Mapped[bool] = mapped_column(default=False)
+    ai_prescription_enabled: Mapped[bool] = mapped_column(default=False)
+    ai_diagnosis_enabled: Mapped[bool] = mapped_column(default=False)
+    voice_duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    manual_time_saved_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class DoctorActivityLog(Base):
+    __tablename__ = "doctor_activity_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
+    activity_type: Mapped[str] = mapped_column(String(80))
+    extra_data: Mapped[str | None] = mapped_column(Text, nullable=True)
+    duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class VoiceTranscript(Base):
+    __tablename__ = "voice_transcripts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    session_id: Mapped[int] = mapped_column(ForeignKey("consultation_sessions.id"), index=True)
+    transcript: Mapped[str] = mapped_column(Text)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    extracted_data: Mapped[str] = mapped_column(Text, default="{}")
+
+
+class DeviceLog(Base):
+    __tablename__ = "device_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    device_type: Mapped[str] = mapped_column(String(30))
+    status: Mapped[str] = mapped_column(String(20))
+    tested_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)

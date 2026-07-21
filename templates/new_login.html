@@ -1,0 +1,38 @@
+{% extends 'new_base.html' %}
+{% block title %}Login | Kash AI{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-grid" style="grid-template-columns:minmax(0,420px) minmax(0,1fr);">
+        <div class="card" style="padding:32px;">
+            <span class="chip">Secure Login</span>
+            <h1 style="font-size:3rem;margin:14px 0 10px;">Welcome back</h1>
+            {% if request.query_params.get('message') %}
+            <div class="card" style="padding:14px 16px;margin-top:14px;background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.3);">{{ request.query_params.get('message') }}</div>
+            {% endif %}
+            <p class="muted">Sign in to the correct workspace. Patients stay in the patient portal, doctors stay in clinical tools.</p>
+            <form method="post" action="/auth/login" style="display:grid;gap:14px;margin-top:24px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input class="field" type="text" name="identifier" placeholder="Email or phone" required>
+                <input class="field" type="password" name="password" placeholder="Password" required>
+                <select class="field" name="role">
+                    <option value="">Auto-detect role</option>
+                    <option value="patient">Patient</option>
+                    <option value="doctor">Doctor</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button class="btn btn-primary pill-btn" type="submit">Sign In</button>
+            </form>
+            <a class="btn btn-secondary pill-btn" href="/auth/google/login" style="display:flex;justify-content:center;margin-top:14px;">Continue with Google</a>
+        </div>
+        <div class="card" style="padding:32px;">
+            <h2 class="section-title" style="font-size:2rem;">Choose your portal</h2>
+            <div class="feature-grid" style="margin-top:18px;">
+                <a class="card" style="padding:18px;" href="/auth/login/patient">Patient Login</a>
+                <a class="card" style="padding:18px;" href="/auth/login/doctor">Doctor Login</a>
+                <a class="card" style="padding:18px;" href="/auth/login/admin">Admin Login</a>
+                <a class="card" style="padding:18px;" href="/auth/signup">New account</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

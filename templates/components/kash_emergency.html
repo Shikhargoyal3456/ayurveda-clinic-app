@@ -1,0 +1,41 @@
+<section class="kash-emergency-rail" id="kashEmergencyRail" aria-live="assertive" aria-atomic="true">
+  <div class="kash-emergency-rail__card">
+    <div>
+      <strong id="kashEmergencyRailText">No critical emergency alerts right now.</strong>
+      <div class="kash-emergency-rail__meta" id="kashEmergencyRailMeta">0 active alerts • 0 pending AI reviews</div>
+    </div>
+    <button class="kash-emergency-button" id="kashEmergencyOpen" type="button">Review Critical Alerts</button>
+  </div>
+</section>
+
+<aside class="kash-alert-drawer" aria-live="polite">
+  <section class="kash-alert-drawer__panel" id="kashAlertDrawerRoot">
+    <header class="kash-alert-drawer__header">
+      <div>
+        <p class="eyebrow" style="color:rgba(255,255,255,.8);margin-bottom:4px;">Emergency Monitor</p>
+        <strong>Alerts & Review Queue</strong>
+      </div>
+      <button class="kash-emergency-button" id="kashAlertDrawerToggle" type="button">
+        Open <span id="kashAlertCount">0</span>
+      </button>
+    </header>
+    <div class="kash-alert-drawer__list" id="kashAlertDrawerPanel" hidden>
+      <div class="kash-alert-item" data-severity="low">
+        <strong>Loading alerts</strong>
+        <p class="mb-0">Polling your current emergency and review endpoints.</p>
+      </div>
+    </div>
+  </section>
+</aside>
+
+<div class="kash-emergency-modal" id="kashEmergencyModal" hidden>
+  <div class="kash-emergency-modal__card">
+    <p class="eyebrow">Critical confirmation</p>
+    <h2>Emergency view unlock</h2>
+    <p>This action is protected to prevent accidental dismissal or taps between patients. Press and hold the button to continue into the critical alert workflow.</p>
+    <div class="stack-list">
+      <button class="btn btn-primary kash-hold-button" id="kashEmergencyHold" type="button" data-progress>Press And Hold To Continue</button>
+      <button class="btn btn-outline-dark" id="kashEmergencyClose" type="button">Cancel</button>
+    </div>
+  </div>
+</div>

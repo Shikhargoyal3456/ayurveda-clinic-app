@@ -89,7 +89,7 @@ def get_patient_insights(db: Session, patient_id: int) -> dict[str, object]:
 @router.get("/")
 def root(request: Request, db: Session = Depends(get_db)):
     if request.session.get("doctor_id"):
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/new/doctor", status_code=303)
     portal_user = get_portal_user(request, db)
     if portal_user is not None:
         role_value = getattr(portal_user.role, "value", str(portal_user.role))
@@ -105,63 +105,18 @@ def root(request: Request, db: Session = Depends(get_db)):
                 request.session["active_profile_avatar"] = profile_avatar_for_relationship(active_profile.relationship, active_profile.profile_avatar)
                 request.session["active_profile_relationship"] = active_profile.relationship
             ctx = patient_dashboard_context(request, portal_user)
-            return render_template(templates, request, "patient_home.html", ctx)
+            return render_template(templates, request, "new_patient_dashboard.html", {
+                **ctx,
+                "user": portal_user,
+                "csrf_token": ensure_csrf_token(request),
+            })
         return RedirectResponse(url=dashboard_path_for_role(role_value), status_code=303)
-    return render_template(
-        templates,
-        request,
-        "landing.html",
-        {
-            "seo_title": "Kash AI | Healthcare intelligence powered by AI",
-            "seo_description": "Order medicines, consult doctors, analyze reports, and manage your health journey in one calm, intelligent platform.",
-            "active_page": "home",
-            "is_guest_user": True,
-            "user_name": "Visitor",
-            "user_role": "AI-powered healthcare",
-            "avatar_label": "KA",
-        },
-    )
+    return RedirectResponse(url="/new", status_code=303)
 
 
 @router.get("/my-health")
 def my_health(request: Request, db: Session = Depends(get_db)):
-    portal_user = get_portal_user(request, db)
-    if portal_user is not None and getattr(portal_user.role, "value", str(portal_user.role)) == "patient":
-        profiles = active_profiles_for_user(db, portal_user.id)
-        if not profiles:
-            return RedirectResponse(url="/profiles/add", status_code=303)
-        if len(profiles) > 1 and not request.session.get("active_profile_id"):
-            return RedirectResponse(url="/profiles/select", status_code=303)
-    payload = get_dashboard_payload()
-    subscriptions = payload.get("subscriptions", [])
-    active_medicines = []
-    for item in subscriptions[:5]:
-        days_left = int(item.get("days_left", 0) or 0)
-        tone = "yellow" if days_left <= 3 else "green"
-        badge = "Refill soon" if days_left <= 3 else "On track"
-        refill_text = "today" if days_left <= 0 else f"in {days_left} days"
-        active_medicines.append(
-            {
-                "name": item.get("medicine_name", "Medicine"),
-                "refill_text": refill_text,
-                "tone": tone,
-                "badge": badge,
-            }
-        )
-    return render_template(
-        templates,
-        request,
-        "patient/simple_health.html",
-        {
-            "simple_nav": "health",
-            "page_hint": "Your medicines and refill reminders",
-            "health_score": payload.get("health_score", 85),
-            "health_message": payload.get("health_message", "Your medicines and reminders are on track."),
-            "active_medicines": active_medicines,
-            "recent_consults": 2,
-            "active_profile_name": request.session.get("active_profile_name", "Myself"),
-        },
-    )
+    return RedirectResponse(url="/new/patient", status_code=303)
 
 
 @router.get("/orders")
@@ -287,43 +242,7 @@ def dashboard(
         for prescription in followup_prescriptions
         if prescription.follow_up_days
     ]
-    return render_template(
-        templates,
-        request,
-        "dashboard.html",
-        {
-            "doctor": doctor,
-            "clinic_name": settings.clinic_name,
-            "current_datetime": current_datetime,
-            "patients": patients,
-            "total_patients": total_patients,
-            "total_cases": total_cases,
-            "todays_appointments": len(emr_dashboard.get("today_appointments", [])),
-            "todays_patients": len([patient for patient in recent_patients if getattr(patient, "created_at", None) and patient.created_at.date() == today]),
-            "todays_earnings": float(emr_dashboard.get("revenue_today", 0.0) or 0.0),
-            "pending_payments": int(
-                db.query(func.count(Payment.id))
-                .join(Patient, Patient.id == Payment.patient_id)
-                .filter(Patient.doctor_id == doctor.id, Payment.status == "unpaid")
-                .scalar()
-                or 0
-            ),
-            "followups_due": len(emr_dashboard.get("followups_due", [])),
-            "returning_patients": returning_patients,
-            "upcoming_appointments": upcoming_appointments,
-            "due_followups": due_followups,
-            "today_appointments": emr_dashboard.get("today_appointments", []),
-            "recent_patients": recent_patients,
-            "pending_followups": emr_dashboard.get("followups_due", []),
-            "latest_prescriptions": latest_prescriptions,
-            "outstanding_payments": outstanding_payments,
-            "next_visit_recommendations": next_visit_recommendations,
-            "demo_mode_active": demo_mode_active,
-            "ai_dashboard_doctor_id": doctor.id,
-            "flash": pop_flash(request),
-            "csrf_token": ensure_csrf_token(request),
-        },
-    )
+    return RedirectResponse(url="/new/doctor", status_code=303)
 
 
 @router.get("/api/dashboard/risk-patients")

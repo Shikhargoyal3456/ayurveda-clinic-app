@@ -19,16 +19,19 @@ class CacheService:
     def __init__(self) -> None:
         self._sync_client = None
         self._async_client = None
+        self._connect_attempted = False
         self._connect()
 
     def _connect(self) -> None:
+        if self._connect_attempted:
+            return
+        self._connect_attempted = True
         if not settings.cache_enabled or not settings.redis_url:
             return
         try:
             import redis  # type: ignore
 
             self._sync_client = redis.Redis.from_url(settings.redis_url, decode_responses=True, socket_connect_timeout=1, socket_timeout=1)
-            self._sync_client.ping()
         except Exception as exc:
             logger.warning("Redis sync cache unavailable: %s", exc)
             self._sync_client = None
@@ -81,6 +84,8 @@ class CacheService:
         return result
 
     async def get_json_async(self, key: str) -> Any | None:
+        if self._async_client is None:
+            self._connect()
         if self._async_client is not None:
             try:
                 value = await self._async_client.get(key)
@@ -90,6 +95,8 @@ class CacheService:
         return self._local_get(key)
 
     async def set_json_async(self, key: str, value: Any, ttl_seconds: int = 300) -> bool:
+        if self._async_client is None:
+            self._connect()
         if self._async_client is not None:
             try:
                 await self._async_client.setex(key, ttl_seconds, json.dumps(value))
@@ -100,6 +107,8 @@ class CacheService:
         return True
 
     def get_json(self, key: str) -> Any | None:
+        if self._sync_client is None:
+            self._connect()
         if self._sync_client is not None:
             try:
                 value = self._sync_client.get(key)
@@ -109,6 +118,8 @@ class CacheService:
         return self._local_get(key)
 
     def set_json(self, key: str, value: Any, ttl_seconds: int = 900) -> None:
+        if self._sync_client is None:
+            self._connect()
         if self._sync_client is not None:
             try:
                 self._sync_client.setex(key, ttl_seconds, json.dumps(value))

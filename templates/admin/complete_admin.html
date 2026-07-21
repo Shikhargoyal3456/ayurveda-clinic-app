@@ -120,7 +120,7 @@ function redirectToLogin(message = 'Your admin session expired. Please sign in a
         showToast(message, 'error');
     }
     window.setTimeout(() => {
-        window.location.href = '/login';
+        window.location.href = '/new/login';
     }, 500);
 }
 

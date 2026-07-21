@@ -106,6 +106,11 @@ def configure_logging() -> None:
     root._ayurveda_logging_configured = True  # type: ignore[attr-defined]
 
 
+def setup_logging() -> logging.Logger:
+    configure_logging()
+    return get_logger(__name__)
+
+
 def set_request_id(request_id: str) -> None:
     _request_id.set(request_id)
 

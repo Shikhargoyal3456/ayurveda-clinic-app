@@ -22,8 +22,9 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.analytics import aggregate_daily_statistics, track_event
-from app.auth import ensure_csrf_token, get_current_doctor, verify_csrf
+from app.auth import ensure_csrf_token, get_current_doctor, get_current_user, verify_csrf
 from app.config import settings
+from app.utils.batch_operations import bulk_insert
 try:
     from app.health import build_health_report
 except Exception as exc:
@@ -94,7 +95,7 @@ logger = logging.getLogger(__name__)
 _ADMIN_ACTION_BUCKETS: dict[str, deque[float]] = defaultdict(deque)
 UX_FEEDBACK_LOG = "ux_feedback.jsonl"
 security = HTTPBearer(auto_error=False)
-ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN", "your-secret-token-here").strip()
+ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN", "").strip()
 email_service = EmailService()
 
 
@@ -1807,17 +1808,12 @@ def activity_dashboard_page(
 
 
 @router.get("/admin/complete")
-def complete_admin_page(
-    request: Request,
-    doctor: Doctor = Depends(get_current_doctor),
-):
-    _require_admin(doctor)
-    return render_template(
-        templates,
-        request,
-        "admin/complete_admin.html",
-        _admin_template_context(request),
-    )
+async def complete_admin_page(request: Request, user=Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return templates.TemplateResponse("admin/complete_admin.html", {"request": request, "user": user})
 
 
 @router.get("/api/admin/medicines")
@@ -1975,6 +1971,7 @@ async def bulk_upload_medicines(
     failed = 0
     failures: list[dict[str, object]] = []
 
+    inventory_rows = []
     for index, row in enumerate(reader, start=2):
         try:
             name = str(row.get("name", "")).strip()
@@ -2015,7 +2012,7 @@ async def bulk_upload_medicines(
             )
             db.add(medicine)
             db.flush()
-            db.add(
+            inventory_rows.append(
                 PharmacyInventory(
                     pharmacy_store_id=None,
                     pharmacy_user_id=None,
@@ -2032,6 +2029,8 @@ async def bulk_upload_medicines(
             failed += 1
             failures.append({"row": index, "error": str(exc)})
 
+    if inventory_rows:
+        bulk_insert(db, inventory_rows, chunk_size=1000)
     commit_with_retry(db)
     await _broadcast_admin_activity(
         "bulk_upload",
@@ -2058,6 +2057,7 @@ async def bulk_add_medicines_json(
     failed = 0
     failures: list[dict[str, object]] = []
 
+    inventory_rows = []
     for index, row in enumerate(medicines):
         try:
             if not isinstance(row, dict):
@@ -2100,7 +2100,7 @@ async def bulk_add_medicines_json(
             )
             db.add(medicine)
             db.flush()
-            db.add(
+            inventory_rows.append(
                 PharmacyInventory(
                     pharmacy_store_id=None,
                     pharmacy_user_id=None,
@@ -2117,6 +2117,8 @@ async def bulk_add_medicines_json(
             failed += 1
             failures.append({"index": index, "error": str(exc)})
 
+    if inventory_rows:
+        bulk_insert(db, inventory_rows, chunk_size=1000)
     commit_with_retry(db)
     await _broadcast_admin_activity(
         "bulk_upload",

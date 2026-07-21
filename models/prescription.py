@@ -39,16 +39,23 @@ class AIFeedback(Base):
     __tablename__ = "ai_feedback"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    consultation_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     prescription_id: Mapped[int | None] = mapped_column(ForeignKey("prescriptions.id"), nullable=True, index=True)
     case_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     patient_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     doctor_id: Mapped[int] = mapped_column(ForeignKey("doctors.id"), index=True)
     field_name: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    feature_type: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
     ai_suggestion: Mapped[str | None] = mapped_column(Text, nullable=True)
     doctor_correction: Mapped[str | None] = mapped_column(Text, nullable=True)
+    doctor_final: Mapped[str | None] = mapped_column(Text, nullable=True)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    accuracy_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
     accepted: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    was_accepted: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    modified: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    feedback_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     prescription = relationship("Prescription", back_populates="feedback_entries")

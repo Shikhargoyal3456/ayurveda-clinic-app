@@ -4,6 +4,12 @@
 <div class="site-container page-shell emr-shell">
     <aside class="page-sidebar">{% include 'emr/_sidebar.html' %}</aside>
     <section class="page-content">        <div class="emr-neural-banner">Neural-grade EMR workspace with calmer records, cleaner actions, and faster clinical flow.</div>
+        <script>
+            window.kashConsultContext = {
+                patientId: {{ patient.id | default(0, true) | tojson }},
+                doctorId: {{ doctor.id | default(0, true) | tojson }},
+            };
+        </script>
         <style class="emr-neural-inline">
         .emr-neural-banner{margin:0 0 24px;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#e486ab 0%,#c06a8f 100%);color:#fff;text-align:center;font-size:14px;letter-spacing:-.01em;box-shadow:0 18px 40px rgba(192,106,143,.24)}
         .page-content .card,.page-content .metric-card,.page-content .responsive-table-card,.page-content .page-header,.page-content .emr-hero-card,.page-content .emr-mini-panel,.page-content .appointment-row,.page-content .info-chip,.page-content .checkbox-card,.page-content .feature-card,.page-content .list-row,.page-content .filter-bar,.page-content .patient-registry-card,.page-content .simple-registration-card,.page-content .surface-tint{border-radius:20px !important;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
@@ -50,6 +56,51 @@
             </div>
             <div class="alert alert-warning mt-4"><i class="fa-solid fa-bell"></i> Always confirm spacing, dose, and contraindications when combining herbomineral preparations with chronic allopathic medicines.</div>
         </div>
+        <div class="card mt-4" id="visionCard">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <p class="eyebrow mb-1">Tongue diagnosis</p>
+                    <h2 class="h4 mb-0">Camera / upload analysis</h2>
+                </div>
+                <div class="inline-actions">
+                    <input type="file" id="tongueImageInput" accept="image/*" class="form-control form-control-sm" capture="environment">
+                    <button type="button" class="btn btn-primary btn-sm" id="captureTongueBtn">Capture</button>
+                    <button type="button" class="btn btn-outline-dark btn-sm" id="analyzeTongueBtn">Analyze</button>
+                </div>
+            </div>
+            <video id="tongueCameraPreview" autoplay playsinline muted class="mt-3" style="width:100%;max-height:320px;border-radius:18px;background:#000;"></video>
+            <div id="tongueAnalysisResult" class="mt-3"></div>
+        </div>
+        <div class="card mt-4">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <p class="eyebrow mb-1">Voice to action</p>
+                    <h2 class="h4 mb-0">Ambient AI scribe draft</h2>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="voiceActionBtn">Process voice draft</button>
+            </div>
+            <div class="row g-3 mt-2">
+                <div class="col-md-3"><div class="p-3 border rounded-4 h-100" id="voiceCaseSheet">Case sheet draft will appear here.</div></div>
+                <div class="col-md-3"><div class="p-3 border rounded-4 h-100" id="voiceMedicines">Medicine suggestions will appear here.</div></div>
+                <div class="col-md-3"><div class="p-3 border rounded-4 h-100" id="voicePrescription">Prescription draft will appear here.</div></div>
+                <div class="col-md-3"><div class="p-3 border rounded-4 h-100" id="voiceFollowup">Follow-up date will appear here.</div></div>
+            </div>
+            <div class="mt-3">
+                <button type="button" class="btn btn-success btn-sm" id="confirmVoiceActionBtn">Confirm All</button>
+            </div>
+        </div>
+        <div class="card mt-4">
+            <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <p class="eyebrow mb-1">Similar patients</p>
+                    <h2 class="h4 mb-0">Hyper-personalized Rx recommendations</h2>
+                </div>
+                <button type="button" class="btn btn-outline-dark btn-sm" id="recommendMedicinesBtn">Find matches</button>
+            </div>
+            <div id="medicineRecommendationBox" class="mt-3"></div>
+        </div>
+        <script src="{{ url_for('static', path='js/camera.js') }}" defer></script>
+        <script src="{{ url_for('static', path='js/voice-action.js') }}" defer></script>
     </section>
 </div>
 {% endblock %}

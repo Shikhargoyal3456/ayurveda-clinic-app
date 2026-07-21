@@ -1,0 +1,617 @@
+{% extends "new_base.html" %}
+
+{% block title %}Voice Consultation | Kash AI{% endblock %}
+
+{% block content %}
+<div class="consultation-container">
+    <section class="consultation-header glass">
+        <div>
+            <h1>🩺 Voice Consultation</h1>
+            <p>Speak naturally and let the assistant extract the patient story in real time.</p>
+        </div>
+        <div class="header-actions">
+            <span class="status-badge" id="recordingStatus">⏺ Ready</span>
+            <a href="/feature-status" class="btn-secondary">Feature Status</a>
+            <a href="/device-check" class="btn-secondary">Device Check</a>
+            <a href="/api/voice/health" class="btn-secondary">Voice API Test</a>
+        </div>
+    </section>
+
+    <section class="consultation-grid">
+        <div class="consultation-left">
+            <div class="language-selector glass">
+                <label for="voiceLanguage">🌐 Select Language:</label>
+                <select id="voiceLanguage" class="language-select">
+                    <option value="hi-IN">हिन्दी (Hindi)</option>
+                    <option value="en-US" selected>English (US)</option>
+                    <option value="ta-IN">தமிழ் (Tamil)</option>
+                    <option value="te-IN">తెలుగు (Telugu)</option>
+                    <option value="kn-IN">ಕನ್ನಡ (Kannada)</option>
+                    <option value="ml-IN">മലയാളം (Malayalam)</option>
+                    <option value="mr-IN">मराठी (Marathi)</option>
+                    <option value="bn-IN">বাংলা (Bengali)</option>
+                    <option value="gu-IN">ગુજરાતી (Gujarati)</option>
+                    <option value="pa-IN">ਪੰਜਾਬੀ (Punjabi)</option>
+                </select>
+                <span class="language-hint">Choose your preferred language for voice input</span>
+            </div>
+
+            <div class="controls glass">
+                <button id="startBtn" class="btn-primary" onclick="startConsultation()" type="button">🎤 Start Voice Consultation</button>
+                <button id="pauseBtn" class="btn-secondary" onclick="pauseConsultation()" type="button" disabled>⏸ Pause</button>
+                <button id="stopBtn" class="btn-danger" onclick="stopConsultation()" type="button" disabled>⏹ Stop</button>
+                <button class="btn-secondary" onclick="clearTranscript()" type="button">🗑️ Clear</button>
+            </div>
+
+            <div class="audio-meter glass">
+                <div class="meter-label">🎧 Audio Level</div>
+                <div class="meter-container">
+                    <div class="meter-bar" id="audioLevelBar"></div>
+                </div>
+                <div class="meter-status" id="meterStatus">⚪ Idle</div>
+            </div>
+
+            <div class="transcript-box glass">
+                <h2>📝 Live Transcription <span class="transcript-lang" id="currentLang">en-US</span></h2>
+                <div class="transcript-content" id="transcriptDisplay">
+                    <p class="transcript-placeholder">Waiting to start...</p>
+                </div>
+                <div class="transcript-status">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Idle</span>
+                    <span class="word-count" id="wordCount">0 words</span>
+                </div>
+            </div>
+
+            <div class="clinical-copilot glass">
+                <h2>🧠 Clinical Copilot</h2>
+                <p class="copilot-desc">Auto-drafts notes from the latest transcript</p>
+                <div class="copilot-grid">
+                    <article class="copilot-card">
+                        <h3>📋 Draft Summary</h3>
+                        <div id="draftSummary">No summary yet.</div>
+                    </article>
+                    <article class="copilot-card">
+                        <h3>💊 Draft Prescription</h3>
+                        <div id="draftPrescription">No prescription yet.</div>
+                    </article>
+                    <article class="copilot-card">
+                        <h3>📅 Draft Follow-up</h3>
+                        <div id="draftFollowup">No follow-up yet.</div>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        <div class="consultation-right">
+            <div class="patient-form glass">
+                <h2>👤 Patient</h2>
+                <div class="form-group">
+                    <label for="patientName">Name</label>
+                    <input type="text" id="patientName" placeholder="Auto-filled from speech">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patientAge">Age</label>
+                        <input type="number" id="patientAge" placeholder="Auto-filled">
+                    </div>
+                    <div class="form-group">
+                        <label for="patientGender">Gender</label>
+                        <select id="patientGender">
+                            <option value="">Auto-filled</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="patientPhone">Phone</label>
+                    <input type="text" id="patientPhone" placeholder="Optional">
+                </div>
+            </div>
+
+            <div class="case-sheet glass">
+                <h2>📋 Case Sheet</h2>
+                <div class="form-group">
+                    <label for="symptoms">Symptoms</label>
+                    <textarea id="symptoms" rows="2" placeholder="No symptoms captured yet."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="diagnosis">Diagnosis</label>
+                    <input type="text" id="diagnosis" placeholder="AI diagnosis">
+                </div>
+            </div>
+
+            <div class="medicines glass">
+                <h2>💊 Medicines</h2>
+                <div id="medicineList">No medicines suggested yet.</div>
+            </div>
+
+            <div class="followup glass">
+                <h2>📅 Follow-up</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="followupDate">Follow-up date</label>
+                        <input type="date" id="followupDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="followupReason">Reason</label>
+                        <input type="text" id="followupReason" placeholder="Review">
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions glass">
+                <button class="btn-primary" onclick="saveConsultation()" type="button">💾 Save</button>
+                <button class="btn-secondary" onclick="shareWhatsApp()" type="button">📤 WhatsApp</button>
+                <button class="btn-danger" onclick="resetConsultation()" type="button">🔄 Reset</button>
+            </div>
+
+            <div class="raw-extract glass">
+                <h2>Raw Extract</h2>
+                <pre id="rawExtract">{}</pre>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+let isRecording = false;
+let isPaused = false;
+let transcript = "";
+let finalTranscript = "";
+let recognition = null;
+let audioContext = null;
+let analyser = null;
+let dataArray = null;
+let levelInterval = null;
+let micStream = null;
+
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const stopBtn = document.getElementById("stopBtn");
+const statusText = document.getElementById("statusText");
+const statusDot = document.getElementById("statusDot");
+const recordingStatus = document.getElementById("recordingStatus");
+const transcriptDisplay = document.getElementById("transcriptDisplay");
+const audioLevelBar = document.getElementById("audioLevelBar");
+const meterStatus = document.getElementById("meterStatus");
+const currentLang = document.getElementById("currentLang");
+const wordCount = document.getElementById("wordCount");
+const voiceLanguage = document.getElementById("voiceLanguage");
+
+function getCSRFToken() {
+    const metaToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (metaToken) return metaToken;
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split("=");
+        if (name === "csrf_token") return decodeURIComponent(value || "");
+    }
+    return "";
+}
+
+function detectLanguage(text) {
+    if (/[\u0900-\u097F]/.test(text)) return "hi";
+    if (/[\u0B80-\u0BFF]/.test(text)) return "ta";
+    if (/[\u0C00-\u0C7F]/.test(text)) return "te";
+    if (/[\u0C80-\u0CFF]/.test(text)) return "kn";
+    if (/[\u0D00-\u0D7F]/.test(text)) return "ml";
+    if (/[\u0980-\u09FF]/.test(text)) return "bn";
+    if (/[\u0A80-\u0AFF]/.test(text)) return "gu";
+    if (/[\u0A00-\u0A7F]/.test(text)) return "pa";
+    return "en";
+}
+
+function startConsultation() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        alert("❌ Speech recognition is not supported in this browser.\nPlease use Google Chrome or Microsoft Edge.");
+        return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("❌ Microphone access is not available in this browser context. Use Chrome or Edge on localhost/HTTPS.");
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+        audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+        }
+    }).then((stream) => {
+        micStream = stream;
+        setupAudioMeter(stream);
+        startRecognition();
+    }).catch((error) => {
+        console.error("❌ Microphone permission denied:", error);
+        alert("⚠️ Please allow microphone access in your browser settings.\n\n1. Click the lock icon in the address bar\n2. Find Microphone and select Allow\n3. Refresh the page and try again");
+    });
+}
+
+function setupAudioMeter(stream) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser);
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    if (levelInterval) clearInterval(levelInterval);
+    levelInterval = setInterval(updateAudioLevel, 50);
+}
+
+function updateAudioLevel() {
+    if (!analyser || !dataArray) return;
+    analyser.getByteFrequencyData(dataArray);
+    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+    const percent = Math.min((average / 255) * 100, 100);
+    audioLevelBar.style.width = percent + "%";
+    if (percent > 5) {
+        audioLevelBar.style.background = percent > 60 ? "#34D399" : "#4F46E5";
+        meterStatus.textContent = "🔊 Speaking";
+        meterStatus.style.color = "#34D399";
+    } else {
+        audioLevelBar.style.background = "#6B7280";
+        meterStatus.textContent = isRecording ? "⏺ Listening..." : "⚪ Idle";
+        meterStatus.style.color = "#6B7280";
+    }
+}
+
+function startRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const lang = voiceLanguage.value || "en-US";
+    recognition = new SpeechRecognition();
+    recognition.lang = lang;
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    currentLang.textContent = lang;
+
+    recognition.onstart = function () {
+        isRecording = true;
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        stopBtn.disabled = false;
+        statusText.textContent = "Recording...";
+        statusDot.className = "status-dot recording";
+        recordingStatus.textContent = "⏺ Recording";
+        recordingStatus.style.color = "#EF4444";
+        transcriptDisplay.innerHTML = '<p class="transcript-placeholder">Listening... speak now</p>';
+    };
+
+    recognition.onresult = function (event) {
+        let interimText = "";
+        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+            const transcriptPart = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript += transcriptPart + " ";
+            } else {
+                interimText += transcriptPart;
+            }
+        }
+        transcript = (finalTranscript + interimText).trim();
+        if (!transcript) return;
+
+        transcriptDisplay.innerHTML = `<p>${transcript}</p>`;
+        const words = transcript.trim().split(/\s+/).filter(Boolean).length;
+        wordCount.textContent = words + " words";
+        const detectedLang = detectLanguage(transcript);
+        autoFillFields(transcript, detectedLang);
+        document.getElementById("rawExtract").textContent = JSON.stringify({
+            transcript,
+            language: detectedLang,
+            selectedLanguage: voiceLanguage.value,
+            timestamp: new Date().toISOString()
+        }, null, 2);
+    };
+
+    recognition.onerror = function (event) {
+        console.error("🎤 Speech error:", event.error);
+        if (event.error === "not-allowed") {
+            alert("⚠️ Microphone access was denied.");
+            stopConsultation();
+        } else if (event.error === "no-speech") {
+            statusText.textContent = "No speech detected, keep speaking...";
+        } else if (event.error === "audio-capture") {
+            alert("⚠️ No microphone found.");
+            stopConsultation();
+        } else if (event.error === "network") {
+            statusText.textContent = "Network issue, reconnecting...";
+        }
+    };
+
+    recognition.onend = function () {
+        if (isRecording && !isPaused) {
+            try {
+                recognition.start();
+            } catch (error) {
+                console.warn("Restart failed:", error);
+            }
+        }
+    };
+
+    try {
+        recognition.start();
+    } catch (error) {
+        console.error("Failed to start:", error);
+        alert("❌ Failed to start speech recognition. Please refresh and try again.");
+    }
+}
+
+function pauseConsultation() {
+    if (!recognition) return;
+    isPaused = !isPaused;
+    if (isPaused) {
+        recognition.stop();
+        pauseBtn.textContent = "▶️ Resume";
+        statusText.textContent = "Paused";
+        statusDot.className = "status-dot paused";
+        recordingStatus.textContent = "⏸ Paused";
+    } else {
+        try {
+            recognition.start();
+            pauseBtn.textContent = "⏸ Pause";
+            statusText.textContent = "Recording...";
+            statusDot.className = "status-dot recording";
+            recordingStatus.textContent = "⏺ Recording";
+        } catch (error) {
+            console.warn("Resume failed:", error);
+        }
+    }
+}
+
+function stopConsultation() {
+    if (recognition) {
+        try {
+            recognition.stop();
+        } catch (error) {
+            console.warn("Stop error:", error);
+        }
+    }
+    isRecording = false;
+    isPaused = false;
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
+    stopBtn.disabled = true;
+    pauseBtn.textContent = "⏸ Pause";
+    statusText.textContent = "Stopped";
+    statusDot.className = "status-dot idle";
+    recordingStatus.textContent = "⏹ Stopped";
+    recordingStatus.style.color = "#6B7280";
+    if (levelInterval) {
+        clearInterval(levelInterval);
+        levelInterval = null;
+    }
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+    if (micStream) {
+        micStream.getTracks().forEach((track) => track.stop());
+        micStream = null;
+    }
+    audioLevelBar.style.width = "0%";
+    meterStatus.textContent = "⚪ Idle";
+}
+
+function clearTranscript() {
+    transcript = "";
+    finalTranscript = "";
+    transcriptDisplay.innerHTML = '<p class="transcript-placeholder">Transcript cleared</p>';
+    wordCount.textContent = "0 words";
+    document.getElementById("rawExtract").textContent = "{}";
+}
+
+function autoFillFields(text, lang) {
+    if (!text) return;
+    console.log("🔄 Auto-filling from:", text, "Language:", lang);
+    const lower = text.toLowerCase();
+
+    let name = null;
+    const nameEng = text.match(/patient (?:is|name) ([a-zA-Z\s]+?)(?:,|\.|and|age|for)/i);
+    if (nameEng) name = nameEng[1].trim();
+    if (!name) {
+        const nameHindi = text.match(/(?:मरीज|रोगी|patient)\s*(?:का\s*नाम|नाम|का)\s*([\u0900-\u097F\s]+?)(?:,|\.|and|उम्र|आयु|age|for|है)/i);
+        if (nameHindi) name = nameHindi[1].trim();
+    }
+    if (!name) {
+        const genericName = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/);
+        if (genericName) name = genericName[1].trim();
+    }
+    if (name && name.length > 1) document.getElementById("patientName").value = name;
+
+    let age = null;
+    const ageEng = text.match(/(\d{1,3})\s*(?:years|yrs|year old|yo)/i);
+    if (ageEng) age = ageEng[1];
+    if (!age) {
+        const ageIndic = text.match(/(\d{1,3})\s*(?:साल|वर्ष|வயது|ఏళ్ళు|ವರ್ಷ|വയസ്സ്|বছর|વર્ષ|ਸਾਲ)/i);
+        if (ageIndic) age = ageIndic[1];
+    }
+    if (age) document.getElementById("patientAge").value = age;
+
+    if (lower.includes("female") || lower.includes("woman") || lower.includes("girl") || lower.includes("महिला") || lower.includes("औरत") || lower.includes("लड़की")) {
+        document.getElementById("patientGender").value = "female";
+    } else if (lower.includes("male") || lower.includes("man") || lower.includes("boy") || lower.includes("पुरुष") || lower.includes("आदमी") || lower.includes("लड़का")) {
+        document.getElementById("patientGender").value = "male";
+    }
+
+    const symptoms = [];
+    const symptomMap = {
+        "fever": ["fever", "बुखार", "ज्वर", "காய்ச்சல்", "జ్వరం", "ಜ್ವರ", "പനി", "জ্বর", "તાવ", "ਬੁਖਾਰ"],
+        "cough": ["cough", "खांसी", "खासी", "இருமல்", "దగ్గు", "ಕೆಮ್ಮು", "ചുമ", "কাশি", "ખાંસી", "ਖੰਘ"],
+        "cold": ["cold", "जुकाम", "சளி", "జలుబు", "ಶೀತ", "തണുപ്പ്", "সর্দি", "શરદી", "ਜ਼ੁਕਾਮ"],
+        "headache": ["headache", "सिर दर्द", "தலைவலி", "తలనొప్పి", "ತಲೆನೋವು", "തലവേദന", "মাথা ব্যথা", "માથાનો દુખાવો", "ਸਿਰ ਦਰਦ"],
+        "pain": ["pain", "दर्द", "வலி", "నొప్పి", "ನೋವು", "വേദന", "ব্যথা", "દુખાવો", "ਦਰਦ"],
+        "nausea": ["nausea", "मतली", "குமட்டல்", "వికారం"],
+        "vomiting": ["vomiting", "उल्टी", "வாந்தி", "వాంతులు"],
+        "diarrhea": ["diarrhea", "दस्त", "வயிற்றுப்போக்கு", "విరేచనాలు"],
+        "constipation": ["constipation", "कब्ज", "மலச்சிக்கல்", "మలబద్ధకం"],
+        "acidity": ["acidity", "एसिडिटी", "அமிலத்தன்மை", "యాసిడిటీ"],
+        "gas": ["gas", "गैस", "வாயு", "వాయువు"],
+        "sore throat": ["sore throat", "गला खराब", "தொண்டை வலி", "గొంతు నొప్పి"]
+    };
+    Object.entries(symptomMap).forEach(([english, variants]) => {
+        if (variants.some((variant) => lower.includes(variant))) symptoms.push(english);
+    });
+    const uniqueSymptoms = [...new Set(symptoms)];
+    if (uniqueSymptoms.length > 0) document.getElementById("symptoms").value = uniqueSymptoms.join(", ");
+
+    const diagnosis = [];
+    if (lower.includes("vata") || lower.includes("वात") || lower.includes("வாதம்")) diagnosis.push("Vata");
+    if (lower.includes("pitta") || lower.includes("पित्त") || lower.includes("பித்தம்")) diagnosis.push("Pitta");
+    if (lower.includes("kapha") || lower.includes("कफ") || lower.includes("கபம்")) diagnosis.push("Kapha");
+    if (diagnosis.length > 0) document.getElementById("diagnosis").value = [...new Set(diagnosis)].join("-") + " imbalance";
+
+    const nameVal = document.getElementById("patientName").value || "Patient";
+    const symptomsVal = uniqueSymptoms.join(", ") || document.getElementById("symptoms").value || "not specified";
+    document.getElementById("draftSummary").textContent = `${nameVal} reported with symptoms: ${symptomsVal}.`;
+
+    if (uniqueSymptoms.length > 0) {
+        const medicines = ["Triphala Churna", "Dashmool Kadha", "Chitrakadi Vati", "Sanshamani Vati"];
+        const selected = medicines.slice(0, Math.min(uniqueSymptoms.length + 1, 3));
+        document.getElementById("draftPrescription").textContent = selected.join(", ");
+        document.getElementById("medicineList").textContent = selected.join(", ");
+        document.getElementById("draftFollowup").textContent = `Follow-up in ${uniqueSymptoms.length > 2 ? 7 : 14} days`;
+    }
+}
+
+function saveConsultation() {
+    const data = {
+        patient: {
+            name: document.getElementById("patientName").value || "",
+            age: document.getElementById("patientAge").value || "",
+            gender: document.getElementById("patientGender").value || "",
+            phone: document.getElementById("patientPhone").value || ""
+        },
+        case_sheet: {
+            symptoms: document.getElementById("symptoms").value || "",
+            diagnosis: document.getElementById("diagnosis").value || ""
+        },
+        medicines: document.getElementById("medicineList").textContent || "",
+        follow_up: {
+            date: document.getElementById("followupDate").value || "",
+            reason: document.getElementById("followupReason").value || ""
+        },
+        transcript: transcript || "",
+        language: voiceLanguage.value || "en-US",
+        timestamp: new Date().toISOString()
+    };
+
+    fetch("/api/consultation/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": getCSRFToken() },
+        body: JSON.stringify(data)
+    })
+        .then((response) => {
+            if (!response.ok) throw new Error("Server error: " + response.status);
+            return response.json();
+        })
+        .then((payload) => {
+            console.log("✅ Saved:", payload);
+            alert("💾 Consultation saved successfully!");
+        })
+        .catch((error) => {
+            console.error("❌ Save error:", error);
+            alert("❌ Failed to save: " + error.message);
+        });
+}
+
+function shareWhatsApp() {
+    const name = document.getElementById("patientName").value || "Patient";
+    const symptoms = document.getElementById("symptoms").value || "Not specified";
+    const diagnosis = document.getElementById("diagnosis").value || "Not diagnosed";
+    const meds = document.getElementById("draftPrescription").textContent || "Not specified";
+    const followup = document.getElementById("draftFollowup").textContent || "Not specified";
+    const message = `🩺 Kash AI Prescription\n\nPatient: ${name}\nSymptoms: ${symptoms}\nDiagnosis: ${diagnosis}\nPrescription: ${meds}\n\nFollow-up: ${followup}\n\n- Generated by Kash AI`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
+}
+
+function resetConsultation() {
+    if (!confirm("Are you sure you want to reset everything?")) return;
+    clearTranscript();
+    document.getElementById("patientName").value = "";
+    document.getElementById("patientAge").value = "";
+    document.getElementById("patientGender").value = "";
+    document.getElementById("patientPhone").value = "";
+    document.getElementById("symptoms").value = "";
+    document.getElementById("diagnosis").value = "";
+    document.getElementById("medicineList").textContent = "No medicines suggested yet.";
+    document.getElementById("followupDate").value = "";
+    document.getElementById("followupReason").value = "";
+    document.getElementById("transcriptDisplay").innerHTML = '<p class="transcript-placeholder">Waiting to start...</p>';
+    document.getElementById("draftSummary").textContent = "No summary yet.";
+    document.getElementById("draftPrescription").textContent = "No prescription yet.";
+    document.getElementById("draftFollowup").textContent = "No follow-up yet.";
+    if (recognition && isRecording) stopConsultation();
+}
+
+voiceLanguage.addEventListener("change", function () {
+    if (isRecording) {
+        if (confirm("Change language? This will stop the current recording.")) {
+            stopConsultation();
+            setTimeout(() => startConsultation(), 500);
+        } else {
+            this.value = currentLang.textContent;
+        }
+    }
+    currentLang.textContent = this.value;
+});
+
+window.addEventListener("beforeunload", function () {
+    if (micStream) micStream.getTracks().forEach((track) => track.stop());
+    if (audioContext) audioContext.close();
+});
+</script>
+
+<style>
+.consultation-container { max-width: 1400px; margin: 0 auto; padding: 20px 0 40px; }
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; }
+.consultation-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.consultation-header h1 { font-size: 28px; margin: 0; color: #f8fbff; }
+.consultation-header p, .language-hint, .copilot-desc { color: rgba(255,255,255,0.58); margin: 6px 0 0; }
+.header-actions, .controls, .actions, .language-selector { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.consultation-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr); gap: 20px; }
+.consultation-left, .consultation-right { display: flex; flex-direction: column; gap: 20px; }
+.language-selector label { color: #f8fbff; font-weight: 700; }
+.language-select { padding: 9px 14px; border-radius: 8px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.2); color: #fff; }
+.language-select option { color: #111827; }
+.btn-primary { padding: 12px 24px; background: #4F46E5; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: 700; text-decoration: none; }
+.btn-primary:hover { background: #4338CA; }
+.btn-primary:disabled, .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { padding: 12px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: #E5E7EB; cursor: pointer; text-decoration: none; }
+.btn-secondary:hover { background: rgba(255,255,255,0.1); }
+.btn-danger { padding: 12px 24px; background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; color: #EF4444; cursor: pointer; }
+.audio-meter { padding: 14px 16px; }
+.meter-label { font-size: 13px; color: rgba(255,255,255,0.66); margin-bottom: 8px; }
+.meter-container { width: 100%; height: 9px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden; }
+.meter-bar { height: 100%; width: 0%; border-radius: 999px; transition: width 0.05s; background: #4F46E5; }
+.meter-status { font-size: 12px; color: #6B7280; margin-top: 6px; }
+.status-badge { padding: 8px 12px; border-radius: 999px; background: rgba(255,255,255,0.08); color: #e5e7eb; font-weight: 700; }
+.transcript-box h2, .clinical-copilot h2, .patient-form h2, .case-sheet h2, .medicines h2, .followup h2, .raw-extract h2 { margin-top: 0; margin-bottom: 12px; color: #f8fbff; font-size: 1rem; }
+.transcript-box h2 { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.transcript-lang, .word-count { color: rgba(255,255,255,0.44); font-size: 12px; font-weight: 500; }
+.transcript-content { min-height: 80px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 8px; }
+.transcript-content p { margin: 0; color: #E5E7EB; line-height: 1.6; }
+.transcript-placeholder { color: rgba(255,255,255,0.35); font-style: italic; }
+.transcript-status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255,255,255,0.55); }
+.status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #6B7280; }
+.status-dot.recording { background: #EF4444; animation: pulse 1s infinite; }
+.status-dot.paused { background: #F59E0B; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.copilot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.copilot-card { padding: 12px; background: rgba(255,255,255,0.04); border-radius: 8px; }
+.copilot-card h3 { margin: 0 0 6px; font-size: 13px; color: rgba(255,255,255,0.68); }
+.copilot-card div, #medicineList { font-size: 13px; color: rgba(255,255,255,0.82); }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; color: rgba(255,255,255,0.62); margin-bottom: 4px; }
+.form-group input, .form-group select, .form-group textarea { width: 100%; padding: 9px 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(255,255,255,0.04); color: #E5E7EB; font-size: 14px; }
+.form-group select option { color: #111827; }
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #4F46E5; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.raw-extract pre { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin: 0; max-height: 120px; font-size: 12px; color: rgba(255,255,255,0.55); overflow: auto; }
+@media (max-width: 1024px) { .consultation-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .copilot-grid, .form-row { grid-template-columns: 1fr; } .consultation-header { flex-direction: column; align-items: flex-start; } }
+</style>
+{% endblock %}

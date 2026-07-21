@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% import "components/kash_shell.html" as shell %}
+{% set hide_footer = true %}
+
+{% block page %}
+{% include "components/kash_emergency.html" %}
+<div class="site-container ops-page">
+    {{ shell.page_header('Emergency review', 'Patient WhatsApp emergency responses', 'Shared emergency severity system for recent WhatsApp escalations and AI response history.') }}
+
+    <section class="ops-hero">
+        <div>
+            <p class="eyebrow">Emergency response queue</p>
+            <h1>Review recent WhatsApp safety cases without introducing a second emergency UI.</h1>
+            <p class="mb-0">This page now uses the same severity semantics and emergency shell component system as the rest of the rebuild.</p>
+        </div>
+        <div class="ops-hero__panel">
+            <div class="ops-mini-card">
+                <span class="ops-kicker">Cases shown</span>
+                <strong>{{ items | length }}</strong>
+                <p class="mb-0">Newest WhatsApp emergency interactions, sorted from latest to earliest.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="ops-card">
+        <div class="ops-table-card__header">
+            <div><p class="eyebrow">Recent interactions</p><h2>Escalation audit log</h2></div>
+        </div>
+        <div class="ops-stack">
+            {% for item in items %}
+            <article class="ops-list-item">
+                <div style="min-width:0;">
+                    <div class="ops-chip-row" style="margin-bottom:10px;">
+                        <strong>{{ item.patient_name }}</strong>
+                        {{ shell.severity_badge(item.severity) }}
+                        <span class="ops-pill">{{ item.created_at.strftime('%d %b %Y, %I:%M %p') if item.created_at else '' }}</span>
+                        <span class="ops-pill {% if item.alert_sent %}ops-tone-high{% else %}ops-tone-low{% endif %}">Doctor alerted: {{ 'Yes' if item.alert_sent else 'No' }}</span>
+                    </div>
+                    <div class="ops-stack">
+                        <div class="ops-mini-card">
+                            <span class="ops-caption">Patient message</span>
+                            <p class="mb-0">{{ item.query_text }}</p>
+                        </div>
+                        <div class="ops-mini-card">
+                            <span class="ops-caption">AI response</span>
+                            <p class="mb-0">{{ item.ai_response }}</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            {% else %}
+            <div class="ops-empty">No WhatsApp emergency interactions logged yet.</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<script>
+window.KashEmergencySeedData = [
+{% for item in items %}
+  {
+    patient_name: {{ item.patient_name | tojson }},
+    severity: {{ item.severity | tojson }},
+    query_text: {{ item.query_text | tojson }},
+    ai_response: {{ item.ai_response | tojson }},
+    created_at: {{ (item.created_at.isoformat() if item.created_at else '') | tojson }},
+    alert_sent: {{ item.alert_sent | tojson }}
+  }{% if not loop.last %},{% endif %}
+{% endfor %}
+];
+</script>
+{% endblock %}

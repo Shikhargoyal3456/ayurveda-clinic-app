@@ -1,358 +1,266 @@
 (function () {
     const config = window.AI_DOCTOR_CONFIG || {};
-    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const websocketUrl = config.websocketUrl
-        ? `${wsProtocol}//${window.location.host}${config.websocketUrl}`
-        : null;
-
     const state = {
-        socket: null,
-        mediaStream: null,
-        mediaRecorder: null,
-        recognition: null,
-        frameTimer: null,
-        connected: false,
         listening: false,
-        sessionId: null,
-        canUseSpeechRecognition: "webkitSpeechRecognition" in window || "SpeechRecognition" in window,
+        recognition: null,
+        messages: [],
     };
 
-    const elements = {
-        connectionStatus: document.getElementById("connectionStatus"),
-        sessionMessage: document.getElementById("sessionMessage"),
-        cameraStatus: document.getElementById("cameraStatus"),
-        micStatus: document.getElementById("micStatus"),
-        patientVideo: document.getElementById("patientVideo"),
-        cameraOverlay: document.getElementById("cameraOverlay"),
-        transcriptBox: document.getElementById("transcriptBox"),
-        manualMessage: document.getElementById("manualMessage"),
-        visionInsights: document.getElementById("visionInsights"),
-        medicineInsights: document.getElementById("medicineInsights"),
-        safetyInsights: document.getElementById("safetyInsights"),
-        consultationSummary: document.getElementById("consultationSummary"),
-        consultationSummaryText: document.getElementById("consultationSummaryText"),
-        startConsultationButton: document.getElementById("startConsultationButton"),
-        micToggleButton: document.getElementById("micToggleButton"),
-        sendMessageButton: document.getElementById("sendMessageButton"),
-        emergencyButton: document.getElementById("emergencyButton"),
-        endConsultationButton: document.getElementById("endConsultationButton"),
-    };
-
-    function updateStatus(target, text) {
-        if (target) target.textContent = text;
+    function escapeHtml(text) {
+        return String(text || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
-    function appendMessage(role, text) {
-        if (!elements.transcriptBox || !text) return;
-        const wrapper = document.createElement("div");
-        wrapper.className = `doctor-message doctor-message--${role}`;
-        const label = document.createElement("strong");
-        label.textContent = role === "patient" ? "You" : role === "doctor" ? "Dr. Kash" : "System";
-        const body = document.createElement("p");
-        body.textContent = text;
-        wrapper.append(label, body);
-        elements.transcriptBox.appendChild(wrapper);
-        elements.transcriptBox.scrollTop = elements.transcriptBox.scrollHeight;
-    }
+    function ensureElements() {
+        const container = document.querySelector(".ai-doctor-container") || document.body;
+        let chatMessages = document.getElementById("chatMessages");
+        let chatInput = document.getElementById("chatInput");
+        let sendButton = document.getElementById("sendButton");
+        let voiceButton = document.getElementById("voiceButton");
+        let quickActions = document.getElementById("quickActions");
 
-    function speak(text) {
-        if (!("speechSynthesis" in window) || !text) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.rate = 0.97;
-        utterance.pitch = 1;
-        utterance.lang = "en-US";
-        window.speechSynthesis.speak(utterance);
-    }
-
-    function sendJson(payload) {
-        if (!state.socket || state.socket.readyState !== WebSocket.OPEN) return;
-        state.socket.send(JSON.stringify(payload));
-    }
-
-    function handleServerEvent(event) {
-        switch (event.type) {
-            case "session_ready":
-                state.sessionId = event.session_id;
-                break;
-            case "status":
-                updateStatus(elements.sessionMessage, event.detail || "Connected.");
-                break;
-            case "transcript":
-                appendMessage("patient", event.text);
-                break;
-            case "ai_message":
-                appendMessage("doctor", event.text);
-                updateStatus(elements.sessionMessage, "Dr. Kash responded.");
-                speak(event.text);
-                break;
-            case "vision_update":
-                if (elements.visionInsights) {
-                    elements.visionInsights.textContent = event.text;
-                }
-                break;
-            case "medicine_lookup":
-                if (elements.medicineInsights) {
-                    const topMatch = event.payload?.top_match;
-                    elements.medicineInsights.textContent = topMatch
-                        ? `${topMatch.name}: ${topMatch.description || "General medicine context available."}`
-                        : `Looked up ${event.payload?.query || "the medicine"}, but no strong external match was found.`;
-                }
-                break;
-            case "emergency":
-                if (elements.safetyInsights) {
-                    elements.safetyInsights.textContent = event.text;
-                }
-                appendMessage("system", event.text);
-                alert("This sounds urgent. Please call emergency services in India (112) immediately or go to the nearest hospital.");
-                break;
-            case "consultation_summary":
-                if (elements.consultationSummary && elements.consultationSummaryText) {
-                    const lines = [
-                        `Patient topics: ${(event.summary?.patient_summary || []).join(" | ") || "No patient messages captured."}`,
-                        `Visual note: ${event.summary?.visual_summary || "No camera summary."}`,
-                        "Next step: book a real doctor if symptoms continue or worsen."
-                    ];
-                    elements.consultationSummary.hidden = false;
-                    elements.consultationSummaryText.textContent = lines.join(" ");
-                }
-                break;
-            case "error":
-                appendMessage("system", event.message || "Something went wrong.");
-                break;
-            default:
-                break;
+        if (!chatMessages) {
+            chatMessages = document.createElement("div");
+            chatMessages.id = "chatMessages";
+            chatMessages.className = "chat-window";
+            container.appendChild(chatMessages);
         }
-    }
-
-    async function connectWebSocket() {
-        if (state.socket && (state.socket.readyState === WebSocket.OPEN || state.socket.readyState === WebSocket.CONNECTING)) {
-            return;
+        if (!chatInput) {
+            chatInput = document.createElement("textarea");
+            chatInput.id = "chatInput";
+            chatInput.rows = 2;
+            chatInput.placeholder = "Type your message or speak in Hindi...";
+            chatInput.className = "form-control";
+            container.appendChild(chatInput);
         }
-        if (!websocketUrl) return;
-        state.socket = new WebSocket(websocketUrl);
-
-        state.socket.addEventListener("open", function () {
-            state.connected = true;
-            updateStatus(elements.connectionStatus, "Connected");
-            updateStatus(elements.sessionMessage, "Private AI consultation room is live. Audio and video are used in real time only.");
-        });
-
-        state.socket.addEventListener("message", function (message) {
-            try {
-                const payload = JSON.parse(message.data);
-                handleServerEvent(payload);
-            } catch (_error) {
-                appendMessage("system", "Received an unreadable server message.");
-            }
-        });
-
-        state.socket.addEventListener("close", function () {
-            state.connected = false;
-            state.socket = null;
-            updateStatus(elements.connectionStatus, "Disconnected");
-            updateStatus(elements.sessionMessage, "Connection closed. Refresh to start again.");
-        });
-
-        state.socket.addEventListener("error", function () {
-            updateStatus(elements.connectionStatus, "Connection issue");
-            appendMessage("system", "Could not connect to the AI doctor right now.");
-        });
-    }
-
-    async function startMedia() {
-        if (state.mediaStream) return state.mediaStream;
-        try {
-            state.mediaStream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }
-            });
-            elements.patientVideo.srcObject = state.mediaStream;
-            updateStatus(elements.cameraStatus, "Camera on");
-            updateStatus(elements.micStatus, "Mic ready");
-            if (elements.cameraOverlay) {
-                elements.cameraOverlay.textContent = "Camera is live. Hold the affected area steady for a few seconds.";
-            }
-            startFrameCapture();
-            startAudioRecorder();
-            return state.mediaStream;
-        } catch (error) {
-            appendMessage("system", "Please allow camera and microphone access to use the live AI doctor.");
-            updateStatus(elements.cameraStatus, "Permission needed");
-            updateStatus(elements.micStatus, "Permission needed");
-            throw error;
+        if (!sendButton) {
+            sendButton = document.createElement("button");
+            sendButton.id = "sendButton";
+            sendButton.type = "button";
+            sendButton.className = "doctor-cta doctor-cta--primary";
+            sendButton.textContent = "Send";
+            container.appendChild(sendButton);
         }
-    }
-
-    function startFrameCapture() {
-        if (state.frameTimer) {
-            window.clearInterval(state.frameTimer);
+        if (!voiceButton) {
+            voiceButton = document.createElement("button");
+            voiceButton.id = "voiceButton";
+            voiceButton.type = "button";
+            voiceButton.className = "doctor-cta doctor-cta--secondary";
+            voiceButton.textContent = "🎙 Voice";
+            container.appendChild(voiceButton);
         }
-        const canvas = document.createElement("canvas");
-        const context = canvas.getContext("2d");
-        state.frameTimer = window.setInterval(function () {
-            const video = elements.patientVideo;
-            if (!video || video.readyState < 2 || !state.connected) return;
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-            const base64 = dataUrl.split(",")[1];
-            sendJson({ type: "video_frame", mime_type: "image/jpeg", image: base64 });
-        }, 2000);
-    }
-
-    function startAudioRecorder() {
-        if (!state.mediaStream || typeof MediaRecorder === "undefined") return;
-        if (state.mediaRecorder) return;
-
-        try {
-            state.mediaRecorder = new MediaRecorder(state.mediaStream, { mimeType: "audio/webm" });
-        } catch (_error) {
-            return;
+        if (!quickActions) {
+            quickActions = document.createElement("div");
+            quickActions.id = "quickActions";
+            quickActions.className = "quick-actions";
+            quickActions.innerHTML = `
+                <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="summary">Summary</button>
+                <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="prescribe">Prescribe</button>
+                <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="follow-up">Follow-up</button>
+            `;
+            container.appendChild(quickActions);
         }
 
-        state.mediaRecorder.addEventListener("dataavailable", function (event) {
-            if (!event.data || !event.data.size || !state.connected) return;
-            const reader = new FileReader();
-            reader.onloadend = function () {
-                const result = typeof reader.result === "string" ? reader.result : "";
-                const base64 = result.split(",")[1];
-                if (base64) {
-                    sendJson({ type: "audio_chunk", mime_type: event.data.type || "audio/webm", audio: base64 });
-                }
+        return { chatMessages, chatInput, sendButton, voiceButton, quickActions };
+    }
+
+    function appendMessage(role, text, extraClass = "") {
+        const { chatMessages } = ensureElements();
+        const message = document.createElement("div");
+        message.className = `message ${role}${extraClass ? ` ${extraClass}` : ""}`;
+        const icon = role === "user" ? "👤" : "🩺";
+        message.innerHTML = `
+            <div class="message-content">
+                <span class="message-icon">${icon}</span>
+                <span class="message-text">${escapeHtml(text)}</span>
+            </div>
+        `;
+        chatMessages.appendChild(message);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function setQuickActions(actions) {
+        const { quickActions } = ensureElements();
+        if (!quickActions || !actions) return;
+        quickActions.innerHTML = `
+            <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="summary">${escapeHtml(actions.summary || "Summary")}</button>
+            <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="prescribe">${escapeHtml(actions.prescription || "Prescribe")}</button>
+            <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="follow-up">${escapeHtml(actions.follow_up || "Follow-up")}</button>
+        `;
+    }
+
+    function mockAssistantResponse(message) {
+        const normalized = message.toLowerCase();
+        if (normalized.includes("fever") || normalized.includes("bukhar") || normalized.includes("ज्वर")) {
+            return {
+                response: "आपके लक्षणों से शरीर में गर्मी या सूजन का संकेत मिल सकता है. आराम करें, पर्याप्त तरल लें, और तेज बुखार हो तो डॉक्टर से मिलें.",
+                actions: {
+                    summary: "बुखार/गर्मी जैसे लक्षण. तरल, आराम, और निगरानी रखें.",
+                    prescription: "गिलोय, गुनगुना पानी, और हल्का भोजन पर विचार करें.",
+                    follow_up: "24-48 घंटे में या लक्षण बढ़ने पर फॉलो-अप करें.",
+                },
             };
-            reader.readAsDataURL(event.data);
-        });
-        state.mediaRecorder.start(1500);
+        }
+        if (normalized.includes("acidity") || normalized.includes("gas") || normalized.includes("stomach") || normalized.includes("पेट")) {
+            return {
+                response: "यह पाचन अग्नि से जुड़ी समस्या हो सकती है. देर रात भोजन से बचें, हल्का आहार लें, और दिनचर्या नियमित रखें.",
+                actions: {
+                    summary: "पाचन असंतुलन की संभावना. भारी भोजन कम करें.",
+                    prescription: "त्रिफला रात में, गुनगुना पानी, और तला हुआ भोजन कम करें.",
+                    follow_up: "7 दिन में पुनः समीक्षा करें.",
+                },
+            };
+        }
+        return {
+            response: "मैं आपकी बात समझ रहा हूं. आयुर्वेदिक दृष्टि से हम लक्षणों, दिनचर्या, और आहार के आधार पर आगे बढ़ सकते हैं.",
+            actions: {
+                summary: "संक्षिप्त आयुर्वेदिक समीक्षा तैयार करें.",
+                prescription: "लक्षणों के अनुसार हल्का, पचने योग्य आहार सुझाएं.",
+                follow_up: "एक सप्ताह के भीतर फॉलो-अप रखें.",
+            },
+        };
     }
 
-    function startSpeechRecognition() {
-        if (!state.canUseSpeechRecognition) {
-            appendMessage("system", "Live browser transcription is not supported here. You can still type messages below.");
+    async function sendMessage(forcedMessage = "") {
+        const { chatInput, sendButton } = ensureElements();
+        const message = String(forcedMessage || chatInput?.value || "").trim();
+        if (!message) return null;
+        if (sendButton) sendButton.disabled = true;
+
+        appendMessage("user", message);
+        const typingNode = document.createElement("div");
+        typingNode.className = "message ai typing";
+        typingNode.innerHTML = "<em>Typing...</em>";
+        ensureElements().chatMessages.appendChild(typingNode);
+        ensureElements().chatMessages.scrollTop = ensureElements().chatMessages.scrollHeight;
+        if (chatInput) chatInput.value = "";
+
+        try {
+            const response = await fetch("/api/ai-chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            typingNode?.remove();
+            if (!response.ok) {
+                const fallback = mockAssistantResponse(message);
+                appendMessage("ai", payload.detail || payload.error || fallback.response, "action");
+                setQuickActions(fallback.actions);
+                state.messages.push({ role: "user", text: message }, { role: "ai", text: fallback.response });
+                window.KashUI?.showToast?.(payload.detail || "AI assistant unavailable. Showing a fallback response.", "warning");
+                return fallback;
+            }
+            const modelInfo = payload.model ? ` (${payload.model})` : "";
+            appendMessage("ai", `${payload.response || "मैं आपकी मदद कर रहा हूं."}${modelInfo}`, "action");
+            setQuickActions(payload.actions || {});
+            state.messages.push({ role: "user", text: message }, { role: "ai", text: payload.response || "" });
+            return payload;
+        } catch (error) {
+            typingNode?.remove();
+            const fallback = mockAssistantResponse(message);
+            appendMessage("ai", fallback.response, "action");
+            setQuickActions(fallback.actions);
+            window.KashUI?.showToast?.("Could not reach the AI assistant. You can retry the message.", "error");
+            return fallback;
+        } finally {
+            if (sendButton) sendButton.disabled = false;
+        }
+    }
+
+    function handleActions(action) {
+        const prompts = {
+            summary: "Please provide a concise Ayurvedic summary.",
+            prescribe: "Suggest a gentle Ayurvedic prescription.",
+            "follow-up": "Tell me the follow-up timeline.",
+        };
+        return sendMessage(prompts[action] || action);
+    }
+
+    function initVoiceInput() {
+        const { voiceButton } = ensureElements();
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition || !voiceButton) {
+            if (voiceButton) voiceButton.disabled = true;
             return;
         }
 
-        const RecognitionClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-        state.recognition = new RecognitionClass();
-        state.recognition.lang = "en-US";
-        state.recognition.continuous = true;
-        state.recognition.interimResults = true;
-
-        state.recognition.onstart = function () {
-            state.listening = true;
-            updateStatus(elements.micStatus, "Listening");
-            if (elements.micToggleButton) {
-                elements.micToggleButton.innerHTML = '<i class="fa-solid fa-microphone-slash" aria-hidden="true"></i> Stop Listening';
+        voiceButton.addEventListener("click", () => {
+            if (!state.recognition) {
+                state.recognition = new SpeechRecognition();
+                state.recognition.lang = "hi-IN";
+                state.recognition.continuous = false;
+                state.recognition.interimResults = false;
+                state.recognition.onresult = (event) => {
+                    const transcript = event.results?.[0]?.[0]?.transcript || "";
+                    const input = document.getElementById("chatInput");
+                    if (input) input.value = transcript;
+                    void sendMessage(transcript);
+                };
+                state.recognition.onerror = (event) => {
+                    state.listening = false;
+                    voiceButton.textContent = "🎙 Voice";
+                    voiceButton.disabled = false;
+                    const reason = event?.error === "not-allowed"
+                        ? "Microphone permission is blocked. Please allow mic access in the browser, or type your message."
+                        : "Voice input could not start. Please type your message or try again.";
+                    appendMessage("ai", reason, "action");
+                    window.KashUI?.showToast?.(reason, "warning");
+                };
+                state.recognition.onend = () => {
+                    state.listening = false;
+                    voiceButton.textContent = "🎙 Voice";
+                    voiceButton.disabled = false;
+                };
             }
-        };
-
-        state.recognition.onresult = function (event) {
-            let finalTranscript = "";
-            for (let i = event.resultIndex; i < event.results.length; i += 1) {
-                const transcript = event.results[i][0].transcript.trim();
-                if (event.results[i].isFinal) {
-                    finalTranscript += `${transcript} `;
-                } else {
-                    updateStatus(elements.sessionMessage, `Hearing: ${transcript}`);
+            if (!state.listening) {
+                state.listening = true;
+                voiceButton.textContent = "Listening...";
+                try {
+                    state.recognition.start();
+                } catch (_error) {
+                    state.listening = false;
+                    voiceButton.textContent = "🎙 Voice";
+                    appendMessage("ai", "Voice input is already starting. Please wait a moment or type your message.", "action");
                 }
+            } else {
+                state.listening = false;
+                state.recognition.stop();
             }
-            const clean = finalTranscript.trim();
-            if (clean) {
-                sendJson({ type: "user_text", text: clean });
-            }
-        };
-
-        state.recognition.onerror = function () {
-            updateStatus(elements.micStatus, "Mic issue");
-        };
-
-        state.recognition.onend = function () {
-            if (state.listening) {
-                state.recognition.start();
-                return;
-            }
-            updateStatus(elements.micStatus, "Mic off");
-            if (elements.micToggleButton) {
-                elements.micToggleButton.innerHTML = '<i class="fa-solid fa-microphone" aria-hidden="true"></i> Start Listening';
-            }
-        };
-
-        state.recognition.start();
-    }
-
-    function stopSpeechRecognition() {
-        state.listening = false;
-        if (state.recognition) {
-            state.recognition.stop();
-        }
-        updateStatus(elements.micStatus, "Mic off");
-    }
-
-    async function startConsultation() {
-        await connectWebSocket();
-        await startMedia();
-        updateStatus(elements.connectionStatus, "Connected");
-    }
-
-    function stopConsultation() {
-        stopSpeechRecognition();
-        if (state.frameTimer) {
-            window.clearInterval(state.frameTimer);
-            state.frameTimer = null;
-        }
-        if (state.mediaRecorder && state.mediaRecorder.state !== "inactive") {
-            state.mediaRecorder.stop();
-        }
-        if (state.mediaStream) {
-            state.mediaStream.getTracks().forEach(function (track) { track.stop(); });
-            state.mediaStream = null;
-        }
-        if (state.socket && state.socket.readyState === WebSocket.OPEN) {
-            sendJson({ type: "end_consultation" });
-        }
-        updateStatus(elements.cameraStatus, "Camera off");
-        updateStatus(elements.micStatus, "Mic off");
+        });
     }
 
     function bindEvents() {
-        elements.startConsultationButton?.addEventListener("click", startConsultation);
-
-        elements.micToggleButton?.addEventListener("click", async function () {
-            if (!state.connected || !state.mediaStream) {
-                await startConsultation();
+        const { chatInput, sendButton, quickActions } = ensureElements();
+        sendButton?.addEventListener("click", () => void sendMessage());
+        chatInput?.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void sendMessage();
             }
-            if (state.listening) {
-                stopSpeechRecognition();
-                return;
-            }
-            startSpeechRecognition();
         });
-
-        elements.sendMessageButton?.addEventListener("click", function () {
-            const text = elements.manualMessage?.value.trim();
-            if (!text) return;
-            sendJson({ type: "user_text", text: text });
-            elements.manualMessage.value = "";
+        quickActions?.addEventListener("click", (event) => {
+            const target = event.target instanceof HTMLElement ? event.target.closest("[data-action]") : null;
+            if (!target) return;
+            void handleActions(target.getAttribute("data-action") || "");
         });
-
-        elements.emergencyButton?.addEventListener("click", function () {
-            if (elements.safetyInsights) {
-                elements.safetyInsights.textContent = "Emergency support requested. Call 112 (India Emergency) immediately if there is chest pain, trouble breathing, severe bleeding, seizure, or suicidal thoughts.";
-            }
-            alert("If this is an emergency, call 112 (India Emergency) immediately or go to the nearest hospital.");
-            window.location.href = `tel:${config.emergencyPhone || "112"}`;
-        });
-
-        elements.endConsultationButton?.addEventListener("click", stopConsultation);
+        if (!document.getElementById("chatMessages")?.children.length) {
+            appendMessage("ai", "नमस्ते. मैं आपकी Ayurvedic AI assistant हूं. अपनी समस्या बताइए.");
+        }
     }
 
-    document.addEventListener("DOMContentLoaded", function () {
-        bindEvents();
-        connectWebSocket();
-    });
+    window.sendMessage = sendMessage;
+    window.handleActions = handleActions;
+    window.escapeHtml = escapeHtml;
 
-    window.addEventListener("beforeunload", function () {
-        stopConsultation();
+    document.addEventListener("DOMContentLoaded", () => {
+        ensureElements();
+        bindEvents();
+        initVoiceInput();
+        console.log("AI Doctor chat initialized");
     });
 })();

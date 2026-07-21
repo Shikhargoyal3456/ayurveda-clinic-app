@@ -44,12 +44,12 @@ ROLE_SLUG_ALIASES: dict[str, str] = {
 }
 
 PORTAL_DASHBOARD_PATHS: dict[str, str] = {
-    UserRole.patient.value: "/patient",
-    UserRole.doctor.value: "/doctor/dashboard",
+    UserRole.patient.value: "/patient/dashboard",
+    UserRole.doctor.value: "/new/doctor",
     UserRole.pharmacy_owner.value: "/pharmacy",
     UserRole.lab_owner.value: "/lab",
     UserRole.delivery_partner.value: "/delivery",
-    UserRole.admin.value: "/admin",
+    UserRole.admin.value: "/new/admin",
 }
 
 DOCTOR_DASHBOARD_PATHS: dict[str, str] = {
@@ -119,7 +119,7 @@ def slug_to_role(slug: str) -> str:
 
 
 def dashboard_path_for_role(role: str) -> str:
-    return PORTAL_DASHBOARD_PATHS.get(role, "/patient")
+    return PORTAL_DASHBOARD_PATHS.get(role, "/patient/dashboard")
 
 
 def normalize_doctor_type(doctor_type: str | None, specialization: str | None = None) -> str:
@@ -163,6 +163,7 @@ def create_portal_session(request, user: User, remember_me: bool = False) -> Non
     request.session["portal_user_name"] = user.full_name
     request.session["portal_user_role"] = user.role.value if isinstance(user.role, UserRole) else str(user.role)
     request.session["portal_role"] = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    request.session["role"] = user.role.value if isinstance(user.role, UserRole) else str(user.role)
     request.session["portal_session_version"] = int(user.session_version or 1)
     request.session["portal_session_started_at"] = now.isoformat()
     request.session["portal_last_seen_at"] = now.isoformat()
@@ -265,6 +266,7 @@ def create_user(
         password_hash=hash_password(password),
         full_name=sanitize_text(full_name, max_length=255),
         role=UserRole(role),
+        account_type=role if role in {UserRole.doctor.value, UserRole.patient.value} else "patient",
         is_verified=role == UserRole.patient.value,
         verification_document_path=documents.get("verification_document_path"),
         professional_document_path=documents.get("professional_document_path"),

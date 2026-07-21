@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.config import BASE_DIR, load_dotenv, settings
 from app.models import Appointment, CaseSheet, Doctor, Patient
+from models.ai_log import AILog
 from services.cache_service import cache, cache_result
 
 
@@ -452,6 +453,25 @@ async def call_ai_text_cached(
         max_output_tokens,
     )
     return {"text": text, "provider": provider.value}
+
+
+def _log_ai_call(
+    feature: str,
+    input_payload: dict[str, Any],
+    result: dict[str, str],
+    doctor_id: int | None = None,
+) -> None:
+    from app.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        log_entry = AILog(
+            doctor_id=doctor_id, feature=feature, input_payload=json.dumps(input_payload), raw_output=result.get("text"), provider=result.get("provider")
+        )
+        db.add(log_entry)
+        db.commit()
+    finally:
+        db.close()
 
 
 async def call_gemini(
@@ -1460,12 +1480,20 @@ def get_ai_response(prompt: str | dict[str, Any], mode: str = "samhita", context
     if isinstance(prompt, dict):
         doctor_type = (mode or "ayurveda").strip().lower()
         if doctor_type in {"ayurveda", "samhita"}:
-            return asyncio.run(get_ayurveda_prescription(prompt))
+            result = asyncio.run(get_ayurveda_prescription(prompt))
+            # This is a simplified logging hook for demonstration.
+            # A robust implementation would use a background task.
+            # _log_ai_call("get_ayurveda_prescription", prompt, {"text": json.dumps(result), "provider": result.get("provider")})
+            return result
         if doctor_type == "modern":
-            return asyncio.run(get_modern_prescription(prompt))
+            result = asyncio.run(get_modern_prescription(prompt))
+            # _log_ai_call("get_modern_prescription", prompt, {"text": json.dumps(result), "provider": result.get("provider")})
+            return result
         return {"success": False, "error": f"Unknown doctor_type: {doctor_type}"}
 
     context = context or {}
+    doctor_id = context.get("doctor_id")
+
     context_block = json.dumps(context, ensure_ascii=True, indent=2) if context else "{}"
     mode_prompts = {
         "samhita": (
@@ -1494,6 +1522,7 @@ def get_ai_response(prompt: str | dict[str, Any], mode: str = "samhita", context
     )
     try:
         answer, provider = chat_with_fallback(system_prompt, user_prompt, temperature=0.3)
+        _log_ai_call(f"get_ai_response:{normalized_mode}", {"prompt": prompt, "context": context}, {"text": answer, "provider": provider.value}, doctor_id=doctor_id)
         return {"answer": answer, "mode": normalized_mode, "provider": provider.value}
     except Exception as exc:
         logger.exception("Mode-aware AI response failed: %s", exc)
@@ -1502,4 +1531,5 @@ def get_ai_response(prompt: str | dict[str, Any], mode: str = "samhita", context
             "Give a brief, safe clinical answer with likely considerations, immediate advice, and doctor-review caution."
         )
         answer, provider = chat_with_fallback(system_prompt, simpler_prompt, temperature=0.1)
+        _log_ai_call(f"get_ai_response:{normalized_mode}:fallback", {"prompt": simpler_prompt, "context": context}, {"text": answer, "provider": provider.value}, doctor_id=doctor_id)
         return {"answer": answer, "mode": normalized_mode, "provider": provider.value, "warning": str(exc)}

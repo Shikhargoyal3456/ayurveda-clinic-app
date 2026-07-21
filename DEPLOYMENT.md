@@ -1,3 +1,107 @@
+# Kash AI - Deployment Guide
+
+## Production Targets
+
+- Frontend landing page: `https://kash-ai.vercel.app`
+- Backend API: `https://kash-ai-api.onrender.com`
+- Database: Render PostgreSQL internal connection string
+
+## Important Secret Handling
+
+Do not commit API keys, database URLs, JWT secrets, encryption keys, or session secrets. Add them only in the hosting provider environment variable UI. If any real API keys have been shared in prompts, chat logs, screenshots, or committed files, rotate them before production launch.
+
+## Version Control
+
+The repository is already initialized with Git. Before committing, review the dirty working tree and stage only intentional production files:
+
+```powershell
+git status --short
+git add .gitignore vercel.json index.html DEPLOYMENT.md
+git add templates static routers app requirements.txt
+git commit -m "Prepare Kash AI production deployment"
+```
+
+Push after creating a GitHub repository:
+
+```powershell
+git remote add origin https://github.com/YOUR_USERNAME/kash-ai.git
+git branch -M main
+git push -u origin main
+```
+
+## Vercel Frontend
+
+This repo includes `vercel.json` for a static landing page deployment from `index.html`.
+
+Deploy:
+
+```powershell
+npm install -g vercel
+vercel --prod
+```
+
+The static landing CTA points to:
+
+```text
+https://kash-ai-api.onrender.com
+```
+
+## Render Backend
+
+Create a Render Web Service connected to the GitHub repo:
+
+- Name: `kash-ai-api`
+- Environment: Python
+- Build command: `pip install -r requirements.txt`
+- Start command: `uvicorn app.main:app --host 0.0.0.0 --port 10000`
+
+Set production environment variables in Render:
+
+```text
+ENVIRONMENT=production
+DEBUG=False
+DATABASE_URL=<render-postgresql-internal-url>
+GROQ_API_KEY=<rotated-groq-key>
+GEMINI_API_KEY=<rotated-gemini-key>
+SECRET_KEY=<strong-random-secret>
+JWT_SECRET=<strong-random-secret>
+ENCRYPTION_KEY=<strong-random-secret>
+SESSION_COOKIE_SECURE=True
+SESSION_COOKIE_HTTPONLY=True
+ALLOWED_ORIGINS=https://kash-ai.vercel.app,https://kash-ai-api.onrender.com
+```
+
+## Render PostgreSQL
+
+Create a Render PostgreSQL database:
+
+- Name: `kash-ai-db`
+- Plan: Free tier for initial validation
+- Copy the internal connection string into `DATABASE_URL`
+
+## Post-Deployment Verification
+
+```powershell
+curl https://kash-ai-api.onrender.com/healthz
+curl https://kash-ai-api.onrender.com/feature-status
+curl https://kash-ai-api.onrender.com/api/voice/health
+```
+
+Checklist:
+
+- [ ] GitHub repository created
+- [ ] Intentional files committed and pushed
+- [ ] Vercel frontend deployed
+- [ ] Render backend deployed
+- [ ] Render PostgreSQL created
+- [ ] Production secrets set in Render
+- [ ] Landing page CTA opens backend
+- [ ] Health check returns 200
+- [ ] Login page loads
+- [ ] Voice and feature status pages work
+
+---
+
 # Dr. Kash AI Deployment on Google Cloud Platform
 
 This deployment bundle is designed for your project:

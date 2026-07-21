@@ -1,0 +1,130 @@
+Ayurveda Clinic Management System - External Access Diagnostic Report
+Generated: 2026-03-22 17:06:34 +05:30
+Project Root: C:\Users\goyal\OneDrive\Desktop\ayurveda_project
+Python Runtime: C:\Users\goyal\AppData\Local\ayurveda-runtime\Scripts\python.exe
+Target Port: 8000
+
+
+=== Privileges ===
+Running without Administrator privileges. Some firewall and socket checks may be limited.
+
+=== 1. Application Process And Local Listener ===
+[FINDING] No active Python/Uvicorn process was found from this PowerShell session.
+[FINDING] No TCP listener was detected on port 8000.
+[FINDING] Local HTTP health check to http://127.0.0.1:8000/healthz failed: Unable to connect to the remote server
+Local HTTPS probe failed, which is expected if the app serves plain HTTP only.
+
+=== 2. Network Configuration ===
+Detected adapter addresses:
+
+Adapter                            Family         Address                              
+-------                            ------         -------                              
+vEthernet (WSL (Hyper-V firewall)) IPv6           fe80::d303:5554:beac:edd4            
+vEthernet (WSL (Hyper-V firewall)) IPv4           192.168.208.1                        
+Wi-Fi                              IPv6           2405:201:4039:7036:3e9:383e:eab0:9bf5
+Wi-Fi                              IPv6           2405:201:4039:7036:6012:7791:485:a1ed
+Wi-Fi                              IPv6-Temporary 2405:201:4039:7036:6012:7791:485:a1ed
+Wi-Fi                              IPv6           fe80::8a13:517c:db20:5ed8            
+Wi-Fi                              IPv4           192.168.29.212
+Firewall profile summary:
+
+Domain Profile Settings: 
+----------------------------------------------------------------------
+State                                 ON
+
+Private Profile Settings: 
+----------------------------------------------------------------------
+State                                 ON
+
+Public Profile Settings: 
+----------------------------------------------------------------------
+State                                 ON
+Ok.
+Firewall rule summary for 'Ayurveda Clinic App':
+
+Rule Name:                            Ayurveda Clinic App
+----------------------------------------------------------------------
+Enabled:                              Yes
+Direction:                            In
+Profiles:                             Domain,Private,Public
+Grouping:                             
+LocalIP:                              Any
+RemoteIP:                             Any
+Protocol:                             TCP
+LocalPort:                            8000
+RemotePort:                           Any
+Edge traversal:                       No
+Action:                               Allow
+Ok.
+Network profile summary:
+Unable to read network profile without elevated permissions.
+
+=== 3. Google Cloud And External Reachability ===
+This machine does not appear to be a Google Cloud VM from local metadata checks.
+[FINDING] Could not detect external/public IP automatically.
+Local Test-NetConnection to 127.0.0.1:8000:
+
+ComputerName RemotePort TcpTestSucceeded
+------------ ---------- ----------------
+127.0.0.1          8000            False
+[FINDING] Test-NetConnection confirms that localhost:8000 is not reachable right now.
+
+=== 4. Browser HTTPS / HSTS / SSL Error Analysis ===
+Observed symptom to investigate: ERR_SSL_PROTOCOL_ERROR while trying an http:// URL.
+That usually means the browser or an intermediate layer attempted HTTPS against a plain HTTP service.
+Chrome HSTS clear steps:
+1. Open chrome://net-internals/#hsts
+2. In 'Delete domain security policies', enter the host name and delete it
+3. Close all Chrome windows
+4. Re-open and test again with explicit http://
+
+=== 5. IPv4 / IPv6 Access Guidance ===
+IPv4 test URLs:
+http://192.168.208.1:8000
+http://192.168.29.212:8000
+IPv6 test URLs:
+http://[fe80::d303:5554:beac:edd4]:8000
+http://[2405:201:4039:7036:3e9:383e:eab0:9bf5]:8000
+http://[2405:201:4039:7036:6012:7791:485:a1ed]:8000
+http://[2405:201:4039:7036:6012:7791:485:a1ed]:8000
+http://[fe80::8a13:517c:db20:5ed8]:8000
+
+=== 6. Test Commands You Can Run Manually ===
+Local HTTP:
+Invoke-WebRequest http://127.0.0.1:8000/healthz
+Local IPv4:
+Invoke-WebRequest http://192.168.29.212:8000/healthz
+IPv6 literal:
+Invoke-WebRequest 'http://[2405:201:4039:7036:6012:7791:485:a1ed]:8000/healthz'
+Listener check:
+netstat -ano -p TCP | findstr :8000
+Firewall rule check:
+netsh advfirewall firewall show rule name="Ayurveda Clinic App"
+GCP firewall command:
+gcloud compute firewall-rules create allow-ayurveda-app --allow tcp:8000 --source-ranges 0.0.0.0/0 --target-tags ayurveda-app
+
+=== 7. Root Cause Summary ===
+[FINDING] Primary root cause from this diagnostic run: the app is not actually reachable on localhost:8000 right now, so public/browser access cannot work yet.
+[FINDING] You are testing an IPv6 literal address. If IPv4 access works but IPv6 does not, the issue is likely IPv6 routing/firewall/browser behavior rather than FastAPI binding.
+Findings summary:
+- No active Python/Uvicorn process was found from this PowerShell session.
+- No TCP listener was detected on port 8000.
+- Local HTTP health check to http://127.0.0.1:8000/healthz failed: Unable to connect to the remote server
+- Could not detect external/public IP automatically.
+- Test-NetConnection confirms that localhost:8000 is not reachable right now.
+- Primary root cause from this diagnostic run: the app is not actually reachable on localhost:8000 right now, so public/browser access cannot work yet.
+- You are testing an IPv6 literal address. If IPv4 access works but IPv6 does not, the issue is likely IPv6 routing/firewall/browser behavior rather than FastAPI binding.
+
+=== FIX THIS - Recommended Next Steps ===
+- Re-run PowerShell as Administrator for the most complete firewall and listener diagnostics.
+- Start the app again with: powershell -ExecutionPolicy Bypass -File .\start_local.ps1
+- If Uvicorn says it started but no listener appears, stop all old instances and restart the app from the project root using the known-good runtime.
+- First fix local reachability before debugging public access. If localhost fails, the browser and cloud are not the primary problem.
+- Test in an Incognito window and explicitly type http:// not https://.
+- In Chrome, open chrome://net-internals/#hsts and clear any HSTS entry for the host or domain.
+- Temporarily disable browser extensions that auto-upgrade HTTP to HTTPS.
+- If you are using an IPv6 literal, test IPv4 too: http://192.168.29.212:8000 and your real external IPv4 if available.
+- If IPv6 fails but IPv4 works, prefer exposing the app through IPv4 first or place nginx in front with proper dual-stack support.
+- If the browser only fails on the bracketed IPv6 URL, that points to IPv6 routing, browser policy, or ISP exposure rather than the FastAPI app alone.
+
+Diagnostic report saved to: C:\Users\goyal\OneDrive\Desktop\ayurveda_project\diagnostic_report.txt

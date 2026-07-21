@@ -1,0 +1,10 @@
+<div class="toolbar export-toolbar" style="gap:10px;flex-wrap:wrap;">
+    <a class="btn btn-outline-success pill-btn" href="/api/export/patients?format=csv">Export Patients CSV</a>
+    {% if patient %}
+    <a class="btn btn-outline-primary pill-btn" href="/api/export/patients/{{ patient.id }}?format=pdf">Export Patient PDF</a>
+    {% endif %}
+    {% if prescription %}
+    <a class="btn btn-outline-primary pill-btn" href="/api/export/prescriptions/{{ prescription.id }}?format=pdf">Export Prescription PDF</a>
+    {% endif %}
+    <a class="btn btn-outline-dark pill-btn" href="/api/export/all-data">Export All Data</a>
+</div>

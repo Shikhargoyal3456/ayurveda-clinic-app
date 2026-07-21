@@ -27,6 +27,10 @@
                     <strong>Fast start</strong>
                     <span>Open today’s list, then move straight into consults and charting.</span>
                 </div>
+                <div class="emr-mini-panel">
+                    <strong>Voice-first consults</strong>
+                    <span>Open the live consultation room, check devices, and capture notes in one flow.</span>
+                </div>
             </div>
         </section>
 
@@ -62,6 +66,12 @@
 <a href="{{ consultation_entry_href }}" class="fab mobile-only" aria-label="Start Consultation">
     <i class="fa-solid fa-plus"></i>
 </a>
+<div class="toolbar" style="margin-top:-4px; gap:12px;">
+    <a class="btn btn-primary pill-btn" href="/consultation/voice">🎙️ Voice Consult</a>
+    <a class="btn btn-secondary pill-btn" href="/device-check">📹 Device Check</a>
+    <a class="btn btn-secondary pill-btn" href="/feature-status">🩺 Feature Status</a>
+    <a class="btn btn-accent pill-btn" href="/new/ai-doctor">🤖 AI Doctor</a>
+</div>
 {% endblock %}
 {% block extra_head %}
 <style>

@@ -103,6 +103,8 @@ class Settings:
     logs_dir: Path
     data_dir: Path
     backups_dir: Path
+    enable_auto_backup: bool
+    backup_interval_hours: int
     samhita_pdfs_dir: Path
     vector_store_dir: Path
     database_url: str
@@ -157,6 +159,17 @@ class Settings:
     ai_cache_enabled: bool
     ai_cache_ttl_seconds: int
     ai_enabled: bool
+    enable_vision: bool
+    enable_tongue_ai: bool
+    enable_voice_action: bool
+    enable_churn_prediction: bool
+    enable_billing_ai: bool
+    enable_similarity_recommendations: bool
+    enable_telemedicine_links: bool
+    openai_api_key: str
+    groq_api_key: str
+    sarvam_api_key: str
+    jitsi_domain: str
     ai_fallback_cache_ttl_seconds: int
     ai_failure_log_path: Path
     session_https_only: bool
@@ -225,6 +238,18 @@ class Settings:
         return self.environment
 
 
+class Config:
+    ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
+    DEBUG = os.getenv("DEBUG", "true").lower() == "true"
+    IS_PRODUCTION = ENVIRONMENT == "production"
+
+    HTTPS_ENFORCED = IS_PRODUCTION
+    ALLOW_HTTP_LOCALHOST = not IS_PRODUCTION
+
+
+config = Config()
+
+
 def _detect_environment() -> str:
     explicit = os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or ""
     if explicit:
@@ -253,6 +278,8 @@ def _build_settings() -> Settings:
         logs_dir=logs_dir,
         data_dir=base_dir / "data",
         backups_dir=base_dir / "backups",
+        enable_auto_backup=_get_bool("ENABLE_AUTO_BACKUP", True),
+        backup_interval_hours=_get_int("BACKUP_INTERVAL_HOURS", 6),
         samhita_pdfs_dir=base_dir / "samhita_pdfs",
         vector_store_dir=base_dir / "vector_store",
         # PROD-FIX-6: Normalize SQLite URL with timeout/cache query options.
@@ -310,11 +337,22 @@ def _build_settings() -> Settings:
         ai_cache_enabled=_get_bool("AI_CACHE_ENABLED", False),
         ai_cache_ttl_seconds=_get_int("AI_CACHE_TTL_SECONDS", 3600),
         ai_enabled=_get_bool("AI_ENABLED", True),
+        enable_vision=_get_bool("ENABLE_VISION", True),
+        enable_tongue_ai=_get_bool("ENABLE_TONGUE_AI", True),
+        enable_voice_action=_get_bool("ENABLE_VOICE_ACTION", True),
+        enable_churn_prediction=_get_bool("ENABLE_CHURN_PREDICTION", True),
+        enable_billing_ai=_get_bool("ENABLE_BILLING_AI", True),
+        enable_similarity_recommendations=_get_bool("ENABLE_SIMILARITY_RECOMMENDATIONS", True),
+        enable_telemedicine_links=_get_bool("ENABLE_TELEMEDICINE_LINKS", True),
+        openai_api_key=os.getenv("OPENAI_API_KEY", "").strip(),
+        groq_api_key=os.getenv("GROQ_API_KEY", "").strip(),
+        sarvam_api_key=os.getenv("SARVAM_API_KEY", "").strip(),
+        jitsi_domain=os.getenv("JITSI_DOMAIN", "meet.jit.si").strip() or "meet.jit.si",
         ai_fallback_cache_ttl_seconds=_get_int("AI_FALLBACK_CACHE_TTL_SECONDS", 1800),
         ai_failure_log_path=logs_dir / "ai_failures.jsonl",
         session_https_only=_get_bool("SESSION_HTTPS_ONLY", environment == "production"),
         session_same_site=os.getenv("SESSION_SAME_SITE", "lax"),
-        session_idle_timeout_minutes=_get_int("SESSION_IDLE_TIMEOUT_MINUTES", 720),
+        session_idle_timeout_minutes=_get_int("SESSION_IDLE_TIMEOUT_MINUTES", 30),
         session_refresh_window_minutes=_get_int("SESSION_REFRESH_WINDOW_MINUTES", 30),
         https_redirect_enabled=_get_bool("HTTPS_REDIRECT_ENABLED", environment == "production"),
         host=os.getenv("HOST", "0.0.0.0"),

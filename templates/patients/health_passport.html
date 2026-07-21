@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = doctor.full_name or doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = ((doctor.full_name or doctor.username or 'DR')[:2]) | upper %}
+
+{% block title %}Health Passport{% endblock %}
+
+{% block header_actions %}
+<a href="/patient/{{ patient.id }}/health-card" class="btn btn-outline-dark btn-sm">Health Card</a>
+<a href="/patients/{{ patient.id }}/cases" class="btn btn-primary btn-sm">Case History</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <section class="page-header">
+        <div>
+            <div class="breadcrumbs mb-2"><span>Home</span><span>Health Passport</span></div>
+            <p class="eyebrow">Longitudinal record</p>
+            <h1>{{ patient.name }} Health Passport</h1>
+            <p class="mb-0">Prakriti, visit timeline, current medicines, follow-up history, and safety notes in one place.</p>
+        </div>
+    </section>
+    <section class="dashboard-grid">
+        <article class="table-panel">
+            <div class="page-header mb-3"><div><p class="eyebrow">Prakriti</p><h2>Constitution mix</h2></div></div>
+            {% for key, value in passport.prakriti.items() %}
+            <div class="mb-3">
+                <div class="d-flex justify-content-between"><strong>{{ key|title }}</strong><span>{{ value }}%</span></div>
+                <div class="progress-track"><div class="progress-bar" style="width:{{ value }}%;"></div></div>
+            </div>
+            {% endfor %}
+        </article>
+        <article class="table-panel">
+            <div class="page-header mb-3"><div><p class="eyebrow">Warnings</p><h2>Allergies & contraindications</h2></div></div>
+            <div class="stack-item" style="border-left:4px solid {% if passport.allergies or passport.contraindications %}#b42318{% else %}#2D8B4E{% endif %};">
+                <p><strong>Allergies:</strong> {{ passport.allergies|join(', ') if passport.allergies else 'None recorded' }}</p>
+                <p class="mb-0"><strong>Contraindications:</strong> {{ passport.contraindications|join(', ') if passport.contraindications else 'None recorded' }}</p>
+            </div>
+        </article>
+    </section>
+    <section class="dashboard-grid">
+        <article class="table-panel">
+            <div class="page-header mb-3"><div><p class="eyebrow">Timeline</p><h2>Visit history</h2></div></div>
+            <div class="stack-list">
+                {% for visit in passport.visitHistory %}
+                <div class="stack-item">
+                    <strong>{{ visit.date[:10] }}</strong>
+                    <p class="mb-1">{{ visit.chiefComplaint or 'No chief complaint recorded' }}</p>
+                    <p class="mb-0 text-muted">{{ visit.diagnosis or 'Diagnosis pending' }} · {{ visit.doctor }}</p>
+                </div>
+                {% else %}
+                <div class="stack-item"><p class="mb-0">No visits recorded yet.</p></div>
+                {% endfor %}
+            </div>
+        </article>
+        <article class="table-panel">
+            <div class="page-header mb-3"><div><p class="eyebrow">Current medications</p><h2>Ongoing treatment</h2></div></div>
+            <div class="stack-list">
+                {% for medicine in passport.ongoingMedications %}
+                <div class="stack-item">
+                    <strong>{{ medicine.name }}</strong>
+                    <p class="mb-0 text-muted">{{ medicine.dose or 'As advised' }} · Started {{ medicine.startDate or 'recently' }}</p>
+                </div>
+                {% else %}
+                <div class="stack-item"><p class="mb-0">No ongoing medicines recorded.</p></div>
+                {% endfor %}
+            </div>
+        </article>
+    </section>
+    <section class="table-panel">
+        <div class="page-header mb-3"><div><p class="eyebrow">Prescription archive</p><h2>Complete history</h2></div></div>
+        <div class="stack-list">
+            {% for item in passport.prescriptions %}
+            <div class="stack-item">
+                <strong>{{ item.date[:10] }}</strong>
+                <p class="mb-1">{{ item.sentTo or 'Not sent by email' }}</p>
+                <p class="mb-0 text-muted">{{ item.medicines|length }} medicine(s)</p>
+            </div>
+            {% else %}
+            <div class="stack-item"><p class="mb-0">No prescriptions recorded yet.</p></div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

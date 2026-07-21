@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kash AI is a voice-first AI assistant for Ayurvedic clinics. Speak Hindi, let AI write notes, and save 2+ hours daily.">
+    <title>Kash AI - AI-Powered Ayurvedic Healthcare</title>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/landing.css">
+  </head>
+  <body>
+    <canvas id="scene" aria-hidden="true"></canvas>
+
+    <main class="hero" aria-labelledby="hero-title">
+      <section class="glass-panel">
+        <nav class="brand" aria-label="Kash AI">
+          <span class="brand-mark" aria-hidden="true">🩺</span>
+          <span class="brand-name">Kash AI</span>
+        </nav>
+
+        <div class="hero-copy">
+          <p class="eyebrow">AI-powered Ayurvedic clinic assistant</p>
+          <h1 id="hero-title">Speak Hindi. AI writes. Save 2+ hours daily.</h1>
+          <p class="subcopy">
+            Capture consultations, structure clinical notes, flag emergencies, and keep follow-ups moving from one calm, intelligent workspace.
+          </p>
+        </div>
+
+        <div class="actions">
+          <a class="cta" href="https://kash-ai-api.onrender.com" aria-label="Launch Kash AI app">
+            <span>Launch App</span>
+            <span class="cta-icon" aria-hidden="true">→</span>
+          </a>
+          <div class="pulse-status" aria-label="System status">
+            <span class="status-dot"></span>
+            Clinic AI ready
+          </div>
+        </div>
+
+        <div class="badges" aria-label="Key features">
+          <span>Voice-First</span>
+          <span>AI Diagnosis</span>
+          <span>WhatsApp</span>
+          <span>Emergency Detection</span>
+        </div>
+      </section>
+
+      <aside class="insight-panel" aria-label="Consultation workflow preview">
+        <div class="orbit-ring"></div>
+        <div class="metric">
+          <span class="metric-value">2.4x</span>
+          <span class="metric-label">Faster SOAP notes</span>
+        </div>
+        <div class="workflow">
+          <span>Hindi voice</span>
+          <span>Clinical summary</span>
+          <span>Prescription draft</span>
+        </div>
+      </aside>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="/static/js/landing.js" defer></script>
+  </body>
+</html>

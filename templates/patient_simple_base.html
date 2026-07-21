@@ -30,6 +30,24 @@
         .top-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
         .mini-btn { min-height: 46px; padding: 0.8rem 1rem; border-radius: 9999px; border: 1px solid var(--color-border); background: white; color: var(--color-text-primary); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; }
         .mini-btn:hover { border-color: rgba(15, 76, 92, 0.25); color: var(--color-primary-light); }
+        .patient-account { position: relative; }
+        .patient-account__button { min-height: 46px; padding: 0.45rem 0.9rem 0.45rem 0.45rem; border-radius: 9999px; border: 1px solid var(--color-border); background: white; color: var(--color-text-primary); font-weight: 700; display: inline-flex; align-items: center; gap: 0.55rem; cursor: pointer; box-shadow: var(--shadow-sm); }
+        .patient-account__button:hover, .patient-account__button[aria-expanded="true"] { border-color: rgba(15, 76, 92, 0.28); color: var(--color-primary-light); }
+        .patient-account__avatar { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--color-primary-light), #7c3aed); color: white; font-weight: 800; text-transform: uppercase; }
+        .patient-account__name { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .patient-account__role { color: var(--color-text-secondary); font-size: 0.78rem; font-weight: 700; }
+        .patient-account__chevron { color: var(--color-text-secondary); font-size: 0.8rem; transition: transform 0.18s ease; }
+        .patient-account__button[aria-expanded="true"] .patient-account__chevron { transform: rotate(180deg); }
+        .patient-account__menu { position: absolute; right: 0; top: calc(100% + 10px); min-width: 280px; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: 1.1rem; background: white; box-shadow: var(--shadow-dropdown); display: none; z-index: calc(var(--z-sticky) + 3); }
+        .patient-account__menu.show { display: block; }
+        .patient-account__header { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center; padding: 0.4rem 0.45rem 0.8rem; border-bottom: 1px solid #edf2f7; margin-bottom: 0.4rem; }
+        .patient-account__header strong, .patient-account__header small { display: block; }
+        .patient-account__header small { color: var(--color-text-secondary); margin-top: 0.15rem; }
+        .patient-account__badge { display: inline-flex; width: fit-content; margin-top: 0.35rem; padding: 0.18rem 0.55rem; border-radius: 9999px; background: var(--color-primary-lighter); color: var(--color-primary-light); font-size: 0.75rem; font-weight: 800; }
+        .patient-account__item { width: 100%; display: flex; align-items: center; gap: 0.65rem; padding: 0.72rem 0.75rem; border: 0; border-radius: 0.9rem; background: transparent; color: var(--color-text-primary); text-align: left; font-weight: 700; cursor: pointer; }
+        .patient-account__item:hover { background: #f8fafc; }
+        .patient-account__item--logout { color: var(--color-danger); }
+        .patient-account__divider { height: 1px; background: #edf2f7; margin: 0.4rem 0; }
         .portal-strip { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
         .portal-link { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0.65rem 0.95rem; border: 1px solid var(--color-border); border-radius: 9999px; background: white; color: var(--color-ai-dark); font-weight: 600; }
         .profile-switcher-wrap { position: relative; }
@@ -91,6 +109,9 @@
         @media (max-width: 640px) {
             .tile-grid { grid-template-columns: 1fr; }
             .top-actions { display: grid; grid-template-columns: 1fr 1fr; }
+            .patient-account { grid-column: 1 / -1; }
+            .patient-account__button { width: 100%; justify-content: center; }
+            .patient-account__menu { left: 0; right: 0; min-width: 0; }
             .list-row { flex-direction: column; align-items: flex-start; }
             .brand-logo { width: 136px; height: 42px; }
         }
@@ -101,6 +122,18 @@
     {% set portal_session_role = request.session.get('portal_user_role') if request is defined and request.session is defined else '' %}
     {% set portal_session_name = request.session.get('portal_user_name') if request is defined and request.session is defined else '' %}
     {% set patient_home_href = '/patient' if portal_session_role == 'patient' else '/' %}
+    {% if request is defined and request.session is defined %}
+        {% set patient_account_name = portal_session_name or request.session.get('active_profile_name', 'Patient') %}
+        {% set patient_account_email = request.session.get('portal_user_email', '') %}
+        {% set patient_account_avatar = request.session.get('active_profile_avatar', '') %}
+    {% else %}
+        {% set patient_account_name = 'Patient' %}
+        {% set patient_account_email = '' %}
+        {% set patient_account_avatar = '' %}
+    {% endif %}
+    {% if not patient_account_avatar %}
+        {% set patient_account_avatar = (patient_account_name or 'P')[:1] | upper %}
+    {% endif %}
     <a class="skip-link" href="#mainContent">Skip to main content</a>
     <div class="app-shell">
         <header class="top-bar">
@@ -119,10 +152,6 @@
                     <a class="portal-link" href="/patient/symptom-analyzer">AI Tools</a>
                     <a class="portal-link" href="/order-medicines">Search Medicines</a>
                     <a class="portal-link" href="/orders">Orders</a>
-                    <form method="post" action="/auth/logout" class="portal-link-form">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
-                        <button type="submit" class="portal-link portal-link-button">Logout</button>
-                    </form>
                     {% else %}
                     <a class="portal-link" href="/auth/login/patient">Patient Login</a>
                     <a class="portal-link" href="/auth/login/doctor">Doctor Login</a>
@@ -144,7 +173,7 @@
                             <a href="/profiles/manage">Manage</a>
                         </div>
                         <div id="profileDropdownItems">
-                            <a class="portal-link" href="/profiles/select" style="justify-content:flex-start;">Open profile selector</a>
+                            <a class="portal-link portal-link--start" href="/profiles/select">Open profile selector</a>
                         </div>
                     </div>
                 </div>
@@ -152,10 +181,33 @@
                 <button type="button" class="mini-btn" aria-label="Go back" onclick="history.length > 1 ? history.back() : window.location.href='{{ patient_home_href }}'">Back</button>
                 <a class="mini-btn" href="{{ patient_home_href }}">Home</a>
                 {% if portal_session_role == 'patient' %}
-                <form method="post" action="/auth/logout" class="mini-btn-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
-                    <button type="submit" class="mini-btn">Logout</button>
-                </form>
+                <div class="patient-account">
+                    <button type="button" class="patient-account__button" id="userMenuBtn" aria-haspopup="menu" aria-expanded="false">
+                        <span class="patient-account__avatar">{{ patient_account_avatar }}</span>
+                        <span class="patient-account__name">{{ patient_account_name }}</span>
+                        <span class="patient-account__role">Patient</span>
+                        <i class="fa-solid fa-chevron-down patient-account__chevron" aria-hidden="true"></i>
+                    </button>
+                    <div class="patient-account__menu user-dropdown" id="userDropdown" role="menu" aria-label="Patient account menu">
+                        <div class="patient-account__header">
+                            <span class="patient-account__avatar">{{ patient_account_avatar }}</span>
+                            <div>
+                                <strong>{{ patient_account_name }}</strong>
+                                {% if patient_account_email %}<small>{{ patient_account_email }}</small>{% endif %}
+                                <span class="patient-account__badge">Patient</span>
+                            </div>
+                        </div>
+                        <a href="/patient" class="patient-account__item" role="menuitem">Dashboard</a>
+                        <a href="/patient/symptom-analyzer" class="patient-account__item" role="menuitem">AI Tools</a>
+                        <a href="/profiles/manage" class="patient-account__item" role="menuitem">Manage Profiles</a>
+                        <a href="/device-check" class="patient-account__item" role="menuitem">Device Check</a>
+                        <div class="patient-account__divider"></div>
+                        <form method="post" action="/auth/logout" class="logout-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
+                            <button type="submit" class="patient-account__item patient-account__item--logout" role="menuitem">Logout</button>
+                        </form>
+                    </div>
+                </div>
                 {% else %}
                 <a class="mini-btn" href="/auth/login">Login</a>
                 {% endif %}
@@ -368,10 +420,10 @@
                     profileDropdownItems.innerHTML = (payload.profiles || []).map((profile) => `
                         <button type="button" class="profile-dropdown__item" data-profile-id="${profile.id}">
                             <span>${profile.avatar_emoji}</span>
-                            <span><strong>${profile.profile_name}</strong><span class="profile-dropdown__meta" style="display:block;">${profile.relationship}</span></span>
+                            <span><strong>${profile.profile_name}</strong><span class="profile-dropdown__meta profile-dropdown__meta--block">${profile.relationship}</span></span>
                             <span>${Number(activeId) === Number(profile.id) ? "Active" : ""}</span>
                         </button>
-                    `).join("") || '<a class="portal-link" href="/profiles/add" style="justify-content:flex-start;">Add your first profile</a>';
+                    `).join("") || '<a class="portal-link portal-link--start" href="/profiles/add">Add your first profile</a>';
                 } catch (error) {}
             }
             async function switchProfile(profileId) {
@@ -415,6 +467,29 @@
                 profileDropdown.classList.remove("is-open");
                 profileSwitcher.setAttribute("aria-expanded", "false");
             });
+
+            const userMenuBtn = document.getElementById("userMenuBtn");
+            const userDropdown = document.getElementById("userDropdown");
+            const closeUserDropdown = function () {
+                userDropdown?.classList.remove("show");
+                userMenuBtn?.setAttribute("aria-expanded", "false");
+            };
+            userMenuBtn?.addEventListener("click", function (event) {
+                event.stopPropagation();
+                const isOpen = userDropdown?.classList.toggle("show") || false;
+                userMenuBtn.setAttribute("aria-expanded", String(isOpen));
+            });
+            document.addEventListener("click", function (event) {
+                if (!userMenuBtn || !userDropdown) return;
+                if (userMenuBtn.contains(event.target) || userDropdown.contains(event.target)) return;
+                closeUserDropdown();
+            });
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeUserDropdown();
+                }
+            });
+            window.addEventListener("blur", closeUserDropdown);
         });
     </script>
     {% block extra_scripts %}{% endblock %}

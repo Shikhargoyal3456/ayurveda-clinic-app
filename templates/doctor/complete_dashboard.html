@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+
+{% block title %}Doctor Dashboard | Kash AI{% endblock %}
+
+{% block page %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <div>
+            <p class="eyebrow">Doctor workspace</p>
+            <h1>Doctor Dashboard</h1>
+            <p class="muted">Welcome back, Dr. {{ user.full_name or user.username }}.</p>
+        </div>
+        <div class="header-actions">
+            <span class="greeting">{{ now.strftime('%A, %B %d, %Y') if now is defined else '' }}</span>
+            <span class="date">{{ clinic_name | default('Kash AI Clinic') }}</span>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span class="stat-label">Total Patients</span><strong class="stat-value">{{ total_patients }}</strong><span class="stat-change positive">+{{ new_patients }} this month</span></div>
+        <div class="stat-card"><span class="stat-label">Today's Appointments</span><strong class="stat-value">{{ today_appointments }}</strong><span class="stat-change">{{ upcoming_appointments }} upcoming</span></div>
+        <div class="stat-card"><span class="stat-label">Revenue This Month</span><strong class="stat-value">₹{{ revenue_this_month }}</strong><span class="stat-change positive">Growth {{ revenue_growth }}%</span></div>
+        <div class="stat-card"><span class="stat-label">Avg Satisfaction</span><strong class="stat-value">{{ avg_rating }}</strong><span class="stat-change">From {{ total_reviews }} reviews</span></div>
+        <div class="stat-card"><span class="stat-label">AI-Assisted Cases</span><strong class="stat-value">{{ ai_assisted_cases }}</strong><span class="stat-change positive">{{ ai_success_rate }}% success</span></div>
+        <div class="stat-card"><span class="stat-label">Case Completion</span><strong class="stat-value">{{ completion_rate }}%</strong><span class="stat-change">{{ pending_cases }} pending</span></div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Patient Visits</h3>
+            <canvas id="visitsChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Patient Demographics</h3>
+            <canvas id="demographicsChart"></canvas>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h3>Revenue Trend</h3>
+            <canvas id="revenueChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <h3>Top Diagnoses</h3>
+            <canvas id="diagnosesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="activity-section">
+        <h3>Recent Activity</h3>
+        <div class="activity-list">
+            {% for activity in recent_activities %}
+            <div class="activity-item">
+                <span class="activity-time">{{ activity.time }}</span>
+                <span class="activity-text">{{ activity.text }}</span>
+                <span class="activity-status {{ activity.status }}">{{ activity.status_label }}</span>
+            </div>
+            {% else %}
+            <p class="no-activity">No recent activity</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-grid">
+            <a href="/consultation/voice" class="action-btn">New Voice Consultation</a>
+            <a href="/patients/add" class="action-btn">Add Patient</a>
+            <a href="/appointments" class="action-btn">Schedule Appointment</a>
+            <a href="/ai-doctor" class="action-btn">AI Doctor Chat</a>
+            <a href="/feature-status" class="action-btn">Feature Status</a>
+            <a href="/device-check" class="action-btn">Device Check</a>
+            <a href="/doctor/stats" class="action-btn">View Statistics</a>
+            <a href="/prescriptions" class="action-btn">New Prescription</a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    new Chart(document.getElementById("visitsChart"), {type:"line", data:{labels: {{ visit_labels | tojson }}, datasets:[{label:"Patients", data: {{ visit_data | tojson }}, borderColor:"#4F46E5", backgroundColor:"rgba(79,70,229,0.1)", fill:true, tension:0.35}]}, options:{responsive:true, plugins:{legend:{display:false}}}});
+    new Chart(document.getElementById("demographicsChart"), {type:"doughnut", data:{labels:["Male","Female","Other"], datasets:[{data: {{ demographics_data | tojson }}, backgroundColor:["#4F46E5","#7C3AED","#EC4899"]}]}, options:{responsive:true, plugins:{legend:{position:"bottom"}}}});
+    new Chart(document.getElementById("revenueChart"), {type:"bar", data:{labels: {{ revenue_labels | tojson }}, datasets:[{label:"Revenue (₹)", data: {{ revenue_data | tojson }}, backgroundColor:"rgba(79,70,229,0.6)", borderColor:"#4F46E5", borderWidth:1}]}, options:{responsive:true, plugins:{legend:{display:false}}}});
+    new Chart(document.getElementById("diagnosesChart"), {type:"bar", data:{labels: {{ diagnosis_labels | tojson }}, datasets:[{label:"Cases", data: {{ diagnosis_data | tojson }}, backgroundColor:["#4F46E5","#7C3AED","#EC4899","#F59E0B","#10B981"]}]}, options:{responsive:true, plugins:{legend:{display:false}}, indexAxis:"y"}});
+});
+</script>
+
+<style>
+.dashboard-container{max-width:1400px;margin:0 auto;padding:20px}
+.dashboard-header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px;padding:20px;border-radius:16px;background:rgba(255,255,255,.05)}
+.dashboard-header h1{margin:0}
+.header-actions{display:flex;flex-direction:column;align-items:flex-end}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card,.chart-card,.activity-section,.quick-actions{padding:20px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.stat-card{display:flex;flex-direction:column;gap:6px}
+.stat-value{font-size:1.7rem;font-weight:800}
+.stat-label{opacity:.75;font-size:.88rem}
+.stat-change.positive{color:#34D399}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.chart-card canvas{width:100% !important;max-height:220px}
+.activity-list{display:grid;gap:10px;margin-top:10px}
+.activity-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.activity-time{min-width:84px;opacity:.7}
+.activity-status{padding:4px 10px;border-radius:999px;font-size:.8rem}
+.activity-status.success{background:rgba(52,211,153,.2);color:#34D399}
+.quick-actions{margin-top:24px}
+.action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}
+.action-btn{padding:12px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+@media (max-width:768px){.charts-grid{grid-template-columns:1fr}.dashboard-header{flex-direction:column;align-items:flex-start}.header-actions{align-items:flex-start}}
+</style>
+{% endblock %}

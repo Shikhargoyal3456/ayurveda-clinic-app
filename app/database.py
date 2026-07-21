@@ -140,6 +140,7 @@ def ensure_schema_compatibility() -> dict[str, object]:
 def _run_database_startup() -> None:
     Base.metadata.create_all(bind=engine)
     _ensure_feature_schema()
+    _ensure_compatibility_views()
     _ensure_admin_seed_data()
     _ensure_portal_test_users()
     _ensure_patient_user_profiles()
@@ -169,7 +170,8 @@ def _activate_sqlite_fallback(exc: Exception) -> None:
 
 
 def init_db() -> None:
-    from app.models import Appointment, CaseSheet, Doctor, Patient, PatientQuery  # noqa: F401
+    from app.models import Appointment, CaseSheet, ConsultationMetric, Doctor, DoctorActivityLog, Patient, PatientQuery  # noqa: F401
+    from app.models import BillingCode, TelemedicineSession, TongueAnalysis  # noqa: F401
     from models.ai_features import AIConversationHistory, AIPrediction, AIPrescriptionScan, MedicineInfoCache  # noqa: F401
     from models.emr import (  # noqa: F401
         EMRAssessment,
@@ -186,6 +188,8 @@ def init_db() -> None:
     from models.marketplace import DeliveryPartner, LabStore, OrderDelivery, PharmacyStore  # noqa: F401
     from models.payment import Payment  # noqa: F401
     from models.medicine import MasterMedicine, Medicine, MedicineOrder, MedicineRequest, Pharmacy, PharmacyInventory, StockAdjustment, StockAlert  # noqa: F401
+    from models.audit_log import AuditLog  # noqa: F401
+    from models.patient_link import PatientAccountLink  # noqa: F401
     from models.prescription import AIFeedback, Prescription  # noqa: F401
     from models.subscription import ClinicSubscription, SubscriptionUsage  # noqa: F401
     from models.supplier import Supplier  # noqa: F401
@@ -266,16 +270,23 @@ def _ensure_feature_schema() -> None:
                     text(
                         "CREATE TABLE IF NOT EXISTS ai_feedback ("
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "consultation_id INTEGER, "
                         "prescription_id INTEGER, "
                         "case_id INTEGER, "
                         "patient_id INTEGER, "
                         "doctor_id INTEGER NOT NULL, "
                         "field_name VARCHAR(80), "
+                        "feature_type VARCHAR(40), "
                         "ai_suggestion TEXT, "
                         "doctor_correction TEXT, "
+                        "doctor_final TEXT, "
                         "rating INTEGER CHECK (rating >= 1 AND rating <= 5), "
+                        "accuracy_score INTEGER CHECK (accuracy_score >= 1 AND accuracy_score <= 5), "
                         "accepted BOOLEAN, "
+                        "was_accepted BOOLEAN, "
+                        "modified BOOLEAN, "
                         "notes TEXT, "
+                        "feedback_text TEXT, "
                         "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
                         "FOREIGN KEY (prescription_id) REFERENCES prescriptions(id), "
                         "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
@@ -284,14 +295,28 @@ def _ensure_feature_schema() -> None:
         elif "ai_feedback" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("ai_feedback")}
             with engine.begin() as connection:
+                if "consultation_id" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN consultation_id INTEGER"))
                 if "patient_id" not in columns:
                     connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN patient_id INTEGER"))
                 if "field_name" not in columns:
                     connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN field_name VARCHAR(80)"))
+                if "feature_type" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN feature_type VARCHAR(40)"))
                 if "ai_suggestion" not in columns:
                     connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN ai_suggestion TEXT"))
                 if "doctor_correction" not in columns:
                     connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN doctor_correction TEXT"))
+                if "doctor_final" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN doctor_final TEXT"))
+                if "accuracy_score" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN accuracy_score INTEGER"))
+                if "was_accepted" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN was_accepted BOOLEAN"))
+                if "modified" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN modified BOOLEAN"))
+                if "feedback_text" not in columns:
+                    connection.execute(text("ALTER TABLE ai_feedback ADD COLUMN feedback_text TEXT"))
         if "patient_queries" not in existing_tables:
             with engine.begin() as connection:
                 connection.execute(
@@ -356,6 +381,15 @@ def _ensure_feature_schema() -> None:
                     connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN reminder_sent_at DATETIME"))
                 if "reminder_count" not in columns:
                     connection.execute(text("ALTER TABLE pending_reviews ADD COLUMN reminder_count INTEGER DEFAULT 0"))
+        if "emr_consultations" in existing_tables:
+            columns = {column["name"] for column in inspector.get_columns("emr_consultations")}
+            with engine.begin() as connection:
+                if "ai_used" not in columns:
+                    connection.execute(text("ALTER TABLE emr_consultations ADD COLUMN ai_used BOOLEAN DEFAULT 0"))
+                if "ai_summary" not in columns:
+                    connection.execute(text("ALTER TABLE emr_consultations ADD COLUMN ai_summary TEXT DEFAULT ''"))
+                if "duration_minutes" not in columns:
+                    connection.execute(text("ALTER TABLE emr_consultations ADD COLUMN duration_minutes INTEGER DEFAULT 0"))
         if "medicine_orders" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("medicine_orders")}
             with engine.begin() as connection:
@@ -454,6 +488,50 @@ def _ensure_feature_schema() -> None:
                     connection.execute(text("ALTER TABLE ai_prescriptions_scanned ADD COLUMN verified_by_user_id INTEGER"))
                 if "doctor_user_id" not in columns:
                     connection.execute(text("ALTER TABLE ai_prescriptions_scanned ADD COLUMN doctor_user_id INTEGER"))
+        if "tongue_analyses" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS tongue_analyses ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "patient_id INTEGER NOT NULL, "
+                        "image_url VARCHAR(255) DEFAULT '', "
+                        "analysis_text TEXT DEFAULT '', "
+                        "prakriti_prediction VARCHAR(120) DEFAULT '', "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id))"
+                    )
+                )
+        if "billing_codes" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS billing_codes ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "prescription_id INTEGER NOT NULL, "
+                        "icd_11_codes TEXT DEFAULT '[]', "
+                        "ayush_code VARCHAR(120) DEFAULT '', "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (prescription_id) REFERENCES prescriptions(id))"
+                    )
+                )
+        if "telemedicine_sessions" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS telemedicine_sessions ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "patient_id INTEGER NOT NULL, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "session_url VARCHAR(255) DEFAULT '', "
+                        "provider VARCHAR(40) DEFAULT 'jitsi', "
+                        "duration_minutes INTEGER DEFAULT 0, "
+                        "notes TEXT DEFAULT '', "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id), "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
+                    )
+                )
         if "doctor_profiles" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("doctor_profiles")}
             with engine.begin() as connection:
@@ -462,10 +540,112 @@ def _ensure_feature_schema() -> None:
         if "users" in existing_tables:
             columns = {column["name"] for column in inspector.get_columns("users")}
             with engine.begin() as connection:
+                if "account_type" not in columns:
+                    connection.execute(text("ALTER TABLE users ADD COLUMN account_type VARCHAR(20) DEFAULT 'patient'"))
                 if "google_id" not in columns:
                     connection.execute(text("ALTER TABLE users ADD COLUMN google_id VARCHAR(255)"))
+        if "consultation_sessions" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS consultation_sessions ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "patient_id INTEGER, "
+                        "status VARCHAR(30) DEFAULT 'active', "
+                        "started_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "ended_at DATETIME, "
+                        "notes TEXT, "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id), "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id))"
+                    )
+                )
+        if "consultation_metrics" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS consultation_metrics ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "consultation_id INTEGER NOT NULL, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "patient_id INTEGER NOT NULL, "
+                        "start_time DATETIME NOT NULL, "
+                        "end_time DATETIME, "
+                        "duration_seconds INTEGER, "
+                        "ai_used BOOLEAN DEFAULT 0, "
+                        "ai_voice_enabled BOOLEAN DEFAULT 0, "
+                        "ai_vision_enabled BOOLEAN DEFAULT 0, "
+                        "ai_prescription_enabled BOOLEAN DEFAULT 0, "
+                        "ai_diagnosis_enabled BOOLEAN DEFAULT 0, "
+                        "voice_duration_seconds INTEGER, "
+                        "manual_time_saved_seconds INTEGER, "
+                        "notes TEXT, "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (consultation_id) REFERENCES consultation_sessions(id), "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id), "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id))"
+                    )
+                )
+        if "doctor_activity_log" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS doctor_activity_log ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "doctor_id INTEGER NOT NULL, "
+                        "activity_type VARCHAR(80) NOT NULL, "
+                        "metadata TEXT, "
+                        "duration_seconds INTEGER, "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
+                    )
+                )
+        if "voice_transcripts" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS voice_transcripts ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "session_id INTEGER NOT NULL, "
+                        "transcript TEXT NOT NULL, "
+                        "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "extracted_data TEXT DEFAULT '{}', "
+                        "FOREIGN KEY (session_id) REFERENCES consultation_sessions(id))"
+                    )
+                )
+        if "device_logs" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS device_logs ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "user_id INTEGER NOT NULL, "
+                        "device_type VARCHAR(30) NOT NULL, "
+                        "status VARCHAR(20) NOT NULL, "
+                        "tested_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (user_id) REFERENCES users(id))"
+                    )
+                )
     except Exception as exc:  # pragma: no cover
         logger.warning("Feature schema compatibility check failed: %s", exc)
+
+
+def _ensure_compatibility_views() -> None:
+    if not _engine_is_sqlite():
+        return
+
+    try:
+        inspector = inspect(engine)
+        existing_tables = set(inspector.get_table_names())
+        with engine.begin() as connection:
+            if "cases" not in existing_tables:
+                connection.execute(text("CREATE VIEW IF NOT EXISTS cases AS SELECT * FROM case_sheets"))
+            if "orders" not in existing_tables:
+                connection.execute(text("CREATE VIEW IF NOT EXISTS orders AS SELECT * FROM medicine_orders"))
+            if "patient_links" not in existing_tables:
+                connection.execute(text("CREATE VIEW IF NOT EXISTS patient_links AS SELECT * FROM patient_account_links"))
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Compatibility view setup failed: %s", exc)
 
 
 def _ensure_supplier_seed_data() -> None:

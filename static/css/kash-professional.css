@@ -105,6 +105,63 @@ body {
     gap: 0.75rem;
 }
 
+.new-shell-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    border-radius: 999px;
+}
+
+.new-shell-footer {
+    margin: 24px 0 18px;
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    font-size: 0.95rem;
+}
+
+.dashboard-topbar {
+    margin-top: 20px;
+}
+
+.dashboard-layout {
+    margin-top: 18px;
+}
+
+.dashboard-main {
+    display: grid;
+    gap: 18px;
+}
+
+.dashboard-card--hero {
+    padding: 28px;
+}
+
+.dashboard-card--compact {
+    padding: 24px;
+}
+
+.dashboard-toolbar {
+    margin-top: 14px;
+}
+
+.dashboard-title {
+    margin: 0 0 8px;
+}
+
+.dashboard-section-title {
+    font-size: 2rem;
+}
+
+.dashboard-table-shell {
+    margin-top: 14px;
+}
+
 .btn {
     padding: 0.75rem 1.5rem;
     border-radius: 12px;

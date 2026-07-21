@@ -59,6 +59,13 @@
             </div>
 
             <div class="ambient-controls">
+                <label class="form-group" style="min-width: 280px; margin: 0;">
+                    <span>Microphone device</span>
+                    <select id="micDeviceSelect" class="form-control">
+                        <option value="">Default microphone</option>
+                    </select>
+                    <small id="micDeviceLabel" class="text-muted">Using default microphone</small>
+                </label>
                 <button id="startScribeBtn" class="btn btn-primary btn-pill" type="button">
                     <i class="fa-solid fa-microphone-lines"></i> Start Listening
                 </button>
@@ -67,6 +74,9 @@
                 </button>
                 <button id="clearBtn" class="btn btn-ghost btn-pill" type="button">
                     <i class="fa-solid fa-trash"></i> Clear
+                </button>
+                <button id="refreshMicBtn" class="btn btn-outline-dark btn-pill" type="button">
+                    <i class="fa-solid fa-rotate"></i> Refresh Mics
                 </button>
                 <button id="saveEMRBtn" class="btn btn-outline-success btn-pill" type="button" disabled>
                     <i class="fa-solid fa-floppy-disk"></i> Save to EMR
@@ -123,7 +133,7 @@
                             </label>
                             <label class="form-group">
                                 <span>System type</span>
-                                <input type="text" id="systemType" value="{{ 'Ayurveda' if user_role == 'Doctor - Ayurveda' else 'Integrated' }}" readonly>
+                                <input type="text" id="systemType" value="{{ 'Ayurveda' if system_type == 'ayurveda' else 'Modern' if system_type == 'modern' else 'Integrated' }}" readonly>
                             </label>
                         </div>
                         <label class="form-group">
@@ -178,9 +188,12 @@
 
     const patientSelect = document.getElementById('ambientPatientSelect');
     const openPatientButton = document.getElementById('ambientOpenPatient');
+    const micDeviceSelect = document.getElementById('micDeviceSelect');
+    const micDeviceLabel = document.getElementById('micDeviceLabel');
     const startBtn = document.getElementById('startScribeBtn');
     const stopBtn = document.getElementById('stopBtn');
     const clearBtn = document.getElementById('clearBtn');
+    const refreshMicBtn = document.getElementById('refreshMicBtn');
     const saveBtn = document.getElementById('saveEMRBtn');
     const editBtn = document.getElementById('editBtn');
     const generatePrescriptionBtn = document.getElementById('generatePrescriptionBtn');
@@ -210,6 +223,7 @@
         recording: false,
         editable: false,
         selectedPatientId: patientSelect.value || '',
+        selectedDeviceId: '',
         stopPromiseResolver: null,
         lastUploadPromise: Promise.resolve(),
         lastPrescriptionItems: [],
@@ -291,6 +305,74 @@
         node.value = value || '';
     }
 
+    function updateMicLabel() {
+        if (!micDeviceLabel) return;
+        const selectedOption = micDeviceSelect?.selectedOptions?.[0];
+        const label = selectedOption?.textContent?.trim() || 'Default microphone';
+        micDeviceLabel.textContent = `Using ${label}`;
+    }
+
+    async function acquireMicrophoneStream() {
+        if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+            throw new Error('This browser does not support microphone recording.');
+        }
+
+        const devices = await navigator.mediaDevices.enumerateDevices?.().catch(() => []);
+        const audioInputs = (devices || []).filter((device) => device && device.kind === 'audioinput' && device.deviceId);
+        const chosenDeviceId = (micDeviceSelect?.value || state.selectedDeviceId || '').trim();
+        const constraintsToTry = [
+            ...(chosenDeviceId ? [{ audio: { deviceId: { exact: chosenDeviceId } } }] : []),
+            { audio: true },
+            { audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } },
+            ...audioInputs.map((device) => ({ audio: { deviceId: { exact: device.deviceId } } })),
+        ];
+
+        let lastError = null;
+        for (const constraints of constraintsToTry) {
+            try {
+                return await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (error) {
+                lastError = error;
+                const errorName = String(error?.name || '');
+                if (!['NotFoundError', 'OverconstrainedError', 'NotReadableError', 'AbortError'].includes(errorName)) {
+                    throw error;
+                }
+            }
+        }
+
+        if (!audioInputs.length && lastError) {
+            throw new Error('No microphone was found on this device. Please connect a microphone and try again.');
+        }
+        throw lastError || new Error('Unable to access the microphone.');
+    }
+
+    async function refreshMicrophoneList() {
+        if (!micDeviceSelect || !navigator.mediaDevices?.enumerateDevices) return;
+        const devices = await navigator.mediaDevices.enumerateDevices().catch(() => []);
+        const audioInputs = (devices || []).filter((device) => device && device.kind === 'audioinput');
+        const currentValue = micDeviceSelect.value;
+
+        micDeviceSelect.replaceChildren();
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Default microphone';
+        micDeviceSelect.appendChild(defaultOption);
+
+        audioInputs.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId || '';
+            option.textContent = device.label || `Microphone ${index + 1}`;
+            micDeviceSelect.appendChild(option);
+        });
+
+        if ([...micDeviceSelect.options].some((option) => option.value === currentValue)) {
+            micDeviceSelect.value = currentValue;
+        }
+        state.selectedDeviceId = micDeviceSelect.value || '';
+        updateMicLabel();
+    }
+
     function syncPatientContextFromSelection() {
         const option = patientSelect.options[patientSelect.selectedIndex];
         state.selectedPatientId = patientSelect.value || '';
@@ -367,7 +449,9 @@
         }
         try {
             await startSession();
-            state.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            await refreshMicrophoneList();
+            state.selectedDeviceId = micDeviceSelect?.value || '';
+            state.stream = await acquireMicrophoneStream();
             state.recorder = new MediaRecorder(state.stream);
             state.recording = true;
             state.lastUploadPromise = Promise.resolve();
@@ -394,6 +478,11 @@
             console.error(error);
             state.sessionId = null;
             window.alert(error.message || 'Microphone access is required to start ambient capture.');
+            setStatus(
+                'stopped',
+                'Microphone unavailable',
+                error?.message || 'Please connect or allow a microphone, then try again.'
+            );
         }
     }
 
@@ -585,6 +674,13 @@
         window.location.href = `/emr/ambient-scribe?patient_id=${patientId}`;
     });
     patientSelect?.addEventListener('change', syncPatientContextFromSelection);
+    micDeviceSelect?.addEventListener('change', () => {
+        state.selectedDeviceId = micDeviceSelect.value || '';
+        updateMicLabel();
+    });
+    refreshMicBtn?.addEventListener('click', () => {
+        refreshMicrophoneList().catch((error) => console.error(error));
+    });
     startBtn?.addEventListener('click', startAmbientScribe);
     stopBtn?.addEventListener('click', stopAmbientScribe);
     clearBtn?.addEventListener('click', resetScribe);
@@ -599,6 +695,8 @@
     });
 
     syncPatientContextFromSelection();
+    refreshMicrophoneList().catch((error) => console.error(error));
+    updateMicLabel();
     setStatus('ready', 'Ready to start', 'Microphone is idle. Keep the phone on the desk and tap start when the consultation begins.');
 })();
 </script>

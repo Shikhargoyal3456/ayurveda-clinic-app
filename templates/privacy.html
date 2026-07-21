@@ -1,11 +1,26 @@
-{% extends 'base.html' %}
-{% set active_page = 'home' %}
-{% set user_name = 'Privacy' %}
-{% set user_role = 'Policy' %}
-{% set avatar_label = 'PP' %}
-
-{% block title %}Kash AI | Privacy Policy{% endblock %}
-{% block page %}
-<div class="site-container section-stack fade-in-up"><section class="privacy-panel" style="max-width:860px; margin:0 auto;"><p class="eyebrow">Privacy policy</p><h1>Privacy Policy</h1><p class="text-muted">Last updated: April 2026</p><div class="section-stack mt-4"><div><h3>What we collect</h3><p>Kash AI collects patient health records, doctor account information, and consultation data entered by registered doctors. This data is used solely to provide clinic management services.</p></div><div><h3>How we use your data</h3><p>Data is used only to power the clinic management features you use. We do not sell, share, or transfer patient data to any third party without explicit consent.</p></div><div><h3>Data storage</h3><p>All data is stored securely on encrypted servers. Patient data is accessible only to the treating doctor who created the record.</p></div><div><h3>AI features</h3><p>Symptom data may be sent to Google Gemini AI for generating clinical suggestions. This data is used only for generating the response and is not stored by Google for training purposes under our API agreement.</p><p><strong>All AI-generated responses require doctor review and approval before being communicated to patients. Kash AI is an assistive tool. The treating doctor bears final responsibility for all medical advice.</strong></p></div><div><h3>Your rights</h3><p>Doctors and patients may request deletion of their data at any time by contacting us. We will process deletion requests within 30 days.</p></div><div><h3>Contact</h3><p>For privacy concerns contact: privacy@kashai.in</p></div></div><a href="/signup" class="btn btn-outline-dark mt-4">Back to Signup</a></section></div>
+{% extends 'new_base.html' %}
+{% block title %}Privacy Policy | Kash AI{% endblock %}
+{% block content %}
+<section class="card" style="margin-top:24px;padding:28px;line-height:1.7;">
+    <p class="chip">Last updated: {{ current_date if current_date is defined else 'July 2026' }}</p>
+    <h1 style="margin-top:12px;">Privacy Policy</h1>
+    <p>This policy explains how Kash AI handles personal data under the Digital Personal Data Protection Act, 2023 and related Indian laws.</p>
+    <h2>What we collect</h2>
+    <p>We may collect your name, contact details, login details, profile information, medical history, prescriptions, appointments, payments, and related service data.</p>
+    <h2>How we use data</h2>
+    <p>We use data to provide diagnosis support, treatment workflows, appointment handling, billing, customer support, safety checks, and legal compliance.</p>
+    <h2>Sharing of data</h2>
+    <p>We share your data with doctors, labs, pharmacies, and other care partners only when needed for care delivery or when you consent, unless the law requires disclosure.</p>
+    <h2>Storage and security</h2>
+    <p>We store data on secure systems and use reasonable safeguards, including encryption and access controls, to protect against unauthorized access, loss, or misuse.</p>
+    <h2>Retention</h2>
+    <p>We keep data only as long as necessary for the stated purpose, legal compliance, and record-keeping. You may request deletion where applicable by law.</p>
+    <h2>Your rights</h2>
+    <p>You may request access, correction, deletion, and withdrawal of consent, subject to lawful exceptions and verification requirements.</p>
+    <h2>Withdrawing consent</h2>
+    <p>You can withdraw consent by writing to our grievance officer. Withdrawal may limit features that depend on the relevant data.</p>
+    <h2>Grievance officer</h2>
+    <p>Email: <a href="mailto:goyalshikhar67@gmail.com">goyalshikhar67@gmail.com</a></p>
+    <p>We will respond to privacy requests within a reasonable time under applicable law.</p>
+</section>
 {% endblock %}
-

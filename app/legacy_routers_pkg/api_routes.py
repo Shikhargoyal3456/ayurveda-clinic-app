@@ -1,13 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.config import TEMPLATES_DIR
 from app.services.ai_service import analyze_symptoms
-
-
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 router = APIRouter()
 
 
@@ -17,12 +12,12 @@ class SymptomRequest(BaseModel):
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse(request, "dashboard.html", {"request": request})
+    return RedirectResponse(url="/new", status_code=303)
 
 
 @router.get("/ai_analyzer", response_class=HTMLResponse)
 async def ai_analyzer(request: Request):
-    return templates.TemplateResponse(request, "ai_analyzer.html", {"request": request})
+    return RedirectResponse(url="/ai-analyzer", status_code=303)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -32,32 +27,32 @@ async def login(request: Request):
 
 @router.get("/signup", response_class=HTMLResponse)
 async def signup(request: Request):
-    return templates.TemplateResponse(request, "signup.html", {"request": request})
+    return RedirectResponse(url="/new/signup", status_code=303)
 
 
 @router.get("/appointments", response_class=HTMLResponse)
 async def appointments(request: Request):
-    return templates.TemplateResponse(request, "appointments.html", {"request": request})
+    return RedirectResponse(url="/appointments", status_code=303)
 
 
 @router.get("/followups", response_class=HTMLResponse)
 async def followups(request: Request):
-    return templates.TemplateResponse(request, "followups.html", {"request": request})
+    return RedirectResponse(url="/followups", status_code=303)
 
 
 @router.get("/schedule", response_class=HTMLResponse)
 async def schedule(request: Request):
-    return templates.TemplateResponse(request, "schedule.html", {"request": request})
+    return RedirectResponse(url="/schedule", status_code=303)
 
 
 @router.get("/add_case", response_class=HTMLResponse)
 async def add_case(request: Request):
-    return templates.TemplateResponse(request, "add_case.html", {"request": request})
+    return RedirectResponse(url="/patients/1/cases/new", status_code=303)
 
 
 @router.get("/view_cases", response_class=HTMLResponse)
 async def view_cases(request: Request):
-    return templates.TemplateResponse(request, "view_cases.html", {"request": request})
+    return RedirectResponse(url="/dashboard", status_code=303)
 
 
 @router.post("/analyze")

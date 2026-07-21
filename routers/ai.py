@@ -101,7 +101,7 @@ def _ensure_ai_feature_access(request: Request, db: Session) -> dict[str, object
         if doctor is not None:
             return {"source": "doctor", "user": doctor}
 
-    raise HTTPException(status_code=303, headers={"Location": "/login"})
+    raise HTTPException(status_code=303, headers={"Location": "/new/login"})
 
 
 def _wrap_ai_safety_response(symptoms: str, result: dict[str, object]) -> dict[str, object]:

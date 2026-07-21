@@ -1,0 +1,60 @@
+{% extends 'new_base.html' %}
+{% block title %}Admin Dashboard | Kash AI{% endblock %}
+{% block head %}
+{{ super() }}
+<script defer src="/static/js/admin.js"></script>
+{% endblock %}
+{% block content %}
+<section class="topbar glass" style="margin-top:20px;">
+    <strong>Kash AI</strong>
+    <div class="toolbar">
+        <span class="chip">{{ user.full_name or 'Admin' }}</span>
+        <a class="chip" href="/new/doctor">Doctor View</a>
+        <a class="chip" href="/patient/dashboard">Patient View</a>
+        <a class="chip" href="/admin/audit">Audit Logs</a>
+    </div>
+</section>
+<section class="card" style="padding:28px;margin-top:18px;">
+    <span class="chip">Admin Workspace</span>
+    <h1 style="margin:14px 0 10px;">Platform oversight, without the clutter.</h1>
+    <p class="muted">Use this console to monitor users, workflow health, and account access across the new frontend.</p>
+    {% include 'partials/export_buttons.html' %}
+</section>
+
+<section class="card" style="padding:28px;margin-top:18px;" data-backup-admin>
+    <div class="topbar" style="padding:0 0 18px;">
+        <div>
+            <span class="chip">Secure Backups</span>
+            <h2 style="margin:12px 0 0;">Encrypted backups and restore</h2>
+        </div>
+        <div class="toolbar">
+            <button type="button" class="btn btn-primary pill-btn" data-backup-create>Create Backup</button>
+            <button type="button" class="btn btn-secondary pill-btn" data-backup-refresh>Refresh List</button>
+        </div>
+    </div>
+
+    <div class="card" style="padding:14px 16px;margin-bottom:18px;background:rgba(255,255,255,.06);">
+        <div class="toolbar" style="justify-content:space-between;align-items:center;">
+            <strong>Backup Status</strong>
+            <span class="chip" data-backup-status>Ready</span>
+        </div>
+        <p class="muted" style="margin:10px 0 0;" data-backup-message>No backup action yet.</p>
+    </div>
+
+    <div class="table-shell">
+        <table class="glass-table" data-backup-table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Created</th>
+                    <th>Size</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody data-backup-list>
+                <tr><td colspan="4" class="muted">Loading backups...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

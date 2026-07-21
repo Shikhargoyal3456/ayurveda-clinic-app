@@ -1,0 +1,27 @@
+{% extends 'new_base.html' %}
+{% block title %}Terms & Conditions | Kash AI{% endblock %}
+{% block content %}
+<section class="card" style="margin-top:24px;padding:28px;line-height:1.7;">
+    <p class="chip">Last updated: {{ current_date if current_date is defined else 'July 2026' }}</p>
+    <h1 style="margin-top:12px;">Terms & Conditions</h1>
+    <p>These terms apply to Kash AI in India and should be read together with our Privacy Policy.</p>
+    <h2>User eligibility</h2>
+    <p>You must be at least 18 years old and legally competent to enter into a contract under Indian law. If you use the app on behalf of a child or dependent, you confirm you have the authority to do so.</p>
+    <h2>Account security</h2>
+    <p>You are responsible for keeping your password, OTPs, and device access secure. Please notify us immediately if you suspect unauthorized use of your account.</p>
+    <h2>Medical disclaimer</h2>
+    <p>Kash AI provides informational support and workflow assistance. AI output is not medical advice, diagnosis, or a substitute for a qualified healthcare professional.</p>
+    <h2>Doctor registration</h2>
+    <p>Doctor users must hold a valid registration from the appropriate Indian medical council and must comply with the Telemedicine Practice Guidelines, 2020.</p>
+    <h2>Prescription rules</h2>
+    <p>Prescriptions must be issued only by qualified doctors and must comply with applicable Indian laws, including the Drugs and Cosmetics Act, 1940 and related rules.</p>
+    <h2>Emergency disclaimer</h2>
+    <p>If you may be experiencing a medical emergency, call 112 immediately or contact the nearest emergency service. Do not rely on the app for emergency care.</p>
+    <h2>Data collection and use</h2>
+    <p>We collect and use data only as needed to provide the service, operate accounts, support diagnosis and treatment workflows, billing, and legal compliance.</p>
+    <h2>Sharing with third parties</h2>
+    <p>We share data with doctors, labs, pharmacies, and other service providers only when needed for care delivery or with your consent, unless required by law.</p>
+    <h2>Governing law and disputes</h2>
+    <p>These terms are governed by the laws of India. Any dispute will be subject to the courts having jurisdiction in Gurugram, Haryana, and, where applicable, Delhi.</p>
+</section>
+{% endblock %}

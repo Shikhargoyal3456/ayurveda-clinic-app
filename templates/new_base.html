@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token if csrf_token is defined else '' }}">
+    <title>{% block title %}Kash AI{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/kash-ai.css">
+    <script defer src="/static/js/new_app.js"></script>
+    <script defer src="/static/js/error_handler.js"></script>
+    <script defer src="/static/js/optimistic_ui.js"></script>
+    <script defer src="/static/js/export.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+<div class="new-shell">
+    {% if user is defined and user %}
+    {% set role_value = user.role.value if user.role is defined and user.role.value is defined else user.role %}
+{% if resolved_session_role == 'patient' and request is defined and request.session is defined and request.session.get('active_profile_avatar') %}
+    {% set avatar_char = request.session.get('active_profile_avatar') %}
+{% else %}
+    {% set avatar_char = (user.full_name or user.email or 'K')[:1] | upper %}
+{% endif %}
+    {% endif %}
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <a href="/new" class="brand-link">
+                    <span class="brand-icon">🩺</span>
+                    <span class="brand-name">Kash AI</span>
+                    <span class="brand-tag">Healthcare intelligence</span>
+                </a>
+            </div>
+
+            <div class="navbar-links" id="navLinks">
+                {% if user is defined and user %}
+                <a class="nav-link" href="/new/dashboard">Dashboard</a>
+                {% if role_value == 'doctor' %}
+                    <a class="nav-link" href="/patients">Patients</a>
+                    <a class="nav-link" href="/appointments">Appointments</a>
+                    <a class="nav-link" href="/new/ai-doctor">AI Doctor</a>
+                    <a class="nav-link" href="/feature-status">Status</a>
+                {% elif role_value == 'patient' %}
+                    <a class="nav-link" href="/patient/dashboard">My Health</a>
+                    <a class="nav-link" href="/new/appointments">Appointments</a>
+                    <a class="nav-link" href="/new/prescriptions">Prescriptions</a>
+                    <a class="nav-link" href="/new/ai-doctor">AI Assistant</a>
+                {% else %}
+                    <a class="nav-link" href="/new/admin">Admin</a>
+                {% endif %}
+                {% else %}
+                <a class="nav-link" href="/new#features">Features</a>
+                <a class="nav-link" href="/telemedicine/book">Consult</a>
+                <a class="nav-link" href="/auth/login">Login</a>
+                <a class="nav-link nav-cta" href="/auth/signup">Get Started</a>
+                {% endif %}
+            </div>
+
+            <div class="navbar-user">
+                {% if user is defined and user %}
+                <div class="user-profile">
+                    <button class="user-menu-btn" type="button" id="userMenuBtn" aria-expanded="false">
+                        <span class="user-avatar">{{ avatar_char }}</span>
+                        <span class="user-name">{{ user.full_name or user.email }}</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="user-dropdown" id="userDropdown">
+                        <div class="dropdown-header">
+                            <div class="dropdown-avatar">{{ avatar_char }}</div>
+                            <div class="dropdown-info">
+                                <strong>{{ user.full_name or user.email }}</strong>
+                                <small>{{ user.email }}</small>
+                                <span class="role-badge">{{ role_value | title }}</span>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="/new/dashboard" class="dropdown-item">Dashboard</a>
+                        <a href="/new/settings" class="dropdown-item">Profile</a>
+                        <a href="/new/settings" class="dropdown-item">Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <form method="post" action="/auth/logout" class="logout-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token | default('') }}">
+                            <button type="submit" class="dropdown-item logout logout-button logout-button--menu">
+                                <span class="avatar-lg avatar-lg--logout">{{ avatar_char }}</span>
+                                <span>Logout</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="auth-buttons">
+                    <a href="/auth/login" class="btn-login">Login</a>
+                    <a href="/auth/signup" class="btn-signup">Sign Up</a>
+                </div>
+                {% endif %}
+            </div>
+
+            <button class="mobile-toggle" id="mobileToggle" type="button" aria-label="Menu" aria-expanded="false">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <main class="kash-container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <span class="footer-icon">🩺</span>
+                <span class="footer-name">Kash AI</span>
+                <span class="footer-tagline">AI-powered healthcare intelligence for modern India.</span>
+            </div>
+            <div class="footer-links">
+                <div class="footer-section">
+                    <h4>Platform</h4>
+                    <a href="/new#features">Features</a>
+                    <a href="/telemedicine/book">Consult Doctors</a>
+                    <a href="/diagnostics/lab-booking">Lab Tests</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <a href="/portal">Business Hub</a>
+                    <a href="/trust/verified-practitioners">Trust Center</a>
+                    <a href="/community/wellness-feed">Community</a>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <a href="/contact">Help Center</a>
+                    <a href="/privacy">Privacy Policy</a>
+                    <a href="/pricing">Pricing</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 KASH AI. All rights reserved.</span>
+            <div class="footer-bottom-links">
+                <a href="/terms">Terms &amp; Conditions</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/contact">Contact</a>
+            </div>
+        </div>
+    </footer>
+</div>
+</body>
+</html>

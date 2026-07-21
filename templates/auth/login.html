@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Kash AI</title>
+    <meta name="description" content="Login to Kash AI and access your patient or business account.">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="icon" type="image/png" href="/static/images/kash-ai-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="/static/css/kash-ai.css?v=20260711-ui-refresh-3">
+    <style>
+    body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(180deg,#041115 0%,#07171d 54%,#03090c 100%);color:#dff7f7}
+    .auth-container{min-height:100vh;display:grid;place-items:center;padding:28px 16px}
+    .auth-card{width:min(100%,640px);background:rgba(4,17,21,.82);border:1px solid rgba(152,255,241,.14);border-radius:32px;padding:34px;box-shadow:0 34px 90px rgba(0,0,0,.34);backdrop-filter:blur(24px) saturate(150%);display:grid;gap:18px}
+    .auth-header{text-align:center;display:grid;gap:8px}
+    .auth-icon{font-size:2.4rem}
+    .auth-header h1{margin:0;color:#f7ffff;font-family:'Plus Jakarta Sans',sans-serif}
+    .muted,.security-detail,.password-policy{color:rgba(223,247,247,.72)}
+    .security-badge,.session-badge,.attempts-indicator,.lockout-warning,.lockout-resolved{border-radius:18px;padding:12px 14px}
+    .security-badge,.session-badge{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(0,194,255,.10),rgba(102,241,214,.08));border:1px solid rgba(152,255,241,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+    .attempts-indicator{display:grid;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(152,255,241,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+    .lockout-mini-badge{display:inline-flex;align-items:center;gap:8px;width:fit-content;padding:8px 12px;border-radius:999px;background:rgba(102,241,214,.12);border:1px solid rgba(102,241,214,.18);color:#9ff8ea;font-size:.88rem;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.12);line-height:1.2}
+    .attempts-bar,.strength-bar{height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+    .attempts-fill,.strength-fill{height:100%;width:100%;border-radius:999px;transition:width .2s ease}
+    .password-strength{display:grid;gap:10px;margin-top:10px}
+    .strength-label{font-weight:700}
+    .rules-list{margin:0;padding-left:18px;display:grid;gap:6px}
+    .rules-list li.passed{color:#66f1d6}.rules-list li.failed{color:#ffd4d0}
+    .smart-login-form{display:grid;gap:16px}
+    .input-group{display:grid;gap:8px}
+    .input-group span,.input-group label{font-weight:600;color:#f7ffff}
+    .input-group input,.input-group select{width:100%;padding:14px 16px;border-radius:16px;border:1px solid rgba(152,255,241,.14);background:rgba(255,255,255,.04);color:#f7ffff;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+    .input-group input:focus,.input-group select:focus{outline:none;border-color:rgba(102,241,214,.75);box-shadow:0 0 0 4px rgba(102,241,214,.12)}
+    .password-wrapper{position:relative}
+    .toggle-password{position:absolute;right:14px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#9ee9ef;cursor:pointer}
+    .form-options{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .checkbox-label,.forgot-link{font-size:.92rem;color:rgba(223,247,247,.72)}
+    .checkbox-label input{accent-color:#66f1d6}
+    .login-btn{width:100%;padding:14px 18px;border-radius:16px;font-weight:700;border:none;cursor:pointer;background:linear-gradient(135deg,#66f1d6,#00c2ff);color:#041115;box-shadow:0 14px 30px rgba(0,194,255,.18);transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease}
+    .login-btn:hover{transform:translateY(-1px);box-shadow:0 18px 36px rgba(0,194,255,.24)}
+    .login-btn:disabled{cursor:not-allowed;opacity:.7;transform:none;box-shadow:none}
+    .divider{display:flex;align-items:center;margin:2px 0;color:rgba(223,247,247,.42);font-size:.86rem}
+    .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(152,255,241,.12)}
+    .divider span{padding:0 14px}
+    .btn-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 16px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(152,255,241,.14);color:#f7ffff;text-decoration:none;font-size:.96rem;font-weight:700;transition:transform .18s ease,background .18s ease,border-color .18s ease}
+    .btn-google:hover{transform:translateY(-1px);background:rgba(255,255,255,.09);border-color:rgba(152,255,241,.28)}
+    .btn-google svg{flex-shrink:0}
+    .security-footer{display:grid;gap:10px;text-align:center}
+    .signup-link a{color:#66f1d6;text-decoration:none;font-weight:700}
+    .captcha-box{padding:12px 14px;border-radius:16px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
+    .lockout-warning,.lockout-resolved{border:1px solid rgba(152,255,241,.12);background:rgba(255,255,255,.04)}
+    .lockout-warning{color:#ffd9d1}
+    .lockout-resolved{color:#a5f3d3}
+    .password-policy{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(152,255,241,.10)}
+    @media (max-width:560px){.auth-card{padding:26px 20px}}
+    </style>
+</head>
+<body>
+<div class="auth-container">
+    <section class="auth-card">
+        <div class="auth-header">
+            <span class="auth-icon">🔐</span>
+            <h1>Login to Kash AI</h1>
+            <p class="muted">Secure access to your Ayurvedic clinic assistant</p>
+        </div>
+        <div class="security-badge"><span>🔒 Secure Connection</span><span>•</span><span>⏱️ Session: {{ session_timeout }} min</span></div>
+        {% if flash %}
+        <div class="captcha-box">{{ flash.message }}</div>
+        {% endif %}
+        <div id="lockoutContainer">
+            {% if locked %}
+            <div class="lockout-warning">⚠️ Too many failed attempts. Please wait for the timer to finish before trying again.</div>
+            {% endif %}
+        </div>
+        <div class="attempts-indicator">
+            <div class="attempts-bar"><div class="attempts-fill" id="attemptsFill" style="width: {{ ((remaining_attempts / 5) * 100) if remaining_attempts is not none else 100 }}%;"></div></div>
+            <span id="attemptsText">{{ remaining_attempts }} attempts remaining before temporary lockout</span>
+            <span class="lockout-mini-badge" id="lockoutMiniBadge" {% if not locked %}style="display:none;"{% endif %}>⏳ Checking lockout status…</span>
+        </div>
+        <form id="loginForm" class="smart-login-form" method="post" action="/auth/login">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <label class="input-group">
+                <span>📧 Email or Username</span>
+                <input type="text" id="identifier" name="identifier" placeholder="Enter your email or username" required>
+            </label>
+            <label class="input-group">
+                <span>🔑 Password</span>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    <button type="button" id="togglePassword" class="toggle-password" aria-label="Toggle password"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </label>
+            <div id="passwordStrengthContainer"></div>
+            <div class="password-policy" id="passwordPolicyText">Password must have: at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.</div>
+            <label class="input-group">
+                <span>I am a</span>
+                <select name="role">
+                    <option value="">Auto-detect</option>
+                    <option value="doctor" {% if preferred_role == 'doctor' %}selected{% endif %}>Doctor</option>
+                    <option value="patient" {% if preferred_role == 'patient' %}selected{% endif %}>Patient</option>
+                </select>
+            </label>
+            <div class="form-options">
+                <label class="checkbox-label"><input type="checkbox" name="remember_me"> Remember me</label>
+                <a href="/auth/forgot-password" class="forgot-link">Forgot Password?</a>
+            </div>
+            {% if show_captcha %}
+            <div class="captcha-box">Extra verification enabled after repeated failed attempts.</div>
+            {% endif %}
+            <button type="submit" class="login-btn" id="loginBtn">🔐 Sign In</button>
+        </form>
+        <div class="divider"><span>or</span></div>
+        <a href="/auth/google/login" class="btn-google">
+            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.28-3.14.76-4.59l-7.98-6.19A23.99 23.99 0 0 0 0 24c0 3.77.87 7.35 2.56 10.56l7.97-5.97z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 5.97C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Sign in with Google
+        </a>
+        <div class="security-footer">
+            <p class="muted">🔒 Your data is encrypted, monitored, and secure.</p>
+            <p class="signup-link">Don't have an account? <a href="/auth/signup">Sign Up</a> →</p>
+        </div>
+    </section>
+</div>
+<script src="/static/js/password_strength.js"></script>
+<script src="/static/js/lockout_timer.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const passwordInput = document.getElementById("password");
+    const strengthContainer = document.getElementById("passwordStrengthContainer");
+    const strengthChecker = new PasswordStrength();
+    const toggleButton = document.getElementById("togglePassword");
+    const lockoutContainer = document.getElementById("lockoutContainer");
+    const remainingAttempts = Number({{ remaining_attempts | tojson }});
+    const lockoutRemaining = Number({{ lockout_remaining | tojson }});
+    const attemptsText = document.getElementById("attemptsText");
+    const attemptsFill = document.getElementById("attemptsFill");
+    const loginBtn = document.getElementById("loginBtn");
+    const lockoutMiniBadge = document.getElementById("lockoutMiniBadge");
+
+    attemptsText.textContent = `${remainingAttempts} attempts remaining before temporary lockout`;
+    attemptsFill.style.width = `${Math.max(0, (remainingAttempts / 5) * 100)}%`;
+
+    const updateLockoutBadge = (secondsRemaining) => {
+        if (!lockoutMiniBadge) return;
+        if (secondsRemaining > 0) {
+            const minutes = Math.floor(secondsRemaining / 60);
+            const seconds = secondsRemaining % 60;
+            lockoutMiniBadge.textContent = `⏳ Try again in ${minutes}:${seconds.toString().padStart(2, "0")}`;
+            lockoutMiniBadge.style.display = "inline-flex";
+        } else {
+            lockoutMiniBadge.textContent = "✅ Lockout cleared";
+            lockoutMiniBadge.style.display = "inline-flex";
+            loginBtn.disabled = false;
+            loginBtn.textContent = "🔐 Sign In";
+            if (attemptsText) {
+                attemptsText.textContent = "You can try signing in again now";
+            }
+            if (attemptsFill) {
+                attemptsFill.style.width = "100%";
+            }
+        }
+    };
+
+    if (lockoutRemaining > 0) {
+        loginBtn.disabled = true;
+        loginBtn.textContent = "Locked temporarily";
+        updateLockoutBadge(lockoutRemaining);
+        const timer = new LockoutTimer(lockoutContainer, lockoutRemaining, updateLockoutBadge);
+        timer.start();
+    }
+
+    passwordInput.addEventListener("input", function () {
+        if (this.value.length > 0) {
+            strengthChecker.render(this.value, strengthContainer);
+        } else {
+            strengthContainer.innerHTML = "";
+        }
+    });
+
+    toggleButton.addEventListener("click", () => {
+        passwordInput.type = passwordInput.type === "password" ? "text" : "password";
+        toggleButton.innerHTML = passwordInput.type === "password" ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
+    });
+});
+</script>
+</body>
+</html>

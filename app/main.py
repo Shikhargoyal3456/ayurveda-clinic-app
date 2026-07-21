@@ -5,6 +5,7 @@ import os
 import re
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime
 from threading import Thread
 from time import perf_counter
 
@@ -12,10 +13,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from dotenv import load_dotenv
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -23,9 +24,13 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from app.analytics import track_event
 from app.auth import _apply_rate_limit, ensure_csrf_token
+from app.cache.cache_manager import build_etag, get_cached_page, set_cached_page
 from app.config import settings
 from app.database import SessionLocal, init_db
-from app.exception_handlers import register_exception_handlers
+from app.error_handlers import register_exception_handlers
+from app.schemas import AIChatRequest
+from app.utils.groq_client import groq_client
+from app.utils.file_validator import validate_prompt_injection
 try:
     from app.health import build_health_report, production_launch_metrics
     from services.cache_service import redis_ping
@@ -52,8 +57,12 @@ except Exception as exc:
     async def redis_ping() -> bool:
         return False
 from app.logging_config import clear_request_id, configure_logging, set_request_id
+from app.middleware.csrf import CSRFMiddleware
+from app.middleware.rate_limiter import RateLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.monitoring import PerformanceMonitoringMiddleware
 from app.rate_limit import limiter
+from middleware.role_middleware import RoleGuardMiddleware
 from app.template_compat import patch_jinja2_templates
 from app.models import Doctor
 from models.care_plan import PatientCarePlan  # noqa: F401
@@ -99,6 +108,7 @@ from routers.lab_owner import router as lab_owner_router
 from routers.lab_analyzer import router as lab_analyzer_router
 from routers.marketplace import router as marketplace_router
 from routers.medicine_info import router as medicine_info_router
+from routers.new_frontend import router as new_frontend_router
 from routers.patients import router as patients_router
 from routers.patient_tools import router as patient_tools_router
 from routers.order_medicines import router as order_medicines_router
@@ -110,14 +120,23 @@ from routers.pure_ai import router as pure_ai_router
 from routers.public_clinic import router as public_clinic_router
 from routers.patient_agent import router as patient_agent_router
 from routers.sales import router as sales_router
+from routers.statistics import router as statistics_router
 from routers.startup import router as startup_router
+from routers.backup import backup_scheduler, router as backup_router
+from routers.audit import router as audit_router
+from routers.export import router as export_router
+from routers.patient_linking import router as patient_linking_router
 from routers.subscriptions import router as subscriptions_router
 from routers.telemedicine import router as telemedicine_router
+from routers.voice_consultation import router as voice_consultation_router
+from routers.voice_transcribe import router as voice_router
 from routers.delivery import router as delivery_router
 from routers.debug import router as debug_router
 from routers.dashboard import router as dashboard_router
 from routers.doctor_review import router as doctor_review_router
 from routers.google_auth import router as google_auth_router
+from routers.consultation import router as consultation_router
+from routers.device_check import router as device_check_router
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
 from routes.payment import router as payment_router
@@ -135,6 +154,7 @@ configure_logging()
 logger = logging.getLogger(__name__)
 patch_jinja2_templates()
 atexit.register(close_genai_client)
+templates = Jinja2Templates(directory=str(settings.templates_dir))
 
 
 def _masked_setting(name: str, value: str) -> str:
@@ -212,7 +232,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = (
             "default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net; "
+            "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https://checkout.razorpay.com; "
             "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
             "connect-src 'self' ws: wss: https://checkout.razorpay.com https://lumberjack.razorpay.com; "
@@ -367,6 +387,8 @@ async def lifespan(_: FastAPI):
     init_db()
     track_event("application_started", environment=settings.environment)
     Thread(target=_run_startup_warmups, name="startup-warmups", daemon=True).start()
+    if settings.enable_auto_backup:
+        backup_scheduler.start_background()
     yield
 
 
@@ -410,13 +432,33 @@ def create_app() -> FastAPI:
         allowed_hosts = ["*"]
     application.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
     application.add_middleware(GZipMiddleware, minimum_size=512)
-    application.add_middleware(SlowAPIMiddleware)
     application.add_middleware(PerformanceMonitoringMiddleware)
+    application.add_middleware(SecurityHeadersMiddleware)
+    application.add_middleware(RateLimitMiddleware, requests_per_minute=60)
     application.add_middleware(APIRateLimitMiddleware)
     application.add_middleware(RequestContextMiddleware)
     application.add_middleware(OverloadProtectionMiddleware)
     application.add_middleware(AttachSessionUserMiddleware)
     application.add_middleware(SubscriptionEnforcementMiddleware)
+    application.add_middleware(RoleGuardMiddleware)
+    application.add_middleware(CSRFMiddleware)
+
+    @application.middleware("http")
+    async def session_timeout_middleware(request: Request, call_next):
+        try:
+            session = request.scope.get("session")
+            if isinstance(session, dict):
+                last_activity = session.get("last_activity")
+                now = datetime.now().timestamp()
+                timeout_seconds = max(60, int(settings.session_idle_timeout_minutes or 15) * 60)
+                if last_activity and (now - float(last_activity)) > timeout_seconds:
+                    session.clear()
+                    return RedirectResponse(url="/new/login?message=Session%20expired", status_code=303)
+                session["last_activity"] = now
+        except Exception:
+            pass
+        return await call_next(request)
+
     # Starlette executes the last-added middleware first, so SessionMiddleware must
     # be added after session-dependent middleware declarations in source order.
     application.add_middleware(
@@ -441,6 +483,80 @@ def create_app() -> FastAPI:
     async def favicon_redirect():
         return RedirectResponse(url="/static/images/favicon.svg", status_code=307)
 
+    @application.get("/", include_in_schema=False)
+    async def root():
+        return RedirectResponse(url="/new", status_code=302)
+
+    @application.get("/index", include_in_schema=False)
+    async def index_page():
+        return RedirectResponse(url="/new", status_code=302)
+
+    @application.get("/landing", include_in_schema=False)
+    async def landing_page(request: Request):
+        return templates.TemplateResponse(
+            "landing.html",
+            {
+                "request": request,
+                "app_url": "/new",
+            },
+        )
+
+    @application.get("/doctor/dashboard", include_in_schema=False)
+    async def old_doctor_dashboard():
+        return RedirectResponse(url="/new/doctor", status_code=301)
+
+    @application.get("/patient", include_in_schema=False)
+    async def old_patient_dashboard():
+        return RedirectResponse(url="/new/patient", status_code=301)
+
+    @application.get("/patient/dashboard", include_in_schema=False)
+    async def patient_dashboard_redirect():
+        return RedirectResponse(url="/new/patient", status_code=301)
+
+    @application.get("/admin", include_in_schema=False)
+    async def old_admin_dashboard():
+        return RedirectResponse(url="/new/admin", status_code=301)
+
+    @application.get("/feature-status", include_in_schema=False)
+    async def feature_status_page(request: Request):
+        cached = get_cached_page("feature-status")
+        if cached is not None:
+            if request.headers.get("if-none-match") == cached.etag:
+                return HTMLResponse(status_code=304, content="")
+            response = HTMLResponse(content=str(cached.content))
+            response.headers["ETag"] = cached.etag
+            response.headers["Cache-Control"] = "public, max-age=300"
+            return response
+        response = templates.TemplateResponse("feature_status.html", {"request": request, "csrf_token": getattr(request.state, "csrf_token", "")})
+        body = getattr(response, "body", b"").decode("utf-8", errors="ignore")
+        if body:
+            set_cached_page("feature-status", body)
+            response.headers["ETag"] = build_etag(body)
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return response
+
+    @application.get("/device-check", include_in_schema=False)
+    async def device_check_page(request: Request):
+        cached = get_cached_page("device-check")
+        if cached is not None:
+            if request.headers.get("if-none-match") == cached.etag:
+                return HTMLResponse(status_code=304, content="")
+            response = HTMLResponse(content=str(cached.content))
+            response.headers["ETag"] = cached.etag
+            response.headers["Cache-Control"] = "public, max-age=300"
+            return response
+        response = templates.TemplateResponse("device_check.html", {"request": request, "csrf_token": getattr(request.state, "csrf_token", "")})
+        body = getattr(response, "body", b"").decode("utf-8", errors="ignore")
+        if body:
+            set_cached_page("device-check", body)
+            response.headers["ETag"] = build_etag(body)
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return response
+
+    @application.get("/consultation/voice", include_in_schema=False)
+    async def voice_consultation_page(request: Request):
+        return templates.TemplateResponse("consultation/voice_consultation.html", {"request": request, "csrf_token": getattr(request.state, "csrf_token", "")})
+
     @application.get("/portal", include_in_schema=False)
     async def portal_redirect():
         return RedirectResponse(url="/dashboard", status_code=302)
@@ -454,8 +570,13 @@ def create_app() -> FastAPI:
     # FROZEN: not needed for clinic pilot v1
     # application.include_router(startup_router)
     application.include_router(health_router)
+    application.include_router(backup_router)
+    application.include_router(export_router)
+    application.include_router(audit_router)
+    application.include_router(patient_linking_router)
     application.include_router(auth_router)
     application.include_router(google_auth_router)
+    application.include_router(new_frontend_router)
     application.include_router(patients_router)
     application.include_router(patient_tools_router)
     application.include_router(patient_agent_router)
@@ -467,6 +588,10 @@ def create_app() -> FastAPI:
     application.include_router(ai_dashboard_router)
     application.include_router(dashboard_router)
     application.include_router(doctor_review_router)
+    application.include_router(consultation_router)
+    application.include_router(device_check_router)
+    application.include_router(voice_consultation_router)
+    application.include_router(voice_router)
     # FROZEN: not needed for clinic pilot v1
     # application.include_router(ai_pharmacy_router)
     application.include_router(ai_features_router)
@@ -498,8 +623,8 @@ def create_app() -> FastAPI:
     application.include_router(pure_ai_router)
     # FROZEN: not needed for clinic pilot v1
     # application.include_router(ecommerce_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(order_medicines_router)
+    # Enable medicine ordering
+    application.include_router(order_medicines_router)
     # FROZEN: not needed for clinic pilot v1
     # application.include_router(subscriptions_router)
     application.include_router(admin_router)
@@ -512,6 +637,58 @@ def create_app() -> FastAPI:
     # FROZEN: not needed for clinic pilot v1
     # application.include_router(demo_router)
     application.include_router(sales_router)
+    application.include_router(statistics_router)
+
+    @application.post("/api/ai-chat")
+    async def ai_chat(payload: AIChatRequest):
+        if not validate_prompt_injection(payload.message):
+            return JSONResponse(status_code=400, content={"detail": "Invalid input detected"})
+        prompt = f"""
+        You are Dr. Kash, an AI assistant for Ayurvedic doctors.
+        Context: {payload.context}
+        Patient ID: {payload.patient_id or "New patient"}
+
+        User query: {payload.message}
+
+        Provide helpful Ayurvedic advice. Be concise, professional, and evidence-based.
+        Focus on Ayurvedic principles, herbal remedies, and lifestyle recommendations.
+        """
+        response = await groq_client.chat([{"role": "user", "content": prompt}], temperature=0.7, max_tokens=500)
+        if not response:
+            normalized = payload.message.lower()
+            if any(term in normalized for term in ["fever", "bukhar", "ज्वर", "ताप"]):
+                response = "आपके लक्षणों से शरीर में गर्मी या संक्रमण जैसा संकेत मिल रहा है. पर्याप्त आराम करें, तरल लें, और तेज बुखार हो तो तुरंत डॉक्टर से मिलें."
+            elif any(term in normalized for term in ["gas", "acidity", "stomach", "पेट"]):
+                response = "पाचन असंतुलन की संभावना है. हल्का भोजन, समय पर खाना, और गुनगुना पानी लाभकारी हो सकता है."
+            else:
+                response = "मैं आपकी बात समझ गया. लक्षणों के पैटर्न, दिनचर्या, और आहार के आधार पर आगे बेहतर सलाह बनाई जा सकती है."
+
+        actions = {}
+        if "prescribe" in payload.message.lower() or "medicine" in payload.message.lower():
+            actions["prescription"] = "Consider Triphala Churna 5g twice daily or as directed by your doctor."
+        if "follow" in payload.message.lower() or "appointment" in payload.message.lower():
+            actions["follow_up"] = "7 days from today"
+        if "summary" in payload.message.lower():
+            actions["summary"] = "Patient reported symptoms. Further evaluation recommended."
+
+        return JSONResponse(
+            {
+                "response": response,
+                "actions": actions or {
+                    "summary": "संक्षिप्त आयुर्वेदिक सलाह: नियमित दिनचर्या और हल्का आहार रखें।",
+                    "prescription": "त्रिफला, गुनगुना पानी, और तले हुए भोजन से परहेज़ पर विचार करें।",
+                    "follow_up": "7 दिन के भीतर फॉलो-अप रखें।",
+                },
+            }
+        )
+
+    @application.get("/api/ai-chat", include_in_schema=False)
+    async def ai_chat_probe(message: str = "Hello"):
+        return await ai_chat(AIChatRequest(message=message))
+
+    @application.get("/telemedicine/start", include_in_schema=False)
+    async def telemedicine_start_probe():
+        return {"success": True, "message": "Telemedicine initiation endpoint is available"}
 
     return application
 

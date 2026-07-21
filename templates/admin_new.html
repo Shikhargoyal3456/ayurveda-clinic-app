@@ -3,7 +3,7 @@
 {% set user_name = doctor.full_name or doctor.username or "Admin" %}
 {% set user_role = "System oversight" %}
 {% set avatar_label = "AD" %}
-{% set hide_header = true %}
+{% set hide_header = false %}
 {% set hide_footer = true %}
 {% set show_sidebar = false %}
 
@@ -11,10 +11,6 @@
 
 {% block header_actions %}
 <a href="/dashboard" class="btn btn-outline-dark btn-sm">Clinic Dashboard</a>
-<form method="post" action="/auth/logout" style="display:inline;">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
-  <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
-</form>
 {% endblock %}
 
 {% block page %}

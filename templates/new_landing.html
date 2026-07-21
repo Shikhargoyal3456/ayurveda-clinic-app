@@ -1,0 +1,426 @@
+{% extends "new_base.html" %}
+
+{% block title %}Kash AI - AI-Powered Ayurvedic Healthcare{% endblock %}
+
+{% block content %}
+<div class="landing-wrapper">
+    <section class="landing-hero" id="features">
+        <div class="landing-hero-content">
+            <h1>AI-Powered Ayurvedic Healthcare</h1>
+            <p class="landing-hero-subtitle">Speak Hindi, AI writes. Save 2+ hours daily.</p>
+            <p class="landing-hero-description">
+                Kash AI gives doctors a calmer clinical workflow, faster documentation,
+                and a patient experience that feels premium from the first tap.
+            </p>
+            <div class="landing-hero-buttons">
+                <a href="/auth/signup" class="landing-btn-primary">Start Free Trial</a>
+                <a href="/new/ai-doctor" class="landing-btn-secondary">Watch Demo</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-features-section">
+        <h2 class="landing-section-title">Why teams switch</h2>
+        <div class="landing-features-grid">
+            <article class="landing-feature-card">
+                <div class="landing-feature-icon">🎤</div>
+                <h3>Voice-First Intake</h3>
+                <p>Dictate notes in Hindi or English and save time.</p>
+            </article>
+            <article class="landing-feature-card">
+                <div class="landing-feature-icon">🤖</div>
+                <h3>AI Clinical Support</h3>
+                <p>Generate cases, prescriptions, and follow-ups faster.</p>
+            </article>
+            <article class="landing-feature-card">
+                <div class="landing-feature-icon">📱</div>
+                <h3>WhatsApp-Ready Journeys</h3>
+                <p>Share care plans instantly through WhatsApp-ready flows.</p>
+            </article>
+            <article class="landing-feature-card">
+                <div class="landing-feature-icon">🚨</div>
+                <h3>Emergency Detection</h3>
+                <p>AI detects critical symptoms and alerts doctors.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="landing-roles-section" id="consult">
+        <div class="landing-roles-grid">
+            <article class="landing-role-card">
+                <h2>For Doctors</h2>
+                <p class="landing-role-subtitle">Built for clinical speed</p>
+                <ul class="landing-role-features">
+                    <li>Dictate notes in Hindi or English and save time.</li>
+                    <li>Generate cases, prescriptions, and follow-ups faster.</li>
+                    <li>Keep patient context organized in one secure workspace.</li>
+                    <li>Share care plans instantly through WhatsApp-ready flows.</li>
+                </ul>
+            </article>
+            <article class="landing-role-card">
+                <h2>For Patients</h2>
+                <p class="landing-role-subtitle">Simple, calm care access</p>
+                <ul class="landing-role-features">
+                    <li>Book appointments without calling the clinic.</li>
+                    <li>View prescriptions and care plans anytime.</li>
+                    <li>Ask AI health questions in a friendly chat.</li>
+                    <li>Track health history and follow-ups in one place.</li>
+                </ul>
+            </article>
+        </div>
+    </section>
+
+    <section class="landing-stats-section">
+        <div class="landing-stats-grid">
+            <div class="landing-stat-item">
+                <span class="landing-stat-number">70%</span>
+                <span class="landing-stat-label">Less Typing</span>
+            </div>
+            <div class="landing-stat-item">
+                <span class="landing-stat-number">2+ Hours</span>
+                <span class="landing-stat-label">Saved per doctor</span>
+            </div>
+            <div class="landing-stat-item">
+                <span class="landing-stat-number">800k+</span>
+                <span class="landing-stat-label">Doctors scale-ready</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="landing-cta">
+        <h2>Clear Calls to Action</h2>
+        <div class="landing-cta-buttons">
+            <a href="/auth/login" class="landing-btn-primary">Login</a>
+            <a href="/auth/signup" class="landing-btn-secondary">Create Account</a>
+            <a href="/new/ai-doctor" class="landing-btn-outline">Try AI Doctor</a>
+        </div>
+    </section>
+</div>
+
+<style>
+.landing-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 60px 24px 40px;
+}
+
+.landing-hero,
+.landing-cta,
+.landing-feature-card,
+.landing-role-card,
+.landing-stat-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
+    backdrop-filter: blur(18px);
+}
+
+.landing-hero {
+    text-align: center;
+    padding: 60px 40px 50px;
+    margin-bottom: 60px;
+    border-radius: 24px;
+}
+
+.landing-hero-content {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.landing-hero-content h1 {
+    margin: 0 0 16px;
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1.08;
+    font-weight: 800;
+    letter-spacing: 0;
+    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.landing-hero-subtitle {
+    margin: 0 0 12px;
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.landing-hero-description {
+    max-width: 640px;
+    margin: 0 auto 30px;
+    font-size: 1.08rem;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.64);
+}
+
+.landing-hero-buttons,
+.landing-cta-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.landing-features-section,
+.landing-roles-section,
+.landing-stats-section {
+    margin-bottom: 60px;
+}
+
+.landing-section-title {
+    margin: 0 0 40px;
+    text-align: center;
+    font-size: 2rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.landing-features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.landing-feature-card {
+    min-height: 208px;
+    padding: 30px 20px;
+    border-radius: 16px;
+    text-align: center;
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.landing-feature-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(79, 70, 229, 0.36);
+}
+
+.landing-feature-icon {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 2.35rem;
+    line-height: 1;
+}
+
+.landing-feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.05rem;
+    line-height: 1.3;
+}
+
+.landing-feature-card p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.landing-roles-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px;
+}
+
+.landing-role-card {
+    padding: 40px;
+    border-radius: 16px;
+}
+
+.landing-role-card h2 {
+    margin: 0 0 6px;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+.landing-role-subtitle {
+    margin: 0 0 18px;
+    color: rgba(255, 255, 255, 0.56);
+    font-size: 0.95rem;
+}
+
+.landing-role-features {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.landing-role-features li {
+    position: relative;
+    padding-left: 24px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 0.96rem;
+    line-height: 1.55;
+}
+
+.landing-role-features li::before {
+    content: "";
+    position: absolute;
+    top: 0.68em;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #818cf8;
+}
+
+.landing-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.landing-stat-item {
+    padding: 30px 20px;
+    border-radius: 16px;
+    text-align: center;
+}
+
+.landing-stat-number {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 2.5rem;
+    line-height: 1;
+    font-weight: 800;
+    background: linear-gradient(135deg, #6d5dfc 0%, #a5b4fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.landing-stat-label {
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 1rem;
+}
+
+.landing-cta {
+    padding: 50px 40px;
+    border-radius: 24px;
+    text-align: center;
+}
+
+.landing-cta h2 {
+    margin: 0 0 22px;
+    font-size: 1.8rem;
+    line-height: 1.2;
+    letter-spacing: 0;
+}
+
+.landing-btn-primary,
+.landing-btn-secondary,
+.landing-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    padding: 14px 36px;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.landing-btn-primary {
+    background: linear-gradient(135deg, #6d5dfc, #8b5cf6);
+}
+
+.landing-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.28);
+}
+
+.landing-btn-secondary {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.landing-btn-secondary:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.landing-btn-outline {
+    background: transparent;
+    border: 1px solid rgba(129, 140, 248, 0.85);
+}
+
+.landing-btn-outline:hover {
+    transform: translateY(-2px);
+    background: rgba(129, 140, 248, 0.12);
+}
+
+@media (max-width: 1024px) {
+    .landing-features-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .landing-wrapper {
+        padding: 30px 16px 24px;
+    }
+
+    .landing-hero {
+        padding: 40px 20px 32px;
+        margin-bottom: 44px;
+    }
+
+    .landing-hero-subtitle {
+        font-size: 1.15rem;
+    }
+
+    .landing-hero-description {
+        font-size: 1rem;
+    }
+
+    .landing-hero-buttons,
+    .landing-cta-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .landing-features-section,
+    .landing-roles-section,
+    .landing-stats-section {
+        margin-bottom: 44px;
+    }
+
+    .landing-roles-grid,
+    .landing-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-role-card,
+    .landing-cta {
+        padding: 28px 22px;
+    }
+
+    .landing-section-title {
+        font-size: 1.65rem;
+        margin-bottom: 28px;
+    }
+}
+
+@media (max-width: 520px) {
+    .landing-features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .landing-btn-primary,
+    .landing-btn-secondary,
+    .landing-btn-outline {
+        width: 100%;
+    }
+
+    .landing-stat-number {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}

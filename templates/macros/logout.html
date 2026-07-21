@@ -1,0 +1,6 @@
+{% macro logout_button(csrf_token) %}
+<form action="/auth/logout" method="post" class="logout-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit" class="dropdown-item logout">Logout</button>
+</form>
+{% endmacro %}

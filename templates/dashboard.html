@@ -8,7 +8,7 @@
 {% block title %}Kash AI | Clinic Workspace{% endblock %}
 
 {% block header_actions %}
-<a href="/ai-doctor-live" class="btn btn-outline-dark btn-sm">AI consultation</a>
+<a href="/new/ai-doctor" class="btn btn-outline-dark btn-sm">AI consultation</a>
 <a href="#add-patient" class="btn btn-primary btn-sm">New patient</a>
 {% endblock %}
 
@@ -22,7 +22,7 @@
                 <a href="#add-patient"><i class="fa-solid fa-user-plus"></i>New patient</a>
                 <a href="/appointments"><i class="fa-solid fa-calendar-days"></i>Appointments</a>
                 <a href="/followups"><i class="fa-solid fa-clock-rotate-left"></i>Follow-ups</a>
-                <a href="/ai-doctor-live"><i class="fa-solid fa-wave-square"></i>AI consultation</a>
+                <a href="/new/ai-doctor"><i class="fa-solid fa-wave-square"></i>AI consultation</a>
                 <a href="/ai-analyzer"><i class="fa-solid fa-stethoscope"></i>AI analyzer</a>
                 <a href="/emr/doctor-dashboard"><i class="fa-solid fa-notes-medical"></i>EMR suite</a>
                 <a href="/medicines"><i class="fa-solid fa-capsules"></i>Medicines</a>
@@ -50,10 +50,6 @@
             </div>
             <div class="inline-actions">
                 <span class="badge text-bg-light">{{ clinic_name }}</span>
-                <form method="post" action="/auth/logout" style="display:inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token or request.session.get('_csrf_token', '') }}">
-                    <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
-                </form>
             </div>
         </section>
 
@@ -122,6 +118,16 @@
             <div class="stack-list" id="aiRiskList">
                 <div class="stack-item"><p class="mb-0">Kash AI is reviewing follow-up patterns and repeated symptom clusters.</p></div>
             </div>
+        </section>
+        <section class="card mt-4">
+            <div class="page-header mb-3">
+                <div>
+                    <p class="eyebrow">Churn radar</p>
+                    <h2 class="h4 mb-0">Patients at risk of dropping off</h2>
+                </div>
+                <button type="button" class="btn btn-outline-dark btn-sm" id="refreshChurnBtn">Refresh</button>
+            </div>
+            <div id="churnWidget">Loading churn prediction...</div>
         </section>
 
         <section class="hero-card ai-dashboard-shell" id="legacyAiHero">
@@ -434,6 +440,7 @@
 
 {% block extra_scripts %}
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+<script defer src="{{ url_for('static', path='js/dashboard.js') }}"></script>
 <script>
 const legacyDoctorId = {{ ai_dashboard_doctor_id | default(doctor.id) | tojson }};
 const patientAgentDoctorId = {{ doctor.id | tojson }};
@@ -846,6 +853,30 @@ window.addEventListener("DOMContentLoaded", () => {
         assistantInput.value = "";
         void handleAssistantQuery(query);
     });
+
+    const churnWidget = document.getElementById("churnWidget");
+    const refreshChurnBtn = document.getElementById("refreshChurnBtn");
+    const renderChurn = (patients) => {
+        if (!churnWidget) return;
+        churnWidget.innerHTML = patients.length ? patients.map((patient) => `
+            <div class="stack-item d-flex justify-content-between align-items-center gap-3">
+                <div><strong>${patient.patient_name}</strong><p class="mb-0">${patient.days_since_last_visit} days since last visit</p></div>
+                <a class="btn btn-outline-success btn-sm" href="mailto:${patient.email || ''}">Send Reminder</a>
+            </div>
+        `).join("") : `<div class="stack-item"><p class="mb-0">No at-risk patients right now.</p></div>`;
+    };
+    const loadChurn = async () => {
+        if (!churnWidget) return;
+        try {
+            const response = await fetch("/api/predict-churn", { credentials: "same-origin" });
+            const payload = await response.json();
+            renderChurn(payload.patients || []);
+        } catch (error) {
+            churnWidget.textContent = "Churn prediction is unavailable right now.";
+        }
+    };
+    refreshChurnBtn?.addEventListener("click", loadChurn);
+    void loadChurn();
 });
 </script>
 <style>

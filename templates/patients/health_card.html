@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% set active_page = 'profile' %}
+{% set user_name = doctor.full_name or doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = ((doctor.full_name or doctor.username or 'DR')[:2]) | upper %}
+
+{% block title %}Health Card{% endblock %}
+
+{% block header_actions %}
+<button type="button" class="btn btn-outline-dark btn-sm" onclick="window.print()">Print</button>
+<button type="button" class="btn btn-primary btn-sm" id="shareHealthCard">Share Link</button>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    <article class="table-panel" style="max-width:900px; margin:0 auto;">
+        <div class="page-header mb-4">
+            <div>
+                <p class="eyebrow">Shareable patient card</p>
+                <h1>{{ patient.name }}</h1>
+                <p class="mb-0">{{ patient.age }} yrs · {{ patient.gender }} · {{ clinic_name }}</p>
+            </div>
+            <img src="{{ qr_url }}" alt="Health card QR" style="width:160px; height:160px; border:1px solid #d9e7ef; border-radius:18px; background:#fff;" loading="lazy">
+        </div>
+        <div class="dashboard-grid">
+            <div class="stack-item">
+                <strong>Prakriti Type</strong>
+                <p class="mb-0">{{ passport.prakriti }}</p>
+            </div>
+            <div class="stack-item">
+                <strong>Current Medications</strong>
+                <p class="mb-0">{{ passport.ongoingMedications|map(attribute='name')|join(', ') if passport.ongoingMedications else 'None recorded' }}</p>
+            </div>
+            <div class="stack-item">
+                <strong>Allergies</strong>
+                <p class="mb-0">{{ passport.allergies|join(', ') if passport.allergies else 'None recorded' }}</p>
+            </div>
+            <div class="stack-item">
+                <strong>Doctor & Clinic</strong>
+                <p class="mb-0">{{ doctor_name }} · {{ clinic_name }}</p>
+            </div>
+        </div>
+    </article>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById("shareHealthCard")?.addEventListener("click", async function () {
+    try {
+        await navigator.clipboard.writeText({{ card_url|tojson }});
+        window.showToast?.("Health card link copied.", "success");
+    } catch (_error) {
+        window.showErrorToast?.("Could not copy the health card link.");
+    }
+});
+</script>
+{% endblock %}

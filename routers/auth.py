@@ -60,6 +60,7 @@ from app.portal_auth import (
 )
 from services.profile_service import active_profiles_for_user, ensure_default_profile, set_active_profile_session
 from app.security import hash_refresh_token, invalidate_all_sessions_for_doctor, invalidate_current_session, issue_session_tokens, validate_password_complexity
+from app.security import clear_failed_login, login_attempt_count, login_lockout_remaining_seconds, record_failed_login
 from app.models import Doctor
 from models.user import DoctorProfile, User, UserRole
 from services.email_service import EmailService
@@ -314,7 +315,7 @@ def _render_smart_login_page(csrf_token: str, preferred_role: str = "", flash: d
         <div class="lookup-card workspace-card">
             <strong>Doctor clinic or admin workspace?</strong>
             <p>If you use the legacy clinic dashboard or your saved admin ID only works there, continue with the secure workspace login.</p>
-            <a class="workspace-link" href="/login">Open Doctor / Admin Workspace</a>
+            <a class="workspace-link" href="/auth/login">Open Doctor / Admin Workspace</a>
         </div>
         <div class="lookup-card">
             <strong>Forgot account type?</strong>
@@ -401,7 +402,13 @@ def _logout_redirect_for_role(role: str | None) -> str:
 
 
 def _session_logout_redirect(request: Request) -> str:
-    return "/auth/login"
+    return "/"
+
+
+def _clear_auth_cookies(response: RedirectResponse) -> RedirectResponse:
+    for cookie_name in ("session", "session_token", "csrf_token", "access_token", "refresh_token"):
+        response.delete_cookie(cookie_name)
+    return response
 
 
 def _preview_payload(extra: dict[str, str]) -> dict[str, str]:
@@ -509,7 +516,11 @@ def _portal_redirect_for_user(request: Request, user: User) -> str:
     role_value = user.role.value if isinstance(user.role, UserRole) else str(user.role)
     if role_value == UserRole.doctor.value:
         doctor_dashboard = str(request.session.get("portal_doctor_dashboard") or "").strip()
-        return doctor_dashboard or dashboard_path_for_role(role_value)
+        return "/new/doctor"
+    if role_value == UserRole.patient.value:
+        return "/patient/dashboard"
+    if role_value == UserRole.admin.value:
+        return "/new/admin"
     return dashboard_path_for_role(role_value)
 
 
@@ -616,8 +627,17 @@ def _try_legacy_workspace_login(request: Request, db: Session, identifier: str, 
     return RedirectResponse(url=_legacy_dashboard_path(doctor), status_code=303)
 
 
-def _complete_portal_login(request: Request, db: Session, user: User, remember_me: bool, audit_name: str = "portal_login_success"):
+def _complete_portal_login(
+    request: Request,
+    db: Session,
+    user: User,
+    remember_me: bool,
+    audit_name: str = "portal_login_success",
+    login_identifier: str | None = None,
+):
     _clear_failed_login(user, db)
+    if login_identifier:
+        clear_failed_login(login_identifier)
     user.last_login = datetime.now(timezone.utc)
     commit_with_retry(db)
     # Portal accounts and the legacy doctor/admin workspace use different
@@ -626,8 +646,15 @@ def _complete_portal_login(request: Request, db: Session, user: User, remember_m
     invalidate_current_session(request)
     clear_portal_session(request)
     create_portal_session(request, user, remember_me=remember_me)
+    request.session["role"] = user.role.value
     _activate_linked_workspace_session(request, db, user)
-    write_audit_event(audit_name, request, user_id=user.id, role=user.role.value)
+    write_audit_event(
+        audit_name,
+        request,
+        user_id=user.id,
+        role=user.role.value,
+        client_ip=request.client.host if request.client else "unknown",
+    )
     track_event("portal_login", role=user.role.value, user_id=user.id)
     redirect_url = dashboard_path_for_role(user.role.value)
     if user.role == UserRole.doctor:
@@ -645,10 +672,22 @@ def _complete_portal_login(request: Request, db: Session, user: User, remember_m
         ensure_default_profile(db, user)
         profiles = active_profiles_for_user(db, user.id)
         if len(profiles) > 1:
-            redirect_url = "/profiles/select"
+            redirect_url = "/patient/dashboard"
         elif profiles:
             set_active_profile_session(request, profiles[0])
-    logger.info("portal_login_success email=%s role=%s redirect=%s", user.email, user.role.value, redirect_url)
+        else:
+            redirect_url = "/patient/dashboard"
+    elif user.role == UserRole.admin:
+        redirect_url = "/new/admin"
+    elif user.role == UserRole.doctor:
+        redirect_url = "/new/doctor"
+    logger.info(
+        "portal_login_success email=%s role=%s redirect=%s ip=%s",
+        user.email,
+        user.role.value,
+        redirect_url,
+        request.client.host if request.client else "unknown",
+    )
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
@@ -662,8 +701,8 @@ def _increment_failed_login(user: User | None, db: Session) -> None:
     if user is None:
         return
     user.failed_login_attempts = int(user.failed_login_attempts or 0) + 1
-    if user.failed_login_attempts >= 8:
-        user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+    if user.failed_login_attempts >= 10:
+        user.locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
     commit_with_retry(db)
 
 
@@ -736,10 +775,7 @@ def login_page(request: Request, db: Session = Depends(get_db)):
         doctor = getattr(request.state, "user", None)
         redirect_url = _legacy_dashboard_path(doctor) if isinstance(doctor, Doctor) else "/dashboard"
         return RedirectResponse(url=redirect_url, status_code=303)
-    return _render_smart_login_page(
-        ensure_csrf_token(request),
-        flash=pop_flash(request),
-    )
+    return RedirectResponse(url="/auth/login", status_code=303)
 
 
 @router.post("/login")
@@ -779,7 +815,7 @@ def login(
     doctor = db.query(Doctor).filter(Doctor.username == normalized).first()
     if doctor is not None and doctor.locked_until and doctor.locked_until > datetime.now(timezone.utc):
         set_flash(request, "Account temporarily locked after repeated failures.", "danger")
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/auth/login", status_code=303)
 
     if doctor is None or not verify_password(password, doctor.password_hash):
         message = register_login_failure(doctor, normalized, request, db if doctor is not None else None)
@@ -787,7 +823,7 @@ def login(
         if "invalid username or password" in message.lower():
             message = "Invalid username or password. Please try again."
         set_flash(request, message, "danger")
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/auth/login", status_code=303)
 
     if needs_password_rehash(doctor.password_hash):
         doctor.password_hash = hash_password(password)
@@ -807,19 +843,16 @@ def login(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
+@router.get("/auth/signup")
 @router.get("/signup")
 @router.get("/register")
 def signup_page(request: Request, db: Session = Depends(get_db)):
     if not _signup_allowed(db):
         set_flash(request, "Public signup is disabled. Contact your administrator.", "warning")
-        return RedirectResponse(url="/login", status_code=303)
-    return render_template(templates, request,
-        "signup.html",
-        {
-            "request": request,
-            "flash": pop_flash(request),
-            "csrf_token": ensure_csrf_token(request),
-        },
+        return RedirectResponse(url="/auth/login", status_code=303)
+    return templates.TemplateResponse(
+        "auth/signup.html",
+        {"request": request, "csrf_token": ensure_csrf_token(request)},
     )
 
 
@@ -828,7 +861,7 @@ def signup_page(request: Request, db: Session = Depends(get_db)):
 def signup(
     request: Request,
     username: str = Form(..., min_length=3, max_length=120),
-    password: str = Form(..., min_length=10, max_length=256),
+    password: str = Form(..., min_length=8, max_length=256),
     full_name: str = Form("", max_length=160),
     specialty: str = Form("ayurveda"),
     selected_plan: str = Form(""),
@@ -838,19 +871,19 @@ def signup(
     if not _signup_allowed(db):
         write_audit_event("signup_blocked", request, username=username.strip().lower(), reason="public_signup_disabled")
         set_flash(request, "Public signup is disabled.", "danger")
-        return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/auth/login", status_code=303)
 
     complexity_errors = validate_password_complexity(password)
     if complexity_errors:
         set_flash(request, " ".join(complexity_errors), "danger")
-        return RedirectResponse(url="/signup", status_code=303)
+        return RedirectResponse(url="/auth/signup", status_code=303)
 
     normalized = normalized_username(username.strip())
     existing = db.query(Doctor).filter(Doctor.username == normalized).first()
     if existing:
         write_audit_event("signup_failed", request, username=normalized, reason="username_exists")
         set_flash(request, "Username already exists.", "danger")
-        return RedirectResponse(url="/signup", status_code=303)
+        return RedirectResponse(url="/auth/signup", status_code=303)
 
     valid_specialties = {"ayurveda", "modern_medicine", "homeopathy", "dental", "physiotherapy"}
     if specialty not in valid_specialties:
@@ -873,7 +906,7 @@ def signup(
     if selected_plan.strip():
         request.session["selected_plan"] = selected_plan.strip().lower()
     set_flash(request, "Clinic account created successfully.", "success")
-    return RedirectResponse(url="/dashboard", status_code=303)
+    return RedirectResponse(url="/new/doctor", status_code=303)
 
 
 @router.get("/auth/login/{role_slug}")
@@ -885,10 +918,25 @@ def portal_login_page(request: Request, role_slug: str, db: Session = Depends(ge
     user = get_portal_user(request, db)
     if user is not None:
         return RedirectResponse(url=_portal_redirect_for_user(request, user), status_code=303)
-    return _render_smart_login_page(
-        csrf_token=ensure_csrf_token(request),
-        preferred_role=canonical_slug,
-        flash=pop_flash(request),
+    client_ip = request.client.host if request.client else "unknown"
+    login_identifier = f"login:{client_ip}"
+    failed_attempts = login_attempt_count(login_identifier)
+    lockout_remaining = login_lockout_remaining_seconds(login_identifier, limit=10)
+    return render_template(
+        templates,
+        request,
+        "auth/login.html",
+        {
+            "request": request,
+            "csrf_token": ensure_csrf_token(request),
+            "preferred_role": canonical_slug,
+            "flash": pop_flash(request),
+            "remaining_attempts": max(0, 5 - failed_attempts),
+            "lockout_remaining": lockout_remaining,
+            "locked": lockout_remaining > 0,
+            "session_timeout": settings.session_idle_timeout_minutes,
+            "show_captcha": failed_attempts >= 3,
+        },
     )
 
 
@@ -898,10 +946,24 @@ def smart_login_page(request: Request, role: str | None = Query(default=None), d
     if user is not None:
         return RedirectResponse(url=_portal_redirect_for_user(request, user), status_code=303)
     preferred_role = role_to_slug(slug_to_role(role)) if role else ""
-    return _render_smart_login_page(
-        csrf_token=ensure_csrf_token(request),
-        preferred_role=preferred_role,
-        flash=pop_flash(request),
+    client_ip = request.client.host if request.client else "unknown"
+    failed_attempts = login_attempt_count(f"login:{client_ip}")
+    lockout_remaining = login_lockout_remaining_seconds(f"login:{client_ip}", limit=10)
+    return render_template(
+        templates,
+        request,
+        "auth/login.html",
+        {
+            "request": request,
+            "csrf_token": ensure_csrf_token(request),
+            "preferred_role": preferred_role,
+            "flash": pop_flash(request),
+            "remaining_attempts": max(0, 5 - failed_attempts),
+            "lockout_remaining": lockout_remaining,
+            "locked": lockout_remaining > 0,
+            "session_timeout": settings.session_idle_timeout_minutes,
+            "show_captcha": failed_attempts >= 3,
+        },
     )
 
 
@@ -922,6 +984,8 @@ def portal_login(
     users = [_find_portal_user(db, identifier, chosen_role)] if chosen_role else _find_portal_users(db, identifier)
     users = [user for user in users if user is not None]
     matched_users = [user for user in users if verify_user_password(user, password)]
+    client_ip = request.client.host if request.client else "unknown"
+    ip_key = f"login:{client_ip}"
 
     if not users or not matched_users:
         if chosen_role in {"", UserRole.doctor.value}:
@@ -932,7 +996,16 @@ def portal_login(
         target = f"/auth/login/{role_to_slug(chosen_role)}" if chosen_role else "/auth/login"
         for user in users:
             _increment_failed_login(user, db)
-        write_audit_event("portal_login_failed", request, identifier=normalize_identifier(identifier), role=chosen_role or "auto")
+        record_failed_login(ip_key)
+        request.session["failed_login_attempts"] = login_attempt_count(ip_key)
+        request.session["lockout_remaining_seconds"] = login_lockout_remaining_seconds(ip_key, limit=10)
+        write_audit_event(
+            "portal_login_failed",
+            request,
+            identifier=normalize_identifier(identifier),
+            role=chosen_role or "auto",
+            client_ip=client_ip,
+        )
         set_flash(request, "Invalid login details. Please try again.", "danger")
         return RedirectResponse(url=target, status_code=303)
 
@@ -944,6 +1017,7 @@ def portal_login(
     user = matched_users[0]
     if user is not None and user.locked_until and user.locked_until > datetime.now(timezone.utc):
         target_slug = role_to_slug(chosen_role or user.role.value)
+        request.session["lockout_remaining_seconds"] = int((user.locked_until - datetime.now(timezone.utc)).total_seconds())
         set_flash(request, "Account temporarily locked after repeated login failures.", "danger")
         return RedirectResponse(url=f"/auth/login/{target_slug}", status_code=303)
 
@@ -951,7 +1025,16 @@ def portal_login(
         set_flash(request, "Your account is under review. We will notify you after verification.", "warning")
         return RedirectResponse(url="/auth/login", status_code=303)
 
-    return _complete_portal_login(request, db, user, remember_me=remember_me == "on")
+    clear_failed_login(ip_key)
+    request.session["failed_login_attempts"] = 0
+    request.session["lockout_remaining_seconds"] = 0
+    return _complete_portal_login(
+        request,
+        db,
+        user,
+        remember_me=remember_me == "on",
+        login_identifier=ip_key,
+    )
 
 
 @router.get("/auth/choose-role")
@@ -997,7 +1080,14 @@ def choose_role_login(
     if selected is None:
         set_flash(request, "Please choose your account again.", "warning")
         return RedirectResponse(url="/auth/login", status_code=303)
-    return _complete_portal_login(request, db, selected, remember_me=remember_me, audit_name="portal_role_selected")
+        return _complete_portal_login(
+            request,
+            db,
+            selected,
+            remember_me=remember_me,
+            audit_name="portal_role_selected",
+            login_identifier=f"login:{request.client.host if request.client else 'unknown'}",
+        )
 
 
 @router.get("/auth/register")
@@ -1348,13 +1438,18 @@ def privacy_page(request: Request):
     return render_template(templates, request, "privacy.html", {"request": request})
 
 
+@router.get("/terms")
+def terms_page(request: Request):
+    return render_template(templates, request, "terms.html", {"request": request})
+
+
 @router.post("/logout")
-def logout(request: Request, _: None = Depends(verify_csrf)):
+def logout(request: Request):
     redirect_url = _session_logout_redirect(request)
     write_audit_event("logout", request)
     clear_portal_session(request)
     invalidate_current_session(request)
-    return RedirectResponse(url=redirect_url, status_code=303)
+    return _clear_auth_cookies(RedirectResponse(url=redirect_url, status_code=303))
 
 
 @router.get("/logout")
@@ -1363,7 +1458,7 @@ def logout_get(request: Request):
     write_audit_event("logout_get", request)
     clear_portal_session(request)
     invalidate_current_session(request)
-    return RedirectResponse(url=redirect_url, status_code=303)
+    return _clear_auth_cookies(RedirectResponse(url=redirect_url, status_code=303))
 
 
 @router.post("/logout-all-devices")
@@ -1384,19 +1479,40 @@ def logout_all_devices(
 
 
 @router.post("/auth/logout")
-def portal_logout(request: Request, _: None = Depends(verify_csrf)):
-    redirect_url = _session_logout_redirect(request)
-    clear_portal_session(request)
-    invalidate_current_session(request)
-    return RedirectResponse(url=redirect_url, status_code=303)
+async def portal_logout(request: Request):
+    """Logout user - properly invalidate session"""
+    try:
+        session_token = request.cookies.get("session_token")
+        if session_token:
+            try:
+                from app.security.session import revoke_session
+
+                revoke_session(session_token)
+            except Exception:
+                pass
+        clear_portal_session(request)
+        invalidate_current_session(request)
+    except Exception as exc:
+        print(f"Logout session revocation error: {exc}")
+        try:
+            request.session.clear()
+        except Exception:
+            pass
+
+    response = RedirectResponse(url="/", status_code=302)
+    response.delete_cookie("session_token")
+    response.delete_cookie("csrf_token")
+    response.delete_cookie("session")
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+    return response
 
 
 @router.get("/auth/logout")
 def portal_logout_get(request: Request):
-    redirect_url = _session_logout_redirect(request)
     clear_portal_session(request)
     invalidate_current_session(request)
-    return RedirectResponse(url=redirect_url, status_code=303)
+    return _clear_auth_cookies(RedirectResponse(url=_session_logout_redirect(request), status_code=303))
 
 
 @router.get("/api/auth/session")

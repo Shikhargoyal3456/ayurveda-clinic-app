@@ -1,0 +1,17 @@
+{% extends 'new_base.html' %}
+{% block title %}Claim Health Record | Kash AI{% endblock %}
+{% block content %}
+<section class="card" style="margin-top:24px;padding:28px;max-width:760px;">
+    <span class="chip">Patient onboarding</span>
+    <h1 style="margin:14px 0 10px;">Claim your health record</h1>
+    <p class="muted">Enter your registered mobile number, email, or patient name to link your portal account to an existing clinic record.</p>
+    {% if request.query_params.get('message') %}
+    <div class="card" style="padding:14px 16px;margin:14px 0;background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.3);">{{ request.query_params.get('message') }}</div>
+    {% endif %}
+    <form method="post" action="/new/claim-patient" style="display:grid;gap:14px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input class="field" type="text" name="claim_value" placeholder="Mobile, email, or patient name" required>
+        <button class="btn btn-primary pill-btn" type="submit">Claim Record</button>
+    </form>
+</section>
+{% endblock %}

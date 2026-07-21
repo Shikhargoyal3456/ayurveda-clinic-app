@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, Form, HTTPException, Query, Request
@@ -52,6 +53,7 @@ from shared.template_engine import render_template
 
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(tags=["emr"])
+logger = logging.getLogger(__name__)
 
 AYURVEDA_FORMULATION_LIBRARY = [
     {"name": "Avipattikar Churna", "use": "Acidity and pitta balance", "anupana": "Warm water"},
@@ -457,41 +459,56 @@ async def generate_patient_diet_plan(
     db: Session = Depends(get_db),
     doctor: Doctor = Depends(require_doctor_role),
 ):
-    patient = _patient_for_doctor(db, doctor.id, patient_id)
-    profile = _profile_for_patient(db, patient)
-    consultations = (
-        db.query(EMRConsultation)
-        .filter(EMRConsultation.patient_id == patient.id)
-        .order_by(EMRConsultation.created_at.desc())
-        .all()
-    )
-    assessments = db.query(EMRAssessment).filter(EMRAssessment.patient_id == patient.id).all()
-    assessment_map = {assessment.assessment_type: assessment.payload for assessment in assessments}
-    latest_consultation = consultations[0] if consultations else None
-    patient_data = {
-        "patient_name": patient.name,
-        "diagnosis": getattr(latest_consultation, "title", "") or "Ayurveda follow-up",
-        "symptoms": getattr(latest_consultation, "chief_complaint", "") or "",
-        "notes": getattr(latest_consultation, "treatment_plan", "") or getattr(latest_consultation, "history_of_present_illness", "") or "",
-        "prakriti": _assessment_value(assessment_map, "prakriti", "label", (profile.ayurveda_profile or {}).get("prakriti", "Pending")),
-        "vikriti": _assessment_value(assessment_map, "vikriti", "label", (profile.ayurveda_profile or {}).get("vikriti", "Pending")),
-        "agni": _assessment_value(assessment_map, "agni", "type", (profile.ayurveda_profile or {}).get("agni", "Pending")),
-    }
-    plan = await generate_diet_plan(patient_data)
-    diet_plan = _diet_plan_text(plan)
-    write_emr_audit_log(
-        db,
-        doctor.id,
-        "ai_diet_plan_generated",
-        "patient",
-        patient.id,
-        patient.id,
-        {"patient_name": patient.name},
-        request.client.host if request.client else "",
-        request.headers.get("user-agent", ""),
-    )
-    commit_with_retry(db)
-    return JSONResponse({"success": True, "diet_plan": diet_plan, "structured_plan": plan})
+    try:
+        patient = _patient_for_doctor(db, doctor.id, patient_id)
+        profile = _profile_for_patient(db, patient)
+        consultations = (
+            db.query(EMRConsultation)
+            .filter(EMRConsultation.patient_id == patient.id)
+            .order_by(EMRConsultation.created_at.desc())
+            .all()
+        )
+        assessments = db.query(EMRAssessment).filter(EMRAssessment.patient_id == patient.id).all()
+        assessment_map = {assessment.assessment_type: assessment.payload for assessment in assessments}
+        latest_consultation = consultations[0] if consultations else None
+        patient_data = {
+            "patient_name": patient.name,
+            "patient_id": patient.id,
+            "doctor_id": doctor.id,
+            "diagnosis": getattr(latest_consultation, "title", "") or "Ayurveda follow-up",
+            "symptoms": getattr(latest_consultation, "chief_complaint", "") or "",
+            "notes": getattr(latest_consultation, "treatment_plan", "") or getattr(latest_consultation, "history_of_present_illness", "") or "",
+            "prakriti": _assessment_value(assessment_map, "prakriti", "label", (profile.ayurveda_profile or {}).get("prakriti", "Pending")),
+            "vikriti": _assessment_value(assessment_map, "vikriti", "label", (profile.ayurveda_profile or {}).get("vikriti", "Pending")),
+            "agni": _assessment_value(assessment_map, "agni", "type", (profile.ayurveda_profile or {}).get("agni", "Pending")),
+        }
+        plan = await generate_diet_plan(patient_data)
+        diet_plan = _diet_plan_text(plan)
+        write_emr_audit_log(
+            db,
+            doctor.id,
+            "ai_diet_plan_generated",
+            "patient",
+            patient.id,
+            patient.id,
+            {"patient_name": patient.name},
+            request.client.host if request.client else "",
+            request.headers.get("user-agent", ""),
+        )
+        commit_with_retry(db)
+        return JSONResponse({"success": True, "diet_plan": diet_plan, "structured_plan": plan})
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Diet generation failed for patient_id=%s doctor_id=%s", patient_id, doctor.id)
+        return JSONResponse(
+            {
+                "success": False,
+                "error": "Something went wrong. Please try again.",
+                "detail": str(exc),
+            },
+            status_code=500,
+        )
 
 
 @router.post("/api/ai/diet-plan/{patient_id}/save")

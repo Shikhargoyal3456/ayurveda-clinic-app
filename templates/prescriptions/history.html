@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% import 'components/kash_shell.html' as shell %}
+{% set active_page = 'profile' %}
+{% set user_name = doctor.full_name or doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = ((doctor.full_name or doctor.username or 'DR')[:2]) | upper %}
+
+{% block title %}Prescription History{% endblock %}
+
+{% block header_actions %}
+<a href="/patients/{{ patient.id }}/prescriptions/new" class="btn btn-outline-dark btn-sm">New prescription</a>
+<a href="/dashboard" class="btn btn-primary btn-sm">Dashboard</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+    {{ shell.page_header('Patient archive', 'Prescription history for ' ~ patient.name, 'Newest prescriptions first, with delivery status and quick resend/download actions.') }}
+
+    <section class="table-panel">
+        <div class="table-scroll-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Medicines</th>
+                        <th>Sent To</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in history %}
+                    <tr>
+                        <td>{{ item.date.strftime('%d %b %Y, %I:%M %p') if item.date else '-' }}</td>
+                        <td>{{ item.medicines_count }}</td>
+                        <td>{{ item.email_address or patient.email or 'No email on file' }}</td>
+                        <td>
+                            {% if item.delivery_status == 'sent' %}
+                            <span class="badge text-bg-success">Sent</span>
+                            {% elif item.delivery_status == 'failed' %}
+                            <span class="badge text-bg-danger">Failed</span>
+                            {% else %}
+                            <span class="badge text-bg-secondary">Not sent</span>
+                            {% endif %}
+                            {% if item.error_message %}
+                            <div class="text-danger small mt-1">{{ item.error_message }}</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <a href="/prescriptions/{{ item.id }}/preview" class="btn btn-sm btn-outline-primary">Preview</a>
+                                <a href="/prescriptions/{{ item.id }}/download" class="btn btn-sm btn-outline-dark">Download PDF</a>
+                                <form method="post" action="/prescriptions/{{ item.id }}/resend" data-loading-form data-confirm-submit="Resend prescription to {{ item.email_address or patient.email or 'the patient email on file' }}?">
+                                    <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
+                                    <button class="btn btn-sm btn-outline-success" data-loading-text="Resending...">Resend</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-muted">No prescription history available for this patient yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+{% endblock %}

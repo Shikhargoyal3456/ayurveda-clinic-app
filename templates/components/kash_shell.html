@@ -1,0 +1,32 @@
+{% macro page_header(eyebrow, title, description='', actions='') %}
+<section class="card" style="padding:24px 26px;">
+  <div class="page-header">
+    <div>
+      {% if eyebrow %}<p class="eyebrow mb-2">{{ eyebrow }}</p>{% endif %}
+      <h1 class="mb-2">{{ title }}</h1>
+      {% if description %}<p class="mb-0">{{ description }}</p>{% endif %}
+    </div>
+    {% if actions %}
+    <div class="inline-actions">{{ actions | safe }}</div>
+    {% endif %}
+  </div>
+</section>
+{% endmacro %}
+
+{% macro async_skeleton(lines=3) %}
+<div aria-hidden="true" role="status" class="stack-list">
+  {% for _ in range(lines) %}
+  <div class="kash-skeleton" style="height:56px;border-radius:18px;"></div>
+  {% endfor %}
+</div>
+{% endmacro %}
+
+{% macro severity_badge(level) %}
+{% set tone = (level or 'low') | lower %}
+<span class="badge" style="
+  {% if tone == 'critical' %}background:#fee2e2;color:#991b1b;
+  {% elif tone == 'high' %}background:#ffedd5;color:#9a3412;
+  {% elif tone == 'medium' %}background:#fef3c7;color:#92400e;
+  {% else %}background:#dcfce7;color:#166534;{% endif %}
+">{{ tone | title }}</span>
+{% endmacro %}

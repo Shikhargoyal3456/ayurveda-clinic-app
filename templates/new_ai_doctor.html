@@ -1,0 +1,271 @@
+{% extends "new_base.html" %}
+
+{% block title %}AI Doctor | Kash AI{% endblock %}
+
+{% block content %}
+<div class="ai-doctor-container">
+    <div class="chat-header">
+        <h1>Dr. Kash AI Assistant</h1>
+        <div class="chat-header-actions">
+            <a href="/new/dashboard" class="btn-secondary">Back to Dashboard</a>
+            <a class="btn-open-live" href="/ai-doctor-live">Open Live AI</a>
+        </div>
+    </div>
+
+    <div class="chat-user-info">
+        Logged in as {{ user.full_name or user.email or "guest" }}.
+    </div>
+
+    <div class="chat-window" id="chatMessages" aria-live="polite">
+        <div class="message ai">
+            <div class="message-content">
+                <span class="message-icon">Dr</span>
+                <span class="message-text">Hello! I'm Dr. Kash AI. How can I help you today?</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type your symptoms or health questions..." autofocus>
+        <button id="voiceButton" class="btn-secondary" type="button">🎤 Speak</button>
+        <button id="sendButton" class="btn-primary" type="button">Send</button>
+    </div>
+
+    <div class="quick-actions">
+        <button type="button" data-action="summary" class="btn-outline">Summary</button>
+        <button type="button" data-action="prescribe" class="btn-outline">Prescribe</button>
+        <button type="button" data-action="followup" class="btn-outline">Follow-up</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const chatInput = document.getElementById("chatInput");
+    const sendButton = document.getElementById("sendButton");
+    const chatMessages = document.getElementById("chatMessages");
+    const voiceButton = document.getElementById("voiceButton");
+
+    if (!chatInput || !sendButton || !chatMessages) {
+        console.error("AI Doctor chat elements missing", { chatInput, sendButton, chatMessages });
+        return;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = String(text || "");
+        return div.innerHTML;
+    }
+
+    function csrfToken() {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta && meta.content) return meta.content;
+        const cookie = document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith("csrf_token="));
+        return cookie ? decodeURIComponent(cookie.split("=").slice(1).join("=")) : "";
+    }
+
+    function appendMessage(role, text, icon) {
+        const message = document.createElement("div");
+        message.className = `message ${role}`;
+        message.innerHTML = `
+            <div class="message-content">
+                <span class="message-icon">${escapeHtml(icon || (role === "user" ? "You" : "Dr"))}</span>
+                <span class="message-text">${escapeHtml(text)}</span>
+            </div>
+        `;
+        chatMessages.appendChild(message);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return message;
+    }
+
+    function appendActions(actions) {
+        if (!actions) return;
+        const rows = [
+            ["summary", "Summary", actions.summary],
+            ["prescription", "Prescription", actions.prescription],
+            ["follow_up", "Follow-up", actions.follow_up],
+        ];
+        rows.forEach(([, label, value]) => {
+            if (value) appendMessage("ai action", `${label}: ${value}`, label.slice(0, 2));
+        });
+    }
+
+    async function sendMessage(forcedMessage) {
+        const message = String(forcedMessage || chatInput.value || "").trim();
+        if (!message) return;
+
+        appendMessage("user", message, "You");
+        chatInput.value = "";
+        chatInput.disabled = true;
+        sendButton.disabled = true;
+        sendButton.textContent = "Sending...";
+
+        const typing = appendMessage("ai typing", "Dr. Kash is thinking...", "Dr");
+
+        try {
+            const response = await fetch("/api/ai-chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-Token": csrfToken(),
+                },
+                body: JSON.stringify({ message, context: "doctor_assistant" }),
+            });
+            const payload = await response.json().catch(() => ({}));
+            typing.remove();
+            if (!response.ok) throw new Error(payload.detail || payload.error || `Server error ${response.status}`);
+
+            const responseText = payload.response || payload.reply || payload.message || `I received your message: "${message}".`;
+            const modelInfo = payload.model ? ` (${payload.model})` : "";
+            appendMessage("ai", `${responseText}${modelInfo}`, "Dr");
+            appendActions(payload.actions);
+        } catch (error) {
+            typing.remove();
+            console.error("AI Doctor chat error", error);
+            appendMessage(
+                "ai",
+                `I understand you're asking about: "${message}". Based on Ayurvedic principles, please consult your doctor for a personalized treatment plan. (Using fallback response)`,
+                "Dr"
+            );
+        } finally {
+            chatInput.disabled = false;
+            sendButton.disabled = false;
+            sendButton.textContent = "Send";
+            chatInput.focus();
+        }
+    }
+
+    document.querySelectorAll("[data-action]").forEach((button) => {
+        button.addEventListener("click", function () {
+            const prompts = {
+                summary: "Please summarize the patient's condition and symptoms.",
+                prescribe: "Please suggest Ayurvedic medicines for this patient.",
+                followup: "Please schedule a follow-up appointment for this patient.",
+            };
+            sendMessage(prompts[this.dataset.action] || "");
+        });
+    });
+
+    sendButton.addEventListener("click", () => sendMessage());
+    chatInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMessage();
+        }
+    });
+
+    let isRecording = false;
+    let voiceRecorderInstance = null;
+
+    function setVoiceButtonState(label, disabled = false) {
+        if (!voiceButton) return;
+        voiceButton.textContent = label;
+        voiceButton.disabled = disabled;
+    }
+
+    async function toggleVoiceInput() {
+        if (!voiceButton) return;
+
+        if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+            alert("Voice recording is not supported in this browser. Please use Chrome or Edge.");
+            return;
+        }
+
+        if (isRecording) {
+            setVoiceButtonState("⏳ Processing...", true);
+
+            const blob = await voiceRecorderInstance?.stop();
+            if (!blob) {
+                setVoiceButtonState("🎤 Speak");
+                isRecording = false;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("audio_file", blob, "recording.webm");
+            formData.append("csrf_token", csrfToken());
+
+            try {
+                const response = await fetch("/api/voice/transcribe", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-Token": csrfToken(),
+                    },
+                    body: formData,
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || `Transcription failed (${response.status})`);
+                }
+
+                chatInput.value = data.transcript || "";
+                setTimeout(() => sendMessage(), 300);
+            } catch (error) {
+                console.error("Voice transcription error", error);
+                alert("Transcription failed: " + (error.message || "Unknown error"));
+            } finally {
+                setVoiceButtonState("🎤 Speak");
+                isRecording = false;
+            }
+            return;
+        }
+
+        try {
+            const { voiceRecorder } = await import("/static/js/voice_recorder.js");
+            voiceRecorderInstance = voiceRecorder;
+            await voiceRecorderInstance.start();
+            isRecording = true;
+            setVoiceButtonState("⏺️ Stop");
+        } catch (error) {
+            console.error("Voice recorder start error", error);
+            isRecording = false;
+            setVoiceButtonState("🎤 Speak");
+            alert("Could not start microphone recording. Please allow microphone access and try again.");
+        }
+    }
+
+    if (voiceButton) {
+        voiceButton.addEventListener("click", function () {
+            void toggleVoiceInput();
+        });
+    }
+
+    console.log("AI Doctor Chat initialized successfully");
+});
+</script>
+
+<style>
+.ai-doctor-container { max-width: 860px; margin: 0 auto; padding: 20px; }
+.chat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; gap: 12px; flex-wrap: wrap; }
+.chat-header h1 { font-size: 24px; margin: 0; color: #0f172a; }
+.chat-header-actions, .quick-actions, .chat-input-area { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.chat-user-info { padding: 8px 2px; margin-bottom: 12px; color: #64748b; font-size: 14px; }
+.chat-window { height: 420px; overflow-y: auto; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; }
+.message { margin-bottom: 12px; display: flex; }
+.message.user { justify-content: flex-end; }
+.message.user .message-content { background: #4f46e5; color: white; border-radius: 18px 18px 4px 18px; }
+.message.ai .message-content { background: white; color: #1f2937; border: 1px solid #e2e8f0; border-radius: 18px 18px 18px 4px; }
+.message.ai.action .message-content { background: #eef2ff; border-color: #c7d2fe; }
+.message-content { max-width: 82%; padding: 12px 16px; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05); }
+.message-icon { font-size: 12px; font-weight: 800; flex-shrink: 0; min-width: 28px; height: 28px; border-radius: 50%; background: rgba(15, 118, 110, 0.1); color: #0f766e; display: inline-flex; align-items: center; justify-content: center; }
+.message-text { word-break: break-word; line-height: 1.5; white-space: pre-wrap; }
+.message.ai.typing .message-text { animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.chat-input-area { flex-wrap: nowrap; }
+.chat-input-area input { flex: 1; min-width: 180px; padding: 13px 16px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: #0f172a; font-size: 16px; }
+.chat-input-area input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12); }
+.quick-actions { margin-top: 12px; }
+.btn-primary, .btn-secondary, .btn-open-live, .btn-outline { border-radius: 8px; cursor: pointer; font-weight: 700; text-decoration: none; border: 1px solid transparent; transition: all 0.2s ease; }
+.btn-primary { padding: 12px 24px; background: #4f46e5; color: white; }
+.btn-primary:hover { background: #4338ca; }
+.btn-primary:disabled, .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-secondary { padding: 12px 18px; background: white; border-color: #cbd5e1; color: #0f172a; }
+.btn-secondary:hover { background: #f8fafc; }
+.btn-open-live { padding: 12px 18px; background: rgba(20, 184, 166, 0.12); border-color: rgba(20, 184, 166, 0.28); color: #0f766e; }
+.btn-outline { background: white; border-color: #cbd5e1; color: #334155; padding: 9px 16px; }
+.btn-outline:hover { background: #eef2ff; border-color: #4f46e5; color: #3730a3; }
+@media (max-width: 640px) {
+    .chat-input-area { display: grid; grid-template-columns: 1fr; }
+    .message-content { max-width: 92%; }
+}
+</style>
+{% endblock %}

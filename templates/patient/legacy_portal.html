@@ -1,0 +1,22 @@
+{% extends "patient_base.html" %}
+{% block title %}Legacy Portal | Kash AI{% endblock %}
+{% block content %}
+<div class="card" style="max-width:1000px;margin:24px auto;padding:28px;">
+    <h1 style="margin-top:0;">📜 Legacy Portal</h1>
+    <p class="muted">Access historical records and data from the older portal layout.</p>
+    <div class="stats-grid" style="margin-top:18px;">
+        <a class="card" href="/patient/history" style="padding:20px;display:block;">
+            <strong>Medical History</strong>
+            <p class="muted">View your complete medical history</p>
+        </a>
+        <a class="card" href="/patient/analytics" style="padding:20px;display:block;">
+            <strong>Health Analytics</strong>
+            <p class="muted">View your health trends over time</p>
+        </a>
+        <a class="card" href="/patient/reports" style="padding:20px;display:block;">
+            <strong>Reports</strong>
+            <p class="muted">Download your medical reports</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -10,6 +10,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session, joinedload
 
+from app.auth import get_current_user
 from app.config import settings
 from app.database import SessionLocal, get_db
 from app.models import Appointment, Doctor, Patient
@@ -65,6 +66,13 @@ class TicketRouteRequest(BaseModel):
 
 class AlternativesRequest(BaseModel):
     medicine_name: str
+
+
+@router.get("/telemedicine/start")
+async def telemedicine_start(request: Request, user=Depends(get_current_user)):
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return {"status": "ready", "user": user}
 
 
 @router.get("/telemedicine/symptom-checker")

@@ -1,0 +1,35 @@
+{% extends "patient_base.html" %}
+{% block title %}AI Assistant | Kash AI{% endblock %}
+{% block content %}
+<section class="doctor-live-shell" style="max-width:1200px;margin:24px auto;">
+    <div class="doctor-live-hero" style="margin-bottom:24px;">
+        <div class="doctor-live-hero__copy">
+            <span class="doctor-live-badge">🤖 PATIENT AI ASSISTANT</span>
+            <h1>Ask your health question in plain language.</h1>
+            <p>Use the same calm AI assistant from the doctor workspace, now framed for patients.</p>
+        </div>
+    </div>
+    <section class="doctor-panel ai-doctor-container">
+        <div class="doctor-panel__header">
+            <div>
+                <h2>AI Doctor Chat</h2>
+                <p>Ask in English or Hindi. The assistant will respond with guidance.</p>
+            </div>
+        </div>
+        <div class="quick-actions" id="quickActions">
+            <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="summary">Summary</button>
+            <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="prescribe">Prescribe</button>
+            <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="follow-up">Follow-up</button>
+        </div>
+        <div class="chat-window" id="chatMessages" aria-live="polite"></div>
+        <div class="chat-input-area">
+            <textarea id="chatInput" rows="2" placeholder="Type your message or speak in Hindi..."></textarea>
+            <button type="button" class="doctor-cta doctor-cta--primary" id="sendButton">Send</button>
+            <button type="button" class="doctor-cta doctor-cta--secondary" id="voiceButton">🎙 Voice</button>
+        </div>
+    </section>
+</section>
+{% endblock %}
+{% block extra_scripts %}
+<script defer src="{{ url_for('static', path='js/ai_doctor.js') }}"></script>
+{% endblock %}

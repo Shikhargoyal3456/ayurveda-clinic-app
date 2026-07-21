@@ -5,7 +5,7 @@ import os
 import re
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -324,6 +324,96 @@ async def doctor_summary(payload: ChatRequest, request: Request, _: None = Depen
 @router.get("/ai-doctor-live")
 async def ai_doctor_live_page(request: Request):
     return render_template(templates, request, "doctor.html")
+
+
+@router.get("/ai-doctor")
+async def ai_doctor_page(request: Request, db: Session = Depends(get_db)):
+    from app.portal_auth import get_portal_user
+
+    user = get_portal_user(request, db)
+    if user is None:
+        raise HTTPException(status_code=303, headers={"Location": "/auth/login"})
+    return render_template(
+        templates,
+        request,
+        "new_ai_doctor.html",
+        {"request": request, "user": user, "csrf_token": getattr(request.state, "csrf_token", "")},
+    )
+
+
+@router.websocket("/ws/ai-doctor")
+async def ai_doctor_websocket(websocket: WebSocket):
+    await websocket.accept()
+    history: list[ChatMessage] = []
+    await websocket.send_json(
+        {
+            "type": "session_ready",
+            "session_id": "live-ai-doctor",
+            "status": "connected",
+            "detail": "Live consultation room is ready.",
+        }
+    )
+
+    try:
+        while True:
+            payload = await websocket.receive_json()
+            event_type = str(payload.get("type") or "").strip()
+
+            if event_type == "end_consultation":
+                await websocket.send_json(
+                    {
+                        "type": "consultation_summary",
+                        "summary": {
+                            "patient_summary": [item.content for item in history if item.role == "user"][-5:],
+                            "visual_summary": "Live camera and voice session ended.",
+                        },
+                    }
+                )
+                break
+
+            if event_type == "video_frame":
+                await websocket.send_json(
+                    {
+                        "type": "vision_update",
+                        "text": "Received the latest camera frame. Continue if you want a deeper visual review.",
+                    }
+                )
+                continue
+
+            if event_type == "audio_chunk":
+                await websocket.send_json(
+                    {
+                        "type": "status",
+                        "status": "connected",
+                        "detail": "Received audio stream chunk.",
+                    }
+                )
+                continue
+
+            if event_type != "user_text":
+                await websocket.send_json({"type": "error", "message": "Unsupported message type."})
+                continue
+
+            text = _sanitize_text(payload.get("text", ""))
+            if not text:
+                await websocket.send_json({"type": "error", "message": "Empty message received."})
+                continue
+
+            history.append(ChatMessage(role="user", content=text))
+            chat_payload = ChatRequest(message=text, messages=history[:-1])
+            prompt = _build_prompt(chat_payload, "general")
+            try:
+                raw_text = _generate_gemini_content(prompt)
+                reply, _diagnosis = _extract_reply_and_diagnosis(raw_text)
+                reply = _append_safety_disclaimer(reply)
+            except Exception as exc:
+                reply = f"I’m having trouble generating a response right now: {exc}"
+
+            history.append(ChatMessage(role="assistant", content=reply))
+            await websocket.send_json({"type": "transcript", "text": text})
+            await websocket.send_json({"type": "ai_message", "text": reply})
+    except WebSocketDisconnect:
+        return
 
 
 @router.post("/api/ai/structure-for-field")

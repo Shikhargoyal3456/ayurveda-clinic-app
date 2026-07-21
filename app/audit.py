@@ -9,6 +9,12 @@ from typing import Any
 from fastapi import Request
 
 from app.config import settings
+from app.database import SessionLocal
+
+try:
+    from models.audit_log import AuditLog
+except Exception:  # pragma: no cover
+    AuditLog = None
 
 _audit_lock = Lock()
 
@@ -40,3 +46,24 @@ def write_audit_event(event: str, request: Request | None = None, **details: Any
     with _audit_lock:
         with _audit_path().open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+
+    if AuditLog is not None:
+        db = SessionLocal()
+        try:
+            db.add(
+                AuditLog(
+                    user_id=actor_id,
+                    actor_role=details.get("role"),
+                    action=event,
+                    resource=details.get("resource"),
+                    resource_id=str(details.get("resource_id")) if details.get("resource_id") is not None else None,
+                    details=details,
+                    ip_address=client_ip,
+                    user_agent=user_agent,
+                )
+            )
+            db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()

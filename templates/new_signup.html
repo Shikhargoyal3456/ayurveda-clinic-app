@@ -1,0 +1,30 @@
+{% extends 'new_base.html' %}
+{% block title %}Sign Up | Kash AI{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="card" style="padding:32px;max-width:760px;margin:0 auto;">
+        <span class="chip">Create account</span>
+        <h1 style="font-size:3rem;margin:14px 0 10px;">Start your Kash AI workspace</h1>
+        {% if request.query_params.get('message') %}
+        <div class="card" style="padding:14px 16px;margin:14px 0;background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.3);">{{ request.query_params.get('message') }}</div>
+        {% endif %}
+        <form method="post" action="/auth/register" style="display:grid;gap:14px;margin-top:22px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input class="field" type="text" name="full_name" placeholder="Full name" required>
+            <input class="field" type="email" name="username" placeholder="Email address" required>
+            <input class="field" type="tel" name="phone" placeholder="Phone number" required>
+            <input class="field" type="password" name="password" placeholder="Password" required>
+            <select class="field" name="role" required>
+                <option value="doctor">Doctor</option>
+                <option value="patient">Patient</option>
+            </select>
+            <div class="checkbox" style="display:flex;gap:10px;align-items:flex-start;font-size:.95rem;">
+                <input type="checkbox" id="consent" name="consent" required style="margin-top:4px;">
+                <label for="consent">I agree to the <a href="/terms">Terms &amp; Conditions</a> and <a href="/privacy">Privacy Policy</a></label>
+            </div>
+            <button class="btn btn-accent pill-btn" type="submit">Create Account</button>
+        </form>
+        <a class="btn btn-secondary pill-btn" href="/auth/google/login" style="display:flex;justify-content:center;margin-top:14px;">Sign up with Google</a>
+    </div>
+</section>
+{% endblock %}

@@ -36,7 +36,15 @@
 
         <form id="registerForm" class="registration-form">
             <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
-            <input type="hidden" name="role" value="{{ role }}">
+            <label class="form-group"><span>I am registering as *</span>
+                <select name="role" required>
+                    <option value="patient" {% if role == 'patient' %}selected{% endif %}>Patient</option>
+                    <option value="doctor" {% if role == 'doctor' %}selected{% endif %}>Doctor</option>
+                    <option value="pharmacy_owner" {% if role == 'pharmacy_owner' %}selected{% endif %}>Pharmacy</option>
+                    <option value="lab_owner" {% if role == 'lab_owner' %}selected{% endif %}>Lab</option>
+                    <option value="delivery_partner" {% if role == 'delivery_partner' %}selected{% endif %}>Delivery Partner</option>
+                </select>
+            </label>
 
             <div class="form-step" id="step1">
                 <div class="form-row">

@@ -182,6 +182,7 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
             existing_user.is_verified = True
         commit_with_retry(db)
         _clear_google_signup(request)
+        request.session["role"] = existing_user.role.value if isinstance(existing_user.role, UserRole) else str(existing_user.role)
         return _complete_google_login(request, db, existing_user)
 
     preferred_role = str(request.session.pop("google_preferred_role", "")).strip().lower()

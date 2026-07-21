@@ -1,0 +1,29 @@
+{% extends 'new_base.html' %}
+{% block title %}Settings | Kash AI{% endblock %}
+{% block content %}
+<section class="card" style="margin-top:24px;padding:28px;">
+    <div class="topbar" style="padding:0 0 18px;">
+        <div>
+            <p class="eyebrow" style="margin:0;">Account</p>
+            <h1 style="margin:4px 0 0;">Settings</h1>
+        </div>
+        <a class="chip" href="{% if user and (user.role.value if user.role is defined and user.role.value is defined else user.role) == 'doctor' %}/new/doctor{% else %}/patient/dashboard{% endif %}">Back</a>
+    </div>
+    <div class="stats-grid">
+        <div class="card metric"><strong>{{ user.full_name or user.email or 'Kash AI user' }}</strong><span class="muted">Profile</span></div>
+        <div class="card metric"><strong>{{ user.email or '—' }}</strong><span class="muted">Email</span></div>
+        <div class="card metric"><strong>{{ user.phone or '—' }}</strong><span class="muted">Phone</span></div>
+    </div>
+    <div class="card" style="margin-top:18px;padding:22px;">
+        <h2 class="section-title" style="font-size:1.6rem;">Preferences</h2>
+        <p class="muted">The full account settings flow remains in the legacy backend for now, but this page keeps the new UI complete and connected.</p>
+        <div class="toolbar" style="margin-top:16px;">
+            <form action="/auth/logout" method="post" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-primary pill-btn">Logout</button>
+            </form>
+            <a class="btn btn-secondary pill-btn" href="/auth/login">Switch Account</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% import 'components/kash_shell.html' as shell %}
+{% set active_page = 'profile' %}
+{% set user_name = doctor.full_name or doctor.username %}
+{% set user_role = clinic_name %}
+{% set avatar_label = ((doctor.full_name or doctor.username or 'DR')[:2]) | upper %}
+
+{% block title %}Prescription Preview{% endblock %}
+
+{% block header_actions %}
+<a href="/prescriptions/{{ prescription.id }}" class="btn btn-outline-dark btn-sm">Back to detail</a>
+<a href="/patients/{{ patient.id }}/prescriptions/history" class="btn btn-primary btn-sm">History</a>
+{% endblock %}
+
+{% block page %}
+<div class="site-container section-stack fade-in-up">
+    {% if flash %}<div class="alert alert-{{ flash.category }}">{{ flash.message }}</div>{% endif %}
+    {{ shell.page_header('Email preview', 'Review before sending', 'Edit medicines, dosage, and diet advice before sending the final prescription email.') }}
+
+    <section class="store-layout" style="grid-template-columns:minmax(0,1fr) 420px; align-items:start;">
+        <article class="form-panel">
+            <form method="post" action="/prescriptions/{{ prescription.id }}/send" id="prescription-preview-form" data-loading-form data-confirm-submit="Send prescription to {{ preview_data.patient_email or 'the patient email on file' }}?" data-confirm-title="Send Prescription" data-confirm-label="Send Email" class="section-stack">
+                <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
+
+                <div class="content-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
+                    <div class="form-row">
+                        <label class="form-label">Patient Name</label>
+                        <input class="form-control" value="{{ preview_data.patient_name }}" disabled>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label" for="patient-email-input">Patient Email</label>
+                        <input id="patient-email-input" name="patient_email" class="form-control" type="email" value="{{ preview_data.patient_email }}">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Age</label>
+                        <input class="form-control" value="{{ preview_data.age }}" disabled>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Gender</label>
+                        <input class="form-control" value="{{ preview_data.gender }}" disabled>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="preview-diagnosis">Ayurvedic Diagnosis</label>
+                    <textarea id="preview-diagnosis" name="diagnosis" class="form-control" rows="3">{{ preview_data.diagnosis }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="preview-followup">Next Appointment</label>
+                    <input id="preview-followup" name="follow_up_date" class="form-control" value="{{ preview_data.follow_up_date }}">
+                </div>
+
+                <div class="section-stack">
+                    <div class="page-header mb-0">
+                        <div>
+                            <p class="eyebrow mb-1">Prescription table</p>
+                            <h2 class="h4 mb-0">Editable medicine rows</h2>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="preview-add-medicine">Add medicine</button>
+                    </div>
+                    <div id="preview-medicine-list" class="section-stack">
+                        {% for medicine in preview_data.medicines %}
+                        <div class="stack-item preview-medicine-row" style="display:grid; grid-template-columns:1.2fr 0.8fr 0.8fr 0.8fr 1fr auto; gap:12px;">
+                            <input name="medicine_name" class="form-control" placeholder="Medicine" value="{{ medicine.name }}">
+                            <input name="medicine_dosage" class="form-control" placeholder="Dose" value="{{ medicine.dosage }}">
+                            <input name="medicine_frequency" class="form-control" placeholder="Timing" value="{{ medicine.frequency or medicine.timing }}">
+                            <input name="medicine_days" class="form-control" placeholder="Duration" value="{{ medicine.duration }}">
+                            <input name="medicine_instructions" class="form-control" placeholder="Instructions" value="{{ medicine.instructions }}">
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-remove-preview-medicine>Remove</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label" for="preview-advice">Diet & Lifestyle Recommendations</label>
+                    <textarea id="preview-advice" name="advice" class="form-control" rows="6">{{ preview_data.advice }}</textarea>
+                </div>
+
+                <div class="hero-actions">
+                    <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Sending...">Send Email</button>
+                    <button type="submit" class="btn btn-outline-dark btn-lg" formaction="/prescriptions/{{ prescription.id }}/download-preview" data-loading-text="Preparing PDF...">Download PDF</button>
+                </div>
+            </form>
+        </article>
+
+        <aside class="table-panel no-print">
+            <p class="eyebrow mb-2">Exact patient email preview</p>
+            <div class="stack-list">
+                <div class="stack-item">
+                    <strong>{{ preview_data.patient_email or 'No email on file' }}</strong>
+                    <p class="text-muted mb-0">This is the rendered HTML email the patient will receive.</p>
+                </div>
+                <iframe title="Prescription email preview" srcdoc="{{ email_html|e }}" style="width:100%; min-height:760px; border:1px solid #d9e7ef; border-radius:18px; background:#ffffff;"></iframe>
+            </div>
+        </aside>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+    const list = document.getElementById("preview-medicine-list");
+    const addButton = document.getElementById("preview-add-medicine");
+    if (!list || !addButton) return;
+
+    function rowTemplate() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "stack-item preview-medicine-row";
+        wrapper.style.display = "grid";
+        wrapper.style.gridTemplateColumns = "1.2fr 0.8fr 0.8fr 0.8fr 1fr auto";
+        wrapper.style.gap = "12px";
+        wrapper.innerHTML = `
+            <input name="medicine_name" class="form-control" placeholder="Medicine">
+            <input name="medicine_dosage" class="form-control" placeholder="Dose">
+            <input name="medicine_frequency" class="form-control" placeholder="Timing">
+            <input name="medicine_days" class="form-control" placeholder="Duration">
+            <input name="medicine_instructions" class="form-control" placeholder="Instructions">
+            <button type="button" class="btn btn-outline-danger btn-sm" data-remove-preview-medicine>Remove</button>
+        `;
+        return wrapper;
+    }
+
+    addButton.addEventListener("click", function () {
+        list.appendChild(rowTemplate());
+    });
+
+    list.addEventListener("click", function (event) {
+        const button = event.target.closest("[data-remove-preview-medicine]");
+        if (!button) return;
+        button.closest(".preview-medicine-row")?.remove();
+    });
+})();
+</script>
+<script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
+{% endblock %}

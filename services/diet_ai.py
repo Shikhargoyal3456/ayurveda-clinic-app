@@ -18,6 +18,9 @@ def _safe_text(value: object, fallback: str = "") -> str:
 
 
 async def generate_diet_plan(patient_data: dict) -> dict:
+    if not isinstance(patient_data, dict):
+        raise ValueError("patient_data must be a dictionary.")
+
     system_prompt = "You are a senior Ayurvedic physician. Return only valid JSON."
     user_prompt = (
         "Create a structured Ayurvedic diet plan for this patient.\n"
@@ -30,13 +33,21 @@ async def generate_diet_plan(patient_data: dict) -> dict:
         "Return JSON only with diagnosis_summary, meal_plan, foods_to_favor, foods_to_avoid, lifestyle_tips, and precautions.\n\n"
         f"Patient data:\n{json.dumps(patient_data, ensure_ascii=True)}"
     )
-    payload, provider = await call_ai_json_with_retry(
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        simpler_user_prompt=simpler_prompt,
-        temperature=0.3,
-        max_output_tokens=4096,
-    )
+    try:
+        payload, provider = await call_ai_json_with_retry(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            simpler_user_prompt=simpler_prompt,
+            temperature=0.3,
+            max_output_tokens=4096,
+        )
+    except Exception as exc:
+        logger.exception("Diet AI generation failed")
+        raise RuntimeError(f"Diet AI generation failed: {exc}") from exc
+
+    if not isinstance(payload, dict):
+        raise RuntimeError("Diet AI returned an invalid payload.")
+
     logger.info("Diet plan generated using %s", provider)
     return payload
 

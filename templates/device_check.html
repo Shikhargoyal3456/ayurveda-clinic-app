@@ -1,0 +1,82 @@
+{% extends "new_base.html" %}
+
+{% block title %}Device Check | Kash AI{% endblock %}
+
+{% block content %}
+<div class="device-container">
+    <section class="device-header glass">
+        <h1>🔧 Device Check - Kash AI</h1>
+        <p>Check camera, microphone, and video readiness before starting a consultation.</p>
+    </section>
+
+    <section class="device-grid" aria-label="Device checks">
+        <article class="device-card glass">
+            <h2>📷 Camera</h2>
+            <div class="device-status checking" id="cameraStatus">⏳ Checking...</div>
+            <div class="camera-preview">
+                <video id="cameraPreview" autoplay playsinline muted></video>
+            </div>
+            <button onclick="testCamera()" class="device-btn" type="button">📸 Test Camera</button>
+            <button onclick="capturePhoto()" class="device-btn" type="button">Capture</button>
+        </article>
+
+        <article class="device-card glass">
+            <h2>🎤 Microphone</h2>
+            <div class="device-status working" id="micStatus">✅ Mic ready to test</div>
+            <div class="mic-level">
+                <div class="level-bar" id="levelBar"></div>
+            </div>
+            <button onclick="testMicrophone()" class="device-btn" type="button">🎤 Test Mic</button>
+            <button onclick="checkMicDevices()" class="device-btn" type="button">🔍 Check Devices</button>
+            <div class="mic-tip">
+                <small>If the browser has blocked the mic, use the address bar lock icon to allow microphone access, then press Test Mic again.</small>
+            </div>
+        </article>
+
+        <article class="device-card glass">
+            <h2>📹 Video</h2>
+            <div class="device-status checking" id="videoStatus">⏳ Checking...</div>
+            <button onclick="testVideo()" class="device-btn" type="button">📹 Test Video</button>
+        </article>
+    </section>
+
+    <section class="device-summary glass">
+        <p>Core device checks are ready. Test microphone when needed.</p>
+        <small>Camera and microphone checks use your browser permissions. Video readiness verifies telemedicine endpoint access.</small>
+    </section>
+</div>
+
+<script src="{{ url_for('static', path='js/device_check.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    testCamera();
+    testVideo();
+});
+</script>
+
+<style>
+.device-container { max-width: 1200px; margin: 0 auto; padding: 30px 0; }
+.glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 20px; }
+.device-header { text-align: center; margin-bottom: 30px; }
+.device-header h1 { font-size: 28px; margin: 0; color: #f8fbff; }
+.device-header p { color: rgba(255,255,255,0.6); margin: 8px 0 0; }
+.device-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+.device-card { text-align: center; }
+.device-card h2 { margin-top: 0; margin-bottom: 12px; color: #f8fbff; font-size: 1.1rem; }
+.device-status { padding: 4px 12px; border-radius: 999px; font-size: 14px; display: inline-block; margin-bottom: 12px; }
+.device-status.working { background: rgba(52,211,153,0.2); color: #34D399; }
+.device-status.checking { background: rgba(251,191,36,0.2); color: #FBBF24; }
+.device-status.failed { background: rgba(248,113,113,0.2); color: #F87171; }
+.camera-preview { width: 100%; max-width: 400px; min-height: 220px; margin: 0 auto 12px; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; display: grid; place-items: center; }
+.camera-preview video { width: 100%; display: block; }
+.mic-level { width: 100%; height: 20px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden; margin: 12px 0; }
+.level-bar { height: 100%; width: 0%; border-radius: 999px; transition: width 0.1s; background: #4F46E5; }
+.device-btn { padding: 8px 20px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: transparent; color: #E5E7EB; cursor: pointer; margin: 4px; }
+.device-btn:hover { background: rgba(79,70,229,0.2); border-color: #4F46E5; }
+.mic-tip { margin-top: 12px; color: rgba(255,255,255,0.45); font-size: 12px; }
+.device-summary { text-align: center; }
+.device-summary p { color: #34D399; font-weight: 700; margin: 0; }
+.device-summary small { color: rgba(255,255,255,0.45); display: block; margin-top: 8px; }
+@media (max-width: 768px) { .device-grid { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

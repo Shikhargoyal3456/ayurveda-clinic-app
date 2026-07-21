@@ -1,0 +1,86 @@
+{% extends "new_base.html" %}
+{% block title %}Doctor Statistics | Kash AI{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/css/stats_dashboard.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<section class="stats-shell">
+    <header class="stats-hero card">
+        <div>
+            <p class="eyebrow">Statistical Dashboard</p>
+            <h1>Doctor Performance Overview</h1>
+            <p class="muted">Track patients, revenue, AI support, clinic operations, and outcomes in one place.</p>
+        </div>
+        <div class="stats-controls">
+            <div class="range-buttons">
+                <button class="range-btn" data-days="7">Last 7 days</button>
+                <button class="range-btn active" data-days="30">Last 30 days</button>
+                <button class="range-btn" data-days="90">Last 90 days</button>
+            </div>
+            <input type="date" id="customStart">
+            <input type="date" id="customEnd">
+            <button id="applyRange" class="btn btn-primary btn-sm">Custom</button>
+            <a class="btn btn-outline-dark btn-sm" id="exportCsv" href="/api/stats/export?format=csv&days={{ stats_days }}">Export CSV</a>
+            <button class="btn btn-outline-dark btn-sm" id="printDashboard">Print</button>
+        </div>
+    </header>
+
+    <section class="kpi-grid" id="overviewCards"></section>
+
+    <section class="stats-grid">
+        <article class="card chart-card"><h2>New Patients</h2><canvas id="newPatientsChart"></canvas></article>
+        <article class="card chart-card"><h2>Demographics</h2><canvas id="demographicsChart"></canvas></article>
+        <article class="card chart-card"><h2>AI Performance</h2><canvas id="aiPerformanceChart"></canvas></article>
+        <article class="card chart-card"><h2>Revenue Trend</h2><canvas id="revenueTrendChart"></canvas></article>
+        <article class="card chart-card"><h2>Clinic Operations</h2><canvas id="operationsChart"></canvas></article>
+        <article class="card chart-card"><h2>Outcomes</h2><canvas id="outcomesChart"></canvas></article>
+    </section>
+
+    <section class="card stats-card">
+        <div class="stats-header">
+            <span class="icon">🤖</span>
+            <h3>AI Performance</h3>
+        </div>
+        <div class="stats-grid-3">
+            <div class="stat-item">
+                <span class="stat-value">{{ snapshot.ai_performance.cases_with_ai }}</span>
+                <span class="stat-label">AI-Assisted Cases</span>
+                <span class="stat-trend">{{ snapshot.ai_performance.ai_used_count }} tracked sessions</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ snapshot.ai_performance.avg_with_ai }} min</span>
+                <span class="stat-label">Average AI Session</span>
+                <span class="stat-trend">{{ snapshot.ai_performance.avg_without_ai }} min without AI</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">{{ snapshot.ai_performance.accuracy }}%</span>
+                <span class="stat-label">AI Accuracy</span>
+                <span class="stat-trend">{{ snapshot.ai_performance.human_only_count }} human-only sessions</span>
+            </div>
+        </div>
+        <div class="stats-footer">
+            <h4>Top AI-Suggested Medicines</h4>
+            <ul>
+                {% for med in snapshot.ai_performance.top_medicines %}
+                <li>{{ med.label }} ({{ med.value }} prescriptions)</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </section>
+
+    <section class="card split-grid">
+        <article>
+            <h2>Top Medicines Suggested</h2>
+            <div id="topMedicines" class="list-stack"></div>
+        </article>
+        <article>
+            <h2>Revenue Breakdown</h2>
+            <canvas id="serviceRevenueChart"></canvas>
+        </article>
+    </section>
+
+    <script>
+        window.doctorStatsSnapshot = {{ snapshot | tojson | safe }};
+    </script>
+    <script src="/static/js/stats_dashboard.js"></script>
+</section>
+{% endblock %}

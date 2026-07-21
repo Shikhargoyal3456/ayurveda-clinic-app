@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Sign Up | Kash AI{% endblock %}
+{% block page %}
+<div class="container py-5">
+    <div class="card p-4">
+        <h1 class="h3">Choose your account type</h1>
+        <p>Select whether you are signing up as a doctor or patient, then continue to the secure registration flow.</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-primary" href="/auth/register/patient">Patient</a>
+            <a class="btn btn-outline-dark" href="/auth/register/doctor">Doctor</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

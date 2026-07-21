@@ -1,0 +1,13 @@
+{
+  "name": "Kash AI",
+  "short_name": "Kash AI",
+  "description": "AI-powered Ayurvedic clinic management",
+  "theme_color": "#1B6CA8",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    { "src": "/public/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/public/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

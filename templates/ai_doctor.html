@@ -44,6 +44,25 @@
     </div>
 
     <div class="doctor-live-grid">
+        <section class="doctor-panel ai-doctor-container">
+            <div class="doctor-panel__header">
+                <div>
+                    <h2>AI Doctor Chat</h2>
+                    <p>Ask in English or Hindi. The assistant will reply with calm Ayurvedic guidance.</p>
+                </div>
+            </div>
+            <div class="quick-actions" id="quickActions">
+                <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="summary">Summary</button>
+                <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="prescribe">Prescribe</button>
+                <button type="button" class="doctor-cta doctor-cta--secondary quick-action-btn" data-action="follow-up">Follow-up</button>
+            </div>
+            <div class="chat-window" id="chatMessages" aria-live="polite"></div>
+            <div class="chat-input-area">
+                <textarea id="chatInput" rows="2" placeholder="Type your message or speak in Hindi..."></textarea>
+                <button type="button" class="doctor-cta doctor-cta--primary" id="sendButton">Send</button>
+                <button type="button" class="doctor-cta doctor-cta--secondary" id="voiceButton">🎙 Voice</button>
+            </div>
+        </section>
         <section class="doctor-panel doctor-panel--camera">
             <div class="doctor-panel__header">
                 <div>
@@ -81,12 +100,6 @@
                     <p>I'm an AI doctor assistant. For final diagnosis and treatment, please consult a real doctor. Tell me what’s going on, and I’ll start with the most important medical questions.</p>
                 </div>
             </div>
-
-            <label class="doctor-text-input">
-                <span>Prefer typing?</span>
-                <textarea id="manualMessage" rows="3" placeholder="Describe your symptoms, mood, or medicine question here..."></textarea>
-            </label>
-            <button type="button" class="doctor-cta doctor-cta--secondary" id="sendMessageButton">Send Message</button>
         </section>
 
         <section class="doctor-panel doctor-panel--insights">
