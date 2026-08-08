@@ -979,6 +979,7 @@ def portal_login(
     db: Session = Depends(get_db),
     _: None = Depends(rate_limit_dependency("portal-login", limit=10, window_seconds=60)),
     ___: None = Depends(auth_backoff_dependency()),
+    ____: None = Depends(verify_csrf),
 ):
     chosen_role = slug_to_role(role_slug.strip()) if role_slug and role_slug.strip() else (slug_to_role(role.strip()) if role.strip() else "")
     users = [_find_portal_user(db, identifier, chosen_role)] if chosen_role else _find_portal_users(db, identifier)
@@ -1080,14 +1081,14 @@ def choose_role_login(
     if selected is None:
         set_flash(request, "Please choose your account again.", "warning")
         return RedirectResponse(url="/auth/login", status_code=303)
-        return _complete_portal_login(
-            request,
-            db,
-            selected,
-            remember_me=remember_me,
-            audit_name="portal_role_selected",
-            login_identifier=f"login:{request.client.host if request.client else 'unknown'}",
-        )
+    return _complete_portal_login(
+        request,
+        db,
+        selected,
+        remember_me=remember_me,
+        audit_name="portal_role_selected",
+        login_identifier=f"login:{request.client.host if request.client else 'unknown'}",
+    )
 
 
 @router.get("/auth/register")

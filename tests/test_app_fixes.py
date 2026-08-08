@@ -41,3 +41,23 @@ async def test_favicon_redirect(client):
 
     assert response.status_code == 307
     assert response.headers["location"] == "/static/images/favicon.svg"
+
+
+@pytest.mark.asyncio
+async def test_browser_404_uses_error_page(client):
+    response = await client.get("/missing-page-for-error-template")
+
+    assert response.status_code == 404
+    assert "text/html" in response.headers["content-type"]
+    assert "<title>404 - Page not found</title>" in response.text
+    assert "Back to Home" in response.text
+    assert "data-error-page" in response.text
+
+
+@pytest.mark.asyncio
+async def test_api_404_stays_json(client):
+    response = await client.get("/api/missing-page-for-error-template")
+
+    assert response.status_code == 404
+    assert response.headers["content-type"].startswith("application/json")
+    assert response.json()["success"] is False

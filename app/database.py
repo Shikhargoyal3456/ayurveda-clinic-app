@@ -171,7 +171,7 @@ def _activate_sqlite_fallback(exc: Exception) -> None:
 
 def init_db() -> None:
     from app.models import Appointment, CaseSheet, ConsultationMetric, Doctor, DoctorActivityLog, Patient, PatientQuery  # noqa: F401
-    from app.models import BillingCode, TelemedicineSession, TongueAnalysis  # noqa: F401
+    from app.models import BillingCode, DietaryRecommendation, HerbalFormula, SamhitaAnalysis, TelemedicineSession, TongueAnalysis  # noqa: F401
     from models.ai_features import AIConversationHistory, AIPrediction, AIPrescriptionScan, MedicineInfoCache  # noqa: F401
     from models.emr import (  # noqa: F401
         EMRAssessment,
@@ -530,6 +530,65 @@ def _ensure_feature_schema() -> None:
                         "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
                         "FOREIGN KEY (patient_id) REFERENCES patients(id), "
                         "FOREIGN KEY (doctor_id) REFERENCES doctors(id))"
+                    )
+                )
+        if "samhita_analyses" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS samhita_analyses ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "patient_id INTEGER, "
+                        "consultation_id INTEGER, "
+                        "symptoms TEXT NOT NULL, "
+                        "age INTEGER, "
+                        "gender VARCHAR(10) DEFAULT '', "
+                        "prakriti VARCHAR(50) DEFAULT 'Unknown', "
+                        "agni VARCHAR(50) DEFAULT 'Unknown', "
+                        "history TEXT DEFAULT 'None', "
+                        "dosha_analysis TEXT, "
+                        "dietary_recommendations TEXT, "
+                        "herbal_formulations TEXT, "
+                        "lifestyle_regimen TEXT, "
+                        "treatment_recommendations TEXT, "
+                        "follow_up_plan TEXT, "
+                        "classical_reference TEXT, "
+                        "raw_response TEXT, "
+                        "created_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "updated_at DATETIME DEFAULT CURRENT_TIMESTAMP, "
+                        "FOREIGN KEY (patient_id) REFERENCES patients(id), "
+                        "FOREIGN KEY (consultation_id) REFERENCES consultation_sessions(id))"
+                    )
+                )
+        if "dietary_recommendations" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS dietary_recommendations ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "analysis_id INTEGER NOT NULL, "
+                        "category VARCHAR(20) NOT NULL, "
+                        "name VARCHAR(100) NOT NULL, "
+                        "rationale TEXT, "
+                        "preparation TEXT, "
+                        "FOREIGN KEY (analysis_id) REFERENCES samhita_analyses(id))"
+                    )
+                )
+        if "herbal_formulas" not in existing_tables:
+            with engine.begin() as connection:
+                connection.execute(
+                    text(
+                        "CREATE TABLE IF NOT EXISTS herbal_formulas ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                        "analysis_id INTEGER NOT NULL, "
+                        "name VARCHAR(100) NOT NULL, "
+                        "sanskrit_name VARCHAR(100), "
+                        "ingredients TEXT, "
+                        "dosage VARCHAR(100), "
+                        "timing VARCHAR(100), "
+                        "duration VARCHAR(100), "
+                        "precautions TEXT, "
+                        "FOREIGN KEY (analysis_id) REFERENCES samhita_analyses(id))"
                     )
                 )
         if "doctor_profiles" in existing_tables:

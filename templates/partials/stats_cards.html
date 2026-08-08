@@ -1,0 +1,22 @@
+<div class="kash-stats-grid">
+    <article class="kash-stat-card">
+        <i class="fa-solid fa-user-doctor"></i>
+        <strong>{{ todays_patients | default(0) }}</strong>
+        <span>Patients Today</span>
+    </article>
+    <article class="kash-stat-card">
+        <i class="fa-solid fa-calendar-check"></i>
+        <strong>{{ todays_appointments | default(0) }}</strong>
+        <span>Appointments</span>
+    </article>
+    <article class="kash-stat-card">
+        <i class="fa-solid fa-phone-volume"></i>
+        <strong>{{ followups_due | default(0) }}</strong>
+        <span>Follow-ups</span>
+    </article>
+    <article class="kash-stat-card">
+        <i class="fa-solid fa-clock"></i>
+        <strong>{{ pending_payments | default(0) }}</strong>
+        <span>Pending Cases</span>
+    </article>
+</div>

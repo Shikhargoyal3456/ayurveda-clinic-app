@@ -1,14 +1,54 @@
 {% extends "base.html" %}
 {% block title %}Sign Up | Kash AI{% endblock %}
 {% block page %}
+<style>
+.signup-role-card{max-width:720px;margin:0 auto;border-radius:18px}
+.role-selector{display:grid;gap:12px;margin:18px 0}
+.role-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.role-btn{padding:14px 16px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-weight:800;cursor:pointer}
+.role-btn.active{border-color:#0d6efd;background:#eef5ff;color:#0b5ed7;box-shadow:0 10px 24px rgba(13,110,253,.12)}
+.google-auth-link{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:12px}
+@media (max-width:560px){.role-buttons{grid-template-columns:1fr}}
+</style>
 <div class="container py-5">
-    <div class="card p-4">
+    <div class="card p-4 signup-role-card">
         <h1 class="h3">Choose your account type</h1>
         <p>Select whether you are signing up as a doctor or patient, then continue to the secure registration flow.</p>
-        <div class="d-flex gap-2 flex-wrap">
-            <a class="btn btn-primary" href="/auth/register/patient">Patient</a>
-            <a class="btn btn-outline-dark" href="/auth/register/doctor">Doctor</a>
+        <div class="role-selector">
+            <label class="fw-semibold" for="selectedRole">I am a</label>
+            <div class="role-buttons" role="group" aria-label="Choose account role">
+                <button type="button" class="role-btn active" data-role="doctor">Doctor</button>
+                <button type="button" class="role-btn" data-role="patient">Patient</button>
+            </div>
+            <input type="hidden" id="selectedRole" value="doctor">
+        </div>
+        <div class="d-grid gap-2">
+            <a class="btn btn-primary" id="continueSignupBtn" href="/auth/register/doctor">Continue</a>
+            <a class="btn btn-outline-dark google-auth-link" id="googleSignupBtn" href="/auth/google/login?role=doctor">
+                <span aria-hidden="true">G</span>
+                <span>Sign up with Google</span>
+            </a>
         </div>
     </div>
 </div>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const selectedRole = document.getElementById("selectedRole");
+    const continueBtn = document.getElementById("continueSignupBtn");
+    const googleBtn = document.getElementById("googleSignupBtn");
+    const roleButtons = Array.from(document.querySelectorAll(".role-btn[data-role]"));
+
+    const applyRole = (role) => {
+        selectedRole.value = role;
+        roleButtons.forEach((button) => button.classList.toggle("active", button.dataset.role === role));
+        continueBtn.href = `/auth/register/${encodeURIComponent(role)}`;
+        googleBtn.href = `/auth/google/login?role=${encodeURIComponent(role)}`;
+    };
+
+    roleButtons.forEach((button) => {
+        button.addEventListener("click", () => applyRole(button.dataset.role));
+    });
+    applyRole(selectedRole.value || "doctor");
+});
+</script>
 {% endblock %}

@@ -96,6 +96,7 @@ from routers.ai_doctor import router as ai_doctor_router
 from routers.ai_dashboard import router as ai_dashboard_router
 from routers.ai_pharmacy import router as ai_pharmacy_router
 from routers.ai_features import router as ai_features_router
+from routers.ayurveda_terms import router as ayurveda_terms_router
 from routers.ambient_emr import router as ambient_emr_router
 from routers.appointments import router as appointments_router
 from routers.auth import router as auth_router
@@ -235,6 +236,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "img-src 'self' data: https://checkout.razorpay.com; "
             "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            "media-src 'self' https://d8j0ntlcm91z4.cloudfront.net; "
             "connect-src 'self' ws: wss: https://checkout.razorpay.com https://lumberjack.razorpay.com; "
             "frame-src https://api.razorpay.com https://checkout.razorpay.com; "
             "frame-ancestors 'none';"
@@ -485,6 +487,11 @@ def create_app() -> FastAPI:
 
     @application.get("/", include_in_schema=False)
     async def root():
+        """Redirect to the full starting page."""
+        return RedirectResponse(url="/new", status_code=302)
+
+    @application.get("/api")
+    async def api_root():
         return {
             "message": "Kash AI API is running!",
             "version": settings.app_version or "1.0.0",
@@ -591,6 +598,7 @@ def create_app() -> FastAPI:
     application.include_router(ai_router)
     application.include_router(ai_doctor_router)
     application.include_router(ai_dashboard_router)
+    application.include_router(ayurveda_terms_router)
     application.include_router(dashboard_router)
     application.include_router(doctor_review_router)
     application.include_router(consultation_router)

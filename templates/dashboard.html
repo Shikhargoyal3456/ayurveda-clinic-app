@@ -13,6 +13,131 @@
 {% endblock %}
 
 {% block page %}
+<div class="kash-clinic-shell">
+    <section class="kash-hero" aria-label="Kash AI doctor dashboard">
+        <div class="kash-hero__main">
+            <div>
+                <p class="kash-eyebrow"><i class="fa-solid fa-microphone-lines"></i> Voice-first Ayurvedic clinic assistant</p>
+                <h1>Welcome back, Dr. {{ doctor.full_name or doctor.username }}</h1>
+                <p>Replace typing with Hindi or English voice input, generate case notes, and move patients from consultation to prescription faster.</p>
+            </div>
+            <div class="kash-hero__actions">
+                <a href="/consultation/voice" class="kash-btn kash-btn--primary">
+                    <i class="fa-solid fa-microphone"></i> Start Voice Consultation
+                </a>
+                <a href="/new/ai-doctor" class="kash-btn kash-btn--ghost">
+                    <i class="fa-solid fa-robot"></i> Ask AI Doctor
+                </a>
+                <button type="button" class="kash-btn kash-btn--ghost" data-language-toggle data-lang="hi">
+                    <i class="fa-solid fa-language"></i> <span>Hindi</span>
+                </button>
+            </div>
+        </div>
+
+        <aside class="kash-voice-card kash-panel">
+            <p class="kash-eyebrow">Live clinic mode</p>
+            <div class="kash-voice-orb"><i class="fa-solid fa-microphone"></i></div>
+            <h2>Speak naturally. Kash AI structures the case sheet.</h2>
+            <p>Designed for doctors on phones, tablets, and desktops during active OPD flow.</p>
+        </aside>
+    </section>
+
+    {% include 'partials/stats_cards.html' %}
+
+    <section class="hero-card ayurveda-terms-panel" aria-label="Ayurvedic medical pronunciation and Samhita commentary">
+        <div class="page-header mb-3">
+            <div>
+                <p class="eyebrow"><i class="fa-solid fa-book-open"></i> Samhita commentary</p>
+                <h2 class="h4 mb-0">Ayurvedic Medical Pronunciation</h2>
+                <p class="mb-0">Search Sanskrit clinical terms, hear pronunciation, and review the classical reference with commentary.</p>
+            </div>
+            <button id="toggle-samhita-search" class="kash-btn kash-btn--ghost" type="button">
+                <i class="fa-solid fa-search"></i> Search Terms
+            </button>
+        </div>
+
+        <div id="samhita-search-area" class="ayurveda-search-row hidden">
+            <div class="ayurveda-search-field">
+                <input id="term-search-input" type="text" placeholder="Search Vata, Jwara, Ashwagandha..." autocomplete="off">
+                <i class="fa-solid fa-search"></i>
+            </div>
+            <select id="category-filter" aria-label="Filter Ayurvedic terms by category">
+                <option value="">All Categories</option>
+                <option value="dosha">Doshas</option>
+                <option value="disease">Diseases</option>
+                <option value="herb">Herbs</option>
+                <option value="treatment">Treatments</option>
+                <option value="anatomy">Anatomy</option>
+            </select>
+            <button id="search-terms-btn" class="kash-btn kash-btn--primary" type="button" aria-label="Search terms">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <div id="term-results-container" class="ayurveda-term-results"></div>
+
+        <article id="featured-term" class="ayurveda-featured-term">
+            <div class="ayurveda-term-top">
+                <div>
+                    <div class="ayurveda-term-title">
+                        <strong id="featured-term-name">Vata</strong>
+                        <span id="featured-term-sanskrit">वात</span>
+                        <span class="badge text-bg-warning" id="featured-term-category">dosha</span>
+                    </div>
+                    <div class="ayurveda-pronunciation">
+                        <button id="pronounce-btn" class="kash-btn kash-btn--ghost" type="button">
+                            <i class="fa-solid fa-volume-high"></i> Listen
+                        </button>
+                        <span id="featured-term-ipa">/ˈvɑːtə/</span>
+                        <span id="featured-term-guide">VAH-tah</span>
+                    </div>
+                </div>
+                <div class="ayurveda-reference">
+                    <span>Samhita Reference</span>
+                    <strong id="featured-term-samhita">Charaka Samhita</strong>
+                    <small id="featured-term-verse">Sutra Sthana 1.3.5</small>
+                </div>
+            </div>
+
+            <div class="ayurveda-term-grid">
+                <div>
+                    <h3>Meaning</h3>
+                    <p id="featured-term-meaning">The biological air principle governing movement.</p>
+                </div>
+                <div>
+                    <h3>Clinical Significance</h3>
+                    <p id="featured-term-clinical">Vata imbalance is associated with neurological, musculoskeletal, and gastrointestinal disorders.</p>
+                </div>
+            </div>
+
+            <div class="ayurveda-commentary">
+                <div class="ayurveda-commentary-icon"><i class="fa-solid fa-scroll"></i></div>
+                <div>
+                    <h3>Commentary: <span id="featured-term-commentary-name">Chakrapani</span></h3>
+                    <small id="featured-term-verse-number">Verse 1.3.5</small>
+                    <p class="ayurveda-sanskrit" id="featured-term-sanskrit-verse">वातः शरीरे चेष्टाकारकः...</p>
+                    <p id="featured-term-commentary-translation">Vata is responsible for movement in the body.</p>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <section class="kash-action-grid" aria-label="Quick actions">
+        <a href="/consultation/voice" class="kash-action-card">
+            <i class="fa-solid fa-microphone"></i>
+            <span><strong>Voice Consultation</strong><br>Hindi/English case capture</span>
+        </a>
+        <a href="/patients" class="kash-action-card">
+            <i class="fa-solid fa-users"></i>
+            <span><strong>Patients</strong><br>Open clinic registry</span>
+        </a>
+        <a href="/appointments" class="kash-action-card">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span><strong>Schedule</strong><br>Review appointments</span>
+        </a>
+    </section>
+</div>
+
 <div class="site-container page-shell">
     <aside class="page-sidebar">
         <section class="side-panel sidebar-card">

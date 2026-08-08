@@ -58,6 +58,7 @@ class Patient(Base):
     )
     patient_queries: Mapped[list["PatientQuery"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     pending_reviews: Mapped[list["PendingReview"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
+    samhita_analyses: Mapped[list["SamhitaAnalysis"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
 
 
 class CaseSheet(Base):
@@ -179,6 +180,114 @@ class ConsultationSession(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     ended_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    samhita_analyses: Mapped[list["SamhitaAnalysis"]] = relationship(back_populates="consultation")
+
+
+class SamhitaAnalysis(Base):
+    __tablename__ = "samhita_analyses"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
+    consultation_id: Mapped[int | None] = mapped_column(ForeignKey("consultation_sessions.id"), nullable=True, index=True)
+    symptoms: Mapped[str] = mapped_column(Text)
+    age: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    gender: Mapped[str] = mapped_column(String(10), default="")
+    prakriti: Mapped[str] = mapped_column(String(50), default="Unknown")
+    agni: Mapped[str] = mapped_column(String(50), default="Unknown")
+    history: Mapped[str] = mapped_column(Text, default="None")
+    dosha_analysis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dietary_recommendations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    herbal_formulations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lifestyle_regimen: Mapped[str | None] = mapped_column(Text, nullable=True)
+    treatment_recommendations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    follow_up_plan: Mapped[str | None] = mapped_column(Text, nullable=True)
+    classical_reference: Mapped[str | None] = mapped_column(Text, nullable=True)
+    raw_response: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+    patient: Mapped["Patient | None"] = relationship(back_populates="samhita_analyses")
+    consultation: Mapped["ConsultationSession | None"] = relationship(back_populates="samhita_analyses")
+    dietary_items: Mapped[list["DietaryRecommendation"]] = relationship(back_populates="analysis", cascade="all, delete-orphan")
+    herbal_formulas: Mapped[list["HerbalFormula"]] = relationship(back_populates="analysis", cascade="all, delete-orphan")
+
+
+class DietaryRecommendation(Base):
+    __tablename__ = "dietary_recommendations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    analysis_id: Mapped[int] = mapped_column(ForeignKey("samhita_analyses.id"), index=True)
+    category: Mapped[str] = mapped_column(String(20))
+    name: Mapped[str] = mapped_column(String(100))
+    rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+    preparation: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    analysis: Mapped["SamhitaAnalysis"] = relationship(back_populates="dietary_items")
+
+
+class HerbalFormula(Base):
+    __tablename__ = "herbal_formulas"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    analysis_id: Mapped[int] = mapped_column(ForeignKey("samhita_analyses.id"), index=True)
+    name: Mapped[str] = mapped_column(String(100))
+    sanskrit_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    ingredients: Mapped[str | None] = mapped_column(Text, nullable=True)
+    dosage: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    timing: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    duration: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    precautions: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    analysis: Mapped["SamhitaAnalysis"] = relationship(back_populates="herbal_formulas")
+
+
+class AyurvedicTerm(Base):
+    __tablename__ = "ayurvedic_terms"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    term: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    sanskrit_term: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    ipa_pronunciation: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    category: Mapped[str] = mapped_column(String(50), default="", index=True)
+    samhita: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
+    chapter: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    verse_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    verse_sanskrit: Mapped[str | None] = mapped_column(Text, nullable=True)
+    verse_translation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    commentary_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    commentary_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    commentary_translation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    meaning: Mapped[str | None] = mapped_column(Text, nullable=True)
+    clinical_significance: Mapped[str | None] = mapped_column(Text, nullable=True)
+    pronunciation_guide: Mapped[str | None] = mapped_column(Text, nullable=True)
+    audio_url: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
+
+
+class AyurTermCategory(Base):
+    __tablename__ = "ayur_term_categories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    icon: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+
+class PatientSamhitaQuery(Base):
+    __tablename__ = "patient_samhita_queries"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int | None] = mapped_column(ForeignKey("patients.id"), nullable=True, index=True)
+    term_id: Mapped[int | None] = mapped_column(ForeignKey("ayurvedic_terms.id"), nullable=True, index=True)
+    query_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    context: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+
+    patient: Mapped["Patient | None"] = relationship()
+    term: Mapped["AyurvedicTerm | None"] = relationship()
 
 
 class ConsultationMetric(Base):

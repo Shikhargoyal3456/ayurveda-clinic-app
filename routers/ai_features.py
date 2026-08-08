@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.config import settings
 from app.database import SessionLocal, commit_with_retry, get_db
 from app.middleware.circuit_breaker import circuit_breaker, concurrency_limiter
@@ -24,7 +25,8 @@ from app.utils.gemini_client import gemini_client
 from app.utils.groq_client import groq_client
 from app.utils.ollama_client import ollama_client
 from app.utils.file_validator import validate_file_upload, validate_prompt_injection
-from app.models import Appointment, BillingCode, CaseSheet, Doctor, Patient, TelemedicineSession, TongueAnalysis
+from app.models import Appointment, BillingCode, CaseSheet, Doctor, Patient, SamhitaAnalysis, TelemedicineSession, TongueAnalysis
+from app.utils.samhita_prompt import build_samhita_prompt
 from services.ai_provider import build_gemini_part, generate_gemini_content, is_gemini_configured, parse_json_response
 from models.outcome import Outcome
 from models.prescription import Prescription
@@ -183,6 +185,122 @@ def _extract_json_response(raw_text: str) -> dict[str, Any] | None:
         return None
 
 
+SAMHITA_SECTION_KEYS = {
+    "dosha analysis": "dosha_analysis",
+    "dietary recommendations": "dietary_recommendations",
+    "dietary recommendations (ahara)": "dietary_recommendations",
+    "herbal formulations": "herbal_formulations",
+    "lifestyle regimen": "lifestyle_regimen",
+    "lifestyle regimen (vihara)": "lifestyle_regimen",
+    "treatment recommendations": "treatment_recommendations",
+    "treatment recommendations (chikitsa)": "treatment_recommendations",
+    "follow-up plan": "follow_up_plan",
+    "follow up plan": "follow_up_plan",
+    "ayurvedic reference": "classical_reference",
+    "classical reference": "classical_reference",
+}
+
+
+def parse_samhita_response(response: str) -> dict[str, str]:
+    """Parse a markdown-style Samhita response into frontend-friendly sections."""
+    sections: dict[str, list[str]] = {}
+    current_key = "summary"
+
+    for raw_line in (response or "").splitlines():
+        stripped = raw_line.strip()
+        heading = re.sub(r"^[#\s\d.\-🩺🍽️🌿🧘🏥📋🔬]+", "", stripped).strip()
+        normalized = re.sub(r"\s+", " ", heading).lower()
+        normalized = re.sub(r"^\d+\.\s*", "", normalized)
+
+        if stripped.startswith("##") and not stripped.startswith("###") and normalized:
+            matched_key = None
+            for label, key in SAMHITA_SECTION_KEYS.items():
+                if label in normalized:
+                    matched_key = key
+                    break
+            current_key = matched_key or re.sub(r"[^a-z0-9]+", "_", normalized).strip("_") or "summary"
+            sections.setdefault(current_key, [])
+            continue
+
+        sections.setdefault(current_key, []).append(raw_line)
+
+    parsed = {key: "\n".join(lines).strip() for key, lines in sections.items() if "\n".join(lines).strip()}
+    for key in SAMHITA_SECTION_KEYS.values():
+        parsed.setdefault(key, "")
+    return parsed
+
+
+def _mock_samhita_response(symptoms: str, prakriti: str, agni: str) -> str:
+    return f"""
+## 1. DOSHA ANALYSIS
+- **Primary Imbalance**: Vata-Pitta
+- **Sub-Dosha Affected**: Prana Vata and Pachaka Pitta
+- **Explanation**: Symptoms such as {symptoms} suggest disturbed movement, digestion, and heat regulation. Prakriti: {prakriti}. Agni: {agni}.
+
+## 2. DIETARY RECOMMENDATIONS (Ahara)
+### Foods to Favor (Pathya):
+- Warm rice gruel with ginger for easy digestion
+- Moong dal soup with cumin and coriander
+- Stewed apple or pear for gentle nourishment
+- Ghee in small quantity to pacify Vata
+- Cumin, fennel, and coriander tea
+
+### Foods to Avoid (Apathya):
+- Cold drinks and refrigerated foods
+- Fried and very spicy foods
+- Excess tea, coffee, and sour foods
+- Irregular meal timing
+
+### Sample Meal Plan:
+- Breakfast: Warm porridge with ghee or stewed fruit
+- Lunch: Moong dal khichdi with cumin
+- Dinner: Light vegetable soup before sunset
+
+## 3. HERBAL FORMULATIONS
+### Primary Formulation:
+- Name: Triphala Churna
+- Ingredients: Haritaki, Bibhitaki, Amalaki
+- Dosage: 3-5 g with warm water
+- Timing: At bedtime
+
+### Supportive Formulations:
+- Dashamoola decoction when Vata pain is prominent
+- Avipattikara Churna when acidity or Pitta signs are prominent
+
+## 4. LIFESTYLE REGIMEN (Vihara)
+### Daily Routine (Dinacharya):
+- Morning: Warm water, light stretching, regular bowel routine
+- Afternoon: Main meal at a consistent time
+- Evening: Early light dinner and screen reduction
+
+### Seasonal Routine (Ritucharya):
+- Favor warm, cooked, easy-to-digest meals and avoid exposure to cold wind.
+
+## 5. TREATMENT RECOMMENDATIONS (Chikitsa)
+### Primary Treatment:
+- Deepana-pachana and Vata-Pitta shamana for 7-14 days.
+- Expected outcomes: better appetite, reduced discomfort, improved sleep.
+
+### Supportive Therapies:
+- Gentle abhyanga with warm sesame oil if no fever
+- Steam inhalation only when clinically appropriate
+
+## 6. FOLLOW-UP PLAN
+- Review in: 7 days
+- Progress indicators: appetite, bowel pattern, sleep, pain, fever, and energy
+- When to escalate: persistent fever, severe pain, breathlessness, dehydration, blood in stool/vomit, or rapid worsening
+
+## 7. AYURVEDIC REFERENCE
+### Classical Reference:
+- Text: Charaka Samhita
+- Chapter: Sutrasthana, Langhana-Brimhana principles
+- Verse: Use practitioner verification for exact verse citation
+
+### Supporting Logic:
+The approach follows dosha assessment, agni correction, pathya-apathya, and staged chikitsa. This is educational support and should be reviewed by a qualified practitioner.
+""".strip()
+
+
 async def get_ai_response_with_fallback(prompt: str, source_text: str = "", temperature: float = 0.7, max_tokens: int = 500) -> tuple[str | None, str]:
     try:
         if gemini_client.is_available():
@@ -246,6 +364,75 @@ async def tongue_health_check():
         "ollama_configured": ollama_client.is_available(),
         "active_path": "gemini -> groq -> ollama -> mock",
         "enabled": _feature_enabled("enable_tongue_ai", True),
+    }
+
+
+@router.post("/api/samhita/analyze")
+async def analyze_samhita(
+    data: dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db),
+    current_user: dict[str, object] | None = Depends(get_current_user),
+):
+    symptoms = _safe_text(data.get("symptoms"))
+    if not symptoms:
+        raise HTTPException(status_code=400, detail="Symptoms are required")
+
+    patient_id = data.get("patient_id")
+    consultation_id = data.get("consultation_id")
+    age_value = data.get("age")
+    try:
+        age = int(age_value) if age_value not in (None, "") else None
+    except (TypeError, ValueError):
+        age = None
+
+    gender = _safe_text(data.get("gender"))
+    prakriti = _safe_text(data.get("prakriti")) or "Unknown"
+    agni = _safe_text(data.get("agni")) or "Unknown"
+    history = _safe_text(data.get("history")) or "None"
+
+    prompt = build_samhita_prompt(
+        symptoms=symptoms,
+        age=age,
+        gender=gender,
+        prakriti=prakriti,
+        agni=agni,
+        history=history,
+    )
+    raw_response, provider = await get_ai_response_with_fallback(prompt, temperature=0.35, max_tokens=1800)
+    if not raw_response:
+        raw_response = _mock_samhita_response(symptoms, prakriti, agni)
+        provider = "mock"
+
+    parsed_response = parse_samhita_response(raw_response)
+
+    analysis = SamhitaAnalysis(
+        patient_id=int(patient_id) if patient_id not in (None, "") else None,
+        consultation_id=int(consultation_id) if consultation_id not in (None, "") else None,
+        symptoms=symptoms,
+        age=age,
+        gender=gender,
+        prakriti=prakriti,
+        agni=agni,
+        history=history,
+        dosha_analysis=parsed_response.get("dosha_analysis"),
+        dietary_recommendations=parsed_response.get("dietary_recommendations"),
+        herbal_formulations=parsed_response.get("herbal_formulations"),
+        lifestyle_regimen=parsed_response.get("lifestyle_regimen"),
+        treatment_recommendations=parsed_response.get("treatment_recommendations"),
+        follow_up_plan=parsed_response.get("follow_up_plan"),
+        classical_reference=parsed_response.get("classical_reference"),
+        raw_response=raw_response,
+    )
+    db.add(analysis)
+    commit_with_retry(db)
+    db.refresh(analysis)
+
+    return {
+        "success": True,
+        "analysis": parsed_response,
+        "analysis_id": analysis.id,
+        "provider": provider,
+        "authenticated": current_user is not None,
     }
 
 

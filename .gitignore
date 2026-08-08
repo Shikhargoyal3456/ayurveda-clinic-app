@@ -55,6 +55,17 @@ package-lock.json
 # Vercel
 .vercel/
 
+# Cloud deployment files (not needed locally)
+vercel.json
+render.yaml
+runtime.txt
+render-build.sh
+*.vercel.app
+*.onrender.com
+
+# Local-only files
+*.local
+
 # Backups and local data
 backups/
 *.bak

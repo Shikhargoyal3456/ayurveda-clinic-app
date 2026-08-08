@@ -16,7 +16,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers.setdefault(
             "Content-Security-Policy",
             "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:; "
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https:; frame-src 'self' https:;",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https:; "
+            "media-src 'self' https://d8j0ntlcm91z4.cloudfront.net; frame-src 'self' https:;",
         )
         if settings.is_production and request.headers.get("x-forwarded-proto", request.url.scheme) == "https":
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")

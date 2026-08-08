@@ -56,6 +56,13 @@
     .lockout-warning{color:#ffd9d1}
     .lockout-resolved{color:#a5f3d3}
     .password-policy{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(152,255,241,.10)}
+    .role-selector{display:grid;gap:10px}
+    .role-selector>span{font-weight:600;color:#f7ffff}
+    .role-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .role-btn{padding:12px 14px;border-radius:16px;border:1px solid rgba(152,255,241,.14);background:rgba(255,255,255,.04);color:#dff7f7;font-weight:800;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+    .role-btn.active{border-color:rgba(102,241,214,.78);background:rgba(102,241,214,.12);color:#f7ffff;box-shadow:0 12px 26px rgba(0,194,255,.12)}
+    .role-btn:hover{transform:translateY(-1px);border-color:rgba(102,241,214,.56)}
+    .google-hint{margin:0;text-align:center;color:rgba(223,247,247,.62);font-size:.86rem}
     @media (max-width:560px){.auth-card{padding:26px 20px}}
     </style>
 </head>
@@ -96,14 +103,14 @@
             </label>
             <div id="passwordStrengthContainer"></div>
             <div class="password-policy" id="passwordPolicyText">Password must have: at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.</div>
-            <label class="input-group">
+            <div class="role-selector">
                 <span>I am a</span>
-                <select name="role">
-                    <option value="">Auto-detect</option>
-                    <option value="doctor" {% if preferred_role == 'doctor' %}selected{% endif %}>Doctor</option>
-                    <option value="patient" {% if preferred_role == 'patient' %}selected{% endif %}>Patient</option>
-                </select>
-            </label>
+                <div class="role-buttons" role="group" aria-label="Choose account role">
+                    <button type="button" class="role-btn{% if preferred_role != 'patient' %} active{% endif %}" data-role="doctor">Doctor</button>
+                    <button type="button" class="role-btn{% if preferred_role == 'patient' %} active{% endif %}" data-role="patient">Patient</button>
+                </div>
+                <input type="hidden" name="role" id="selectedRole" value="{{ preferred_role if preferred_role in ['doctor', 'patient'] else 'doctor' }}">
+            </div>
             <div class="form-options">
                 <label class="checkbox-label"><input type="checkbox" name="remember_me"> Remember me</label>
                 <a href="/auth/forgot-password" class="forgot-link">Forgot Password?</a>
@@ -114,7 +121,8 @@
             <button type="submit" class="login-btn" id="loginBtn">🔐 Sign In</button>
         </form>
         <div class="divider"><span>or</span></div>
-        <a href="/auth/google/login" class="btn-google">
+        <p class="google-hint">Select your role above, then continue with Google.</p>
+        <a href="/auth/google/login?role={{ preferred_role if preferred_role in ['doctor', 'patient'] else 'doctor' }}" class="btn-google" id="googleLoginBtn">
             <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
                 <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                 <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -144,6 +152,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const attemptsFill = document.getElementById("attemptsFill");
     const loginBtn = document.getElementById("loginBtn");
     const lockoutMiniBadge = document.getElementById("lockoutMiniBadge");
+    const selectedRole = document.getElementById("selectedRole");
+    const googleLoginBtn = document.getElementById("googleLoginBtn");
+    const roleButtons = Array.from(document.querySelectorAll(".role-btn[data-role]"));
 
     attemptsText.textContent = `${remainingAttempts} attempts remaining before temporary lockout`;
     attemptsFill.style.width = `${Math.max(0, (remainingAttempts / 5) * 100)}%`;
@@ -189,6 +200,17 @@ document.addEventListener("DOMContentLoaded", () => {
         passwordInput.type = passwordInput.type === "password" ? "text" : "password";
         toggleButton.innerHTML = passwordInput.type === "password" ? '<i class="fa-solid fa-eye"></i>' : '<i class="fa-solid fa-eye-slash"></i>';
     });
+
+    const applyRole = (role) => {
+        selectedRole.value = role;
+        roleButtons.forEach((button) => button.classList.toggle("active", button.dataset.role === role));
+        googleLoginBtn.href = `/auth/google/login?role=${encodeURIComponent(role)}`;
+    };
+
+    roleButtons.forEach((button) => {
+        button.addEventListener("click", () => applyRole(button.dataset.role));
+    });
+    applyRole(selectedRole.value || "doctor");
 });
 </script>
 </body>

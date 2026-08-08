@@ -6,9 +6,13 @@ import uuid
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+
+from app.config import settings
 
 
 logger = logging.getLogger(__name__)
+templates = Jinja2Templates(directory=str(settings.templates_dir))
 
 
 def generate_error_id() -> str:
@@ -45,9 +49,48 @@ def _friendly_message(detail: object, status_code: int) -> str:
         return "Please check the details and try again."
     if "server is busy" in lowered:
         return "Too many people are using the app right now. Please try again shortly."
+    if status_code == status.HTTP_404_NOT_FOUND and lowered == "not found":
+        return "Oops, we couldn't find that page."
     if not text:
         return "Something went wrong. Please try again."
     return text
+
+
+def _error_title(status_code: int) -> str:
+    if status_code == status.HTTP_404_NOT_FOUND:
+        return "Page not found"
+    if status_code == status.HTTP_403_FORBIDDEN:
+        return "Access denied"
+    if status_code == status.HTTP_401_UNAUTHORIZED:
+        return "Login required"
+    if status_code == status.HTTP_429_TOO_MANY_REQUESTS:
+        return "Too many requests"
+    if status_code >= 500:
+        return "Something went wrong"
+    return "Request issue"
+
+
+def _render_error_page(
+    request: Request,
+    status_code: int,
+    message: str,
+    *,
+    headers: dict[str, str] | None = None,
+    error_id: str | None = None,
+) -> HTMLResponse:
+    return templates.TemplateResponse(
+        "error.html",
+        {
+            "request": request,
+            "status_code": status_code,
+            "error_title": _error_title(status_code),
+            "error_message": message,
+            "error_id": error_id,
+            "csrf_token": getattr(request.state, "csrf_token", ""),
+        },
+        status_code=status_code,
+        headers=headers,
+    )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -82,16 +125,7 @@ def register_exception_handlers(app: FastAPI) -> None:
                 payload["retry_after"] = exc.headers.get("Retry-After") if exc.headers else None
             return JSONResponse(status_code=exc.status_code, content=payload, headers=exc.headers)
 
-        return HTMLResponse(
-            status_code=exc.status_code,
-            content=(
-                "<!DOCTYPE html><html><head><title>Request issue</title></head>"
-                "<body style=\"font-family: sans-serif; text-align:center; padding:50px;\">"
-                f"<h1>{exc.status_code}</h1><p>{message}</p><p><a href=\"/\">Return to Homepage</a></p>"
-                "</body></html>"
-            ),
-            headers=exc.headers,
-        )
+        return _render_error_page(request, exc.status_code, message, headers=exc.headers)
 
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
@@ -109,15 +143,9 @@ def register_exception_handlers(app: FastAPI) -> None:
                 },
             )
 
-        return HTMLResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content=(
-                "<!DOCTYPE html><html><head><title>Something went wrong</title></head>"
-                "<body style=\"font-family: sans-serif; text-align:center; padding:50px;\">"
-                "<h1>Something went wrong</h1>"
-                "<p>We've been notified and are working on it.</p>"
-                f"<p>Error ID: {error_id}</p>"
-                "<p><a href=\"/\">Return to Homepage</a></p>"
-                "</body></html>"
-            ),
+        return _render_error_page(
+            request,
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            "We've been notified and are working on it.",
+            error_id=error_id,
         )

@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 import secrets
 
-from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -20,19 +19,23 @@ from app.portal_auth import (
     normalize_identifier,
     normalize_phone,
 )
-from app.auth import verify_csrf
+from app.auth import ensure_csrf_token, verify_csrf
 from models.user import User, UserRole
 from routers.auth import PORTAL_CONFIG, _complete_portal_login
 
+try:
+    from authlib.integrations.starlette_client import OAuth
+except Exception:  # pragma: no cover - optional OAuth dependency
+    OAuth = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 router = APIRouter(prefix="/auth/google", tags=["google-auth"])
-oauth = OAuth()
+oauth = OAuth() if OAuth is not None else None
 
 
 def _google_configured() -> bool:
-    return bool(settings.google_client_id and settings.google_client_secret)
+    return bool(oauth is not None and settings.google_client_id and settings.google_client_secret)
 
 
 if _google_configured():
@@ -83,7 +86,7 @@ def _google_role_context(request: Request, google_user: dict[str, str], error: s
         "google_user": google_user,
         "role_cards": role_cards,
         "error": error,
-        "csrf_token": request.state.csrf_token,
+        "csrf_token": getattr(request.state, "csrf_token", "") or ensure_csrf_token(request),
         "hide_footer": True,
         "hide_header": True,
         "user_name": google_user.get("full_name") or "Google signup",
@@ -151,6 +154,8 @@ async def google_login(request: Request, role: str | None = None):
     if not _google_configured():
         raise HTTPException(status_code=503, detail="Google login is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.")
     preferred_role = str(role or "").strip().lower()
+    if preferred_role not in {UserRole.doctor.value, UserRole.patient.value}:
+        preferred_role = ""
     request.session["google_preferred_role"] = preferred_role
     redirect_uri = settings.google_redirect_uri
     return await oauth.google.authorize_redirect(request, redirect_uri)
