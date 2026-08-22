@@ -32,6 +32,9 @@ async function downloadTwilioMedia(mediaUrl) {
 }
 
 async function normalizePrescriptionUpload(buffer, mimeType) {
+  if (!Buffer.isBuffer(buffer)) {
+    throw new Error('Prescription upload must be provided as an in-memory buffer.');
+  }
   const normalizedMimeType = String(mimeType || 'image/jpeg').split(';')[0];
   if (normalizedMimeType === 'application/pdf') {
     return { buffer, mimeType: normalizedMimeType };

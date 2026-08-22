@@ -1060,7 +1060,7 @@ textarea:focus,
 .landing-hero {
     position: relative;
     background:
-        radial-gradient(circle at top right, rgba(99, 102, 241, 0.12), transparent 30%),
+        radial-gradient(circle at top right, rgba(232, 178, 74, 0.12), transparent 30%),
         radial-gradient(circle at bottom left, rgba(43, 174, 102, 0.16), transparent 36%),
         linear-gradient(135deg, #ffffff 0%, #f5fbf9 48%, #eef4ff 100%);
     border-radius: calc(var(--radius-2xl) + 8px);
@@ -1074,7 +1074,7 @@ textarea:focus,
     gap: 0.5rem;
     padding: 0.45rem 0.85rem;
     border-radius: var(--radius-full);
-    background: rgba(99, 102, 241, 0.08);
+    background: rgba(232, 178, 74, 0.08);
     color: var(--color-ai-dark);
     font-weight: 600;
     font-size: 0.9rem;
@@ -1157,7 +1157,7 @@ textarea:focus,
     position: absolute;
     inset: -6px;
     border-radius: 50%;
-    border: 2px solid rgba(99, 102, 241, 0.25);
+    border: 2px solid rgba(232, 178, 74, 0.25);
     animation: ai-pulse 2s ease infinite;
 }
 
@@ -1287,7 +1287,7 @@ textarea:focus,
 
 /* Standard Button - use everywhere */
 .btn-primary {
-    background: #2BAE66;
+    background: #12A56F;
     color: white;
     border: none;
     padding: 10px 20px;
@@ -1355,7 +1355,7 @@ textarea:focus,
     padding: 12px 24px;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #0f4c5c 0%, #1a7f6b 100%);
+    background: linear-gradient(135deg, #146B4A 0%, #1F9D6B 100%);
     color: white;
     font-weight: 700;
     cursor: pointer;
@@ -1378,7 +1378,7 @@ textarea:focus,
 }
 
 .modern-header {
-    background: linear-gradient(135deg, #0f4c5c 0%, #1a7f6b 100%);
+    background: linear-gradient(135deg, #146B4A 0%, #1F9D6B 100%);
     color: white;
     padding: 24px 32px;
     border-radius: 20px;

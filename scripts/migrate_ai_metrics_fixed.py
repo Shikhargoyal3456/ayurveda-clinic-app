@@ -13,11 +13,18 @@ from datetime import datetime, timedelta
 
 
 DB_PATH = "ayurveda.db"
+AI_METRICS_TABLES = {"consultation_metrics", "ai_feedback", "doctor_activity_log"}
+
+
+def quote_identifier(identifier: str, allowed: set[str]) -> str:
+    if identifier not in allowed:
+        raise ValueError(f"Unexpected SQL identifier: {identifier}")
+    return f'"{identifier}"'
 
 
 def get_table_columns(cursor: sqlite3.Cursor, table_name: str) -> dict[str, tuple]:
     """Get list of column names for a table."""
-    cursor.execute(f"PRAGMA table_info({table_name})")
+    cursor.execute("SELECT * FROM pragma_table_info(?)", (table_name,))
     return {col[1]: col for col in cursor.fetchall()}
 
 
@@ -77,7 +84,7 @@ def recreate_ai_feedback(cursor: sqlite3.Cursor) -> None:
 
     exists = table_exists(cursor, "ai_feedback")
     backup_name = "ai_feedback_backup"
-    cursor.execute(f"DROP TABLE IF EXISTS {backup_name}")
+    cursor.execute("DROP TABLE IF EXISTS ai_feedback_backup")
 
     if exists:
         columns = get_table_columns(cursor, "ai_feedback")
@@ -293,7 +300,8 @@ def migrate() -> None:
         print("✅ Migration completed successfully!")
 
         for table in ["consultation_metrics", "ai_feedback", "doctor_activity_log"]:
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            table_sql = quote_identifier(table, AI_METRICS_TABLES)
+            cursor.execute(f"SELECT COUNT(*) FROM {table_sql}")
             print(f"📊 {table}: {cursor.fetchone()[0]} rows")
     except Exception as exc:
         conn.rollback()

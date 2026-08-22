@@ -1,5 +1,8 @@
 const { createPatient, findPatientById } = require('../models/patientModel');
 
+// SECURITY(authz): requires authentication + ownership check. Any caller can create a
+// patient record. Once an auth scheme exists, require an authenticated clinician (req.user)
+// and associate the new patient with that account.
 async function addPatient(req, res, next) {
   try {
     const { name, phone } = req.body;
@@ -19,6 +22,9 @@ async function addPatient(req, res, next) {
   }
 }
 
+// SECURITY(authz): requires authentication + ownership check. Any caller can read any
+// patient by guessing/enumerating :id (IDOR). Once an auth scheme exists, require req.user
+// and confirm the patient belongs to / is accessible by req.user.
 async function getPatient(req, res, next) {
   try {
     const patient = findPatientById(req.params.id);

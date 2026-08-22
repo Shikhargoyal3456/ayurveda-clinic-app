@@ -45,6 +45,7 @@ from services.ai_provider import (
 
 
 logger = logging.getLogger(__name__)
+LAB_UPLOAD_ROOT = Path(__file__).resolve().parents[1] / "temp"
 
 
 def clean_extracted_text(text: str) -> str:
@@ -201,7 +202,11 @@ class LabReportAnalyzer:
             pytesseract.pytesseract.tesseract_cmd = executable
 
     async def extract_text_from_report(self, file_path: str, file_type: str) -> str:
-        raw_bytes = Path(file_path).read_bytes()
+        base_dir = LAB_UPLOAD_ROOT.resolve()
+        report_path = Path(file_path).resolve()
+        if base_dir not in report_path.parents:
+            raise ValueError("Invalid lab report path.")
+        raw_bytes = report_path.read_bytes()
         return self.extract_text_from_bytes(raw_bytes, file_type=file_type)
 
     def extract_text_from_bytes(self, file_bytes: bytes, file_type: str = "") -> str:

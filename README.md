@@ -30,5 +30,7 @@ FastAPI-based AI EMR for Ayurvedic clinics. The system covers doctor authenticat
 ## 🚀 Deployment Steps
 1. Set `ENVIRONMENT=production`.
 2. Install dependencies: `pip install -r requirements.txt`.
-3. Run migrations, if any.
-4. Start server: `uvicorn main:app --host 0.0.0.0 --port 8000`.
+3. Run database migrations: `alembic upgrade head`.
+4. Start server (production): `gunicorn -c gunicorn_conf.py -b 0.0.0.0:8000 app.main:app`.
+
+See [RUN.md](RUN.md) for a full local + production quick-start and [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment.

@@ -1,19 +1,23 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+/* Kash AI — "Ancient intelligence, computed": botanical ink + turmeric + living green.
+   Variable names are unchanged so every existing component re-themes automatically. */
 :root {
-    --kash-bg: #0a0a0f;
-    --kash-surface: rgba(18, 20, 31, 0.72);
-    --kash-surface-strong: rgba(24, 27, 40, 0.94);
-    --kash-border: rgba(255, 255, 255, 0.08);
-    --kash-text: #f5f7fb;
-    --kash-muted: rgba(233, 236, 246, 0.7);
-    --kash-accent: #7c3aed;
-    --kash-accent-2: #e486ab;
-    --kash-success: #10b981;
-    --kash-warm: #fbbf24;
-    --kash-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    --kash-bg: #0B1512;
+    --kash-surface: rgba(19, 34, 28, 0.72);
+    --kash-surface-strong: rgba(19, 34, 28, 0.94);
+    --kash-border: rgba(138, 168, 148, 0.16);
+    --kash-text: #F4EEE1;
+    --kash-muted: rgba(244, 238, 225, 0.66);
+    --kash-accent: #E8B24A;      /* turmeric gold */
+    --kash-accent-2: #2FC98A;    /* living green */
+    --kash-success: #2FC98A;
+    --kash-warm: #E8B24A;
+    --kash-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
     --kash-radius: 20px;
     --kash-pill: 80px;
+    --kash-font-display: 'Fraunces', Georgia, serif;
+    --kash-font-util: 'Space Grotesk', 'Inter', sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -21,9 +25,9 @@
 html, body {
     min-height: 100%;
     background:
-        radial-gradient(circle at top left, rgba(124, 58, 237, 0.18), transparent 35%),
-        radial-gradient(circle at top right, rgba(228, 134, 171, 0.16), transparent 30%),
-        linear-gradient(180deg, #0a0a0f 0%, #090b14 100%);
+        radial-gradient(60% 50% at 78% 8%, rgba(232, 178, 74, 0.16), transparent 60%),
+        radial-gradient(50% 45% at 8% 92%, rgba(47, 201, 138, 0.12), transparent 60%),
+        linear-gradient(180deg, #0B1512 0%, #081109 100%);
     color: var(--kash-text);
     font-family: 'Inter', sans-serif;
 }
@@ -31,6 +35,11 @@ html, body {
 body {
     margin: 0;
     color: var(--kash-text);
+}
+
+h1, h2, h3, .hero-title, .section-title, .page-title {
+    font-family: var(--kash-font-display);
+    letter-spacing: -0.015em;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -57,13 +66,13 @@ a { color: inherit; text-decoration: none; }
 .new-shell::before {
     top: -120px;
     left: -120px;
-    background: rgba(124, 58, 237, 0.4);
+    background: rgba(232, 178, 74, 0.32);
 }
 
 .new-shell::after {
     right: -120px;
     bottom: -120px;
-    background: rgba(228, 134, 171, 0.3);
+    background: rgba(47, 201, 138, 0.26);
 }
 
 .kash-container {
@@ -111,7 +120,7 @@ a { color: inherit; text-decoration: none; }
 .brand-name,
 .footer-name {
     font-weight: 800;
-    background: linear-gradient(135deg, #ffffff, #a5b4fc);
+    background: linear-gradient(135deg, #ffffff, #E8B24A);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -154,13 +163,13 @@ a { color: inherit; text-decoration: none; }
 }
 
 .nav-cta {
-    background: #4f46e5;
+    background: #C6871B;
     color: #ffffff;
     padding-inline: 20px;
 }
 
 .nav-cta:hover {
-    background: #4338ca;
+    background: #A66E13;
     color: #ffffff;
     transform: translateY(-1px);
 }
@@ -200,12 +209,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .btn-signup {
-    background: #4f46e5;
+    background: #C6871B;
     color: #ffffff;
 }
 
 .btn-signup:hover {
-    background: #4338ca;
+    background: #A66E13;
     transform: translateY(-1px);
 }
 
@@ -233,7 +242,7 @@ a { color: inherit; text-decoration: none; }
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    background: linear-gradient(135deg, #C6871B, #E8B24A);
     color: white;
     font-weight: 800;
     text-transform: uppercase;
@@ -308,8 +317,8 @@ a { color: inherit; text-decoration: none; }
     width: fit-content;
     padding: 2px 10px;
     border-radius: 999px;
-    background: rgba(124, 58, 237, 0.22);
-    color: #c4b5fd;
+    background: rgba(232, 178, 74, 0.22);
+    color: #F0C674;
     font-size: 0.72rem;
     font-weight: 800;
 }
@@ -435,7 +444,7 @@ a { color: inherit; text-decoration: none; }
 
 .card:hover {
     transform: translateY(-3px);
-    border-color: rgba(124, 58, 237, 0.35);
+    border-color: rgba(232, 178, 74, 0.35);
     box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
 }
 
@@ -516,8 +525,8 @@ button:hover {
 .avatar-lg--profile,
 .avatar--logout,
 .avatar-lg--logout {
-    background: linear-gradient(135deg, rgba(228, 134, 171, 0.18), rgba(192, 106, 143, 0.24));
-    box-shadow: 0 10px 24px rgba(192, 106, 143, 0.14);
+    background: linear-gradient(135deg, rgba(47, 201, 138, 0.18), rgba(47, 201, 138, 0.24));
+    box-shadow: 0 10px 24px rgba(47, 201, 138, 0.14);
 }
 
 .avatar--profile {
@@ -531,7 +540,7 @@ button:hover {
     height: 52px;
     border-radius: 18px;
     font-size: 1.2rem;
-    box-shadow: 0 14px 28px rgba(192, 106, 143, 0.16);
+    box-shadow: 0 14px 28px rgba(47, 201, 138, 0.16);
 }
 
 .avatar--logout {
@@ -655,8 +664,8 @@ button:hover {
     margin-top: 2px;
     padding: 2px 10px;
     border-radius: 999px;
-    background: rgba(124, 58, 237, 0.2);
-    color: #c4b5fd;
+    background: rgba(232, 178, 74, 0.2);
+    color: #F0C674;
 }
 
 .dropdown-divider {
@@ -748,8 +757,8 @@ button:hover {
 
 .sidebar-nav a.active,
 .sidebar-nav a:hover {
-    border-color: rgba(124, 58, 237, 0.36);
-    background: rgba(124, 58, 237, 0.16);
+    border-color: rgba(232, 178, 74, 0.36);
+    background: rgba(232, 178, 74, 0.16);
 }
 
 .topbar {
@@ -814,11 +823,11 @@ th {
 
 .message.user {
     margin-left: auto;
-    background: rgba(124, 58, 237, 0.18);
+    background: rgba(232, 178, 74, 0.18);
 }
 
 .message.ai {
-    background: rgba(228, 134, 171, 0.15);
+    background: rgba(47, 201, 138, 0.15);
 }
 
 .input-bar {
@@ -977,7 +986,7 @@ input::placeholder {
 
 .message.user {
     justify-self: end;
-    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    background: linear-gradient(135deg, #E8B24A 0%, #C6871B 100%);
     color: #fff;
 }
 
@@ -995,7 +1004,7 @@ input::placeholder {
 }
 
 .message.ai.action {
-    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.12);
+    box-shadow: 0 10px 30px rgba(232, 178, 74, 0.12);
 }
 
 .chat-input-area {
@@ -1454,7 +1463,7 @@ input::placeholder {
 .samhita-card--amber { border-left-color: #fbbf24; }
 .samhita-card--green { border-left-color: #34d399; }
 .samhita-card--red { border-left-color: #f87171; }
-.samhita-card--purple { border-left-color: #c084fc; }
+.samhita-card--purple { border-left-color: #E8B24A; }
 .samhita-card--blue { border-left-color: #60a5fa; }
 .samhita-card--pink { border-left-color: #f472b6; }
 

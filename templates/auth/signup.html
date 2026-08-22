@@ -20,6 +20,7 @@
                 <button type="button" class="role-btn active" data-role="doctor">Doctor</button>
                 <button type="button" class="role-btn" data-role="patient">Patient</button>
             </div>
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
             <input type="hidden" id="selectedRole" value="doctor">
         </div>
         <div class="d-grid gap-2">

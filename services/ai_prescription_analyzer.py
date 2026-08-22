@@ -38,6 +38,13 @@ except Exception:  # pragma: no cover
     fitz = None
 
 
+# ReDoS guard (tainted-regex-stdlib-fastapi): cap OCR/user text length before it is
+# scanned by the medicine/dosage/duration regexes below. Real prescriptions are far
+# shorter than this bound, so matches are preserved while pathological inputs cannot
+# force super-linear backtracking.
+_MAX_REGEX_TEXT = 10000
+
+
 class AIPrescriptionAnalyzer:
     """Analyze prescriptions, enrich medicines, and support ordering flows."""
 
@@ -107,7 +114,7 @@ class AIPrescriptionAnalyzer:
         }
 
     def extract_medicines_from_text(self, db: Session, text: str) -> list[dict[str, Any]]:
-        clean_text = str(text or "").strip()
+        clean_text = str(text or "").strip()[:_MAX_REGEX_TEXT]
         if not clean_text:
             return []
         rows = db.query(MasterMedicine).filter(MasterMedicine.is_active.is_(True)).order_by(MasterMedicine.popularity_score.desc(), MasterMedicine.name.asc()).limit(500).all()

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha384-PPIZEGYM1v8zp5Py7UjFb79S58UeqCL9pYVnVPURKEqvioPROaVAJKKLzvH2rDnI" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="stylesheet" href="/static/css/kash-ai.css?v=20260711-ui-refresh-3">
     <style>
     body{margin:0;font-family:'Inter',sans-serif;background:linear-gradient(180deg,#041115 0%,#07171d 54%,#03090c 100%);color:#dff7f7}
@@ -21,7 +21,7 @@
     .auth-header h1{margin:0;color:#f7ffff;font-family:'Plus Jakarta Sans',sans-serif}
     .muted,.security-detail,.password-policy{color:rgba(223,247,247,.72)}
     .security-badge,.session-badge,.attempts-indicator,.lockout-warning,.lockout-resolved{border-radius:18px;padding:12px 14px}
-    .security-badge,.session-badge{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(0,194,255,.10),rgba(102,241,214,.08));border:1px solid rgba(152,255,241,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+    .security-badge,.session-badge{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;background:linear-gradient(135deg,rgba(232, 178, 74,.10),rgba(102,241,214,.08));border:1px solid rgba(152,255,241,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
     .attempts-indicator{display:grid;gap:8px;background:rgba(255,255,255,.04);border:1px solid rgba(152,255,241,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
     .lockout-mini-badge{display:inline-flex;align-items:center;gap:8px;width:fit-content;padding:8px 12px;border-radius:999px;background:rgba(102,241,214,.12);border:1px solid rgba(102,241,214,.18);color:#9ff8ea;font-size:.88rem;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.12);line-height:1.2}
     .attempts-bar,.strength-bar{height:10px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
@@ -29,7 +29,7 @@
     .password-strength{display:grid;gap:10px;margin-top:10px}
     .strength-label{font-weight:700}
     .rules-list{margin:0;padding-left:18px;display:grid;gap:6px}
-    .rules-list li.passed{color:#66f1d6}.rules-list li.failed{color:#ffd4d0}
+    .rules-list li.passed{color:#2FC98A}.rules-list li.failed{color:#ffd4d0}
     .smart-login-form{display:grid;gap:16px}
     .input-group{display:grid;gap:8px}
     .input-group span,.input-group label{font-weight:600;color:#f7ffff}
@@ -39,9 +39,9 @@
     .toggle-password{position:absolute;right:14px;top:50%;transform:translateY(-50%);border:none;background:transparent;color:#9ee9ef;cursor:pointer}
     .form-options{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .checkbox-label,.forgot-link{font-size:.92rem;color:rgba(223,247,247,.72)}
-    .checkbox-label input{accent-color:#66f1d6}
-    .login-btn{width:100%;padding:14px 18px;border-radius:16px;font-weight:700;border:none;cursor:pointer;background:linear-gradient(135deg,#66f1d6,#00c2ff);color:#041115;box-shadow:0 14px 30px rgba(0,194,255,.18);transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease}
-    .login-btn:hover{transform:translateY(-1px);box-shadow:0 18px 36px rgba(0,194,255,.24)}
+    .checkbox-label input{accent-color:#2FC98A}
+    .login-btn{width:100%;padding:14px 18px;border-radius:16px;font-weight:700;border:none;cursor:pointer;background:linear-gradient(135deg,#2FC98A,#E8B24A);color:#041115;box-shadow:0 14px 30px rgba(232, 178, 74,.18);transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease}
+    .login-btn:hover{transform:translateY(-1px);box-shadow:0 18px 36px rgba(232, 178, 74,.24)}
     .login-btn:disabled{cursor:not-allowed;opacity:.7;transform:none;box-shadow:none}
     .divider{display:flex;align-items:center;margin:2px 0;color:rgba(223,247,247,.42);font-size:.86rem}
     .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(152,255,241,.12)}
@@ -50,7 +50,7 @@
     .btn-google:hover{transform:translateY(-1px);background:rgba(255,255,255,.09);border-color:rgba(152,255,241,.28)}
     .btn-google svg{flex-shrink:0}
     .security-footer{display:grid;gap:10px;text-align:center}
-    .signup-link a{color:#66f1d6;text-decoration:none;font-weight:700}
+    .signup-link a{color:#2FC98A;text-decoration:none;font-weight:700}
     .captcha-box{padding:12px 14px;border-radius:16px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa}
     .lockout-warning,.lockout-resolved{border:1px solid rgba(152,255,241,.12);background:rgba(255,255,255,.04)}
     .lockout-warning{color:#ffd9d1}
@@ -60,7 +60,7 @@
     .role-selector>span{font-weight:600;color:#f7ffff}
     .role-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .role-btn{padding:12px 14px;border-radius:16px;border:1px solid rgba(152,255,241,.14);background:rgba(255,255,255,.04);color:#dff7f7;font-weight:800;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}
-    .role-btn.active{border-color:rgba(102,241,214,.78);background:rgba(102,241,214,.12);color:#f7ffff;box-shadow:0 12px 26px rgba(0,194,255,.12)}
+    .role-btn.active{border-color:rgba(102,241,214,.78);background:rgba(102,241,214,.12);color:#f7ffff;box-shadow:0 12px 26px rgba(232, 178, 74,.12)}
     .role-btn:hover{transform:translateY(-1px);border-color:rgba(102,241,214,.56)}
     .google-hint{margin:0;text-align:center;color:rgba(223,247,247,.62);font-size:.86rem}
     @media (max-width:560px){.auth-card{padding:26px 20px}}

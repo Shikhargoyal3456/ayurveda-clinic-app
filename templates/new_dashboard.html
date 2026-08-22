@@ -116,7 +116,7 @@
     </section>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const chartDefaults = {
@@ -148,8 +148,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: "Patients",
                     data: {{ visit_data|tojson }},
-                    borderColor: "#4cc9f0",
-                    backgroundColor: "rgba(76, 201, 240, 0.14)",
+                    borderColor: "#2FC98A",
+                    backgroundColor: "rgba(47, 201, 138, 0.14)",
                     fill: true,
                     tension: 0.4
                 }]
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 labels: ["Male", "Female", "Other"],
                 datasets: [{
                     data: {{ demographics_data|tojson }},
-                    backgroundColor: ["#4cc9f0", "#8b5cf6", "#f15bb5"],
+                    backgroundColor: ["#2FC98A", "#E8B24A", "#f15bb5"],
                     borderColor: "rgba(255, 255, 255, 0.14)"
                 }]
             },
@@ -183,8 +183,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: "Revenue (₹)",
                     data: {{ revenue_data|tojson }},
-                    backgroundColor: "rgba(139, 92, 246, 0.62)",
-                    borderColor: "#8b5cf6",
+                    backgroundColor: "rgba(232, 178, 74, 0.62)",
+                    borderColor: "#E8B24A",
                     borderWidth: 1
                 }]
             },
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: "Cases",
                     data: {{ diagnosis_data|tojson }},
-                    backgroundColor: ["#4cc9f0", "#8b5cf6", "#f15bb5", "#f59e0b", "#10b981"]
+                    backgroundColor: ["#2FC98A", "#E8B24A", "#f15bb5", "#f59e0b", "#10b981"]
                 }]
             },
             options: { ...chartDefaults, indexAxis: "y", plugins: { legend: { display: false } } }
@@ -391,7 +391,7 @@ document.addEventListener("DOMContentLoaded", function () {
     border-radius: 999px;
     padding: 4px 10px;
     color: #dbeafe;
-    background: rgba(76, 201, 240, 0.14);
+    background: rgba(47, 201, 138, 0.14);
     font-size: 0.75rem;
     white-space: nowrap;
 }
@@ -435,8 +435,8 @@ document.addEventListener("DOMContentLoaded", function () {
 .action-btn:hover,
 .action-btn:focus-visible {
     color: #ffffff;
-    border-color: rgba(76, 201, 240, 0.64);
-    background: rgba(76, 201, 240, 0.14);
+    border-color: rgba(47, 201, 138, 0.64);
+    background: rgba(47, 201, 138, 0.14);
     transform: translateY(-2px);
 }
 

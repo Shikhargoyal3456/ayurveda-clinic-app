@@ -33,14 +33,18 @@ def transcribe_audio(audio_file_path: str, language: str = "auto") -> str:
     if not api_key:
         raise RuntimeError("GOOGLE_SPEECH_API_KEY is not configured.")
 
-    with open(audio_file_path, "rb") as f:
+    audio_path = Path(audio_file_path).resolve()
+    if audio_path.parent != Path(os.getenv("TMP", os.getenv("TEMP", "/tmp"))).resolve() and audio_path.parent != Path("/tmp").resolve():
+        raise RuntimeError("Invalid audio file path.")
+
+    with audio_path.open("rb") as f:
         audio_content = f.read()
 
     client = speech.SpeechClient(
         client_options={"api_key": api_key}
     )
     audio = speech.RecognitionAudio(content=audio_content)
-    suffix = Path(audio_file_path).suffix.lower()
+    suffix = audio_path.suffix.lower()
 
     language_codes = []
     if language == "auto":

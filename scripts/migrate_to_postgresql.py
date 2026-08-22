@@ -5,9 +5,20 @@ Run: python scripts/migrate_to_postgresql.py
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 
 import psycopg2
+from psycopg2 import sql
+
+
+SQL_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def quote_sqlite_identifier(identifier: str) -> str:
+    if not SQL_IDENTIFIER_RE.fullmatch(identifier):
+        raise ValueError(f"Unexpected SQL identifier: {identifier}")
+    return f'"{identifier}"'
 
 
 def get_postgres_connection():
@@ -31,13 +42,15 @@ def migrate():
     for table in tables:
         if table.startswith("sqlite_"):
             continue
+        sqlite_table = quote_sqlite_identifier(table)
         print(f"Migrating table: {table}")
-        sqlite_cursor.execute(f"PRAGMA table_info({table})")
+        sqlite_cursor.execute("SELECT * FROM pragma_table_info(?)", (table,))
         columns = sqlite_cursor.fetchall()
         col_names = [col[1] for col in columns]
         col_types = [col[2] for col in columns]
-        column_defs = []
+        pg_types = []
         for name, typ in zip(col_names, col_types):
+            quote_sqlite_identifier(name)
             if typ == "INTEGER":
                 pg_type = "INTEGER"
             elif typ == "REAL":
@@ -46,14 +59,25 @@ def migrate():
                 pg_type = "TIMESTAMP"
             else:
                 pg_type = "TEXT"
-            column_defs.append(f"{name} {pg_type}")
-        pg_cursor.execute(f"CREATE TABLE IF NOT EXISTS {table} ({', '.join(column_defs)})")
-        sqlite_cursor.execute(f"SELECT * FROM {table}")
+            pg_types.append(pg_type)
+        pg_cursor.execute(
+            sql.SQL("CREATE TABLE IF NOT EXISTS {} ({})").format(
+                sql.Identifier(table),
+                sql.SQL(", ").join(
+                    sql.SQL("{} {}").format(sql.Identifier(name), sql.SQL(pg_type))
+                    for name, pg_type in zip(col_names, pg_types)
+                ),
+            )
+        )
+        sqlite_cursor.execute(f"SELECT * FROM {sqlite_table}")
         rows = sqlite_cursor.fetchall()
         for row in rows:
-            placeholders = ",".join(["%s"] * len(col_names))
             pg_cursor.execute(
-                f"INSERT INTO {table} ({','.join(col_names)}) VALUES ({placeholders})",
+                sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+                    sql.Identifier(table),
+                    sql.SQL(", ").join(sql.Identifier(name) for name in col_names),
+                    sql.SQL(", ").join(sql.Placeholder() for _ in col_names),
+                ),
                 row,
             )
         print(f"  Migrated {len(rows)} rows")

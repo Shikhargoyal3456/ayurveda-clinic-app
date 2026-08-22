@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 from sqlalchemy.orm import Session
@@ -12,6 +14,25 @@ try:  # pragma: no cover - optional dependency in local envs
     from PIL import Image
 except Exception:  # pragma: no cover
     Image = None
+
+
+# SSRF guard (tainted-fastapi-http-request-requests): `image_url` is user supplied,
+# so outbound fetches are restricted to an explicit host allowlist. Uploaded medicine
+# images are persisted as local filesystem paths (never fetched over HTTP), so the
+# allowlist is empty by default (deny all outbound). Populate OUTBOUND_ALLOWED_HOSTS
+# (comma-separated hostnames) to permit fetching from a trusted image CDN/origin.
+_ALLOWED_IMAGE_HOSTS = frozenset(
+    host.strip().lower()
+    for host in os.getenv("OUTBOUND_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+)
+
+
+def _is_allowed_image_url(url: str) -> bool:
+    parsed = urlparse(str(url or ""))
+    if parsed.scheme not in {"http", "https"}:
+        return False
+    return (parsed.hostname or "").lower() in _ALLOWED_IMAGE_HOSTS
 
 
 class AIMedicineImageRecognition:
@@ -47,6 +68,8 @@ class AIMedicineImageRecognition:
         if self.model is None or self._np is None or self._decode_predictions is None or self._preprocess_input is None or Image is None:
             return heuristic_labels
         try:  # pragma: no cover - expensive path
+            if not _is_allowed_image_url(image_url):
+                raise ValueError(f"Outbound image host not allowed (SSRF guard): {image_url!r}")
             response = requests.get(image_url, timeout=8)
             response.raise_for_status()
             img = Image.open(__import__("io").BytesIO(response.content)).convert("RGB")

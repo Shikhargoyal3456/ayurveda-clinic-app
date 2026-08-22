@@ -4,7 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token if csrf_token is defined else '' }}">
-    <title>{% block title %}Kash AI{% endblock %}</title>
+    {% set seo_title = seo_title | default('Kash AI — Ancient intelligence, computed') %}
+    {% set seo_description = seo_description | default('AI-powered Ayurvedic healthcare for modern India. Kash AI listens in Hindi or English, reads the pulse of a consultation, and turns ancient diagnostic wisdom into a calm, computed clinical workflow.') %}
+    {% set seo_image = seo_image | default('/static/images/kash-ai-og.png') %}
+    <title>{% block title %}{{ seo_title }}{% endblock %}</title>
+    <meta name="description" content="{{ seo_description }}">
+    <meta name="theme-color" content="#0B1512">
+    <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Kash AI">
+    <meta property="og:title" content="{{ seo_title }}">
+    <meta property="og:description" content="{{ seo_description }}">
+    <meta property="og:image" content="{{ seo_image }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ seo_title }}">
+    <meta name="twitter:description" content="{{ seo_description }}">
+    <meta name="twitter:image" content="{{ seo_image }}">
+    {% block meta %}{% endblock %}
     <link rel="stylesheet" href="/static/css/kash-ai.css">
     <script defer src="/static/js/new_app.js"></script>
     <script defer src="/static/js/error_handler.js"></script>

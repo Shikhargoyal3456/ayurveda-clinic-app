@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from app.config import settings
+from app.security import is_safe_relative_redirect
 
 
 logger = logging.getLogger(__name__)
@@ -116,7 +117,10 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException):
         if 300 <= exc.status_code < 400 and exc.headers and exc.headers.get("Location"):
-            return RedirectResponse(url=exc.headers["Location"], status_code=exc.status_code)
+            location = exc.headers["Location"]
+            if is_safe_relative_redirect(location):
+                return RedirectResponse(url=location, status_code=exc.status_code)
+            return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"success": False, "error": "Invalid redirect target"})
 
         message = _friendly_message(exc.detail, exc.status_code)
         if _wants_json(request):

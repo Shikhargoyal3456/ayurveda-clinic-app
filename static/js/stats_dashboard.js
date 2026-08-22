@@ -7,7 +7,7 @@
     snapshot: window.doctorStatsSnapshot || null,
   };
 
-  const colors = ["#66f1d6", "#00c2ff", "#8b5cf6", "#f59e0b", "#ef4444", "#22c55e"];
+  const colors = ["#5FE0A8", "#2FC98A", "#E8B24A", "#f59e0b", "#ef4444", "#22c55e"];
 
   const qs = (sel) => document.querySelector(sel);
 

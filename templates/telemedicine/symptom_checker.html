@@ -170,7 +170,8 @@ function bookConsultation() {
 }
 
 function bookWithDoctor(doctorId) {
-    window.location.href = `/telemedicine/book?doctor_id=${doctorId}`;
+    const params = new URLSearchParams({ doctor_id: String(doctorId) });
+    window.location.href = "/telemedicine/book?" + params.toString();
 }
 </script>
 <style>

@@ -671,7 +671,8 @@
     openPatientButton?.addEventListener('click', () => {
         const patientId = patientSelect.value;
         if (!patientId) return;
-        window.location.href = `/emr/ambient-scribe?patient_id=${patientId}`;
+        const params = new URLSearchParams({ patient_id: patientId });
+        window.location.href = "/emr/ambient-scribe?" + params.toString();
     });
     patientSelect?.addEventListener('change', syncPatientContextFromSelection);
     micDeviceSelect?.addEventListener('change', () => {

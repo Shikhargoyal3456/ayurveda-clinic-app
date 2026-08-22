@@ -51,7 +51,7 @@ def ai_health() -> dict[str, Any]:
 
 def rag_health() -> dict[str, Any]:
     try:
-        docs_path = settings.vector_store_dir / "docs.pkl"
+        docs_path = settings.vector_store_dir / "docs.json"
         faiss_path = settings.vector_store_dir / "index.faiss"
         return {
             "status": "ok" if docs_path.exists() and faiss_path.exists() else "degraded",

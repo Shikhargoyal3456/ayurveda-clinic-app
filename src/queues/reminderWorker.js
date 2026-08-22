@@ -42,5 +42,5 @@ worker.on('completed', (job) => {
 });
 
 worker.on('failed', (job, error) => {
-  console.error(`Reminder job failed: ${job?.id}`, error);
+  console.error('Reminder job failed: %s', job?.id, error);
 });

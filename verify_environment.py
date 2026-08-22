@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib
 import sys
 
 from sqlalchemy import text
@@ -10,17 +9,17 @@ from app.database import engine
 from services.ai_provider import GROQ_API_KEY
 
 
-REQUIRED_MODULES = [
-    "fastapi",
-    "uvicorn",
-    "sqlalchemy",
-    "jinja2",
-    "passlib",
-    "requests",
-    "numpy",
-    "google.genai",
-    "groq",
-]
+REQUIRED_MODULES = {
+    "fastapi": lambda: __import__("fastapi"),
+    "uvicorn": lambda: __import__("uvicorn"),
+    "sqlalchemy": lambda: __import__("sqlalchemy"),
+    "jinja2": lambda: __import__("jinja2"),
+    "passlib": lambda: __import__("passlib"),
+    "requests": lambda: __import__("requests"),
+    "numpy": lambda: __import__("numpy"),
+    "google.genai": lambda: __import__("google.genai"),
+    "groq": lambda: __import__("groq"),
+}
 
 
 def main() -> int:
@@ -31,9 +30,9 @@ def main() -> int:
         return 1
 
     missing = []
-    for module_name in REQUIRED_MODULES:
+    for module_name, import_module in REQUIRED_MODULES.items():
         try:
-            importlib.import_module(module_name)
+            import_module()
             print(f"[OK] {module_name}")
         except Exception as exc:
             print(f"[ERROR] {module_name}: {exc}")

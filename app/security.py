@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from threading import Lock
 from typing import Any, Callable
+from urllib.parse import urlsplit
 
 from fastapi import HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -34,6 +35,56 @@ _EMAIL_REGEX = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.IGNOR
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def is_safe_relative_redirect(target: str) -> bool:
+    value = str(target or "").strip()
+    if not value or value.startswith(("//", "http://", "https://")):
+        return False
+    parsed = urlsplit(value)
+    return not parsed.scheme and not parsed.netloc and value.startswith("/")
+
+
+def safe_basename(name: Any) -> str:
+    """Return the final path component of ``name`` with any traversal stripped.
+
+    Use for user-supplied file names before joining them onto a trusted base
+    directory. Removes directory separators and ``..`` sequences so the result
+    can never escape its intended folder.
+    """
+    import os
+
+    raw = str(name or "").replace("\\", "/")
+    base = os.path.basename(raw)
+    if base in {"", ".", ".."}:
+        return ""
+    return base
+
+
+def resolve_within_base(base_dir: Any, candidate: Any) -> "os.PathLike[str]":
+    """Resolve ``candidate`` and guarantee it stays inside ``base_dir``.
+
+    ``candidate`` may be a user-influenced relative path or filename. The
+    returned :class:`pathlib.Path` is the fully-resolved location; a
+    ``400 Bad Request`` is raised if it would escape ``base_dir`` (path
+    traversal). This is the canonical fix for the Semgrep
+    ``tainted-path-traversal-*`` findings.
+    """
+    import os
+    from pathlib import Path
+
+    base = Path(base_dir).resolve()
+    raw = str(candidate or "")
+    if os.path.isabs(raw):
+        target = Path(raw).resolve()
+    else:
+        target = (base / raw).resolve()
+    if base != target and base not in target.parents:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file path.",
+        )
+    return target
 
 
 def sanitize_text(value: str, max_length: int | None = None) -> str:

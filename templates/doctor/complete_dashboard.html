@@ -78,13 +78,13 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-    new Chart(document.getElementById("visitsChart"), {type:"line", data:{labels: {{ visit_labels | tojson }}, datasets:[{label:"Patients", data: {{ visit_data | tojson }}, borderColor:"#4F46E5", backgroundColor:"rgba(79,70,229,0.1)", fill:true, tension:0.35}]}, options:{responsive:true, plugins:{legend:{display:false}}}});
-    new Chart(document.getElementById("demographicsChart"), {type:"doughnut", data:{labels:["Male","Female","Other"], datasets:[{data: {{ demographics_data | tojson }}, backgroundColor:["#4F46E5","#7C3AED","#EC4899"]}]}, options:{responsive:true, plugins:{legend:{position:"bottom"}}}});
-    new Chart(document.getElementById("revenueChart"), {type:"bar", data:{labels: {{ revenue_labels | tojson }}, datasets:[{label:"Revenue (₹)", data: {{ revenue_data | tojson }}, backgroundColor:"rgba(79,70,229,0.6)", borderColor:"#4F46E5", borderWidth:1}]}, options:{responsive:true, plugins:{legend:{display:false}}}});
-    new Chart(document.getElementById("diagnosesChart"), {type:"bar", data:{labels: {{ diagnosis_labels | tojson }}, datasets:[{label:"Cases", data: {{ diagnosis_data | tojson }}, backgroundColor:["#4F46E5","#7C3AED","#EC4899","#F59E0B","#10B981"]}]}, options:{responsive:true, plugins:{legend:{display:false}}, indexAxis:"y"}});
+    new Chart(document.getElementById("visitsChart"), {type:"line", data:{labels: {{ visit_labels | tojson }}, datasets:[{label:"Patients", data: {{ visit_data | tojson }}, borderColor:"#146B4A", backgroundColor:"rgba(232, 178, 74,0.1)", fill:true, tension:0.35}]}, options:{responsive:true, plugins:{legend:{display:false}}}});
+    new Chart(document.getElementById("demographicsChart"), {type:"doughnut", data:{labels:["Male","Female","Other"], datasets:[{data: {{ demographics_data | tojson }}, backgroundColor:["#146B4A","#C6871B","#EC4899"]}]}, options:{responsive:true, plugins:{legend:{position:"bottom"}}}});
+    new Chart(document.getElementById("revenueChart"), {type:"bar", data:{labels: {{ revenue_labels | tojson }}, datasets:[{label:"Revenue (₹)", data: {{ revenue_data | tojson }}, backgroundColor:"rgba(232, 178, 74,0.6)", borderColor:"#146B4A", borderWidth:1}]}, options:{responsive:true, plugins:{legend:{display:false}}}});
+    new Chart(document.getElementById("diagnosesChart"), {type:"bar", data:{labels: {{ diagnosis_labels | tojson }}, datasets:[{label:"Cases", data: {{ diagnosis_data | tojson }}, backgroundColor:["#146B4A","#C6871B","#EC4899","#F59E0B","#10B981"]}]}, options:{responsive:true, plugins:{legend:{display:false}}, indexAxis:"y"}});
 });
 </script>
 

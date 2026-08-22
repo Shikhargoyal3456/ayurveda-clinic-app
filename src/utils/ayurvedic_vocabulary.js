@@ -186,6 +186,7 @@ const REPLACEMENTS = [
 ];
 
 const SORTED_REPLACEMENTS = [...REPLACEMENTS].sort((a, b) => b[0].length - a[0].length);
+const BOUNDARY_PATTERN = "(?<!\\w)__TERM__(?!\\w)";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -194,7 +195,8 @@ function escapeRegExp(value) {
 function correctAyurvedicTerms(transcript) {
   let corrected = String(transcript || "");
   for (const [raw, canonical] of SORTED_REPLACEMENTS) {
-    corrected = corrected.replace(new RegExp(`(?<!\\w)${escapeRegExp(raw)}(?!\\w)`, "gi"), canonical);
+    const pattern = BOUNDARY_PATTERN.replace("__TERM__", escapeRegExp(raw));
+    corrected = corrected.replace(new RegExp(pattern, "gi"), canonical);
   }
   return corrected;
 }

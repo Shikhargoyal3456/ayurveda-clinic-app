@@ -6,14 +6,19 @@ const rootDir = path.resolve(__dirname, '..');
 const logoPath = path.join(rootDir, 'public', 'images', 'kash-ai-logo.png');
 const envPath = path.join(rootDir, '.env');
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function upsertEnvValue(filePath, key, value) {
   const lines = fs.existsSync(filePath)
     ? fs.readFileSync(filePath, 'utf8').split(/\r?\n/)
     : [];
 
   let found = false;
+  const keyPattern = new RegExp(`^\\s*${escapeRegExp(key)}\\s*=`);
   const updated = lines.map((line) => {
-    if (line.match(new RegExp(`^\\s*${key}\\s*=`))) {
+    if (line.match(keyPattern)) {
       found = true;
       return `${key}=${value}`;
     }

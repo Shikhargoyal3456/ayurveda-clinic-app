@@ -13,16 +13,16 @@ def remove_hardcoded_tables(database_path: str = "ayurveda.db") -> None:
     conn = sqlite3.connect(str(db_file))
     cursor = conn.cursor()
 
-    tables_to_drop = [
-        "medicines_master",
-        "medicine_info_cache",
-        "static_prescriptions",
-        "disease_symptom_map",
-    ]
+    tables_to_drop = {
+        "medicines_master": "DROP TABLE IF EXISTS medicines_master",
+        "medicine_info_cache": "DROP TABLE IF EXISTS medicine_info_cache",
+        "static_prescriptions": "DROP TABLE IF EXISTS static_prescriptions",
+        "disease_symptom_map": "DROP TABLE IF EXISTS disease_symptom_map",
+    }
 
-    for table in tables_to_drop:
+    for table, drop_sql in tables_to_drop.items():
         try:
-            cursor.execute(f"DROP TABLE IF EXISTS {table}")
+            cursor.execute(drop_sql)
             print(f"Removed table: {table}")
         except Exception as exc:
             print(f"Skipped table {table}: {exc}")

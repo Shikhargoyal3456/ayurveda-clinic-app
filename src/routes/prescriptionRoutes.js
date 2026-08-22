@@ -39,6 +39,9 @@ try {
   upload = null;
 }
 
+// SECURITY(authz): these state-changing routes are wired with no authentication/authorization
+// middleware. No auth scheme exists in this Express app yet; once one is added, insert the
+// auth middleware (e.g. requireAuth) before the controllers below and enforce ownership there.
 router.post('/', createPrescriptionAndNotify);
 router.post('/scan', (req, res, next) => {
   if (!upload) {

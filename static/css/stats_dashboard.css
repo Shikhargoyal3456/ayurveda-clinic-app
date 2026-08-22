@@ -4,7 +4,7 @@
 .stats-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
 .range-buttons{display:flex;gap:8px;flex-wrap:wrap}
 .range-btn{border:1px solid rgba(152,255,241,.16);background:rgba(255,255,255,.05);color:#dff7f7;border-radius:999px;padding:8px 12px;cursor:pointer}
-.range-btn.active{background:linear-gradient(135deg,#66f1d6,#00c2ff);color:#041115}
+.range-btn.active{background:linear-gradient(135deg,#2FC98A,#E8B24A);color:#041115}
 .kpi-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
 .kpi-card{padding:18px;display:grid;gap:8px}
 .kpi-card strong{font-size:1.5rem}

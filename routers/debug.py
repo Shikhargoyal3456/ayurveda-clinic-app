@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
-from app.portal_auth import get_portal_user
+from app.portal_auth import get_portal_user, require_portal_roles
 from models.user import User, UserRole
 from shared.template_engine import templates
 from shared.template_engine import render_template
@@ -15,7 +16,15 @@ router = APIRouter(tags=["debug"])
 
 
 @router.get("/debug/session", response_class=HTMLResponse)
-def debug_session(request: Request, db: Session = Depends(get_db)):
+def debug_session(
+    request: Request,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_portal_roles("admin")),
+):
+    # This endpoint dumps raw session state and user PII, which is sensitive.
+    # Never expose it in production, and restrict it to admins elsewhere.
+    if settings.is_production:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     session_info = dict(request.session)
     user_id = session_info.get("portal_user_id")
     user_info = None

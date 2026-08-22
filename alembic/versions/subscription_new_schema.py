@@ -47,40 +47,60 @@ def upgrade() -> None:
     op.create_index("ix_clinic_subscriptions_plan_id", "clinic_subscriptions_new", ["plan_id"])
     op.create_index("ix_clinic_subscriptions_status", "clinic_subscriptions_new", ["status"])
 
-    source_user = "COALESCE(user_id, doctor_id)" if "user_id" in columns and "doctor_id" in columns else ("user_id" if "user_id" in columns else "doctor_id")
-    source_plan = "COALESCE(plan_id, plan, 'free')" if "plan_id" in columns and "plan" in columns else ("plan_id" if "plan_id" in columns else "plan")
-    source_trial_end = "trial_end_date" if "trial_end_date" in columns else "NULL"
-    source_razorpay = "razorpay_subscription_id" if "razorpay_subscription_id" in columns else "NULL"
-    source_period_end = "COALESCE(current_period_end, expires_at)" if "current_period_end" in columns and "expires_at" in columns else ("current_period_end" if "current_period_end" in columns else ("expires_at" if "expires_at" in columns else "NULL"))
+    metadata = sa.MetaData()
+    source = sa.Table("clinic_subscriptions", metadata, autoload_with=bind)
+    target = sa.Table("clinic_subscriptions_new", metadata, autoload_with=bind)
 
+    def column_or_none(name: str):
+        return source.c[name] if name in columns else sa.null()
+
+    source_user = (
+        sa.func.coalesce(source.c.user_id, source.c.doctor_id)
+        if "user_id" in columns and "doctor_id" in columns
+        else source.c.user_id
+        if "user_id" in columns
+        else source.c.doctor_id
+    )
+    source_plan = (
+        sa.func.coalesce(column_or_none("plan_id"), column_or_none("plan"), sa.literal("free"))
+        if "plan_id" in columns or "plan" in columns
+        else sa.literal("free")
+    )
+    source_period_end = (
+        sa.func.coalesce(column_or_none("current_period_end"), column_or_none("expires_at"))
+        if "current_period_end" in columns or "expires_at" in columns
+        else sa.null()
+    )
+
+    select_rows = (
+        sa.select(
+            sa.func.min(source.c.id),
+            source_user,
+            sa.func.min(sa.func.coalesce(source_plan, sa.literal("free"))),
+            sa.func.min(sa.func.coalesce(column_or_none("status"), sa.literal("trial"))),
+            sa.func.min(sa.func.coalesce(column_or_none("started_at"), sa.func.current_timestamp())),
+            sa.func.min(column_or_none("trial_end_date")),
+            sa.func.min(column_or_none("razorpay_subscription_id")),
+            sa.func.min(source_period_end),
+            sa.func.min(sa.func.coalesce(column_or_none("created_at"), sa.func.current_timestamp())),
+        )
+        .where(source_user.is_not(None))
+        .group_by(source_user)
+    )
     bind.execute(
-        sa.text(
-            f"""
-            INSERT INTO clinic_subscriptions_new (
-                id,
-                user_id,
-                plan_id,
-                status,
-                started_at,
-                trial_end_date,
-                razorpay_subscription_id,
-                current_period_end,
-                created_at
-            )
-            SELECT
-                MIN(id) AS id,
-                {source_user} AS user_id,
-                MIN(COALESCE({source_plan}, 'free')) AS plan_id,
-                MIN(COALESCE(status, 'trial')) AS status,
-                MIN(COALESCE(started_at, CURRENT_TIMESTAMP)) AS started_at,
-                MIN({source_trial_end}) AS trial_end_date,
-                MIN({source_razorpay}) AS razorpay_subscription_id,
-                MIN({source_period_end}) AS current_period_end,
-                MIN(COALESCE(created_at, CURRENT_TIMESTAMP)) AS created_at
-            FROM clinic_subscriptions
-            WHERE {source_user} IS NOT NULL
-            GROUP BY {source_user}
-            """
+        target.insert().from_select(
+            [
+                "id",
+                "user_id",
+                "plan_id",
+                "status",
+                "started_at",
+                "trial_end_date",
+                "razorpay_subscription_id",
+                "current_period_end",
+                "created_at",
+            ],
+            select_rows,
         )
     )
 

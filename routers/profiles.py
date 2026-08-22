@@ -142,7 +142,12 @@ def add_profile(
 
 
 @router.post("/api/profiles/select")
-async def select_profile(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+async def select_profile(
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(require_portal_roles("patient")),
+    _: None = Depends(verify_csrf),
+):
     data = await request.json()
     profile_id = int(data.get("profile_id") or 0)
     profile = (
@@ -161,7 +166,12 @@ async def select_profile(request: Request, db: Session = Depends(get_db), user=D
 
 
 @router.post("/api/profiles/verify-pin")
-async def verify_profile_pin(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+async def verify_profile_pin(
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(require_portal_roles("patient")),
+    _: None = Depends(verify_csrf),
+):
     data = await request.json()
     profile_id = int(data.get("profile_id") or request.session.get("pending_profile_id") or 0)
     pin = str(data.get("pin") or "")
@@ -179,7 +189,12 @@ async def verify_profile_pin(request: Request, db: Session = Depends(get_db), us
 
 
 @router.post("/api/profiles/set-primary")
-async def set_profile_primary(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+async def set_profile_primary(
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(require_portal_roles("patient")),
+    _: None = Depends(verify_csrf),
+):
     data = await request.json()
     profile_id = int(data.get("profile_id") or 0)
     profile = (
@@ -196,7 +211,13 @@ async def set_profile_primary(request: Request, db: Session = Depends(get_db), u
 
 
 @router.post("/api/profiles/delete/{profile_id}")
-def delete_profile(profile_id: int, request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+def delete_profile(
+    profile_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user=Depends(require_portal_roles("patient")),
+    _: None = Depends(verify_csrf),
+):
     profile = (
         db.query(UserProfile)
         .filter(UserProfile.id == profile_id, UserProfile.user_id == user.id, UserProfile.is_active.is_(True))

@@ -20,6 +20,13 @@ except Exception:  # pragma: no cover
     pytesseract = None
 
 
+# ReDoS guard (tainted-regex-stdlib-fastapi): cap OCR/user text length before the
+# medicine-extraction regexes run. Real prescriptions are far shorter than this
+# bound, so intended matches are preserved while pathological inputs cannot force
+# super-linear backtracking.
+_MAX_REGEX_TEXT = 10000
+
+
 class AIPrescriptionScanner:
     """Safe OCR-style prescription extraction with DB validation and fallbacks."""
 
@@ -64,6 +71,7 @@ class AIPrescriptionScanner:
         return "Tab Ashwagandha 500mg once daily for 5 days"
 
     async def extract_medicines(self, text: str) -> list[dict[str, Any]]:
+        text = str(text or "")[:_MAX_REGEX_TEXT]
         medicines: list[dict[str, Any]] = []
         for pattern in self.medicine_patterns:
             for match in re.findall(pattern, text, re.IGNORECASE):

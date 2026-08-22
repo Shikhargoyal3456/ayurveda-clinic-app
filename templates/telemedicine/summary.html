@@ -48,9 +48,14 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
+const telemedicineSummaryShare = {
+    diagnosis: {{ summary.diagnosis | tojson }},
+    followupDate: {{ followup.suggested_followup_date | tojson }}
+};
+
 function shareSummary() {
-    const text = encodeURIComponent(`Consultation summary: {{ summary.diagnosis }}. Follow-up: {{ followup.suggested_followup_date }}`);
-    window.location.href = `https://wa.me/?text=${text}`;
+    const text = encodeURIComponent("Consultation summary: " + telemedicineSummaryShare.diagnosis + ". Follow-up: " + telemedicineSummaryShare.followupDate);
+    window.location.href = "https://wa.me/?text=" + text;
 }
 </script>
 {% endblock %}

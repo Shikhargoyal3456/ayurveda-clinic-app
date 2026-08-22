@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kash AI — Ayurvedic Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --ink:#0B1512; --ink-raised:#13221C; --bone:#F4EEE1; --bone-dim:rgba(244,238,225,.66);
+  --turmeric:#E8B24A; --gold-deep:#C6871B; --verdant:#2FC98A; --verdant-deep:#14855A;
+  --clay:#B4633A; --sage:#8AA894; --line:rgba(138,168,148,.18);
+  --glass:rgba(19,34,28,.55); --glass-brd:rgba(138,168,148,.22);
+  --font-display:"Fraunces",Georgia,serif; --font-body:"Inter",system-ui,sans-serif; --font-util:"Space Grotesk",monospace;
+  --maxw:1180px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink);color:var(--bone);font-family:var(--font-body);
+  line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(60% 50% at 78% 12%,rgba(232,178,74,.16),transparent 60%),
+    radial-gradient(50% 45% at 10% 90%,rgba(47,201,138,.12),transparent 60%),
+    radial-gradient(40% 40% at 50% 50%,rgba(180,99,58,.05),transparent 70%);
+}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(var(--maxw),calc(100% - 44px));margin:0 auto;position:relative;z-index:1}
+.eyebrow{font-family:var(--font-util);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--turmeric);font-weight:600}
+.serif{font-family:var(--font-display)}
+
+/* Nadi pulse divider */
+.nadi{width:100%;height:34px;display:block;opacity:.5}
+.nadi path{stroke:var(--sage);stroke-width:1.2;fill:none}
+
+/* NAV */
+header.nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px);background:rgba(11,21,18,.72);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;align-items:center;justify-content:space-between;height:74px}
+.brand{display:flex;align-items:center;gap:12px;font-family:var(--font-util);font-weight:700;font-size:1.12rem;letter-spacing:.01em}
+.brand .mark{width:34px;height:34px;flex:none}
+.nav-links{display:flex;gap:34px;align-items:center}
+.nav-links a{font-size:.92rem;color:var(--bone-dim);font-weight:500;transition:color .2s}
+.nav-links a:hover{color:var(--bone)}
+.btn{display:inline-flex;align-items:center;gap:9px;font-family:var(--font-util);font-weight:600;font-size:.92rem;padding:12px 22px;border-radius:999px;border:1px solid transparent;cursor:pointer;transition:transform .2s,box-shadow .2s,background .2s;white-space:nowrap}
+.btn-gold{background:linear-gradient(135deg,var(--turmeric),var(--gold-deep));color:#2a1c05;box-shadow:0 8px 30px rgba(232,178,74,.28)}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(232,178,74,.42)}
+.btn-ghost{border-color:var(--glass-brd);color:var(--bone);background:rgba(244,238,225,.03)}
+.btn-ghost:hover{border-color:var(--turmeric);color:var(--turmeric)}
+.nav-toggle{display:none;background:none;border:0;color:var(--bone);font-size:1.5rem;cursor:pointer}
+
+/* HERO */
+.hero{padding:76px 0 40px;position:relative}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:52px;align-items:center}
+.hero h1{font-family:var(--font-display);font-weight:600;font-size:clamp(2.6rem,5.2vw,4.5rem);line-height:1.02;letter-spacing:-.02em;margin:22px 0 0}
+.hero h1 em{font-style:italic;color:var(--turmeric)}
+.hero .lede{font-size:1.12rem;color:var(--bone-dim);max-width:34ch;margin:22px 0 32px}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap}
+.trust{margin-top:34px;display:flex;gap:26px;flex-wrap:wrap;font-family:var(--font-util);font-size:.8rem;color:var(--sage)}
+.trust b{color:var(--bone);font-weight:600}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .8s ease,transform .8s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* ORB */
+.orb-stage{position:relative;aspect-ratio:1/1;width:100%;max-width:520px;margin-left:auto}
+#orb{width:100%;height:100%;display:block}
+.orb-fallback{position:absolute;inset:8%;border-radius:50%;display:none;
+  background:radial-gradient(circle at 38% 32%,#1c3a2c,#0c1a14 70%);
+  box-shadow:inset 0 0 60px rgba(232,178,74,.3),0 0 80px rgba(47,201,138,.18)}
+body.no-webgl .orb-fallback{display:block;animation:breathe 5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.telemetry{position:absolute;left:-6px;bottom:6%;width:236px;padding:16px 18px;border-radius:16px;
+  background:var(--glass);border:1px solid var(--glass-brd);backdrop-filter:blur(14px);font-family:var(--font-util)}
+.telemetry .tl-row{display:flex;justify-content:space-between;align-items:baseline;font-size:.74rem;color:var(--sage);margin:7px 0}
+.telemetry .tl-row b{font-size:1rem;color:var(--bone);font-weight:600}
+.telemetry .tl-head{font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;color:var(--turmeric);margin-bottom:10px}
+.dosha-bar{height:6px;border-radius:3px;margin-top:3px;background:linear-gradient(90deg,var(--turmeric) 0 34%,var(--verdant) 34% 75%,var(--clay) 75% 100%)}
+.tag-live{display:inline-flex;align-items:center;gap:6px}
+.tag-live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--verdant);box-shadow:0 0 10px var(--verdant);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.35}}
+
+/* STRIP */
+.strip{border-block:1px solid var(--line);margin-top:26px}
+.strip-in{display:flex;gap:56px;flex-wrap:wrap;justify-content:space-between;padding:30px 0}
+.stat .n{font-family:var(--font-display);font-size:2.3rem;font-weight:600;color:var(--turmeric);line-height:1}
+.stat .l{font-family:var(--font-util);font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;color:var(--sage);margin-top:6px}
+
+/* SECTION */
+section{padding:88px 0;position:relative}
+.sec-head{max-width:60ch}
+.sec-head h2{font-family:var(--font-display);font-weight:600;font-size:clamp(2rem,3.6vw,3rem);line-height:1.08;letter-spacing:-.015em;margin:14px 0 0}
+.sec-head p{color:var(--bone-dim);margin-top:16px;font-size:1.06rem}
+
+/* CAPABILITIES */
+.cap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:48px}
+.card{background:linear-gradient(180deg,rgba(19,34,28,.7),rgba(11,21,18,.5));border:1px solid var(--line);border-radius:20px;padding:30px 26px;transition:transform .3s,border-color .3s,box-shadow .3s}
+.card:hover{transform:translateY(-6px);border-color:var(--glass-brd);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.card .ic{width:50px;height:50px;border-radius:14px;display:grid;place-items:center;background:rgba(232,178,74,.12);border:1px solid rgba(232,178,74,.22);margin-bottom:20px}
+.card .ic svg{width:26px;height:26px;stroke:var(--turmeric);fill:none;stroke-width:1.6}
+.card h3{font-family:var(--font-display);font-size:1.32rem;font-weight:600;margin-bottom:9px}
+.card p{color:var(--bone-dim);font-size:.96rem}
+.card.green .ic{background:rgba(47,201,138,.12);border-color:rgba(47,201,138,.24)}
+.card.green .ic svg{stroke:var(--verdant)}
+
+/* HOW */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:52px}
+.step{position:relative;padding-top:26px;border-top:1px solid var(--glass-brd)}
+.step .num{font-family:var(--font-util);font-size:.8rem;font-weight:600;color:var(--turmeric);letter-spacing:.1em}
+.step h3{font-family:var(--font-display);font-size:1.5rem;font-weight:600;margin:14px 0 8px}
+.step p{color:var(--bone-dim);font-size:.98rem}
+
+/* DOSHA */
+.dosha{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.dosha-orbs{display:flex;gap:18px;justify-content:center}
+.d-orb{flex:1;text-align:center}
+.d-orb .ball{width:100%;aspect-ratio:1;border-radius:50%;margin-bottom:14px;position:relative;overflow:hidden}
+.d-orb.vata .ball{background:radial-gradient(circle at 36% 30%,#f6d38a,#c6871b 78%);box-shadow:0 0 40px rgba(232,178,74,.3)}
+.d-orb.pitta .ball{background:radial-gradient(circle at 36% 30%,#5fe0aa,#14855a 78%);box-shadow:0 0 40px rgba(47,201,138,.3)}
+.d-orb.kapha .ball{background:radial-gradient(circle at 36% 30%,#dd9068,#8a4423 78%);box-shadow:0 0 40px rgba(180,99,58,.3)}
+.d-orb h4{font-family:var(--font-display);font-size:1.2rem;font-weight:600}
+.d-orb span{font-family:var(--font-util);font-size:.76rem;color:var(--sage);letter-spacing:.06em}
+
+/* QUOTE */
+.quote{text-align:center;max-width:60ch;margin:0 auto}
+.quote blockquote{font-family:var(--font-display);font-style:italic;font-size:clamp(1.5rem,3vw,2.2rem);line-height:1.3;font-weight:500}
+.quote .who{font-family:var(--font-util);font-size:.86rem;color:var(--sage);margin-top:24px;letter-spacing:.06em}
+
+/* CTA BAND */
+.cta-band{background:linear-gradient(135deg,rgba(232,178,74,.14),rgba(47,201,138,.08));border:1px solid var(--glass-brd);border-radius:28px;padding:66px 40px;text-align:center;position:relative;overflow:hidden}
+.cta-band h2{font-family:var(--font-display);font-weight:600;font-size:clamp(2rem,4vw,3.2rem);line-height:1.05}
+.cta-band p{color:var(--bone-dim);margin:16px auto 30px;max-width:46ch;font-size:1.08rem}
+
+/* FOOTER */
+footer{border-top:1px solid var(--line);padding:54px 0 40px;margin-top:20px}
+.foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px}
+.foot-grid h5{font-family:var(--font-util);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--sage);margin-bottom:16px}
+.foot-grid a{display:block;color:var(--bone-dim);font-size:.92rem;margin-bottom:11px;transition:color .2s}
+.foot-grid a:hover{color:var(--turmeric)}
+.foot-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-top:44px;padding-top:24px;border-top:1px solid var(--line);font-size:.82rem;color:var(--sage);font-family:var(--font-util)}
+
+@media(max-width:900px){
+  .hero-grid,.dosha{grid-template-columns:1fr;gap:38px}
+  .orb-stage{max-width:400px;margin:0 auto}
+  .cap-grid,.steps{grid-template-columns:1fr}
+  .foot-grid{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .nav-toggle{display:block}
+  .nav-links.open{display:flex;position:absolute;top:74px;left:0;right:0;flex-direction:column;background:var(--ink-raised);padding:22px;gap:18px;border-bottom:1px solid var(--line)}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top">
+      <svg class="mark" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#E8B24A" stroke-width="1.5"/><path d="M20 6c-5 6-5 22 0 28M20 6c5 6 5 22 0 28M7 20h26" stroke="#2FC98A" stroke-width="1.5"/><circle cx="20" cy="20" r="4" fill="#E8B24A"/></svg>
+      Kash AI
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="#capabilities">Platform</a>
+      <a href="#how">How it works</a>
+      <a href="#dosha">The science</a>
+      <a href="#top">Login</a>
+      <a class="btn btn-gold" href="#cta">Start a consult</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="Menu">☰</button>
+  </div>
+</header>
+
+<a id="top"></a>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <span class="eyebrow reveal">Ayurvedic intelligence platform</span>
+      <h1 class="reveal">Care that reads<br>the <em>whole</em> you.</h1>
+      <p class="lede reveal">Kash AI blends five millennia of Ayurvedic diagnosis — pulse, tongue, dosha — with modern machine intelligence. Consult verified doctors, get AI-guided assessments, and manage medicines, labs and follow-ups in one calm place.</p>
+      <div class="hero-cta reveal">
+        <a class="btn btn-gold" href="#cta">Start a consult →</a>
+        <a class="btn btn-ghost" href="#how">See how it works</a>
+      </div>
+      <div class="trust reveal">
+        <span><b>200+</b> verified practitioners</span>
+        <span><b>50k</b> consults guided</span>
+        <span><b>Private</b> by design</span>
+      </div>
+    </div>
+    <div class="orb-stage reveal">
+      <canvas id="orb"></canvas>
+      <div class="orb-fallback"></div>
+      <div class="telemetry">
+        <div class="tl-head tag-live">Live dosha reading</div>
+        <div class="tl-row"><span>Nadi pulse</span><b><span id="bpm">72</span> bpm</b></div>
+        <div class="tl-row"><span>Balance</span><b id="bal">V·P·K</b></div>
+        <div class="dosha-bar"></div>
+        <div class="tl-row" style="margin-top:12px"><span>AI confidence</span><b><span id="conf">96</span>%</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="wrap strip">
+    <div class="strip-in">
+      <div class="stat"><div class="n">5,000</div><div class="l">Years of texts, searchable</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">Doshas, continuously modelled</div></div>
+      <div class="stat"><div class="n">24/7</div><div class="l">AI triage, doctor-reviewed</div></div>
+      <div class="stat"><div class="n">1</div><div class="l">Place for your whole care</div></div>
+    </div>
+  </div>
+</section>
+
+<svg class="nadi wrap" viewBox="0 0 1200 34" preserveAspectRatio="none"><path d="M0 17h420l14-11 12 22 14-28 12 34 14-17h680"/></svg>
+
+<section id="capabilities">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">What Kash AI does</span>
+      <h2>One platform for the whole arc of care.</h2>
+      <p>From the first symptom to a plan that adapts — every step is guided by AI and confirmed by a licensed Ayurvedic doctor.</p>
+    </div>
+    <div class="cap-grid">
+      <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3a4 4 0 0 0-4 4v1a4 4 0 0 0-1 8 3 3 0 0 0 5 2 3 3 0 0 0 5-2 4 4 0 0 0-1-8V7a4 4 0 0 0-4-4Z"/></svg></div><h3>AI Doctor</h3><p>Describe your symptoms and get an Ayurvedic assessment with cited classical references — reviewed by a real doctor before you act.</p></div>
+      <div class="card green reveal"><div class="ic"><svg viewBox="0 0 24 24"><path d="M4 12s3-7 8-7 8 7 8 7-3 7-8 7-8-7-8-7Z"/><circle cx="12" cy="12" r="2.5"/></svg></div><h3>Pulse &amp; tongue analysis</h3><p>Log your pulse or upload a tongue photo. Kash AI maps the signs to Vata, Pitta and Kapha patterns in seconds.</p></div>
+      <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="14" rx="2"/><path d="m17 9 4-2v10l-4-2"/></svg></div><h3>Video consultations</h3><p>Meet verified doctors over secure video. AI takes structured notes and writes the summary, so nothing gets lost.</p></div>
+      <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24"><path d="M6 3h12l-1 7a5 5 0 0 1-10 0Z"/><path d="M9 21h6M12 17v4"/></svg></div><h3>Pharmacy &amp; marketplace</h3><p>Order authentic herbs and formulations from trusted makers. Refills are tracked and reminders arrive on time.</p></div>
+      <div class="card green reveal"><div class="ic"><svg viewBox="0 0 24 24"><path d="M9 3v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V3"/><path d="M8 3h8"/></svg></div><h3>Lab tests, explained</h3><p>Book diagnostics and read your results in plain language, tied back to your dosha profile and history.</p></div>
+      <div class="card reveal"><div class="ic"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M12 7v5l3 3"/></svg></div><h3>Follow-up care</h3><p>A personalised regimen of herbs, diet and routine — with reminders and progress you can actually see.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how" style="padding-top:20px">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="eyebrow">How it works</span>
+      <h2>Consult. Analyse. Heal.</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="num">01 — Consult</div><h3 class="serif">Tell us what's off</h3><p>Chat, call or video with the AI assistant and a verified doctor. Describe symptoms in your own words, in your language.</p></div>
+      <div class="step reveal"><div class="num">02 — Analyse</div><h3 class="serif">The body, read closely</h3><p>Kash AI reads your pulse, tongue and history against the classical texts, and models your dosha balance in real time.</p></div>
+      <div class="step reveal"><div class="num">03 — Heal</div><h3 class="serif">A plan that adapts</h3><p>Get a personalised plan — herbs, diet, routine — with follow-ups that adjust as you improve. Care that keeps up.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="dosha">
+  <div class="wrap dosha">
+    <div class="reveal">
+      <span class="eyebrow">The science, honoured</span>
+      <h2 class="serif" style="font-size:clamp(2rem,3.6vw,3rem);font-weight:600;line-height:1.08;margin-top:14px">Three energies. One you.</h2>
+      <p style="color:var(--bone-dim);margin-top:16px;font-size:1.06rem">Ayurveda reads health as the balance of three doshas — Vata, Pitta and Kapha. Kash AI turns that centuries-old framework into a living model of your body, updated with every consult, lab and check-in.</p>
+      <a class="btn btn-ghost" href="#cta" style="margin-top:26px">Find your balance</a>
+    </div>
+    <div class="dosha-orbs reveal">
+      <div class="d-orb vata"><div class="ball"></div><h4>Vata</h4><span>AIR · SPACE</span></div>
+      <div class="d-orb pitta"><div class="ball"></div><h4>Pitta</h4><span>FIRE · WATER</span></div>
+      <div class="d-orb kapha"><div class="ball"></div><h4>Kapha</h4><span>EARTH · WATER</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="quote-sec" style="padding-top:20px">
+  <div class="wrap quote reveal">
+    <blockquote>"For the first time, the pulse reading I take by hand and the data on my screen tell the same story."</blockquote>
+    <div class="who">— Dr. Meera Rao · BAMS, verified practitioner on Kash AI</div>
+  </div>
+</section>
+
+<section id="cta">
+  <div class="wrap">
+    <div class="cta-band reveal">
+      <h2 class="serif">Bring your care into<br>the age of intelligence.</h2>
+      <p>Start a guided consult in minutes, or set up your practice on Kash AI and let the AI handle the notes.</p>
+      <div class="hero-cta" style="justify-content:center">
+        <a class="btn btn-gold" href="#top">Start a consult →</a>
+        <a class="btn btn-ghost" href="#top">For practitioners</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="brand" href="#top" style="margin-bottom:14px"><svg class="mark" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="#E8B24A" stroke-width="1.5"/><path d="M20 6c-5 6-5 22 0 28M20 6c5 6 5 22 0 28M7 20h26" stroke="#2FC98A" stroke-width="1.5"/><circle cx="20" cy="20" r="4" fill="#E8B24A"/></svg>Kash AI</a>
+        <p style="color:var(--bone-dim);font-size:.92rem;max-width:32ch">Ayurvedic intelligence for modern India. Ancient wisdom, computed with care.</p>
+      </div>
+      <div><h5>Platform</h5><a href="#capabilities">AI Doctor</a><a href="#capabilities">Consultations</a><a href="#capabilities">Pharmacy</a><a href="#capabilities">Lab tests</a></div>
+      <div><h5>Company</h5><a href="#dosha">The science</a><a href="#top">Practitioners</a><a href="#top">Trust center</a><a href="#top">Careers</a></div>
+      <div><h5>Support</h5><a href="#top">Help center</a><a href="#top">Privacy</a><a href="#top">Terms</a><a href="#top">Contact</a></div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 Kash AI. All rights reserved.</span><span class="tag-live">Systems operational</span></div>
+  </div>
+</footer>
+
+<script>
+// ---- Dosha Orb (Three.js r128) ----
+(function(){
+  var canvas=document.getElementById('orb');
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!window.THREE){document.body.classList.add('no-webgl');return;}
+  var renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true,alpha:true});}
+  catch(e){document.body.classList.add('no-webgl');return;}
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  function size(){var r=canvas.getBoundingClientRect();return[Math.max(r.width,10),Math.max(r.height,10)];}
+  var s=size();renderer.setSize(s[0],s[1],false);
+  var scene=new THREE.Scene();
+  var camera=new THREE.PerspectiveCamera(45,s[0]/s[1],0.1,100);camera.position.z=4.4;
+  var group=new THREE.Group();scene.add(group);
+  var core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.25,4),
+    new THREE.MeshStandardMaterial({color:0x0e1a15,emissive:0x0f5539,emissiveIntensity:.4,roughness:.35,metalness:.5,flatShading:true}));
+  group.add(core);
+  var wire=new THREE.Mesh(new THREE.IcosahedronGeometry(1.52,2),
+    new THREE.MeshBasicMaterial({color:0xE8B24A,wireframe:true,transparent:true,opacity:.16}));
+  group.add(wire);
+  var pts=new THREE.Points(new THREE.IcosahedronGeometry(1.85,3),
+    new THREE.PointsMaterial({color:0x2FC98A,size:.032,transparent:true,opacity:.75}));
+  group.add(pts);
+  var l1=new THREE.PointLight(0xE8B24A,1.3,20);l1.position.set(3,2,4);scene.add(l1);
+  var l2=new THREE.PointLight(0x2FC98A,1.0,20);l2.position.set(-3,-1,2);scene.add(l2);
+  scene.add(new THREE.AmbientLight(0x556655,.7));
+  var t=0;
+  function loop(){
+    t+=0.006;
+    if(!reduce){
+      group.rotation.y+=0.0035;group.rotation.x=Math.sin(t)*0.14;
+      wire.rotation.y-=0.0022;pts.rotation.y+=0.0012;
+      var sc=1+Math.sin(t*1.5)*0.022;core.scale.setScalar(sc);
+    }
+    renderer.render(scene,camera);requestAnimationFrame(loop);
+  }
+  loop();
+  window.addEventListener('resize',function(){var z=size();camera.aspect=z[0]/z[1];camera.updateProjectionMatrix();renderer.setSize(z[0],z[1],false);});
+})();
+
+// ---- Telemetry flutter ----
+(function(){
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var bpm=document.getElementById('bpm'),conf=document.getElementById('conf'),bal=document.getElementById('bal');
+  var mixes=[[34,41,25],[32,43,25],[36,39,25],[33,40,27]],i=0;
+  function tick(){
+    if(bpm)bpm.textContent=70+Math.round(Math.random()*6);
+    if(conf)conf.textContent=94+Math.round(Math.random()*4);
+    if(bal){var m=mixes[i%mixes.length];bal.textContent='V '+m[0]+' · P '+m[1]+' · K '+m[2];i++;}
+  }
+  tick();if(!reduce)setInterval(tick,2600);
+})();
+
+// ---- Scroll reveal ----
+(function(){
+  var els=document.querySelectorAll('.reveal');
+  if(!('IntersectionObserver'in window)){els.forEach(function(e){e.classList.add('in');});return;}
+  var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target);}});},{threshold:.12});
+  els.forEach(function(e){io.observe(e);});
+})();
+
+// ---- Mobile nav ----
+document.getElementById('navToggle').addEventListener('click',function(){document.getElementById('navLinks').classList.toggle('open');});
+document.querySelectorAll('#navLinks a').forEach(function(a){a.addEventListener('click',function(){document.getElementById('navLinks').classList.remove('open');});});
+</script>
+</body>
+</html>

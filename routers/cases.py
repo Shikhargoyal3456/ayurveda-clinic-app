@@ -610,7 +610,9 @@ async def transcribe_case_audio(
         set_flash(request, "Select an audio file before transcribing.", "danger")
         return RedirectResponse(url=f"/patients/{patient.id}/cases/new", status_code=303)
 
-    suffix = Path(audio_file.filename).suffix or ".wav"
+    suffix = Path(Path(str(audio_file.filename)).name).suffix.lower() or ".wav"
+    if suffix not in {".wav", ".flac", ".mp3", ".ogg", ".webm"}:
+        suffix = ".wav"
     temp_path = ""
     try:
         form = await request.form()

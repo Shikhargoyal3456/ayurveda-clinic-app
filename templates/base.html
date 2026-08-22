@@ -6,21 +6,27 @@
     {% set seo_title = seo_title | default('Kash AI | Integrated Ayurveda + Modern Medicine Platform') %}
     {% set seo_description = seo_description | default("India's integrated healthcare platform for Ayurveda, modern medicine, teleconsultation, outcomes, and medicine fulfillment.") %}
     {% set seo_keywords = seo_keywords | default('ayurveda, telemedicine, integrated healthcare, online doctor, ayurvedic treatment, panchakarma, EMR') %}
-    {% set seo_image = seo_image | default('/static/images/kash-ai-logo.svg') %}
+    {% set seo_image = seo_image | default('/static/images/kash-ai-og.png') %}
     {% block meta %}{% endblock %}
     <title>{% block title %}{{ seo_title }}{% endblock %}</title>
     <meta name="description" content="{{ seo_description }}">
     <meta name="keywords" content="{{ seo_keywords }}">
+    <meta name="theme-color" content="#0B1512">
     <meta name="csrf-token" content="{{ csrf_token | default('') }}">
+    <meta property="og:type" content="website">
     <meta property="og:title" content="{{ seo_title }}">
     <meta property="og:description" content="{{ seo_description }}">
     <meta property="og:site_name" content="Kash AI">
     <meta property="og:image" content="{{ seo_image }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ seo_title }}">
+    <meta name="twitter:description" content="{{ seo_description }}">
+    <meta name="twitter:image" content="{{ seo_image }}">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='images/favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <script type="importmap">
 {

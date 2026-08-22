@@ -42,7 +42,7 @@ async function testMicrophone() {
             const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
             const percent = Math.min((average / 255) * 100, 100);
             levelBar.style.width = percent + "%";
-            levelBar.style.background = percent > 10 ? "#34D399" : "#4F46E5";
+            levelBar.style.background = percent > 10 ? "#34D399" : "#E8B24A";
             if (audioContext && audioContext.state === "running") {
                 requestAnimationFrame(updateLevel);
             }

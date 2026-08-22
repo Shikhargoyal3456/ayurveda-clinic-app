@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_doctor
 from app.database import get_db
 from app.models import Appointment, Doctor, Patient
 from app.portal_auth import get_portal_user
@@ -122,12 +123,19 @@ async def pure_reschedule(
     patient_message: str = Body(..., embed=True),
     request: Request = None,
     db: Session = Depends(get_db),
-    user=Depends(get_current_user_optional),
+    doctor_account: Doctor = Depends(get_current_doctor),
 ):
+    # Authorization: this endpoint exposes appointment details and the treating
+    # doctor's full upcoming schedule, so it must never be reachable anonymously
+    # (previously it accepted an optional user and leaked data via IDOR).
     appointment = _appointment_or_404(db, appointment_id)
     patient = db.get(Patient, appointment.patient_id)
     if patient is None:
         raise HTTPException(status_code=404, detail="Patient not found")
+    # A doctor may only act on appointments for their own patients (admins are
+    # doctor accounts flagged separately and pass this check for their patients).
+    if patient.doctor_id != doctor_account.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     doctor = db.get(Doctor, patient.doctor_id)
     current_appointment = {
         "id": appointment.id,
@@ -136,7 +144,7 @@ async def pure_reschedule(
         "doctor_id": patient.doctor_id,
         "doctor_name": (doctor.full_name or doctor.username) if doctor else "Doctor",
         "patient_name": patient.name,
-        "requested_by_user_id": getattr(user, "id", None),
+        "requested_by_user_id": getattr(doctor_account, "id", None),
         "request_path": request.url.path if request else "",
     }
     doctor_schedule = _doctor_schedule_for_next_14_days(db, patient.doctor_id, skip_appointment_id=appointment.id)

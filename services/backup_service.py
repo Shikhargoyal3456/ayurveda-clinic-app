@@ -14,7 +14,7 @@ from services.encryption import DataEncryption
 class BackupService:
     def __init__(self) -> None:
         self.encryption = DataEncryption()
-        self.backup_dir = Path(os.getenv("BACKUP_DIR", str(settings.backups_dir)))
+        self.backup_dir = Path(os.getenv("BACKUP_DIR", str(settings.backups_dir))).resolve()
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
     def _database_path(self) -> Path:
@@ -59,7 +59,10 @@ class BackupService:
         return sorted(backups, key=lambda item: item["created"], reverse=True)
 
     def restore_backup(self, backup_file):
-        backup_path = Path(backup_file)
+        backup_name = Path(str(backup_file)).name
+        backup_path = (self.backup_dir / backup_name).resolve()
+        if self.backup_dir not in backup_path.parents:
+            return {"success": False, "error": "Invalid backup file path"}
         if not backup_path.exists():
             return {"success": False, "error": "Backup file not found"}
         restored = self.encryption.decrypt_file(backup_path, self._database_path())

@@ -286,7 +286,9 @@ class AmbientEMRService:
 
     async def transcribe(self, audio_file: Any) -> str:
         suffix = getattr(audio_file, "filename", "") or ".webm"
-        extension = Path(suffix).suffix.lower() or ".webm"
+        extension = Path(Path(str(suffix)).name).suffix.lower() or ".webm"
+        if extension not in {".wav", ".flac", ".mp3", ".ogg", ".webm"}:
+            extension = ".webm"
         temp_path = ""
         try:
             fd, temp_path = tempfile.mkstemp(suffix=extension)

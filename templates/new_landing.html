@@ -1,64 +1,147 @@
 {% extends "new_base.html" %}
 
-{% block title %}Kash AI - AI-Powered Ayurvedic Healthcare{% endblock %}
+{% block title %}Kash AI — Ancient intelligence, computed{% endblock %}
 
 {% block content %}
 <div class="landing-wrapper">
+
+    <!-- ── HERO ────────────────────────────────────────────── -->
     <section class="landing-hero" id="features">
-        <div class="landing-hero-content">
-            <h1>AI-Powered Ayurvedic Healthcare</h1>
-            <p class="landing-hero-subtitle">Speak Hindi, AI writes. Save 2+ hours daily.</p>
-            <p class="landing-hero-description">
-                Kash AI gives doctors a calmer clinical workflow, faster documentation,
-                and a patient experience that feels premium from the first tap.
+        <div class="hero-copy">
+            <span class="hero-eyebrow">Ayurveda&nbsp;×&nbsp;Artificial Intelligence</span>
+            <h1>Care that reads the<br><em>whole</em> you.</h1>
+            <p class="hero-lead">
+                Kash AI listens in Hindi or English, reads the pulse of a consultation,
+                and turns ancient diagnostic wisdom into a calm, computed clinical workflow.
             </p>
-            <div class="landing-hero-buttons">
-                <a href="/auth/signup" class="landing-btn-primary">Start Free Trial</a>
-                <a href="/new/ai-doctor" class="landing-btn-secondary">Watch Demo</a>
+            <div class="hero-actions">
+                <a href="/auth/signup" class="btn btn-gold">Start free trial</a>
+                <a href="/new/ai-doctor" class="btn btn-ghost">See the AI doctor →</a>
+            </div>
+            <div class="hero-trust">
+                <span><strong>2+ hrs</strong> saved daily</span>
+                <span class="dot"></span>
+                <span><strong>70%</strong> less typing</span>
+                <span class="dot"></span>
+                <span><strong>800k+</strong> doctors scale-ready</span>
+            </div>
+        </div>
+
+        <div class="hero-stage" aria-hidden="true">
+            <div class="orb">
+                <div class="orb-orbit"><i></i><i></i><i></i></div>
+            </div>
+            <div class="telemetry">
+                <div class="tel-row tel-head">
+                    <span class="tel-dot"></span> Dosha telemetry
+                </div>
+                <div class="tel-row"><span>Nadi pulse</span><b class="mono">72&nbsp;bpm</b></div>
+                <div class="tel-row"><span>Vata · Pitta · Kapha</span><b class="mono">balanced</b></div>
+                <div class="tel-row"><span>Model confidence</span><b class="mono tel-green">98.2%</b></div>
+                <div class="tel-bar"><i style="width:82%"></i></div>
             </div>
         </div>
     </section>
 
-    <section class="landing-features-section">
-        <h2 class="landing-section-title">Why teams switch</h2>
+    <!-- ── NADI PULSE DIVIDER ──────────────────────────────── -->
+    <div class="nadi" aria-hidden="true">
+        <svg viewBox="0 0 1200 40" preserveAspectRatio="none">
+            <path d="M0 20 H420 l18 -13 22 26 16 -30 20 34 14 -17 H700 l22 -22 20 22 H1200"
+                  fill="none" stroke="url(#ng)" stroke-width="2" />
+            <defs>
+                <linearGradient id="ng" x1="0" x2="1">
+                    <stop offset="0" stop-color="#E8B24A" stop-opacity="0"/>
+                    <stop offset="0.5" stop-color="#E8B24A"/>
+                    <stop offset="1" stop-color="#2FC98A" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+
+    <!-- ── STATS ───────────────────────────────────────────── -->
+    <section class="landing-stats-section reveal">
+        <div class="landing-stats-grid">
+            <div class="landing-stat-item">
+                <span class="landing-stat-number">70%</span>
+                <span class="landing-stat-label">Less typing per visit</span>
+            </div>
+            <div class="landing-stat-item">
+                <span class="landing-stat-number">2+ hrs</span>
+                <span class="landing-stat-label">Saved per doctor, daily</span>
+            </div>
+            <div class="landing-stat-item">
+                <span class="landing-stat-number">800k+</span>
+                <span class="landing-stat-label">Doctors scale-ready</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CAPABILITIES ────────────────────────────────────── -->
+    <section class="landing-features-section reveal">
+        <span class="section-eyebrow">What it does</span>
+        <h2 class="landing-section-title">Intelligence, grounded in tradition</h2>
         <div class="landing-features-grid">
             <article class="landing-feature-card">
                 <div class="landing-feature-icon">🎤</div>
-                <h3>Voice-First Intake</h3>
-                <p>Dictate notes in Hindi or English and save time.</p>
+                <h3>Voice-first intake</h3>
+                <p>Dictate the consultation in Hindi or English — Kash AI writes the clinical note.</p>
             </article>
             <article class="landing-feature-card">
-                <div class="landing-feature-icon">🤖</div>
-                <h3>AI Clinical Support</h3>
-                <p>Generate cases, prescriptions, and follow-ups faster.</p>
+                <div class="landing-feature-icon">🌿</div>
+                <h3>Dosha-aware support</h3>
+                <p>Suggestions framed around Vata, Pitta and Kapha balance, not generic templates.</p>
             </article>
             <article class="landing-feature-card">
                 <div class="landing-feature-icon">📱</div>
-                <h3>WhatsApp-Ready Journeys</h3>
-                <p>Share care plans instantly through WhatsApp-ready flows.</p>
+                <h3>WhatsApp-ready journeys</h3>
+                <p>Share prescriptions and care plans instantly through familiar channels.</p>
             </article>
             <article class="landing-feature-card">
                 <div class="landing-feature-icon">🚨</div>
-                <h3>Emergency Detection</h3>
-                <p>AI detects critical symptoms and alerts doctors.</p>
+                <h3>Emergency detection</h3>
+                <p>Critical symptoms are surfaced and escalated to the doctor in real time.</p>
             </article>
         </div>
     </section>
 
-    <section class="landing-roles-section" id="consult">
+    <!-- ── HOW IT WORKS ────────────────────────────────────── -->
+    <section class="landing-steps-section reveal" id="consult">
+        <span class="section-eyebrow">How it works</span>
+        <h2 class="landing-section-title">Three unhurried steps</h2>
+        <div class="landing-steps-grid">
+            <article class="landing-step">
+                <span class="step-index">01</span>
+                <h3>Consult</h3>
+                <p>Speak naturally. Kash AI captures the symptoms, history and pulse of the visit.</p>
+            </article>
+            <article class="landing-step">
+                <span class="step-index">02</span>
+                <h3>Analyse</h3>
+                <p>The model reads dosha signals and drafts a structured, editable clinical note.</p>
+            </article>
+            <article class="landing-step">
+                <span class="step-index">03</span>
+                <h3>Heal</h3>
+                <p>Send the plan to the patient and track follow-ups — all in one calm workspace.</p>
+            </article>
+        </div>
+    </section>
+
+    <!-- ── ROLES ───────────────────────────────────────────── -->
+    <section class="landing-roles-section reveal">
         <div class="landing-roles-grid">
             <article class="landing-role-card">
-                <h2>For Doctors</h2>
+                <h2>For doctors</h2>
                 <p class="landing-role-subtitle">Built for clinical speed</p>
                 <ul class="landing-role-features">
-                    <li>Dictate notes in Hindi or English and save time.</li>
-                    <li>Generate cases, prescriptions, and follow-ups faster.</li>
-                    <li>Keep patient context organized in one secure workspace.</li>
+                    <li>Dictate notes in Hindi or English and save hours.</li>
+                    <li>Generate cases, prescriptions and follow-ups faster.</li>
+                    <li>Keep patient context organised in one secure workspace.</li>
                     <li>Share care plans instantly through WhatsApp-ready flows.</li>
                 </ul>
             </article>
             <article class="landing-role-card">
-                <h2>For Patients</h2>
+                <h2>For patients</h2>
                 <p class="landing-role-subtitle">Simple, calm care access</p>
                 <ul class="landing-role-features">
                     <li>Book appointments without calling the clinic.</li>
@@ -70,29 +153,14 @@
         </div>
     </section>
 
-    <section class="landing-stats-section">
-        <div class="landing-stats-grid">
-            <div class="landing-stat-item">
-                <span class="landing-stat-number">70%</span>
-                <span class="landing-stat-label">Less Typing</span>
-            </div>
-            <div class="landing-stat-item">
-                <span class="landing-stat-number">2+ Hours</span>
-                <span class="landing-stat-label">Saved per doctor</span>
-            </div>
-            <div class="landing-stat-item">
-                <span class="landing-stat-number">800k+</span>
-                <span class="landing-stat-label">Doctors scale-ready</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="landing-cta">
-        <h2>Clear Calls to Action</h2>
+    <!-- ── CTA ─────────────────────────────────────────────── -->
+    <section class="landing-cta reveal">
+        <h2>Bring ancient intelligence into your clinic.</h2>
+        <p class="cta-sub">Start in minutes. No card required.</p>
         <div class="landing-cta-buttons">
-            <a href="/auth/login" class="landing-btn-primary">Login</a>
-            <a href="/auth/signup" class="landing-btn-secondary">Create Account</a>
-            <a href="/new/ai-doctor" class="landing-btn-outline">Try AI Doctor</a>
+            <a href="/auth/signup" class="btn btn-gold">Create account</a>
+            <a href="/auth/login" class="btn btn-ghost">Login</a>
+            <a href="/new/ai-doctor" class="btn btn-ghost">Try AI doctor</a>
         </div>
     </section>
 </div>
@@ -100,327 +168,426 @@
 <style>
 .landing-wrapper {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1180px;
     margin: 0 auto;
-    padding: 60px 24px 40px;
+    padding: 40px 24px 40px;
 }
 
-.landing-hero,
-.landing-cta,
-.landing-feature-card,
-.landing-role-card,
-.landing-stat-item {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22);
-    backdrop-filter: blur(18px);
-}
-
+/* ── HERO ── */
 .landing-hero {
-    text-align: center;
-    padding: 60px 40px 50px;
-    margin-bottom: 60px;
-    border-radius: 24px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: center;
+    gap: 40px;
+    padding: 48px 0 32px;
+    margin-bottom: 24px;
 }
-
-.landing-hero-content {
-    max-width: 760px;
-    margin: 0 auto;
+.hero-eyebrow {
+    display: inline-block;
+    margin-bottom: 20px;
+    font-family: var(--kash-font-util, 'Space Grotesk', sans-serif);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--kash-accent, #E8B24A);
 }
-
-.landing-hero-content h1 {
-    margin: 0 0 16px;
-    font-size: clamp(2rem, 5vw, 3rem);
-    line-height: 1.08;
-    font-weight: 800;
-    letter-spacing: 0;
-    background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+.hero-copy h1 {
+    margin: 0 0 20px;
+    font-family: var(--kash-font-display, 'Fraunces', serif);
+    font-size: clamp(2.6rem, 5.4vw, 4.2rem);
+    line-height: 1.02;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--kash-text, #F4EEE1);
 }
-
-.landing-hero-subtitle {
-    margin: 0 0 12px;
-    font-size: 1.5rem;
-    color: rgba(255, 255, 255, 0.82);
+.hero-copy h1 em {
+    font-style: italic;
+    color: var(--kash-accent, #E8B24A);
 }
-
-.landing-hero-description {
-    max-width: 640px;
-    margin: 0 auto 30px;
-    font-size: 1.08rem;
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.64);
+.hero-lead {
+    max-width: 30em;
+    margin: 0 0 30px;
+    font-size: 1.12rem;
+    line-height: 1.68;
+    color: var(--kash-muted, rgba(244, 238, 225, 0.66));
 }
-
-.landing-hero-buttons,
-.landing-cta-buttons {
+.hero-actions {
     display: flex;
-    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 34px;
+}
+.hero-trust {
+    display: flex;
+    align-items: center;
     gap: 16px;
     flex-wrap: wrap;
+    font-size: 0.95rem;
+    color: var(--kash-muted, rgba(244, 238, 225, 0.66));
+}
+.hero-trust strong { color: var(--kash-text, #F4EEE1); font-weight: 700; }
+.hero-trust .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--kash-accent-2, #2FC98A);
 }
 
-.landing-features-section,
-.landing-roles-section,
-.landing-stats-section {
-    margin-bottom: 60px;
+/* ── BUTTONS ── */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50px;
+    padding: 14px 30px;
+    border-radius: 999px;
+    font-family: var(--kash-font-util, 'Space Grotesk', sans-serif);
+    font-size: 0.98rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+.btn-gold {
+    background: linear-gradient(135deg, #E8B24A, #C6871B);
+    color: #17201C;
+    box-shadow: 0 14px 34px rgba(232, 178, 74, 0.28);
+}
+.btn-gold:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 44px rgba(232, 178, 74, 0.38);
+}
+.btn-ghost {
+    background: rgba(244, 238, 225, 0.05);
+    border: 1px solid rgba(138, 168, 148, 0.28);
+    color: var(--kash-text, #F4EEE1);
+}
+.btn-ghost:hover {
+    transform: translateY(-2px);
+    border-color: var(--kash-accent-2, #2FC98A);
+    background: rgba(47, 201, 138, 0.10);
 }
 
+/* ── DOSHA ORB (CSS-only, no external deps) ── */
+.hero-stage {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 440px;
+}
+.orb {
+    position: relative;
+    width: min(400px, 78vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 34% 30%, rgba(232, 178, 74, 0.95), rgba(232, 178, 74, 0) 46%),
+        radial-gradient(circle at 70% 74%, rgba(47, 201, 138, 0.85), rgba(47, 201, 138, 0) 52%),
+        radial-gradient(circle at 60% 40%, rgba(180, 99, 58, 0.55), rgba(180, 99, 58, 0) 40%),
+        radial-gradient(circle at 50% 50%, #16332680, #0B1512 80%);
+    box-shadow: inset 0 0 90px rgba(0, 0, 0, 0.55), 0 30px 90px rgba(0, 0, 0, 0.5);
+    animation: orbBreathe 7s ease-in-out infinite;
+}
+.orb::before {
+    content: "";
+    position: absolute;
+    inset: -13%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg,
+        rgba(232, 178, 74, 0), rgba(232, 178, 74, 0.55),
+        rgba(47, 201, 138, 0.5), rgba(180, 99, 58, 0.3),
+        rgba(232, 178, 74, 0));
+    filter: blur(16px);
+    opacity: 0.6;
+    animation: orbSpin 20s linear infinite;
+}
+.orb::after {
+    content: "";
+    position: absolute;
+    inset: 7%;
+    border-radius: 50%;
+    background:
+        repeating-linear-gradient(0deg, transparent 0 15px, rgba(244, 238, 225, 0.05) 15px 16px),
+        repeating-linear-gradient(90deg, transparent 0 15px, rgba(244, 238, 225, 0.04) 15px 16px);
+    -webkit-mask: radial-gradient(circle, #000 58%, transparent 72%);
+    mask: radial-gradient(circle, #000 58%, transparent 72%);
+    animation: orbSpin 30s linear infinite reverse;
+}
+.orb-orbit {
+    position: absolute;
+    inset: -6%;
+    animation: orbSpin 24s linear infinite;
+}
+.orb-orbit i {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--kash-accent, #E8B24A);
+    box-shadow: 0 0 14px rgba(232, 178, 74, 0.8);
+}
+.orb-orbit i:nth-child(1) { top: 2%;  left: 50%; }
+.orb-orbit i:nth-child(2) { top: 50%; left: 97%; background: var(--kash-accent-2, #2FC98A); box-shadow: 0 0 14px rgba(47, 201, 138, 0.8); }
+.orb-orbit i:nth-child(3) { top: 88%; left: 14%; background: #B4633A; box-shadow: 0 0 14px rgba(180, 99, 58, 0.7); }
+
+/* telemetry glass panel */
+.telemetry {
+    position: absolute;
+    bottom: 6%;
+    left: -2%;
+    width: 232px;
+    padding: 16px 18px;
+    border-radius: 16px;
+    background: rgba(11, 21, 18, 0.66);
+    border: 1px solid rgba(138, 168, 148, 0.20);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(14px);
+}
+.tel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 0.82rem;
+    color: var(--kash-muted, rgba(244, 238, 225, 0.66));
+}
+.tel-head {
+    margin-bottom: 4px;
+    font-family: var(--kash-font-util, 'Space Grotesk', sans-serif);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--kash-text, #F4EEE1);
+}
+.tel-dot {
+    display: inline-block;
+    width: 7px; height: 7px; margin-right: 6px;
+    border-radius: 50%;
+    background: var(--kash-accent-2, #2FC98A);
+    box-shadow: 0 0 8px rgba(47, 201, 138, 0.9);
+    animation: telPulse 2.4s ease-in-out infinite;
+}
+.tel-row b { color: var(--kash-text, #F4EEE1); font-weight: 600; }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.8rem; }
+.tel-green { color: var(--kash-accent-2, #2FC98A); }
+.tel-bar {
+    margin-top: 8px;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(244, 238, 225, 0.10);
+    overflow: hidden;
+}
+.tel-bar i {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #E8B24A, #2FC98A);
+}
+
+/* ── NADI DIVIDER ── */
+.nadi { margin: 8px 0 48px; opacity: 0.9; }
+.nadi svg { display: block; width: 100%; height: 40px; }
+
+/* ── SECTION SHELL ── */
+.section-eyebrow {
+    display: block;
+    text-align: center;
+    margin-bottom: 10px;
+    font-family: var(--kash-font-util, 'Space Grotesk', sans-serif);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--kash-accent, #E8B24A);
+}
 .landing-section-title {
     margin: 0 0 40px;
     text-align: center;
-    font-size: 2rem;
-    line-height: 1.2;
-    font-weight: 700;
-    letter-spacing: 0;
+    font-family: var(--kash-font-display, 'Fraunces', serif);
+    font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+    line-height: 1.14;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--kash-text, #F4EEE1);
+}
+.landing-features-section,
+.landing-roles-section,
+.landing-steps-section,
+.landing-stats-section { margin-bottom: 64px; }
+
+/* cards share a warm glass look */
+.landing-feature-card,
+.landing-role-card,
+.landing-stat-item,
+.landing-step,
+.landing-cta {
+    background: rgba(19, 34, 28, 0.55);
+    border: 1px solid rgba(138, 168, 148, 0.16);
+    box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(14px);
 }
 
-.landing-features-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-}
-
-.landing-feature-card {
-    min-height: 208px;
-    padding: 30px 20px;
-    border-radius: 16px;
-    text-align: center;
-    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
-}
-
-.landing-feature-card:hover {
-    transform: translateY(-4px);
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(79, 70, 229, 0.36);
-}
-
-.landing-feature-icon {
-    display: block;
-    margin-bottom: 12px;
-    font-size: 2.35rem;
-    line-height: 1;
-}
-
-.landing-feature-card h3 {
-    margin: 0 0 8px;
-    font-size: 1.05rem;
-    line-height: 1.3;
-}
-
-.landing-feature-card p {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.64);
-    font-size: 0.92rem;
-    line-height: 1.55;
-}
-
-.landing-roles-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 30px;
-}
-
-.landing-role-card {
-    padding: 40px;
-    border-radius: 16px;
-}
-
-.landing-role-card h2 {
-    margin: 0 0 6px;
-    font-size: 1.75rem;
-    line-height: 1.2;
-    letter-spacing: 0;
-}
-
-.landing-role-subtitle {
-    margin: 0 0 18px;
-    color: rgba(255, 255, 255, 0.56);
-    font-size: 0.95rem;
-}
-
-.landing-role-features {
-    display: grid;
-    gap: 10px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.landing-role-features li {
-    position: relative;
-    padding-left: 24px;
-    color: rgba(255, 255, 255, 0.78);
-    font-size: 0.96rem;
-    line-height: 1.55;
-}
-
-.landing-role-features li::before {
-    content: "";
-    position: absolute;
-    top: 0.68em;
-    left: 0;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #818cf8;
-}
-
+/* stats */
 .landing-stats-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
 }
-
-.landing-stat-item {
-    padding: 30px 20px;
-    border-radius: 16px;
-    text-align: center;
-}
-
+.landing-stat-item { padding: 30px 20px; border-radius: 18px; text-align: center; }
 .landing-stat-number {
     display: block;
     margin-bottom: 6px;
-    font-size: 2.5rem;
+    font-family: var(--kash-font-display, 'Fraunces', serif);
+    font-size: 2.6rem;
     line-height: 1;
-    font-weight: 800;
-    background: linear-gradient(135deg, #6d5dfc 0%, #a5b4fc 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-weight: 600;
+    color: var(--kash-accent, #E8B24A);
 }
+.landing-stat-label { color: var(--kash-muted, rgba(244, 238, 225, 0.66)); font-size: 0.98rem; }
 
-.landing-stat-label {
-    color: rgba(255, 255, 255, 0.64);
+/* features */
+.landing-features-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+}
+.landing-feature-card {
+    min-height: 208px;
+    padding: 30px 22px;
+    border-radius: 18px;
+    transition: transform 200ms ease, border-color 200ms ease, background 200ms ease;
+}
+.landing-feature-card:hover {
+    transform: translateY(-5px);
+    background: rgba(47, 201, 138, 0.06);
+    border-color: rgba(47, 201, 138, 0.34);
+}
+.landing-feature-icon { display: block; margin-bottom: 14px; font-size: 2.3rem; line-height: 1; }
+.landing-feature-card h3 {
+    margin: 0 0 8px;
+    font-size: 1.1rem;
+    line-height: 1.3;
+    color: var(--kash-text, #F4EEE1);
+}
+.landing-feature-card p { margin: 0; color: var(--kash-muted, rgba(244, 238, 225, 0.66)); font-size: 0.94rem; line-height: 1.55; }
+
+/* steps */
+.landing-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+.landing-step { padding: 34px 26px; border-radius: 18px; }
+.step-index {
+    display: block;
+    margin-bottom: 14px;
+    font-family: var(--kash-font-util, 'Space Grotesk', sans-serif);
     font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--kash-accent-2, #2FC98A);
 }
-
-.landing-cta {
-    padding: 50px 40px;
-    border-radius: 24px;
-    text-align: center;
+.landing-step h3 {
+    margin: 0 0 10px;
+    font-family: var(--kash-font-display, 'Fraunces', serif);
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--kash-text, #F4EEE1);
 }
+.landing-step p { margin: 0; color: var(--kash-muted, rgba(244, 238, 225, 0.66)); font-size: 0.96rem; line-height: 1.6; }
 
-.landing-cta h2 {
-    margin: 0 0 22px;
+/* roles */
+.landing-roles-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 26px;
+}
+.landing-role-card { padding: 40px; border-radius: 20px; }
+.landing-role-card h2 {
+    margin: 0 0 6px;
+    font-family: var(--kash-font-display, 'Fraunces', serif);
     font-size: 1.8rem;
-    line-height: 1.2;
-    letter-spacing: 0;
+    font-weight: 600;
+    color: var(--kash-text, #F4EEE1);
+}
+.landing-role-subtitle { margin: 0 0 20px; color: var(--kash-accent, #E8B24A); font-size: 0.95rem; }
+.landing-role-features { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.landing-role-features li {
+    position: relative;
+    padding-left: 26px;
+    color: var(--kash-muted, rgba(244, 238, 225, 0.72));
+    font-size: 0.98rem;
+    line-height: 1.55;
+}
+.landing-role-features li::before {
+    content: "";
+    position: absolute;
+    top: 0.62em;
+    left: 0;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--kash-accent-2, #2FC98A);
+    box-shadow: 0 0 10px rgba(47, 201, 138, 0.6);
 }
 
-.landing-btn-primary,
-.landing-btn-secondary,
-.landing-btn-outline {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 48px;
-    padding: 14px 36px;
-    border-radius: 999px;
-    color: #ffffff;
-    font-size: 1rem;
-    font-weight: 700;
-    text-align: center;
-    transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+/* CTA */
+.landing-cta { padding: 56px 40px; border-radius: 26px; text-align: center; }
+.landing-cta h2 {
+    margin: 0 0 10px;
+    font-family: var(--kash-font-display, 'Fraunces', serif);
+    font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--kash-text, #F4EEE1);
+}
+.cta-sub { margin: 0 0 26px; color: var(--kash-muted, rgba(244, 238, 225, 0.66)); font-size: 1.02rem; }
+.landing-cta-buttons { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 700ms ease, transform 700ms ease; }
+.reveal.in { opacity: 1; transform: none; }
+
+/* ── ANIMATIONS ── */
+@keyframes orbSpin { to { transform: rotate(360deg); } }
+@keyframes orbBreathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes telPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .orb, .orb::before, .orb::after, .orb-orbit, .tel-dot { animation: none !important; }
+    .reveal { opacity: 1; transform: none; transition: none; }
 }
 
-.landing-btn-primary {
-    background: linear-gradient(135deg, #6d5dfc, #8b5cf6);
+/* ── RESPONSIVE ── */
+@media (max-width: 960px) {
+    .landing-hero { grid-template-columns: 1fr; text-align: center; padding-top: 24px; }
+    .hero-lead { margin-left: auto; margin-right: auto; }
+    .hero-actions, .hero-trust { justify-content: center; }
+    .hero-stage { min-height: 380px; margin-top: 12px; }
+    .telemetry { left: 50%; transform: translateX(-50%); bottom: -8px; }
+    .landing-features-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-.landing-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(79, 70, 229, 0.28);
-}
-
-.landing-btn-secondary {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.landing-btn-secondary:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.14);
-}
-
-.landing-btn-outline {
-    background: transparent;
-    border: 1px solid rgba(129, 140, 248, 0.85);
-}
-
-.landing-btn-outline:hover {
-    transform: translateY(-2px);
-    background: rgba(129, 140, 248, 0.12);
-}
-
-@media (max-width: 1024px) {
-    .landing-features-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-}
-
-@media (max-width: 768px) {
-    .landing-wrapper {
-        padding: 30px 16px 24px;
-    }
-
-    .landing-hero {
-        padding: 40px 20px 32px;
-        margin-bottom: 44px;
-    }
-
-    .landing-hero-subtitle {
-        font-size: 1.15rem;
-    }
-
-    .landing-hero-description {
-        font-size: 1rem;
-    }
-
-    .landing-hero-buttons,
-    .landing-cta-buttons {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .landing-features-section,
-    .landing-roles-section,
-    .landing-stats-section {
-        margin-bottom: 44px;
-    }
-
-    .landing-roles-grid,
-    .landing-stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .landing-role-card,
-    .landing-cta {
-        padding: 28px 22px;
-    }
-
-    .landing-section-title {
-        font-size: 1.65rem;
-        margin-bottom: 28px;
-    }
-}
-
-@media (max-width: 520px) {
-    .landing-features-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .landing-btn-primary,
-    .landing-btn-secondary,
-    .landing-btn-outline {
-        width: 100%;
-    }
-
-    .landing-stat-number {
-        font-size: 2rem;
-    }
+@media (max-width: 680px) {
+    .landing-wrapper { padding: 24px 16px 24px; }
+    .landing-steps-grid, .landing-roles-grid, .landing-stats-grid { grid-template-columns: 1fr; }
+    .landing-features-grid { grid-template-columns: 1fr; }
+    .hero-actions .btn, .landing-cta-buttons .btn { width: 100%; }
+    .landing-role-card, .landing-cta { padding: 30px 24px; }
+    .orb { width: min(300px, 82vw); }
 }
 </style>
+
+<script>
+/* scroll-reveal — inline JS is permitted under every CSP variant (script-src 'unsafe-inline') */
+(function () {
+    var els = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        els.forEach(function (el) { el.classList.add('in'); });
+        return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+    }, { threshold: 0.14 });
+    els.forEach(function (el) { io.observe(el); });
+})();
+</script>
 {% endblock %}

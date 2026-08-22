@@ -5,7 +5,7 @@ import hmac
 import json
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,8 @@ from app.auth import get_current_doctor
 from app.config import settings
 from app.database import get_db
 from app.models import Doctor
+from app.portal_auth import require_portal_roles
+from models.user import User, UserRole
 from utils.subscription_utils import (
     apply_razorpay_webhook,
     cancel_user_subscription,
@@ -60,13 +62,23 @@ def subscription_status(
 
 
 @router.post("/subscriptions/create")
-async def create_patient_medicine_subscription(request: Request):
+async def create_patient_medicine_subscription(
+    request: Request,
+    user: User = Depends(require_portal_roles("patient", "admin")),
+):
     try:
         body = await request.json()
     except Exception:
         body = {}
+    # Ownership: patients may only create subscriptions for their own account.
+    # Admins may act on behalf of a supplied user_id.
+    current_role = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    if current_role == UserRole.admin.value:
+        target_user_id = str(body.get("user_id") or user.id)
+    else:
+        target_user_id = str(user.id)
     result = create_medicine_subscription(
-        str(body.get("user_id") or ""),
+        target_user_id,
         body.get("medicines") if isinstance(body.get("medicines"), list) else [],
         str(body.get("frequency") or "monthly"),
     )
@@ -75,12 +87,21 @@ async def create_patient_medicine_subscription(request: Request):
 
 
 @router.get("/subscriptions/{user_id}")
-def patient_medicine_subscriptions(user_id: str):
+def patient_medicine_subscriptions(
+    user_id: str,
+    user: User = Depends(require_portal_roles("patient", "admin")),
+):
+    # IDOR guard: a patient may only read their own subscriptions; admins may read any.
+    current_role = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    if current_role != UserRole.admin.value and str(user.id) != str(user_id):
+        raise HTTPException(status_code=403, detail="Access denied")
     return JSONResponse({"subscriptions": get_user_subscriptions(user_id)})
 
 
 @router.post("/subscriptions/trigger-refill")
-def trigger_medicine_refill():
+def trigger_medicine_refill(
+    user: User = Depends(require_portal_roles("admin")),
+):
     return JSONResponse(trigger_refill())
 
 
@@ -165,21 +186,30 @@ async def subscription_webhook(
     provided_signature = request.headers.get("X-Razorpay-Signature", "").strip()
     webhook_secret = settings.razorpay_key_secret
 
-    if webhook_secret:
-        expected_signature = hmac.new(
-            webhook_secret.encode("utf-8"),
-            raw_body,
-            hashlib.sha256,
-        ).hexdigest()
-        if not hmac.compare_digest(expected_signature, provided_signature):
-            return JSONResponse(
-                {
-                    "error": "invalid_signature",
-                    "message": "Webhook signature verification failed.",
-                    "upgrade_required": False,
-                },
-                status_code=400,
-            )
+    if not webhook_secret or not provided_signature:
+        return JSONResponse(
+            {
+                "error": "signature_required",
+                "message": "Webhook signature verification is required.",
+                "upgrade_required": False,
+            },
+            status_code=400,
+        )
+
+    expected_signature = hmac.new(
+        webhook_secret.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(expected_signature, provided_signature):
+        return JSONResponse(
+            {
+                "error": "invalid_signature",
+                "message": "Webhook signature verification failed.",
+                "upgrade_required": False,
+            },
+            status_code=400,
+        )
 
     try:
         payload = json.loads(raw_body.decode("utf-8"))

@@ -53,10 +53,20 @@
 
 {% block extra_head %}
 <script>
+const orderConfirmationShare = {
+    trackingUrl: {{ (tracking_url or '/orders/tracking/' ~ order.id) | tojson }},
+    orderId: {{ order.id | tojson }},
+    totalAmount: {{ order.total_amount | tojson }},
+    customerMobile: {{ customer_mobile | tojson }}
+};
+
 function sendWhatsAppConfirmation() {
-    const trackingUrl = "{{ tracking_url or '/orders/tracking/' ~ order.id }}";
-    const message = `Order #{{ order.id }} confirmed.%0ATotal: Rs {{ order.total_amount }}%0ATrack: ${window.location.origin}${trackingUrl}`;
-    window.open(`https://wa.me/91{{ customer_mobile }}?text=${message}`, '_blank');
+    const message = encodeURIComponent(
+        "Order #" + orderConfirmationShare.orderId +
+        " confirmed.\nTotal: Rs " + orderConfirmationShare.totalAmount +
+        "\nTrack: " + window.location.origin + orderConfirmationShare.trackingUrl
+    );
+    window.open("https://wa.me/91" + encodeURIComponent(orderConfirmationShare.customerMobile) + "?text=" + message, "_blank");
 }
 </script>
 {% endblock %}

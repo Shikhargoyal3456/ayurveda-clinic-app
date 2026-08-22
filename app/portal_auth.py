@@ -432,9 +432,13 @@ def save_upload(upload, category: str) -> str | None:
     safe_suffix = Path(str(upload.filename)).suffix.lower()
     if safe_suffix not in {".pdf", ".png", ".jpg", ".jpeg", ".webp"}:
         return None
-    category_dir = UPLOAD_ROOT / category
+    safe_category = "".join(ch for ch in Path(str(category)).name if ch.isalnum() or ch in {"-", "_"}) or "uploads"
+    category_dir = UPLOAD_ROOT / safe_category
     category_dir.mkdir(parents=True, exist_ok=True)
-    destination = category_dir / f"{secrets.token_hex(16)}{safe_suffix}"
+    root = UPLOAD_ROOT.resolve()
+    destination = (category_dir / f"{secrets.token_hex(16)}{safe_suffix}").resolve()
+    if root not in destination.parents:
+        return None
     with destination.open("wb") as handle:
         contents = upload.file.read()
         handle.write(contents[:5_000_000])

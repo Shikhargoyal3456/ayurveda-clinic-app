@@ -80,7 +80,10 @@ def prescription_image(
     record = _prescription_record_or_404(db, prescription_id)
     if not _can_access_record(user, record):
         raise HTTPException(status_code=403, detail="Access denied")
-    path = Path(record.image_url or "")
+    upload_root = UPLOAD_ROOT.resolve()
+    path = Path(record.image_url or "").resolve()
+    if upload_root not in path.parents:
+        raise HTTPException(status_code=404, detail="Prescription file not found")
     if not path.exists() or not path.is_file():
         raise HTTPException(status_code=404, detail="Prescription file not found")
     media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"

@@ -201,7 +201,7 @@ async function endCall() {
             body: JSON.stringify({ session_id: roomId })
         });
     } catch (error) {}
-    window.location.href = `/telemedicine/summary/${roomId}`;
+    window.location.href = "/telemedicine/summary/" + encodeURIComponent(roomId);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

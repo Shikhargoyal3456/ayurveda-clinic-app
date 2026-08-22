@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-import pickle
+import json
 import re
 import warnings
 from dataclasses import dataclass
@@ -118,11 +118,10 @@ def _embedding_model():
 def build_vector_store(force: bool = False) -> dict[str, int | bool | list[str]]:
     ensure_runtime_dirs()
     index_path = settings.vector_store_dir / "index.faiss"
-    docs_path = settings.vector_store_dir / "docs.pkl"
+    docs_path = settings.vector_store_dir / "docs.json"
 
     if index_path.exists() and docs_path.exists() and not force:
-        with docs_path.open("rb") as handle:
-            docs = pickle.load(handle)
+        docs = json.loads(docs_path.read_text(encoding="utf-8"))
         return {
             "rebuilt": False,
             "chunks": len(docs),
@@ -160,8 +159,7 @@ def build_vector_store(force: bool = False) -> dict[str, int | bool | list[str]]
     ]
 
     faiss.write_index(index, str(index_path))
-    with docs_path.open("wb") as handle:
-        pickle.dump(docs_payload, handle)
+    docs_path.write_text(json.dumps(docs_payload, ensure_ascii=True), encoding="utf-8")
 
     return {
         "rebuilt": True,

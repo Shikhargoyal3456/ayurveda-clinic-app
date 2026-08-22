@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import pickle
 import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
@@ -147,6 +146,9 @@ class AyurvedaRAGEngine:
         return self._model
 
     def _docs_path(self) -> Path:
+        return Path(self._settings_value("vector_store_dir", settings.base_dir / "vector_store")) / "docs.json"
+
+    def _legacy_docs_path(self) -> Path:
         return Path(self._settings_value("vector_store_dir", settings.base_dir / "vector_store")) / "docs.pkl"
 
     def _faiss_path(self) -> Path:
@@ -215,10 +217,11 @@ class AyurvedaRAGEngine:
             if self._docs is not None and self._faiss_index is not None:
                 return
             if not self._docs_path().exists() or not self._faiss_path().exists():
+                if self._legacy_docs_path().exists():
+                    logger.info("Legacy docs.pkl metadata found; rebuilding vector store metadata as docs.json.")
                 self.prepare(force_rebuild=False)
 
-            with self._docs_path().open("rb") as handle:
-                self._docs = pickle.load(handle)
+            self._docs = json.loads(self._docs_path().read_text(encoding="utf-8"))
             self._faiss_index = faiss.read_index(str(self._faiss_path()))
 
     def warm_up(self) -> dict[str, Any]:

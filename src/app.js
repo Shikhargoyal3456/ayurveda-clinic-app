@@ -16,6 +16,7 @@ initDatabase();
 const app = express();
 
 const requestBuckets = new Map();
+const csrfTokens = new Map();
 
 function clientIp(req) {
   const forwardedFor = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
@@ -38,10 +39,44 @@ function applyInMemoryRateLimit(req, res, next) {
   return next();
 }
 
+function csrfTokenForClient(req) {
+  const key = clientIp(req);
+  const existing = csrfTokens.get(key);
+  if (existing) return existing;
+  const token = require('crypto').randomBytes(32).toString('hex');
+  csrfTokens.set(key, token);
+  return token;
+}
+
+function applyCsrfProtection(req, res, next) {
+  const unsafeMethod = !['GET', 'HEAD', 'OPTIONS'].includes(req.method);
+  if (!unsafeMethod || req.path.startsWith('/webhook')) {
+    return next();
+  }
+  const hasAuthCookie = Boolean(req.headers.cookie);
+  if (!hasAuthCookie) {
+    return next();
+  }
+  const expected = csrfTokenForClient(req);
+  const supplied = String(req.get('x-csrf-token') || req.body?._csrf || req.body?.csrf_token || '');
+  if (supplied && supplied === expected) {
+    return next();
+  }
+  return res.status(403).json({ success: false, error: 'Invalid CSRF token.' });
+}
+
 function corsOptionsDelegate(req, callback) {
   const origin = req.header('Origin');
-  if (!origin || config.allowedOrigins.length === 0 || config.allowedOrigins.includes(origin)) {
-    return callback(null, { origin: origin || false, credentials: true });
+  // Requests without an Origin header (same-origin navigations, curl, server-to-server)
+  // need no CORS reflection.
+  if (!origin) {
+    return callback(null, { origin: false, credentials: true });
+  }
+  // Only reflect origins explicitly present in the configured env allowlist
+  // (ALLOWED_ORIGINS / CORS_ORIGINS). An empty allowlist denies all cross-origin
+  // requests instead of reflecting arbitrary origins with credentials.
+  if (config.allowedOrigins.includes(origin)) {
+    return callback(null, { origin, credentials: true });
   }
   return callback(new Error('Origin not allowed by CORS'));
 }
@@ -64,6 +99,15 @@ app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(applyInMemoryRateLimit);
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
+app.use((req, res, next) => {
+  res.setHeader('X-CSRF-Token', csrfTokenForClient(req));
+  next();
+});
+// SECURITY TODO: add CSRF middleware (csurf) on state-changing routes.
+// A custom double-submit-style guard (applyCsrfProtection) is wired below, but it only
+// enforces when a Cookie header is present and stores tokens in-memory keyed by client IP.
+// Adopting a vetted library (csurf / csrf-csrf) is a pending dependency decision.
+app.use(applyCsrfProtection);
 app.use('/static', express.static(path.join(__dirname, '..', 'public')));
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(config.publicDir, 'dashboard.html'));

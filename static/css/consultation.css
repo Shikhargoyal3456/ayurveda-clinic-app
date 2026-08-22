@@ -3,7 +3,7 @@
 .consultation-header{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
 .consultation-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .consultation-tips{display:flex;gap:10px;flex-wrap:wrap}
-.tip-pill{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#eff6ff;color:#1d4ed8;font-size:.92rem}
+.tip-pill{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;background:#FBF0D8;color:#C6871B;font-size:.92rem}
 .data-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .data-card{display:grid;gap:8px;padding:14px;border-radius:18px;background:#f8fafc;border:1px solid #e2e8f0}
 .data-card__label{font-size:.85rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.04em}
@@ -19,7 +19,7 @@
 .action-buttons .btn{border-radius:999px;padding:10px 14px}
 .action-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .action-card{padding:14px;border-radius:18px;background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e2e8f0;min-height:118px;box-shadow:0 10px 24px rgba(15,23,42,.04)}
-.action-card__label{display:block;margin-bottom:8px;font-size:.84rem;font-weight:800;color:#7c3aed;text-transform:uppercase;letter-spacing:.04em}
+.action-card__label{display:block;margin-bottom:8px;font-size:.84rem;font-weight:800;color:#C6871B;text-transform:uppercase;letter-spacing:.04em}
 .action-card p{margin:0;color:#0f172a;line-height:1.6}
 .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .field-grid label,.consultation-card label{display:grid;gap:6px;font-weight:600}

@@ -31,6 +31,14 @@ def configure_logging() -> logging.Logger:
 
 
 LOGGER = configure_logging()
+KNOWN_TABLES = {
+    "patients",
+    "payments",
+    "prescriptions",
+    "clinic_subscriptions",
+    "doctors",
+    "users",
+}
 
 
 def resolve_database_path() -> Path:
@@ -52,10 +60,12 @@ def table_exists(cursor: sqlite3.Cursor, table_name: str) -> bool:
 
 
 def column_names(cursor: sqlite3.Cursor, table_name: str) -> set[str]:
+    if table_name not in KNOWN_TABLES:
+        raise ValueError(f"Unsupported table name: {table_name}")
     if not table_exists(cursor, table_name):
         return set()
-    rows = cursor.execute(f"PRAGMA table_info({table_name})").fetchall()
-    return {row[1] for row in rows}
+    rows = cursor.execute("SELECT name FROM pragma_table_info(?)", (table_name,)).fetchall()
+    return {row[0] for row in rows}
 
 
 def index_exists(cursor: sqlite3.Cursor, index_name: str) -> bool:

@@ -57,10 +57,11 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
+const profileCsrfToken = {{ (request.state.csrf_token | default(csrf_token)) | tojson }};
 async function selectProfile(profileId, requiresPinHint) {
     const response = await fetch("/api/profiles/select", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": profileCsrfToken },
         body: JSON.stringify({ profile_id: profileId })
     });
     const result = await response.json();
@@ -69,7 +70,7 @@ async function selectProfile(profileId, requiresPinHint) {
         if (!pin) return;
         const pinResponse = await fetch("/api/profiles/verify-pin", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": profileCsrfToken },
             body: JSON.stringify({ profile_id: profileId, pin })
         });
         if (!pinResponse.ok) {

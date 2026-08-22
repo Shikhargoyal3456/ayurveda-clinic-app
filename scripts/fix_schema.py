@@ -12,6 +12,20 @@ from pathlib import Path
 
 
 DB_PATH = Path(__file__).resolve().parents[1] / "ayurveda.db"
+ALLOWED_TABLES = {"ai_feedback", "consultation_metrics"}
+ALLOWED_COLUMN_TYPES = {
+    "INTEGER",
+    "TEXT",
+    "BOOLEAN DEFAULT 0",
+    "DATETIME",
+    "DATETIME DEFAULT CURRENT_TIMESTAMP",
+}
+
+
+def quote_identifier(identifier: str, allowed: set[str]) -> str:
+    if identifier not in allowed:
+        raise ValueError(f"Unexpected SQL identifier: {identifier}")
+    return f'"{identifier}"'
 
 
 def table_exists(cursor: sqlite3.Cursor, table_name: str) -> bool:
@@ -23,8 +37,8 @@ def table_exists(cursor: sqlite3.Cursor, table_name: str) -> bool:
 
 
 def table_columns(cursor: sqlite3.Cursor, table_name: str) -> set[str]:
-    cursor.execute(f"PRAGMA table_info({table_name})")
-    return {str(row[1]) for row in cursor.fetchall()}
+    cursor.execute("SELECT name FROM pragma_table_info(?)", (table_name,))
+    return {str(row[0]) for row in cursor.fetchall()}
 
 
 def ensure_columns(cursor: sqlite3.Cursor, table_name: str, columns: dict[str, str]) -> int:
@@ -32,10 +46,14 @@ def ensure_columns(cursor: sqlite3.Cursor, table_name: str, columns: dict[str, s
     print(f"Columns in {table_name}: {sorted(existing)}")
 
     added = 0
+    table_sql = quote_identifier(table_name, ALLOWED_TABLES)
     for column_name, column_type in columns.items():
         if column_name in existing:
             continue
-        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+        if column_type not in ALLOWED_COLUMN_TYPES:
+            raise ValueError(f"Unexpected SQL column type for {column_name}: {column_type}")
+        column_sql = quote_identifier(column_name, set(columns))
+        cursor.execute(f"ALTER TABLE {table_sql} ADD COLUMN {column_sql} {column_type}")
         print(f"Added {table_name}.{column_name} ({column_type})")
         added += 1
     return added

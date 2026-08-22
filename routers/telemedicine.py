@@ -15,6 +15,7 @@ from app.config import settings
 from app.database import SessionLocal, get_db
 from app.models import Appointment, Doctor, Patient
 from app.portal_auth import dashboard_path_for_role, get_portal_user, normalize_identifier
+from app.security import is_safe_relative_redirect
 from services.ai_order_automation import AIOrderAutomation
 from services.ai_support_automation import AISupportAutomation
 from services.feature_flags import is_ai_automation_enabled, is_telemedicine_enabled
@@ -28,6 +29,20 @@ telemedicine_service = TelemedicineService()
 ai_order = AIOrderAutomation()
 ai_support = AISupportAutomation()
 logger = logging.getLogger(__name__)
+
+
+def require_authenticated_user(user=Depends(get_current_user)):
+    """Require any authenticated user (portal patient/doctor/etc. or legacy doctor).
+
+    Telemedicine consultation data (room, AI summaries, live assist) and the
+    AI order/refill actions must never be reachable anonymously. Previously
+    these endpoints loaded or mutated records purely from a client-supplied
+    ``session_id``/``order_id``/``user_id``, allowing anyone to read another
+    patient's consultation summary or trigger actions by guessing an id.
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user
 
 
 class TelemedicineSessionCreate(BaseModel):
@@ -146,7 +161,7 @@ def telemedicine_booking_page(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/telemedicine/room/{session_id}")
-def telemedicine_room_page(request: Request, session_id: str):
+def telemedicine_room_page(request: Request, session_id: str, user=Depends(require_authenticated_user)):
     _ensure_telemedicine_enabled()
     session = telemedicine_service.active_sessions.get(session_id) or telemedicine_service._load_session(session_id)
     if not session:
@@ -175,11 +190,14 @@ async def telemedicine_video_consult_alias(request: Request, session_id: str | N
         return RedirectResponse(url=f"/telemedicine/room/{resolved_session_id}", status_code=303)
 
     preview_session = await telemedicine_service.create_consultation_session(patient_id=0, doctor_id=0, session_type="video")
-    return RedirectResponse(url=preview_session["room_url"], status_code=303)
+    room_url = str(preview_session.get("room_url", ""))
+    if not is_safe_relative_redirect(room_url):
+        raise HTTPException(status_code=400, detail="Invalid redirect target")
+    return RedirectResponse(url=room_url, status_code=303)
 
 
 @router.get("/telemedicine/summary/{session_id}")
-async def telemedicine_summary_page(request: Request, session_id: str):
+async def telemedicine_summary_page(request: Request, session_id: str, user=Depends(require_authenticated_user)):
     _ensure_telemedicine_enabled()
     summary = await telemedicine_service.ai_post_consultation_summary(session_id)
     followup = await telemedicine_service.auto_schedule_followup(session_id)
@@ -237,6 +255,7 @@ async def create_telemedicine_session(
     patient_id: int | None = Query(default=None),
     doctor_id: int | None = Query(default=None),
     session_type: str = Query(default="video"),
+    user=Depends(require_authenticated_user),
 ):
     _ensure_telemedicine_enabled()
     body = payload or TelemedicineSessionCreate(
@@ -260,21 +279,21 @@ async def analyze_symptoms(payload: SymptomAnalysisRequest):
 
 
 @router.post("/api/telemedicine/ai-assist")
-async def ai_assist_during_consultation(payload: TelemedicineAssistRequest):
+async def ai_assist_during_consultation(payload: TelemedicineAssistRequest, user=Depends(require_authenticated_user)):
     _ensure_telemedicine_enabled()
     insights = await telemedicine_service.real_time_ai_assistant(payload.session_id, payload.conversation)
     return JSONResponse(insights)
 
 
 @router.post("/api/telemedicine/summary")
-async def get_consultation_summary(payload: TelemedicineSummaryRequest):
+async def get_consultation_summary(payload: TelemedicineSummaryRequest, user=Depends(require_authenticated_user)):
     _ensure_telemedicine_enabled()
     summary = await telemedicine_service.ai_post_consultation_summary(payload.session_id)
     return JSONResponse(summary)
 
 
 @router.post("/api/telemedicine/summary/{session_id}")
-async def get_consultation_summary_by_id(session_id: str):
+async def get_consultation_summary_by_id(session_id: str, user=Depends(require_authenticated_user)):
     _ensure_telemedicine_enabled()
     summary = await telemedicine_service.ai_post_consultation_summary(session_id)
     return JSONResponse(summary)
@@ -296,7 +315,7 @@ async def telemedicine_websocket(websocket: WebSocket, session_id: str):
 
 
 @router.post("/api/ai/order/process/{order_id}")
-async def ai_process_order(order_id: int):
+async def ai_process_order(order_id: int, user=Depends(require_authenticated_user)):
     _ensure_ai_enabled()
     result = await ai_order.process_order_with_ai(order_id)
     return JSONResponse(result)
@@ -334,7 +353,7 @@ async def get_medicine_alternatives(payload: AlternativesRequest | None = Body(d
 
 
 @router.post("/api/ai/refill/remind/{user_id}")
-async def refill_reminder(user_id: int):
+async def refill_reminder(user_id: int, user=Depends(require_authenticated_user)):
     _ensure_ai_enabled()
     reminder = await ai_order.auto_refill_reminder(user_id)
     return JSONResponse(reminder)

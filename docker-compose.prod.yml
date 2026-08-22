@@ -12,12 +12,16 @@ services:
     depends_on:
       - redis
       - postgres
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
   postgres:
@@ -30,6 +34,8 @@ services:
       - "5432:5432"
     volumes:
       - kash_ai_postgres:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
 
 volumes:

@@ -11,6 +11,10 @@ const { analyzePrescriptionBuffer, GEMINI_UNAVAILABLE_MESSAGE, inferMimeType } =
 const { buildPrescriptionMessage, formatDoctorName, sendPrescriptionNotification, sendWhatsAppChunks } = require('../services/twilioService');
 const { scheduleMedicationReminders } = require('../queues/reminderQueue');
 
+// SECURITY(authz): requires authentication + ownership check. This endpoint creates a
+// prescription and sends a WhatsApp notification for an arbitrary patientId/phone with no
+// caller identity. Once an auth scheme exists, require an authenticated clinician (req.user)
+// and verify they are permitted to prescribe for the resolved patient.
 async function createPrescriptionAndNotify(req, res, next) {
   try {
     const patientId = req.body.patientId;
@@ -107,6 +111,9 @@ async function createPrescriptionAndNotify(req, res, next) {
   }
 }
 
+// SECURITY(authz): requires authentication + ownership check. Any caller can read another
+// patient's prescriptions by guessing/enumerating :id (IDOR). Once an auth scheme exists,
+// require req.user and confirm the patient belongs to / is accessible by req.user.
 async function listPatientPrescriptions(req, res, next) {
   try {
     const patient = findPatientById(req.params.id);
@@ -120,6 +127,9 @@ async function listPatientPrescriptions(req, res, next) {
   }
 }
 
+// SECURITY(authz): requires authentication + ownership check. Any caller can schedule
+// reminders against an arbitrary prescriptionId/patientId (IDOR). Once an auth scheme
+// exists, require req.user and verify ownership of the resolved prescription/patient.
 async function scheduleReminderForPrescription(req, res, next) {
   try {
     const prescriptionId = req.body.prescriptionId;
@@ -167,6 +177,9 @@ async function scheduleReminderForPrescription(req, res, next) {
   }
 }
 
+// SECURITY(authz): requires authentication + ownership check. Any caller can upload an
+// image for analysis and trigger a WhatsApp message to an arbitrary phone number. Once an
+// auth scheme exists, require an authenticated user (req.user) and authorize the target phone.
 async function scanPrescriptionImage(req, res, next) {
   try {
     const file = req.file;

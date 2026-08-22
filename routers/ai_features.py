@@ -16,7 +16,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_user
+from app.auth import get_current_doctor, get_current_user
 from app.config import settings
 from app.database import SessionLocal, commit_with_retry, get_db
 from app.middleware.circuit_breaker import circuit_breaker, concurrency_limiter
@@ -371,7 +371,7 @@ async def tongue_health_check():
 async def analyze_samhita(
     data: dict[str, Any] = Body(default={}),
     db: Session = Depends(get_db),
-    current_user: dict[str, object] | None = Depends(get_current_user),
+    doctor: Doctor = Depends(get_current_doctor),
 ):
     symptoms = _safe_text(data.get("symptoms"))
     if not symptoms:
@@ -432,7 +432,7 @@ async def analyze_samhita(
         "analysis": parsed_response,
         "analysis_id": analysis.id,
         "provider": provider,
-        "authenticated": current_user is not None,
+        "authenticated": True,
     }
 
 
@@ -462,6 +462,7 @@ async def tongue_analyze(
     request: Request,
     patient_id: int = Query(default=0),
     db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
 ):
     if not _feature_enabled("enable_tongue_ai", True):
         return _response_error("Tongue AI is disabled.", 503)
@@ -570,15 +571,21 @@ async def tongue_analyze(
 
 
 @router.post("/api/voice-to-action")
-async def voice_to_action(payload: dict[str, Any] = Body(default={}), db: Session = Depends(get_db)):
+async def voice_to_action(
+    payload: dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor_account: Doctor = Depends(get_current_doctor),
+):
     if not _feature_enabled("enable_voice_action", True):
         return _response_error("Voice action features are disabled.", 503)
 
     patient_id = int(payload.get("patient_id") or 0)
-    doctor_id = int(payload.get("doctor_id") or 0)
+    # Bind the prescribing doctor to the authenticated account; never trust a
+    # client-supplied doctor_id (prevents attributing prescriptions to others).
+    doctor_id = doctor_account.id
     transcript = _safe_text(payload.get("transcript"))
-    if not patient_id or not doctor_id:
-        return _response_error("patient_id and doctor_id are required.", 422)
+    if not patient_id:
+        return _response_error("patient_id is required.", 422)
 
     patient = db.get(Patient, patient_id)
     doctor = db.get(Doctor, doctor_id)
@@ -710,7 +717,10 @@ Format as JSON only.
 
 
 @router.get("/api/predict-churn")
-async def predict_churn(db: Session = Depends(get_db)):
+async def predict_churn(
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
     if not _feature_enabled("enable_churn_prediction", True):
         return _response_error("Churn prediction is disabled.", 503)
 
@@ -759,7 +769,11 @@ async def predict_churn(db: Session = Depends(get_db)):
 
 
 @router.post("/api/generate-billing-codes")
-async def generate_billing_codes(payload: dict[str, Any] = Body(default={}), db: Session = Depends(get_db)):
+async def generate_billing_codes(
+    payload: dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
     if not _feature_enabled("enable_billing_ai", True):
         return _response_error("Billing AI is disabled.", 503)
 
@@ -801,7 +815,11 @@ async def generate_billing_codes(payload: dict[str, Any] = Body(default={}), db:
 
 
 @router.post("/api/recommend-medicines")
-async def recommend_medicines(payload: dict[str, Any] = Body(default={}), db: Session = Depends(get_db)):
+async def recommend_medicines(
+    payload: dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
     if not _feature_enabled("enable_similarity_recommendations", True):
         return _response_error("Similarity recommendations are disabled.", 503)
 
@@ -857,15 +875,20 @@ async def recommend_medicines(payload: dict[str, Any] = Body(default={}), db: Se
 
 
 @router.post("/api/telemedicine/start")
-async def start_telemedicine(payload: dict[str, Any] = Body(default={}), db: Session = Depends(get_db)):
+async def start_telemedicine(
+    payload: dict[str, Any] = Body(default={}),
+    db: Session = Depends(get_db),
+    doctor_account: Doctor = Depends(get_current_doctor),
+):
     if not _feature_enabled("enable_telemedicine_links", True):
         return _response_error("Telemedicine links are disabled.", 503)
 
     patient_id = int(payload.get("patient_id") or 0)
-    doctor_id = int(payload.get("doctor_id") or 0)
+    # Bind the session owner to the authenticated doctor; ignore any client doctor_id.
+    doctor_id = doctor_account.id
     provider = _safe_text(payload.get("provider")) or "jitsi"
-    if not patient_id or not doctor_id:
-        return _response_error("patient_id and doctor_id are required.", 422)
+    if not patient_id:
+        return _response_error("patient_id is required.", 422)
     patient = db.get(Patient, patient_id)
     doctor = db.get(Doctor, doctor_id)
     if patient is None or doctor is None:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+import secrets
+
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
@@ -42,6 +44,35 @@ from services.superapp_service import (
 router = APIRouter(tags=["superapp"])
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 marketing = MarketingAutomation()
+
+
+def _effective_user_id(request: Request) -> str:
+    """Return a trusted, session-scoped identity for storefront state.
+
+    Never trust a client-supplied ``user_id`` (IDOR): a signed-in portal user
+    is keyed by their real id, while anonymous visitors get a random,
+    session-bound token. This prevents one visitor from reading or mutating
+    another user's cart, loyalty balance, or orders by guessing an id.
+    """
+    portal_id = request.session.get("portal_user_id")
+    if portal_id:
+        return f"user:{portal_id}"
+    anon = request.session.get("superapp_uid")
+    if not anon:
+        anon = f"anon:{secrets.token_hex(16)}"
+        request.session["superapp_uid"] = anon
+    return anon
+
+
+def _require_order_owner(request: Request, order_id: int) -> dict:
+    """Load an order and confirm it belongs to the current session identity."""
+    tracking = get_order_tracking(order_id)
+    if not tracking.get("success"):
+        raise HTTPException(status_code=404, detail="Order not found")
+    order = tracking.get("order", {}) or {}
+    if str(order.get("user_id", "")) != _effective_user_id(request):
+        raise HTTPException(status_code=403, detail="Access denied")
+    return tracking
 
 
 @router.get("/superapp/dashboard")
@@ -109,6 +140,10 @@ def ai_support_page(request: Request):
 @router.get("/orders/tracking/{order_id}")
 def order_tracking_page(request: Request, order_id: int):
     tracking = get_order_tracking(order_id)
+    order = tracking.get("order", {}) or {}
+    # IDOR guard: never render another user's order details.
+    if tracking.get("success") and str(order.get("user_id", "")) != _effective_user_id(request):
+        tracking = {"success": False}
     if not tracking.get("success"):
         tracking = {
             "success": False,
@@ -162,29 +197,28 @@ def pharmacy_categories():
 @limiter.limit("30/minute")
 async def cart_add(request: Request):
     payload = await request.json()
-    return JSONResponse(add_to_cart(int(payload.get("product_id", 0) or 0), int(payload.get("quantity", 1) or 1), str(payload.get("user_id", "guest") or "guest")))
+    return JSONResponse(add_to_cart(int(payload.get("product_id", 0) or 0), int(payload.get("quantity", 1) or 1), _effective_user_id(request)))
 
 
 @router.get("/api/cart")
-def cart_view(user_id: str = "guest"):
-    return JSONResponse(get_cart(user_id))
+def cart_view(request: Request):
+    return JSONResponse(get_cart(_effective_user_id(request)))
 
 
 @router.post("/api/checkout")
 @limiter.limit("10/minute")
 async def checkout_api(request: Request):
-    payload = await request.json() if request.headers.get("content-type", "").lower().startswith("application/json") else {}
-    return JSONResponse(checkout(str(payload.get("user_id", "guest") or "guest")))
+    return JSONResponse(checkout(_effective_user_id(request)))
 
 
 @router.get("/api/offers/available")
-def available_offers(user_id: str = "guest"):
-    return JSONResponse({"offers": get_offers(user_id)})
+def available_offers(request: Request):
+    return JSONResponse({"offers": get_offers(_effective_user_id(request))})
 
 
 @router.get("/api/offers/best")
-def best_offer(user_id: str = "guest"):
-    return JSONResponse(get_best_offer(user_id) or {})
+def best_offer(request: Request):
+    return JSONResponse(get_best_offer(_effective_user_id(request)) or {})
 
 
 @router.get("/api/labs/tests")
@@ -201,7 +235,7 @@ async def lab_book(request: Request):
             [int(item) for item in payload.get("test_ids", []) if str(item).isdigit()],
             str(payload.get("collection_address", "")).strip(),
             str(payload.get("collection_time", "")).strip(),
-            str(payload.get("user_id", "guest") or "guest"),
+            _effective_user_id(request),
         )
     )
 
@@ -218,36 +252,38 @@ async def labs_interpret(request: Request):
 
 
 @router.get("/api/orders/{order_id}/track")
-def order_track(order_id: int):
-    return JSONResponse(get_order_tracking(order_id))
+def order_track(order_id: int, request: Request):
+    return JSONResponse(_require_order_owner(request, order_id))
 
 
 @router.get("/api/orders/{order_id}/location")
-def order_location(order_id: int):
-    tracking = get_order_tracking(order_id)
+def order_location(order_id: int, request: Request):
+    tracking = _require_order_owner(request, order_id)
     return JSONResponse(tracking.get("location", {"lat": 28.6139, "lng": 77.2090, "eta": "25 min"}))
 
 
 @router.post("/api/orders/{order_id}/cancel")
-def order_cancel(order_id: int):
+def order_cancel(order_id: int, request: Request):
+    _require_order_owner(request, order_id)
     return JSONResponse(cancel_order(order_id))
 
 
 @router.post("/api/orders/{order_id}/reschedule")
 async def order_reschedule(order_id: int, request: Request):
+    _require_order_owner(request, order_id)
     payload = await request.json()
     return JSONResponse(reschedule_order(order_id, str(payload.get("estimated_delivery", "")).strip()))
 
 
 @router.get("/api/loyalty/points")
-def loyalty_points(user_id: str = "guest"):
-    return JSONResponse(get_loyalty(user_id))
+def loyalty_points(request: Request):
+    return JSONResponse(get_loyalty(_effective_user_id(request)))
 
 
 @router.post("/api/loyalty/redeem")
 async def loyalty_redeem(request: Request):
     payload = await request.json()
-    return JSONResponse(redeem_reward(str(payload.get("reward_id", "")).strip(), str(payload.get("user_id", "guest") or "guest")))
+    return JSONResponse(redeem_reward(str(payload.get("reward_id", "")).strip(), _effective_user_id(request)))
 
 
 @router.get("/api/loyalty/rewards")
@@ -259,7 +295,7 @@ def loyalty_rewards():
 async def marketing_send_reminder(request: Request):
     payload = await request.json()
     action = str(payload.get("type", "abandoned_cart")).strip().lower()
-    user_id = str(payload.get("user_id", "guest") or "guest")
+    user_id = _effective_user_id(request)
     if action == "refill":
         return JSONResponse(marketing.send_refill_reminder(user_id, payload.get("subscription", {})))
     if action == "health_tip":
@@ -270,8 +306,8 @@ async def marketing_send_reminder(request: Request):
 
 
 @router.get("/api/marketing/personalized-offers")
-def marketing_offers(user_id: str = "guest"):
-    return JSONResponse({"offers": get_offers(user_id)})
+def marketing_offers(request: Request):
+    return JSONResponse({"offers": get_offers(_effective_user_id(request))})
 
 
 @router.post("/api/support/chat")
@@ -282,13 +318,13 @@ async def support_chat(request: Request):
 
 
 @router.get("/api/superapp/dashboard")
-def dashboard_api(user_id: str = "guest"):
-    return JSONResponse(get_dashboard_payload(user_id))
+def dashboard_api(request: Request):
+    return JSONResponse(get_dashboard_payload(_effective_user_id(request)))
 
 
 @router.get("/api/store/recommendations")
-def store_recommendations(user_id: str = "guest"):
-    return JSONResponse({"products": get_ai_recommendations(user_id)})
+def store_recommendations(request: Request):
+    return JSONResponse({"products": get_ai_recommendations(_effective_user_id(request))})
 
 
 @router.get("/api/store/categories")
@@ -306,7 +342,7 @@ async def prescription_auto_refill(request: Request):
     payload = await request.json()
     return JSONResponse(
         auto_refill_prescription(
-            str(payload.get("user_id", "guest") or "guest"),
+            _effective_user_id(request),
             str(payload.get("prescription_name", "Prescription") or "Prescription"),
             payload.get("medicines", []),
             int(payload.get("days_left", 0) or 0),
@@ -315,5 +351,5 @@ async def prescription_auto_refill(request: Request):
 
 
 @router.get("/api/pricing/dynamic/{product_id}")
-def dynamic_pricing(product_id: int, user_id: str = "guest"):
-    return JSONResponse(calculate_dynamic_price(product_id, user_id))
+def dynamic_pricing(product_id: int, request: Request):
+    return JSONResponse(calculate_dynamic_price(product_id, _effective_user_id(request)))

@@ -35,10 +35,11 @@ async def openwa_webhook(request: Request):
     body = await request.body()
     signature = request.headers.get("X-OpenWA-Signature", "")
     secret = settings.openwa_webhook_secret
-    if secret and signature:
-        expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-        if signature != f"sha256={expected}":
-            raise HTTPException(status_code=401, detail="Invalid webhook signature")
+    if not secret or not signature:
+        raise HTTPException(status_code=401, detail="Webhook signature verification is required")
+    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, f"sha256={expected}"):
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
 
     data = await request.json()
     event = str(data.get("event") or "").strip()

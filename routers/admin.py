@@ -407,9 +407,13 @@ async def _save_uploaded_medicine_image(image: UploadFile | None) -> str | None:
         return None
     uploads_dir = settings.static_dir / "uploads" / "medicines"
     uploads_dir.mkdir(parents=True, exist_ok=True)
-    suffix = Path(image.filename).suffix.lower() or ".jpg"
+    suffix = Path(Path(str(image.filename)).name).suffix.lower() or ".jpg"
+    if suffix not in {".jpg", ".jpeg", ".png", ".webp"}:
+        suffix = ".jpg"
     filename = f"{uuid4().hex}{suffix}"
-    target = uploads_dir / filename
+    target = (uploads_dir / filename).resolve()
+    if uploads_dir.resolve() not in target.parents:
+        return None
     content = await image.read()
     target.write_bytes(content)
     return f"/static/uploads/medicines/{filename}"

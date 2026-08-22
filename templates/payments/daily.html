@@ -111,7 +111,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js" integrity="sha384-80d7Zc/7k+MQdOfriYznE6nknB0Id741+VXw/dR8mIoOSgkRpHULydeUoOGrphgf" crossorigin="anonymous"></script>
 <script defer src="{{ url_for('static', path='js/form_submit.js') }}"></script>
 <script>
 const CSRF_TOKEN = "{{ csrf_token }}";

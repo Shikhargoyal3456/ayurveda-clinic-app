@@ -33,6 +33,7 @@
                     {% else %}
                     <button type="button" class="secondary-btn" onclick="setPrimary({{ profile.id }})">Set as Primary</button>
                     <form method="post" action="/api/profiles/delete/{{ profile.id }}" onsubmit="return confirm('Delete this profile?')">
+                        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                         <button type="submit" class="danger-btn">Delete</button>
                     </form>
                     {% endif %}
@@ -70,9 +71,10 @@
 {% block extra_scripts %}
 <script>
 async function setPrimary(profileId) {
+    const csrfToken = {{ (request.state.csrf_token | default(csrf_token)) | tojson }};
     const response = await fetch("/api/profiles/set-primary", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": csrfToken },
         body: JSON.stringify({ profile_id: profileId })
     });
     if (!response.ok) {

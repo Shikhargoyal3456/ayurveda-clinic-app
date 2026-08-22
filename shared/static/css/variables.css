@@ -1,67 +1,69 @@
 :root {
     color-scheme: light;
 
-    --primary: #0F4C5C;
-    --primary-dark: #0A3A46;
-    --primary-light: #1A7F6B;
-    --primary-glow: #2BAE66;
+    /* Kash AI botanical light theme — deep herbal green + turmeric on warm cream.
+       Token names are unchanged; only values differ so the whole portal re-themes. */
+    --primary: #146B4A;
+    --primary-dark: #0E5238;
+    --primary-light: #1F9D6B;
+    --primary-glow: #2FC98A;
 
-    --ai-purple: #6366F1;
-    --ai-indigo: #4F46E5;
-    --ai-gradient: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+    --ai-purple: #E8B24A;
+    --ai-indigo: #C6871B;
+    --ai-gradient: linear-gradient(135deg, #2FC98A 0%, #E8B24A 100%);
 
-    --gray-50: #F9FAFB;
-    --gray-100: #F3F4F6;
-    --gray-200: #E5E7EB;
-    --gray-300: #D1D5DB;
-    --gray-400: #9CA3AF;
-    --gray-600: #4B5563;
-    --gray-900: #111827;
+    --gray-50: #F7F4EC;
+    --gray-100: #EFE9DC;
+    --gray-200: #E4DECF;
+    --gray-300: #CFC7B4;
+    --gray-400: #9AA69E;
+    --gray-600: #4A5852;
+    --gray-900: #17201C;
 
-    --bg-light: #FAFAF8;
-    --bg-white: #FFFFFF;
-    --bg-card: rgba(255, 255, 255, 0.9);
-    --bg-card-strong: rgba(255, 255, 255, 0.96);
-    --bg-dark: #0B1720;
+    --bg-light: #F7F3E9;
+    --bg-white: #FFFDF8;
+    --bg-card: rgba(255, 253, 248, 0.9);
+    --bg-card-strong: rgba(255, 253, 248, 0.96);
+    --bg-dark: #0B1512;
 
-    --color-primary: #0F4C5C;
-    --color-primary-dark: #0A3A46;
-    --color-primary-light: #1A7F6B;
-    --color-primary-lighter: #E6F4F1;
+    --color-primary: #146B4A;
+    --color-primary-dark: #0E5238;
+    --color-primary-light: #1F9D6B;
+    --color-primary-lighter: #E4F5EC;
 
-    --color-secondary: #2BAE66;
-    --color-secondary-dark: #209152;
-    --color-secondary-light: #E8F5EF;
+    --color-secondary: #E8B24A;
+    --color-secondary-dark: #C6871B;
+    --color-secondary-light: #FBF0D8;
 
-    --color-ai: #6366F1;
-    --color-ai-dark: #4F46E5;
-    --color-ai-light: #E0E7FF;
+    --color-ai: #E8B24A;
+    --color-ai-dark: #C6871B;
+    --color-ai-light: #FBF0D8;
 
-    --color-text-primary: #111827;
-    --color-text-secondary: #4B5563;
-    --color-text-muted: #6B7280;
-    --color-text-light: #9CA3AF;
+    --color-text-primary: #17201C;
+    --color-text-secondary: #4A5852;
+    --color-text-muted: #6E7A73;
+    --color-text-light: #9AA69E;
 
-    --color-bg-primary: #FFFFFF;
-    --color-bg-secondary: #FAFAF8;
-    --color-bg-tertiary: #F3F4F6;
+    --color-bg-primary: #FFFDF8;
+    --color-bg-secondary: #F7F3E9;
+    --color-bg-tertiary: #EFE9DC;
 
-    --color-border: #E5E7EB;
-    --color-border-light: #F3F4F6;
-    --color-border-strong: #CBD5E1;
+    --color-border: #E4DECF;
+    --color-border-light: #EFE9DC;
+    --color-border-strong: #CFC7B4;
 
-    --color-success: #10B981;
-    --color-warning: #F59E0B;
-    --color-danger: #EF4444;
-    --color-info: #3B82F6;
+    --color-success: #12A56F;
+    --color-warning: #E0942B;
+    --color-danger: #C0492E;
+    --color-info: #2F8F8F;
 
-    --color-success-soft: #ECFDF5;
-    --color-warning-soft: #FFFBEB;
-    --color-danger-soft: #FEF2F2;
-    --color-info-soft: #EFF6FF;
+    --color-success-soft: #E4F5EC;
+    --color-warning-soft: #FBF0D8;
+    --color-danger-soft: #FBEBE5;
+    --color-info-soft: #E4F1F1;
 
     --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-heading: "Plus Jakarta Sans", "Inter", sans-serif;
+    --font-heading: "Fraunces", "Plus Jakarta Sans", "Inter", serif;
 
     --text-xs: 0.75rem;
     --text-sm: 0.875rem;
@@ -92,7 +94,7 @@
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
+    --shadow-glow: 0 0 40px rgba(232, 178, 74, 0.18);
     --shadow-card: var(--shadow-md);
     --shadow-dropdown: var(--shadow-lg);
     --shadow-modal: var(--shadow-xl);
@@ -110,7 +112,7 @@
     --z-toast: 1080;
     --z-overlay: 1040;
 
-    --focus-ring: 0 0 0 4px rgba(26, 127, 107, 0.12);
+    --focus-ring: 0 0 0 4px rgba(20, 107, 74, 0.15);
     --focus-outline: 2px solid var(--color-primary-light);
 
     --color-bg: var(--color-bg-secondary);

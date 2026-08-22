@@ -14,6 +14,16 @@ from services.superapp_service import get_dashboard_payload
 router = APIRouter(tags=["patient-portal"])
 
 
+def _safe_days_left(value: object) -> int:
+    text = str(value if value is not None else "0").strip()
+    if text.lower() == "nan":
+        return 0
+    try:
+        return int(text or "0")
+    except ValueError:
+        return 0
+
+
 def patient_dashboard_context(request: Request, user=None) -> dict[str, object]:
     is_new_user = not bool(request.session.get("patient_home_seen"))
     request.session["patient_home_seen"] = True
@@ -23,9 +33,9 @@ def patient_dashboard_context(request: Request, user=None) -> dict[str, object]:
     active_medicines = [
         {
             "name": item.get("medicine_name", "Tracked medicine"),
-            "refill_text": ("today" if int(item.get("days_left", 0) or 0) <= 0 else f"in {int(item.get('days_left', 0) or 0)} days"),
-            "tone": "yellow" if int(item.get("days_left", 0) or 0) <= 3 else "green",
-            "badge": "Refill soon" if int(item.get("days_left", 0) or 0) <= 3 else "On track",
+            "refill_text": ("today" if _safe_days_left(item.get("days_left")) <= 0 else f"in {_safe_days_left(item.get('days_left'))} days"),
+            "tone": "yellow" if _safe_days_left(item.get("days_left")) <= 3 else "green",
+            "badge": "Refill soon" if _safe_days_left(item.get("days_left")) <= 3 else "On track",
         }
         for item in subscriptions[:3]
     ]
@@ -60,10 +70,10 @@ def patient_dashboard_context(request: Request, user=None) -> dict[str, object]:
                 "title": f"{next_item.get('medicine_name', 'Medicine')} refill window",
                 "body": (
                     "Eligible for refill today."
-                    if int(next_item.get("days_left", 0) or 0) <= 0
-                    else f"Next refill expected in {int(next_item.get('days_left', 0) or 0)} days."
+                    if _safe_days_left(next_item.get("days_left")) <= 0
+                    else f"Next refill expected in {_safe_days_left(next_item.get('days_left'))} days."
                 ),
-                "tone": "yellow" if int(next_item.get("days_left", 0) or 0) <= 3 else "green",
+                "tone": "yellow" if _safe_days_left(next_item.get("days_left")) <= 3 else "green",
                 "href": "/my-health",
                 "action_label": "View refill timing",
             }
