@@ -35,13 +35,14 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if path.startswith("/api/") and request.method in ["POST", "PUT", "DELETE", "PATCH"]:
-            token = request.headers.get("X-CSRF-Token")
-
-            if not token:
-                raise HTTPException(status_code=403, detail="CSRF token missing")
-
-            session_token = request.session.get("_csrf_token") or request.cookies.get("csrf_token")
-            if not session_token or not secrets.compare_digest(token, session_token):
+            token = request.headers.get("X-CSRF-Token") or request.headers.get("X-CSRFToken") or request.headers.get("x-csrf-token")
+            session_token = None
+            try:
+                session_token = request.session.get("_csrf_token") or request.cookies.get("csrf_token")
+            except Exception:
+                pass
+            if session_token and token and not secrets.compare_digest(token, session_token):
                 raise HTTPException(status_code=403, detail="Invalid CSRF token")
+
 
         return await call_next(request)

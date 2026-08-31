@@ -20,8 +20,9 @@ try:
             category=DeprecationWarning,
         )
         import faiss  # type: ignore
-except ImportError as exc:  # pragma: no cover
-    raise RuntimeError("faiss-cpu is required to build the vector store.") from exc
+except ImportError:  # pragma: no cover
+    faiss = None
+
 
 
 warnings.filterwarnings("ignore", message=".*position_ids.*UNEXPECTED.*")
@@ -128,7 +129,11 @@ def build_vector_store(force: bool = False) -> dict[str, int | bool | list[str]]
             "sources": sorted({item["source_file"] for item in docs}),
         }
 
+    if faiss is None:
+        raise RuntimeError("faiss-cpu is required to build the vector store.")
+
     documents = load_source_chunks()
+
     if not documents:
         raise FileNotFoundError(
             f"No PDF files were found in {settings.samhita_pdfs_dir}. "

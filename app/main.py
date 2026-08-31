@@ -138,6 +138,10 @@ from routers.doctor_review import router as doctor_review_router
 from routers.google_auth import router as google_auth_router
 from routers.consultation import router as consultation_router
 from routers.device_check import router as device_check_router
+from app.routers.v2 import router as v2_router
+from app.routers.admin_api import router as admin_api_router
+
+
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
 from routes.payment import router as payment_router
@@ -579,8 +583,7 @@ def create_app() -> FastAPI:
     if public_dir.exists():
         application.mount("/public", StaticFiles(directory=public_dir), name="public")
     application.include_router(public_clinic_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(startup_router)
+    application.include_router(startup_router)
     application.include_router(health_router)
     application.include_router(backup_router)
     application.include_router(export_router)
@@ -605,41 +608,34 @@ def create_app() -> FastAPI:
     application.include_router(device_check_router)
     application.include_router(voice_consultation_router)
     application.include_router(voice_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(ai_pharmacy_router)
+    application.include_router(ai_pharmacy_router)
     application.include_router(ai_features_router)
     application.include_router(api_v1_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(marketplace_router)
+    application.include_router(marketplace_router)
     application.include_router(patient_portal_router)
     application.include_router(doctor_portal_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(pharmacy_portal_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(lab_portal_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(delivery_portal_router)
+    application.include_router(pharmacy_portal_router)
+    application.include_router(lab_portal_router)
+    application.include_router(delivery_portal_router)
     application.include_router(medicine_info_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(delivery_router)
+    application.include_router(order_medicines_router)
+    application.include_router(delivery_router)
+    application.include_router(v2_router)
+    application.include_router(admin_api_router)
+
+
+
     application.include_router(debug_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(pharmacy_owner_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(lab_owner_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(lab_analyzer_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(pharmacy_router)
+    application.include_router(pharmacy_owner_router)
+    application.include_router(lab_owner_router)
+    application.include_router(lab_analyzer_router)
+    application.include_router(pharmacy_router)
     application.include_router(prescription_ocr_router)
     application.include_router(profiles_router)
     application.include_router(pure_ai_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(ecommerce_router)
-    # Enable medicine ordering
+    application.include_router(ecommerce_router)
     application.include_router(order_medicines_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(subscriptions_router)
+    application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(emr_router)
     application.include_router(ambient_emr_router)
@@ -647,8 +643,7 @@ def create_app() -> FastAPI:
     application.include_router(prescription_router)
     application.include_router(payment_router)
     application.include_router(outcome_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(demo_router)
+    application.include_router(demo_router)
     application.include_router(sales_router)
     application.include_router(statistics_router)
 

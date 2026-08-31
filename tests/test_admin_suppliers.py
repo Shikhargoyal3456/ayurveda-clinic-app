@@ -1,4 +1,6 @@
+import uuid
 import pytest
+
 
 
 pytestmark = pytest.mark.asyncio
@@ -8,48 +10,53 @@ async def test_supplier_crud(admin_client):
     # SUPPLIER-FULL-1: Admin can create, list, read, update, and order from suppliers.
     client = admin_client["client"]
 
-    list_response = await client.get("/admin/suppliers")
+    list_response = await client.get("/admin/suppliers", follow_redirects=True)
     assert list_response.status_code == 200
     assert len(list_response.json()["suppliers"]) >= 2
 
+    sup_id = f"sup_test_crud_{uuid.uuid4().hex[:6]}"
     create_response = await client.post(
         "/admin/supplier/register",
         json={
-            "id": "sup_test_crud",
+            "id": sup_id,
             "name": "Test Supplier",
             "phone": "9999999999",
             "location": "Delhi",
             "categories": ["general", "rare"],
             "whatsapp": "9999999999",
         },
+        follow_redirects=True,
     )
     assert create_response.status_code == 200
     assert create_response.json()["success"] is True
 
-    detail_response = await client.get("/admin/supplier/sup_test_crud")
+    detail_response = await client.get(f"/admin/supplier/{sup_id}", follow_redirects=True)
     assert detail_response.status_code == 200
     assert detail_response.json()["supplier"]["name"] == "Test Supplier"
 
     update_response = await client.put(
-        "/admin/supplier/sup_test_crud",
+        f"/admin/supplier/{sup_id}",
         json={"name": "Updated Supplier", "categories": ["tablets"]},
+        follow_redirects=True,
     )
     assert update_response.status_code == 200
     assert update_response.json()["supplier"]["name"] == "Updated Supplier"
     assert update_response.json()["supplier"]["categories"] == ["tablets"]
 
     order_response = await client.post(
-        "/admin/supplier/sup_test_crud/order",
+        f"/admin/supplier/{sup_id}/order",
         json={"medicine": "Paracetamol", "quantity": 25, "category": "tablets"},
+        follow_redirects=True,
     )
     assert order_response.status_code == 200
     assert order_response.json()["success"] is True
-    assert order_response.json()["order"]["supplier_id"] == "sup_test_crud"
+    assert order_response.json()["order"]["supplier_id"] == sup_id
 
-    delete_response = await client.delete("/admin/supplier/sup_test_crud")
+    delete_response = await client.delete(f"/admin/supplier/{sup_id}", follow_redirects=True)
     assert delete_response.status_code == 200
     assert delete_response.json()["success"] is True
     assert delete_response.json()["supplier"]["is_active"] is False
+
 
 
 async def test_inventory_restock_triggers_supplier_order(admin_client):
@@ -63,12 +70,15 @@ async def test_inventory_restock_triggers_supplier_order(admin_client):
             "name": "AA Tablet Restock Supplier",
             "categories": ["tablets"],
         },
+        follow_redirects=True,
     )
+
 
     from services import inventory_service
     from services.supplier_service import get_supplier_orders
 
-    inventory_service._INVENTORY["Paracetamol"] = {"stock": 11}
+    inventory_service._INVENTORY["Paracetamol"] = {"stock": 11, "category": "tablets"}
+
     before_count = len(get_supplier_orders())
     inventory_service.reduce_stock("Paracetamol", 3)
     orders = get_supplier_orders()
