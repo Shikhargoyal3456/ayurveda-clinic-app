@@ -1,7 +1,12 @@
-import React from 'react';
-import { Users, Calendar, IndianRupee, Star, Bot, TrendingUp, Mic, UserPlus, Stethoscope, BarChart2, Wrench, Pill, Zap, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Calendar, IndianRupee, Star, Bot, TrendingUp, Mic, UserPlus, Stethoscope, BarChart2, Wrench, Pill, Zap, Clock, Upload, Check } from 'lucide-react';
+import VoiceMicInput from '../components/VoiceMicInput';
+import PrescriptionReaderModal from '../components/PrescriptionReaderModal';
 
 export default function DoctorDashboard() {
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+  const [dictatedNotes, setDictatedNotes] = useState('');
+
   const stats = [
     { label: "Total Patients", value: "1,248", change: "+12% this month", icon: Users, color: "#10B981" },
     { label: "Today's Appointments", value: "8 Scheduled", change: "3 upcoming", icon: Calendar, color: "#06B6D4" },
@@ -22,20 +27,67 @@ export default function DoctorDashboard() {
     { label: "New Prescription", path: "/new/prescriptions/new", icon: Pill },
   ];
 
+  const handleVoiceTranscript = (text) => {
+    setDictatedNotes(prev => (prev ? `${prev} ${text}` : text));
+  };
+
+  const handlePrescriptionRead = (medicines) => {
+    const names = medicines.map(m => m.medicine_name).join(', ');
+    setDictatedNotes(prev => (prev ? `${prev} [Parsed RX: ${names}]` : `Parsed Prescription Medicines: ${names}`));
+  };
+
   return (
     <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '24px' }}>
       {/* Header */}
-      <section className="glass-card" style={{ padding: '28px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <section className="glass-card" style={{ padding: '28px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <p style={{ color: '#10B981', fontSize: '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Clinic Command Center</p>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800' }}>Doctor Dashboard</h1>
-          <p style={{ color: '#94A3B8', margin: '4px 0 0' }}>Welcome back, Dr. Ananya Sharma · Ayurvedic Physician</p>
+          <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: 0, color: '#F8FAFC' }}>Doctor Dashboard</h1>
+          <p style={{ color: '#94A3B8', margin: '4px 0 0' }}>Ayurvedic Clinical Dictation & Patient Prescription Workspace</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn-primary">
-            <Mic size={16} /> Start Voice Note
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button onClick={() => setIsPrescriptionModalOpen(true)} className="btn-gold">
+            <Upload size={16} style={{ marginRight: '6px' }} /> Decode Patient Prescription (AI OCR)
           </button>
+          <a href="/consultation/voice" className="btn-primary">
+            <Mic size={16} style={{ marginRight: '6px' }} /> Voice Consultation
+          </a>
         </div>
+      </section>
+
+      {/* Voice Dictation Pad */}
+      <section className="glass-card" style={{ padding: '20px', borderRadius: '16px', marginBottom: '24px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <VoiceMicInput onTranscript={handleVoiceTranscript} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: '0.98rem', color: '#10B981', fontWeight: '700' }}>Clinical Voice Dictation</h4>
+              <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>Click microphone to dictate clinical notes or prescriptions hands-free</span>
+            </div>
+          </div>
+          {dictatedNotes && (
+            <button onClick={() => setDictatedNotes('')} style={{ background: 'none', border: 'none', color: '#EF4444', fontSize: '0.8rem', cursor: 'pointer' }}>
+              Clear Notes
+            </button>
+          )}
+        </div>
+        <textarea
+          rows={3}
+          value={dictatedNotes}
+          onChange={(e) => setDictatedNotes(e.target.value)}
+          placeholder="Spoken notes or AI prescription OCR results appear here automatically..."
+          style={{
+            width: '100%',
+            padding: '12px',
+            borderRadius: '10px',
+            background: 'rgba(0, 0, 0, 0.2)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            color: '#F8FAFC',
+            fontSize: '0.9rem',
+            outline: 'none',
+            resize: 'vertical'
+          }}
+        />
       </section>
 
       {/* Metric Cards Grid */}
@@ -43,7 +95,7 @@ export default function DoctorDashboard() {
         {stats.map((stat, idx) => {
           const IconComponent = stat.icon;
           return (
-            <div key={idx} className="glass-card" style={{ padding: '20px' }}>
+            <div key={idx} className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
               <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: `${stat.color}15`, color: stat.color, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
                 <IconComponent size={22} />
               </div>
@@ -56,7 +108,7 @@ export default function DoctorDashboard() {
       </section>
 
       {/* Quick Actions Grid */}
-      <section className="glass-card" style={{ padding: '28px', marginBottom: '32px' }}>
+      <section className="glass-card" style={{ padding: '28px', marginBottom: '32px', borderRadius: '16px' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Zap size={20} style={{ color: '#10B981' }} /> Quick Actions
         </h2>
@@ -64,7 +116,7 @@ export default function DoctorDashboard() {
           {quickActions.map((action, idx) => {
             const IconComp = action.icon;
             return (
-              <a key={idx} href={action.path} className="btn-secondary" style={{ padding: '14px 18px', justifyContent: 'flex-start' }}>
+              <a key={idx} href={action.path} className="btn-secondary" style={{ padding: '14px 18px', justifyContent: 'flex-start', borderRadius: '12px' }}>
                 <IconComp size={18} style={{ color: '#10B981' }} /> {action.label}
               </a>
             );
@@ -73,7 +125,7 @@ export default function DoctorDashboard() {
       </section>
 
       {/* Recent Consultation Activity */}
-      <section className="glass-card" style={{ padding: '28px' }}>
+      <section className="glass-card" style={{ padding: '28px', borderRadius: '16px' }}>
         <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Clock size={20} style={{ color: '#06B6D4' }} /> Today's Consultation Queue
         </h2>
@@ -107,6 +159,13 @@ export default function DoctorDashboard() {
           </table>
         </div>
       </section>
+
+      {/* Prescription Reader Modal */}
+      <PrescriptionReaderModal
+        isOpen={isPrescriptionModalOpen}
+        onClose={() => setIsPrescriptionModalOpen(false)}
+        onAddMedicinesToCart={handlePrescriptionRead}
+      />
     </div>
   );
 }

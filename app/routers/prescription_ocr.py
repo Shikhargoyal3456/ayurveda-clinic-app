@@ -46,12 +46,8 @@ def handwritten_decoder_page(request: Request, user: User = Depends(require_port
 async def decode_handwritten_prescription(
     request: Request,
     prescription_image: UploadFile = File(...),
-    _: None = Depends(verify_csrf),
     user: User | None = Depends(get_current_user_optional),
 ):
-    if user is None:
-        raise HTTPException(status_code=303, headers={"Location": "/auth/login/patient"})
-
     content = await prescription_image.read()
     if not content:
         return JSONResponse({"success": False, "error": "Please upload a prescription image or PDF."}, status_code=400)
@@ -66,7 +62,8 @@ async def decode_handwritten_prescription(
     if result.get("medicines"):
         result["medicines"] = await ocr_service.enhance_with_medicine_info(result["medicines"])
 
-    logger.info("Prescription handwriting decoded for user_id=%s medicine_count=%s", user.id, len(result.get("medicines", [])))
+    user_id = user.id if user else "guest"
+    logger.info("Prescription handwriting decoded for user_id=%s medicine_count=%s", user_id, len(result.get("medicines", [])))
     return {
         "success": True,
         "data": result,
@@ -120,9 +117,6 @@ def search_prescription_medicine_db(
     limit: int = Query(default=25, ge=1, le=100),
     user: User | None = Depends(get_current_user_optional),
 ):
-    if user is None:
-        raise HTTPException(status_code=303, headers={"Location": "/auth/login/patient"})
-
     results = ocr_service.search_medicine_database(q, limit=limit)
     return {"success": True, "data": results}
 

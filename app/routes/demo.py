@@ -44,3 +44,12 @@ def reset_demo_workspace(
     else:
         set_flash(request, f"Demo data reset for {deleted['patients']} patients.", "success")
     return RedirectResponse(url="/dashboard", status_code=303)
+
+
+@router.post("/api/demo/clear")
+def clear_demo_data_api(
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+):
+    deleted = reset_demo_data(db, doctor)
+    return {"success": True, "message": f"Cleared {deleted.get('patients', 0)} demo records.", "deleted": deleted}

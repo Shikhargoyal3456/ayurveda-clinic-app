@@ -1,31 +1,63 @@
-import React from 'react';
-import { HeartPulse, Bot, Pill, Activity, Calendar, Heart, FileText, Clock, ArrowRight, Wrench, ShoppingBag } from 'lucide-react';
+import React, { useState } from 'react';
+import { HeartPulse, Bot, Pill, Activity, Calendar, Heart, FileText, Clock, ArrowRight, Wrench, ShoppingBag, Upload, Mic } from 'lucide-react';
+import VoiceMicInput from '../components/VoiceMicInput';
+import PrescriptionReaderModal from '../components/PrescriptionReaderModal';
 
 export default function PatientDashboard() {
+  const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState(false);
+  const [voiceQuery, setVoiceQuery] = useState('');
+
+  const handleVoiceTranscript = (text) => {
+    setVoiceQuery(text);
+    // Redirect or trigger search
+    window.location.href = `/order-medicines?q=${encodeURIComponent(text)}`;
+  };
+
+  const handlePrescriptionExtracted = (medicines) => {
+    alert(`Extracted ${medicines.length} medicines! Redirecting to cart...`);
+    window.location.href = '/order-medicines';
+  };
+
   return (
     <div style={{ maxWidth: '1300px', margin: '0 auto', padding: '24px' }}>
       {/* Header Banner */}
-      <section className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 28px', borderRadius: '16px', marginBottom: '24px' }}>
+      <section className="glass-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 28px', borderRadius: '16px', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <p style={{ color: '#10B981', fontWeight: '700', fontSize: '0.85rem', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <HeartPulse size={16} /> Kash AI Health Hub
+            <HeartPulse size={16} /> Kash AI Patient Health Portal
           </p>
-          <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: '0 0 4px' }}>Welcome Back, Anaya Mehta</h1>
-          <p style={{ color: '#94A3B8', margin: 0, fontSize: '0.9rem' }}>Your personalized Ayurvedic health & wellness portal</p>
+          <h1 style={{ fontSize: '2rem', fontWeight: '800', margin: '0 0 4px', color: '#F8FAFC' }}>Welcome Back, Health Portal User</h1>
+          <p style={{ color: '#94A3B8', margin: 0, fontSize: '0.9rem' }}>Your personalized Ayurvedic health, AI diagnosis & prescription workspace</p>
         </div>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button onClick={() => setIsPrescriptionModalOpen(true)} className="btn-gold">
+            <Upload size={16} style={{ marginRight: '6px' }} /> Upload Prescription (AI Reader)
+          </button>
           <a href="/new/ai-doctor" className="btn-primary">
-            <Bot size={16} /> AI Health Assistant
-          </a>
-          <a href="/order_medicines" className="btn-secondary">
-            <Pill size={16} /> Order Medicines
+            <Bot size={16} style={{ marginRight: '6px' }} /> AI Health Assistant
           </a>
         </div>
       </section>
 
+      {/* Voice Assistant Bar */}
+      <section className="glass-card" style={{ padding: '16px 20px', borderRadius: '14px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(232, 178, 74, 0.06)', border: '1px solid rgba(232, 178, 74, 0.2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+          <VoiceMicInput onTranscript={handleVoiceTranscript} />
+          <div>
+            <span style={{ fontSize: '0.9rem', fontWeight: '700', color: '#E8B24A', display: 'block' }}>Voice Assistant Active</span>
+            <span style={{ fontSize: '0.82rem', color: '#94A3B8' }}>Tap mic to speak your symptoms or search for remedies hands-free</span>
+          </div>
+        </div>
+        {voiceQuery && (
+          <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', padding: '4px 12px', borderRadius: '12px', fontSize: '0.85rem' }}>
+            Recorded: "{voiceQuery}"
+          </span>
+        )}
+      </section>
+
       <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px' }}>
-        {/* Sidebar */}
-        <aside className="glass-card" style={{ padding: '20px', height: 'fit-content' }}>
+        {/* Sidebar Navigation */}
+        <aside className="glass-card" style={{ padding: '20px', height: 'fit-content', borderRadius: '16px' }}>
           <p style={{ color: '#94A3B8', fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 12px' }}>Health Services</p>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <a href="/patient" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', fontWeight: '600', textDecoration: 'none' }}>
@@ -46,90 +78,63 @@ export default function PatientDashboard() {
           </nav>
         </aside>
 
-        {/* Main Section */}
+        {/* Main Health Dashboard Content */}
         <main style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Stat Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-            <div className="glass-card" style={{ padding: '20px' }}>
+            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
               <div style={{ color: '#10B981', marginBottom: '8px' }}><Heart size={24} /></div>
-              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#F8FAFC' }}>92%</div>
-              <div style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: '600' }}>Overall Wellness Score</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#F8FAFC' }}>94%</div>
+              <div style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: '600' }}>Wellness Index</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '20px' }}>
+            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
               <div style={{ color: '#06B6D4', marginBottom: '8px' }}><Calendar size={24} /></div>
-              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#F8FAFC' }}>2</div>
-              <div style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: '600' }}>Upcoming Consultations</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#F8FAFC' }}>1</div>
+              <div style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: '600' }}>Active Consultation</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '20px' }}>
+            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
               <div style={{ color: '#6366F1', marginBottom: '8px' }}><FileText size={24} /></div>
-              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#F8FAFC' }}>3</div>
-              <div style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: '600' }}>Active Prescriptions</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#F8FAFC' }}>2</div>
+              <div style={{ color: '#94A3B8', fontSize: '0.85rem', fontWeight: '600' }}>Verified Prescriptions</div>
             </div>
           </div>
 
-          {/* Upcoming Appointments Table */}
-          <section className="glass-card" style={{ padding: '24px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={18} style={{ color: '#10B981' }} /> Upcoming Appointments
-            </h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8' }}>
-                    <th style={{ padding: '10px' }}>Date</th>
-                    <th style={{ padding: '10px' }}>Care Provider</th>
-                    <th style={{ padding: '10px' }}>Time</th>
-                    <th style={{ padding: '10px' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 10px' }}>Tomorrow</td>
-                    <td style={{ padding: '12px 10px', fontWeight: '600' }}>Dr. Ananya Sharma</td>
-                    <td style={{ padding: '12px 10px' }}>10:00 AM</td>
-                    <td style={{ padding: '12px 10px' }}>
-                      <a href="/appointments" style={{ color: '#10B981', textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        View Details <ArrowRight size={14} />
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          {/* Quick Actions & AI Reader Card */}
+          <section className="glass-card" style={{ padding: '24px', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(232, 178, 74, 0.08))' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 6px', fontSize: '1.2rem', color: '#F8FAFC' }}>Have a paper or doctor's prescription?</h3>
+                <p style={{ margin: 0, color: '#94A3B8', fontSize: '0.9rem' }}>Scan it with AI to view medicine list, dosage instructions, and order directly online.</p>
+              </div>
+              <button onClick={() => setIsPrescriptionModalOpen(true)} className="btn-gold" style={{ padding: '12px 20px', fontSize: '0.9rem' }}>
+                <Upload size={16} style={{ marginRight: '6px' }} /> Scan Prescription
+              </button>
             </div>
           </section>
 
-          {/* Active Prescriptions Table */}
-          <section className="glass-card" style={{ padding: '24px' }}>
+          {/* Prescriptions & Ordering Quick Action */}
+          <section className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
             <h3 style={{ margin: '0 0 16px', fontSize: '1.1rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Pill size={18} style={{ color: '#06B6D4' }} /> Active Prescriptions & Medications
+              <Pill size={18} style={{ color: '#06B6D4' }} /> Online Pharmacy & Medicines
             </h3>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94A3B8' }}>
-                    <th style={{ padding: '10px' }}>Formulation / Diagnosis</th>
-                    <th style={{ padding: '10px' }}>Issued Date</th>
-                    <th style={{ padding: '10px' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px 10px', fontWeight: '600' }}>Ashwagandha Churna & Brahmi Ghrita</td>
-                    <td style={{ padding: '12px 10px' }}>28 Aug 2026</td>
-                    <td style={{ padding: '12px 10px' }}>
-                      <a href="/order-medicines" style={{ color: '#06B6D4', textDecoration: 'none', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <ShoppingBag size={14} /> Reorder Medicines
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <p style={{ color: '#94A3B8', fontSize: '0.9rem', marginBottom: '16px' }}>
+              Order authentic classical formulations, Rasayanas, and wellness supplements directly from verified suppliers.
+            </p>
+            <a href="/order-medicines" className="btn-primary" style={{ display: 'inline-flex', padding: '10px 20px', fontSize: '0.9rem' }}>
+              <ShoppingBag size={16} style={{ marginRight: '6px' }} /> Open Medicine Store
+            </a>
           </section>
         </main>
       </div>
+
+      {/* Prescription Reader Modal */}
+      <PrescriptionReaderModal
+        isOpen={isPrescriptionModalOpen}
+        onClose={() => setIsPrescriptionModalOpen(false)}
+        onAddMedicinesToCart={handlePrescriptionExtracted}
+      />
     </div>
   );
 }
