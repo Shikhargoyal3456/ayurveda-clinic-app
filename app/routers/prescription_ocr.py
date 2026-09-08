@@ -95,6 +95,7 @@ async def enhance_prescription_image(
 
 
 @router.post("/prescription/suggest-medicine")
+@router.post("/api/prescription/suggest-medicine")
 async def suggest_prescription_medicine(
     request: Request,
     query: str = Form(...),
@@ -111,6 +112,7 @@ async def suggest_prescription_medicine(
 
 
 @router.get("/prescription/medicine-db")
+@router.get("/api/prescription/medicine-db")
 def search_prescription_medicine_db(
     request: Request,
     q: str = Query(default=""),

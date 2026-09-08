@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, ShieldCheck, HeartPulse, LogOut, Pill, Bot } from 'lucide-react';
+import { LayoutDashboard, ShieldCheck, HeartPulse, LogOut, Pill, Bot, Sparkles } from 'lucide-react';
 
 export default function Navbar() {
   const { user, isLoggedIn, logout, getDashboardPath } = useAuth();
@@ -65,6 +65,15 @@ export default function Navbar() {
           }}
         >
           <Pill size={15} color="#06B6D4" /> Order Medicines
+        </Link>
+        <Link 
+          to="/ocr-decoder" 
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', fontWeight: '600', textDecoration: 'none',
+            color: location.pathname === '/ocr-decoder' ? '#E8B24A' : 'rgba(244, 238, 225, 0.75)'
+          }}
+        >
+          <Sparkles size={15} color="#E8B24A" /> AI OCR Reader
         </Link>
       </nav>
 

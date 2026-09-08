@@ -4,7 +4,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from services.sarvam_voice import get_sarvam_voice
+from app.services.sarvam_voice import get_sarvam_voice
 
 
 router = APIRouter(prefix="/api/voice", tags=["Sarvam Voice"])

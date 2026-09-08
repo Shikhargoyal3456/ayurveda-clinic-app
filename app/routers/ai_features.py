@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -31,6 +31,12 @@ from services.ai_provider import build_gemini_part, generate_gemini_content, is_
 from models.outcome import Outcome
 from models.prescription import Prescription
 from models.medicine import Medicine, PharmacyInventory
+from app.services.ai_voice_assistant import AIVoiceAssistant
+from app.services.ai_prescription_scanner import AIPrescriptionScanner
+from app.services.ai_image_analyzer import AIImageAnalyzer
+from app.services.ai_chatbot import AIHealthcareChatbot
+from app.services.ai_personalization import AIPersonalizationEngine
+from app.services.ai_business_intelligence import AIBusinessIntelligence
 
 try:
     import magic  # type: ignore
@@ -303,20 +309,20 @@ The approach follows dosha assessment, agni correction, pathya-apathya, and stag
 
 async def get_ai_response_with_fallback(prompt: str, source_text: str = "", temperature: float = 0.7, max_tokens: int = 500) -> tuple[str | None, str]:
     try:
-        if gemini_client.is_available():
-            response = await gemini_client.generate_text(prompt, temperature=temperature, max_tokens=max_tokens)
-            if response:
-                return response, "gemini"
-    except Exception:
-        logger.exception("Gemini fallback failed")
-
-    try:
         if groq_client.is_available():
             response = await groq_client.chat([{"role": "user", "content": prompt}], temperature=temperature, max_tokens=max_tokens)
             if response:
                 return response, "groq"
     except Exception:
         logger.exception("Groq fallback failed")
+
+    try:
+        if gemini_client.is_available():
+            response = await gemini_client.generate_text(prompt, temperature=temperature, max_tokens=max_tokens)
+            if response:
+                return response, "gemini"
+    except Exception:
+        logger.exception("Gemini fallback failed")
 
     try:
         if ollama_client.is_available():
@@ -905,3 +911,78 @@ async def start_telemedicine(
     db.add(row)
     commit_with_retry(db)
     return {"success": True, "session": {"id": row.id, "session_url": row.session_url, "provider": row.provider}}
+
+
+_voice_assistant_inst = AIVoiceAssistant()
+_prescription_scanner_inst = AIPrescriptionScanner()
+_image_analyzer_inst = AIImageAnalyzer()
+_chatbot_inst = AIHealthcareChatbot()
+_personalization_inst = AIPersonalizationEngine()
+_bi_inst = AIBusinessIntelligence()
+
+
+@router.post("/api/ai/voice-command")
+async def process_voice_command_endpoint(file: UploadFile = File(...)):
+    """Process voice command input, detect intent, and generate voice response."""
+    result = await _voice_assistant_inst.process_voice_command(file.file)
+    return result
+
+
+@router.post("/api/ai/scan-prescription")
+async def scan_prescription_endpoint(
+    file: UploadFile = File(...),
+    user_id: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    """Scan and parse prescription images/text with database validation."""
+    uid = int(user_id) if user_id and user_id.isdigit() else 0
+    result = await _prescription_scanner_inst.scan_prescription(file.file, user_id=uid, image_name=file.filename or "prescription.txt")
+    return result
+
+
+@router.post("/api/ai/analyze-symptom-image")
+async def analyze_symptom_image_endpoint(
+    file: UploadFile = File(...),
+    symptom_type: str = Form("skin"),
+):
+    """Analyze uploaded symptom image (skin, eye, throat) with vision AI."""
+    result = await _image_analyzer_inst.analyze_symptom_image(file.file, symptom_type)
+    return result
+
+
+@router.post("/api/ai/chat/{user_id}")
+async def chatbot_chat_endpoint(user_id: int, payload: dict[str, Any] = Body(default={})):
+    """Context-aware AI healthcare chatbot."""
+    message = str(payload.get("message") or "").strip()
+    result = await _chatbot_inst.chat(user_id, message)
+    return result
+
+
+@router.get("/api/ai/feed/{user_id}")
+async def personalized_feed_endpoint(user_id: int):
+    """Personalized health & pharmacy recommendations feed."""
+    result = await _personalization_inst.get_personalized_feed(user_id)
+    return result
+
+
+@router.get("/api/ai/health-insights/{user_id}")
+async def health_insights_endpoint(user_id: int):
+    """Predictive health score and insights for patient."""
+    result = await _personalization_inst.get_health_insights(user_id)
+    return result
+
+
+@router.get("/api/ai/forecast-revenue")
+async def forecast_revenue_endpoint(days: int = Query(default=30)):
+    """AI revenue and inventory demand forecasting."""
+    result = await _bi_inst.revenue_forecast(days)
+    return result
+
+
+@router.get("/api/ai/churn-prediction")
+async def churn_prediction_endpoint():
+    """Predict patient churn risks and retention offers."""
+    result = await _bi_inst.customer_churn_prediction()
+    return result
+
+

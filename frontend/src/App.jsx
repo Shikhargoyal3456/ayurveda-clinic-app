@@ -9,6 +9,7 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import OrderMedicines from './pages/OrderMedicines';
+import OCRDecoderPage from './pages/OCRDecoderPage';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/patient" element={<PatientDashboard />} />
               <Route path="/order-medicines" element={<OrderMedicines />} />
+              <Route path="/ocr-decoder" element={<OCRDecoderPage />} />
             </Routes>
           </main>
           <Footer />
