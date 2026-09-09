@@ -116,15 +116,20 @@ class ImagePreprocessor:
 
     def _enhance_image(self, image: Any) -> Any:
         if cv2 is not None and np is not None:
+            w, h = image.size
+            if max(w, h) > 2048:
+                scale = 2048.0 / max(w, h)
+                image = image.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
+
             array = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-            denoised = cv2.fastNlMeansDenoisingColored(array, None, 10, 10, 7, 21)
+            denoised = cv2.bilateralFilter(array, d=5, sigmaColor=50, sigmaSpace=50)
             lab = cv2.cvtColor(denoised, cv2.COLOR_BGR2LAB)
             l_channel, a_channel, b_channel = cv2.split(lab)
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
             enhanced_l = clahe.apply(l_channel)
             merged = cv2.merge((enhanced_l, a_channel, b_channel))
             contrast = cv2.cvtColor(merged, cv2.COLOR_LAB2BGR)
-            sharpen_kernel = np.array([[0, -1, 0], [-1, 5.4, -1], [0, -1, 0]], dtype=np.float32)
+            sharpen_kernel = np.array([[0, -0.5, 0], [-0.5, 3.0, -0.5], [0, -0.5, 0]], dtype=np.float32)
             sharpened = cv2.filter2D(contrast, -1, sharpen_kernel)
             return Image.fromarray(cv2.cvtColor(sharpened, cv2.COLOR_BGR2RGB))
 
@@ -135,31 +140,8 @@ class ImagePreprocessor:
         return sharpened.filter(ImageFilter.MedianFilter(size=3))
 
     def _detect_roi(self, image: Any) -> Any:
-        if cv2 is None or np is None:
-            return image
-        rgb = np.array(image)
-        gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
-        blur = cv2.GaussianBlur(gray, (5, 5), 0)
-        thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (25, 5))
-        dilated = cv2.dilate(thresh, kernel, iterations=2)
-        contours, _ = cv2.findContours(dilated, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if not contours:
-            return image
-        height, width = gray.shape[:2]
-        page_area = height * width
-        best = max(contours, key=cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(best)
-        if w * h < page_area * 0.12:
-            return image
-        padding_x = max(12, int(w * 0.03))
-        padding_y = max(12, int(h * 0.05))
-        x0 = max(0, x - padding_x)
-        y0 = max(0, y - padding_y)
-        x1 = min(width, x + w + padding_x)
-        y1 = min(height, y + h + padding_y)
-        cropped = rgb[y0:y1, x0:x1]
-        return Image.fromarray(cropped)
+        # Preserve full prescription document context so no medicines or doctor notes are clipped
+        return image
 
     def _deskew(self, image: Any) -> Any:
         if cv2 is None or np is None:
@@ -190,11 +172,10 @@ class ImagePreprocessor:
         return Image.fromarray(rotated)
 
     def _finalize(self, image: Any) -> Any:
-        if ImageOps is None or ImageEnhance is None:
+        if ImageEnhance is None:
             return image
-        grayscale = ImageOps.grayscale(image)
-        contrast = ImageEnhance.Contrast(grayscale).enhance(1.2)
-        return contrast.convert("RGB")
+        # Enhance contrast gently while preserving full color channels for vision AI
+        return ImageEnhance.Contrast(image).enhance(1.15)
 
     def _encode_image(self, image: Any) -> bytes:
         buffer = BytesIO()

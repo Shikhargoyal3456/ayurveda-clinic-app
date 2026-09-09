@@ -5,7 +5,13 @@ import {
 } from 'lucide-react';
 import DosageTimingBadge from './DosageTimingBadge';
 
-export default function PrescriptionReaderModal({ isOpen, onClose, onAddMedicinesToCart, onPrescriptionSaved }) {
+export default function PrescriptionReaderModal({ 
+  isOpen, 
+  onClose, 
+  onAddMedicinesToCart, 
+  onPrescriptionSaved,
+  initialPatientId = null 
+}) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,11 +38,23 @@ export default function PrescriptionReaderModal({ isOpen, onClose, onAddMedicine
         .then(data => {
           if (data.success && data.patients) {
             setPatients(data.patients);
+            if (initialPatientId) {
+              const matched = data.patients.find(p => String(p.id) === String(initialPatientId));
+              if (matched) {
+                setSelectedPatientId(String(matched.id));
+                setPatientName(matched.name);
+                setPatientAge(matched.age || 35);
+                setPatientGender(matched.gender || 'Other');
+                return;
+              }
+            }
+            setSelectedPatientId('new');
+            setPatientName('');
           }
         })
         .catch(err => console.error('Error fetching patients:', err));
     }
-  }, [isOpen]);
+  }, [isOpen, initialPatientId]);
 
   if (!isOpen) return null;
 
@@ -86,6 +104,9 @@ export default function PrescriptionReaderModal({ isOpen, onClose, onAddMedicine
         }
         if (data.data.diagnosis) {
           setDiagnosis(data.data.diagnosis);
+        }
+        if (data.data.clinical_advice) {
+          setClinicalAdvice(data.data.clinical_advice);
         }
       } else {
         if (data.detail && typeof data.detail === 'string' && data.detail.includes('login')) {
@@ -495,7 +516,7 @@ export default function PrescriptionReaderModal({ isOpen, onClose, onAddMedicine
                       <td style={{ padding: '6px 10px' }}>
                         <input
                           type="text"
-                          value={med.dosage || ''}
+                          value={typeof med.dosage === 'string' ? med.dosage : (med.dosage_text || (med.dosage?.amount ? `${med.dosage.amount} ${med.dosage?.unit || ''}`.trim() : ''))}
                           onChange={(e) => handleMedicineChange(idx, 'dosage', e.target.value)}
                           style={{ width: '80px', padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F8FAFC' }}
                         />
@@ -523,7 +544,7 @@ export default function PrescriptionReaderModal({ isOpen, onClose, onAddMedicine
                       <td style={{ padding: '6px 10px' }}>
                         <input
                           type="text"
-                          value={med.instructions || ''}
+                          value={med.instructions || med.special_instructions || ''}
                           onChange={(e) => handleMedicineChange(idx, 'instructions', e.target.value)}
                           style={{ width: '100%', padding: '6px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#F8FAFC' }}
                         />

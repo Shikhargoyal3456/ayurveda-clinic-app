@@ -36,7 +36,7 @@ VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJE
 VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "30"))
+AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "75"))
 _AI_SPEND_LOCK = Lock()
 _AI_SPEND_LEDGER = BASE_DIR / "logs" / "ai_spend_guard.json"
 _GENAI_CLIENT_LOCK = Lock()
@@ -137,6 +137,8 @@ def _wait_for_vertex_slot() -> None:
 
 def _is_retryable_vertex_error(exc: Exception) -> bool:
     message = str(exc or "").strip().lower()
+    if "perday" in message or "per day" in message or "daily" in message:
+        return False
     return any(marker in message for marker in _VERTEX_RETRYABLE_ERROR_MARKERS)
 
 
@@ -203,7 +205,16 @@ def build_gemini_part(data: bytes, mime_type: str) -> types.Part:
 
 def _model_candidates(explicit_model: str | None = None, model_candidates: list[str] | None = None) -> list[str]:
     models: list[str] = []
-    defaults = [GEMINI_MODEL, "gemini-3.6-flash"]
+    defaults = [
+        GEMINI_MODEL,
+        "gemini-3.5-flash",
+        "gemini-3.7-flash",
+        "gemini-flash-latest",
+        "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite",
+        "gemini-3-flash-preview",
+        "gemini-3.6-flash",
+    ]
     for candidate in [explicit_model, *(model_candidates or []), *defaults]:
         model_name = str(candidate or "").strip()
         if model_name and model_name not in models:
@@ -729,23 +740,56 @@ async def call_ai_json_with_retry(
 
 def parse_json_response(raw: str) -> dict:
     """
-    Strip markdown code fences and parse JSON.
-    Handles ```json ... ``` and ``` ... ``` wrapping.
-    Raises ValueError with clear message if parsing fails.
+    Strip markdown code fences and robustly parse JSON from LLM responses.
+    Handles ```json ... ```, surrounding commentary, and bare JSON objects/arrays.
     """
     cleaned = (raw or "").strip()
+    if not cleaned:
+        raise ValueError("AI returned empty content.")
 
-    if cleaned.startswith("```"):
-        fenced_parts = cleaned.split("```")
-        if len(fenced_parts) > 1:
-            cleaned = fenced_parts[1].strip()
-            if cleaned.lower().startswith("json"):
-                cleaned = cleaned[4:].strip()
-
+    # 1. Direct parse attempt
     try:
-        return json.loads(cleaned)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"AI returned invalid JSON. Raw response: {raw[:200]}...") from exc
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            return parsed
+        if isinstance(parsed, list):
+            return {"medicines": parsed}
+    except json.JSONDecodeError:
+        pass
+
+    # 2. Extract from markdown code fences ```json ... ```
+    fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", cleaned, re.IGNORECASE)
+    if fence_match:
+        try:
+            parsed = json.loads(fence_match.group(1).strip())
+            if isinstance(parsed, dict):
+                return parsed
+            if isinstance(parsed, list):
+                return {"medicines": parsed}
+        except json.JSONDecodeError:
+            pass
+
+    # 3. Extract outermost curly braces { ... }
+    brace_match = re.search(r"(\{[\s\S]*\})", cleaned)
+    if brace_match:
+        try:
+            parsed = json.loads(brace_match.group(1).strip())
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+
+    # 4. Extract outermost square brackets [ ... ]
+    bracket_match = re.search(r"(\[[\s\S]*\])", cleaned)
+    if bracket_match:
+        try:
+            parsed = json.loads(bracket_match.group(1).strip())
+            if isinstance(parsed, list):
+                return {"medicines": parsed}
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError(f"AI returned invalid JSON. Raw response: {cleaned[:200]}...")
 
 
 def _strip_json_fences(text: str) -> str:

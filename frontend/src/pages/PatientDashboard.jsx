@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { HeartPulse, Bot, Pill, Activity, Calendar, Heart, FileText, Wrench, ShoppingBag, Upload, RefreshCw } from 'lucide-react';
 import VoiceMicInput from '../components/VoiceMicInput';
 import PrescriptionReaderModal from '../components/PrescriptionReaderModal';
@@ -90,21 +91,21 @@ export default function PatientDashboard() {
         <aside className="glass-card" style={{ padding: '20px', height: 'fit-content', borderRadius: '16px' }}>
           <p style={{ color: '#94A3B8', fontSize: '0.78rem', fontWeight: '700', textTransform: 'uppercase', margin: '0 0 12px' }}>Patient Portal</p>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <a href="/patient" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', fontWeight: '600', textDecoration: 'none' }}>
+            <Link to="/patient" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', fontWeight: '600', textDecoration: 'none' }}>
               <Activity size={18} /> My Health Overview
-            </a>
-            <a href="/ocr-decoder" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
+            </Link>
+            <Link to="/ocr-decoder" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
               <Upload size={18} /> AI Prescription OCR
-            </a>
+            </Link>
             <a href="/appointments" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
               <Calendar size={18} /> Appointments
             </a>
-            <a href="/order-medicines" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
+            <Link to="/order-medicines" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
               <Pill size={18} /> Order Medicines
-            </a>
-            <a href="/device-check" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
+            </Link>
+            <Link to="/device-check" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '10px', color: '#E2E8F0', textDecoration: 'none' }}>
               <Wrench size={18} /> Diagnostics Check
-            </a>
+            </Link>
           </nav>
         </aside>
 

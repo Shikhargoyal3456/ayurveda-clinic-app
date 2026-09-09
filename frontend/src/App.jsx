@@ -10,6 +10,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import OrderMedicines from './pages/OrderMedicines';
 import OCRDecoderPage from './pages/OCRDecoderPage';
+import VoiceConsultationPage from './pages/VoiceConsultationPage';
+import DeviceCheckPage from './pages/DeviceCheckPage';
+import AddPatientPage from './pages/AddPatientPage';
 import DoctorAICopilot from './components/DoctorAICopilot';
 
 export default function App() {
@@ -27,6 +30,10 @@ export default function App() {
               <Route path="/patient" element={<PatientDashboard />} />
               <Route path="/order-medicines" element={<OrderMedicines />} />
               <Route path="/ocr-decoder" element={<OCRDecoderPage />} />
+              <Route path="/consultation/voice" element={<VoiceConsultationPage />} />
+              <Route path="/device-check" element={<DeviceCheckPage />} />
+              <Route path="/new/patients/add" element={<AddPatientPage />} />
+              <Route path="/patients/add" element={<AddPatientPage />} />
             </Routes>
           </main>
           <Footer />

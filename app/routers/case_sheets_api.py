@@ -46,6 +46,18 @@ class SavePrescriptionRequest(BaseModel):
     doctor_id: Optional[int] = 1
 
 
+class CreatePatientRequest(BaseModel):
+    name: str
+    age: Optional[int] = 35
+    gender: Optional[str] = "Other"
+    phone: Optional[str] = ""
+    email: Optional[str] = ""
+    prakriti: Optional[str] = "Vata-Pitta"
+    address: Optional[str] = ""
+    medical_history: Optional[str] = ""
+    doctor_id: Optional[int] = 1
+
+
 class CopilotChatRequest(BaseModel):
     patient_id: Optional[int] = None
     patient_name: Optional[str] = None
@@ -369,6 +381,89 @@ def get_patients_list(
     except Exception as exc:
         logger.exception("Error fetching patients list: %s", exc)
         return {"success": False, "patients": []}
+
+
+@router.post("/patients/create")
+@router.post("/patients/add")
+def create_patient_api(
+    payload: CreatePatientRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, Any]:
+    """Register a new patient into the clinic database."""
+    try:
+        doctor_id = payload.doctor_id or 1
+        doctor = db.get(Doctor, doctor_id)
+        if not doctor:
+            doctor = db.query(Doctor).first()
+            if doctor:
+                doctor_id = doctor.id
+
+        clean_name = payload.name.strip()
+        if not clean_name:
+            raise HTTPException(status_code=400, detail="Patient full name is required.")
+
+        clean_email = payload.email.strip() if payload.email and payload.email.strip() else f"{clean_name.lower().replace(' ', '')}{int(datetime.now().timestamp())}@kash.clinic"
+        
+        # Check if patient with exact email or name already exists
+        existing = db.query(Patient).filter(
+            or_(
+                Patient.email == clean_email,
+                Patient.name.ilike(clean_name)
+            )
+        ).first()
+        if existing:
+            # Update patient info if needed
+            existing.age = payload.age or existing.age
+            existing.gender = payload.gender or existing.gender
+            if payload.phone:
+                existing.phone = payload.phone
+            commit_with_retry(db)
+            return {
+                "success": True,
+                "message": f"Patient {existing.name} already exists. Record updated successfully.",
+                "patient": {
+                    "id": existing.id,
+                    "name": existing.name,
+                    "age": existing.age,
+                    "gender": existing.gender,
+                    "phone": existing.phone,
+                    "prakriti": payload.prakriti or "Vata-Pitta",
+                    "prescriptions_count": 0,
+                    "cases_count": 0,
+                }
+            }
+
+        new_patient = Patient(
+            doctor_id=doctor_id,
+            name=clean_name,
+            age=payload.age or 35,
+            gender=payload.gender or "Other",
+            phone=payload.phone.strip() if payload.phone else "",
+            email=clean_email,
+            address=payload.address or (payload.medical_history or "Ayurvedic Patient"),
+        )
+        db.add(new_patient)
+        commit_with_retry(db)
+
+        return {
+            "success": True,
+            "message": f"Patient {new_patient.name} registered successfully.",
+            "patient": {
+                "id": new_patient.id,
+                "name": new_patient.name,
+                "age": new_patient.age,
+                "gender": new_patient.gender,
+                "phone": new_patient.phone,
+                "prakriti": payload.prakriti or "Vata-Pitta",
+                "prescriptions_count": 0,
+                "cases_count": 0,
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Error registering patient: %s", exc)
+        return {"success": False, "message": str(exc)}
 
 
 @router.get("/patients/{patient_id}/dossier")

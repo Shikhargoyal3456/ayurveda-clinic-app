@@ -1,7 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, MicOff, Loader2, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Loader2, Volume2, Square } from 'lucide-react';
 
-export default function VoiceMicInput({ onTranscript, placeholder = "Speak now...", className = "", buttonStyle = {} }) {
+export default function VoiceMicInput({ 
+  onTranscript, 
+  onStart,
+  onStop,
+  onListeningChange,
+  placeholder = "Speak now...", 
+  className = "", 
+  buttonStyle = {},
+  showLabel = false,
+}) {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
@@ -10,21 +19,36 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
   const audioChunksRef = useRef([]);
 
   useEffect(() => {
+    if (onListeningChange) {
+      onListeningChange(isListening);
+    }
+  }, [isListening, onListeningChange]);
+
+  useEffect(() => {
     // Check if browser supports Web Speech API
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-IN'; // Default to English (India), supports Hindi terms
 
       recognition.onresult = (event) => {
-        let transcriptStr = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcriptStr += event.results[i][0].transcript;
+        let finalStr = '';
+        let interimStr = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const res = event.results[i];
+          if (res && res[0]) {
+            if (res.isFinal) {
+              finalStr += res[0].transcript + ' ';
+            } else {
+              interimStr += res[0].transcript;
+            }
+          }
         }
-        if (onTranscript && transcriptStr.trim()) {
-          onTranscript(transcriptStr);
+        const fullTranscript = (finalStr + interimStr).trim();
+        if (onTranscript && fullTranscript) {
+          onTranscript(fullTranscript);
         }
       };
 
@@ -34,15 +58,17 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
           setError('Voice input error. Click to retry.');
         }
         setIsListening(false);
+        if (onStop) onStop();
       };
 
       recognition.onend = () => {
         setIsListening(false);
+        if (onStop) onStop();
       };
 
       recognitionRef.current = recognition;
     }
-  }, [onTranscript]);
+  }, [onTranscript, onStop]);
 
   const startFallbackAudioRecording = async () => {
     try {
@@ -69,7 +95,9 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
           });
           const data = await res.json();
           if (data.success && data.transcript) {
-            onTranscript(data.transcript);
+            if (onTranscript) {
+              onTranscript(data.transcript);
+            }
           } else {
             setError(data.error || 'Could not transcribe audio.');
           }
@@ -78,7 +106,6 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
           setError('Failed to process voice recording.');
         } finally {
           setIsProcessing(false);
-          // Stop media tracks
           stream.getTracks().forEach(track => track.stop());
         }
       };
@@ -86,6 +113,7 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsListening(true);
+      if (onStart) onStart();
     } catch (err) {
       console.error('Microphone access denied or error:', err);
       setError('Microphone permission required.');
@@ -96,14 +124,25 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
   const toggleListening = () => {
     setError('');
     if (isListening) {
+      // STOP listening
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.warn('Error stopping recognition:', e);
+        }
       }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
       }
       setIsListening(false);
+      if (onStop) onStop();
       return;
+    }
+
+    // START listening - notify parent to clear previous notes
+    if (onStart) {
+      onStart();
     }
 
     if (recognitionRef.current) {
@@ -111,7 +150,6 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
         recognitionRef.current.start();
         setIsListening(true);
       } catch (err) {
-        // Fallback to MediaRecorder audio upload if Web Speech API fails
         startFallbackAudioRecording();
       }
     } else {
@@ -120,67 +158,85 @@ export default function VoiceMicInput({ onTranscript, placeholder = "Speak now..
   };
 
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
       <button
         type="button"
         onClick={toggleListening}
         disabled={isProcessing}
-        title={isListening ? "Listening... Click to stop" : "Click to speak via Microphone"}
+        title={isListening ? "Listening... Click to Stop" : "Click to Speak via Microphone"}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          width: '42px',
+          gap: '8px',
+          padding: showLabel ? '8px 16px' : '0',
+          width: showLabel ? 'auto' : '42px',
           height: '42px',
-          borderRadius: '50%',
+          borderRadius: showLabel ? '24px' : '50%',
           border: isListening ? '2px solid #EF4444' : '1px solid rgba(255, 255, 255, 0.2)',
           background: isListening 
-            ? 'rgba(239, 68, 68, 0.2)' 
+            ? 'rgba(239, 68, 68, 0.25)' 
             : isProcessing 
               ? 'rgba(16, 185, 129, 0.2)' 
               : 'rgba(255, 255, 255, 0.08)',
           color: isListening ? '#EF4444' : isProcessing ? '#10B981' : '#F8FAFC',
           cursor: isProcessing ? 'wait' : 'pointer',
           transition: 'all 0.2s ease',
-          boxShadow: isListening ? '0 0 15px rgba(239, 68, 68, 0.5)' : 'none',
+          boxShadow: isListening ? '0 0 18px rgba(239, 68, 68, 0.55)' : 'none',
+          fontWeight: '700',
+          fontSize: '0.85rem',
           ...buttonStyle
         }}
         className={className}
       >
         {isProcessing ? (
-          <Loader2 size={18} className="animate-spin" />
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            {showLabel && <span>Transcribing...</span>}
+          </>
         ) : isListening ? (
-          <Volume2 size={18} style={{ animation: 'pulse 1s infinite' }} />
+          <>
+            <Square size={16} style={{ fill: '#EF4444' }} />
+            {showLabel ? <span>Stop Dictation</span> : null}
+          </>
         ) : (
-          <Mic size={18} />
+          <>
+            <Mic size={18} />
+            {showLabel ? <span>Start Dictation</span> : null}
+          </>
         )}
       </button>
 
-      {isListening && (
-        <span style={{
-          position: 'absolute',
-          top: '-24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: '#EF4444',
-          color: 'white',
-          fontSize: '0.7rem',
-          fontWeight: '700',
-          padding: '2px 8px',
-          borderRadius: '10px',
-          whiteSpace: 'nowrap',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-        }}>
-          Listening...
-        </span>
+      {/* Explicit Stop Dictation Button visible while recording */}
+      {isListening && !showLabel && (
+        <button
+          type="button"
+          onClick={toggleListening}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '7px 14px',
+            borderRadius: '20px',
+            background: '#EF4444',
+            border: 'none',
+            color: 'white',
+            fontWeight: '700',
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            boxShadow: '0 2px 10px rgba(239, 68, 68, 0.45)',
+            animation: 'pulse 1.5s infinite'
+          }}
+        >
+          <Square size={12} style={{ fill: 'white' }} /> Stop Dictation
+        </button>
       )}
 
       {error && (
         <span style={{
           position: 'absolute',
           bottom: '-22px',
-          left: '50%',
-          transform: 'translateX(-50%)',
+          left: '0',
           color: '#F87171',
           fontSize: '0.75rem',
           whiteSpace: 'nowrap'
