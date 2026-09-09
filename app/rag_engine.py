@@ -29,8 +29,9 @@ try:
             category=DeprecationWarning,
         )
         import faiss  # type: ignore
-except ImportError as exc:  # pragma: no cover
-    raise RuntimeError("faiss-cpu is required for retrieval.") from exc
+except ImportError:  # pragma: no cover
+    faiss = None
+
 
 
 logger = logging.getLogger(__name__)
@@ -222,7 +223,10 @@ class AyurvedaRAGEngine:
                 self.prepare(force_rebuild=False)
 
             self._docs = json.loads(self._docs_path().read_text(encoding="utf-8"))
+            if faiss is None:
+                raise RuntimeError("faiss-cpu is required for retrieval.")
             self._faiss_index = faiss.read_index(str(self._faiss_path()))
+
 
     def warm_up(self) -> dict[str, Any]:
         ensure_runtime_dirs()

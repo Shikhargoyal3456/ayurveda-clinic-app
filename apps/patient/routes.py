@@ -9,6 +9,10 @@ from app.portal_auth import require_portal_roles, user_public_context
 from shared.template_engine import render_template, templates
 from services.profile_service import active_profiles_for_user, profile_avatar_for_relationship, resolve_active_profile
 from services.superapp_service import get_dashboard_payload
+from services.patient_service import get_patient_insights, get_patient_timeline
+from app.models import Patient
+
+router = APIRouter(tags=["patient-portal"])
 
 
 router = APIRouter(tags=["patient-portal"])
@@ -118,4 +122,50 @@ def dashboard(request: Request, db: Session = Depends(get_db), user=Depends(requ
         request.session["active_profile_avatar"] = profile_avatar_for_relationship(active_profile.relationship, active_profile.profile_avatar)
         request.session["active_profile_relationship"] = active_profile.relationship
     context = patient_dashboard_context(request, user)
+    return render_template(templates, request, "patient_home.html", context)
+
+
+@router.get("/patient/analytics")
+def patient_analytics(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+    active_profile = resolve_active_profile(request, db, user)
+    if active_profile is None:
+        return RedirectResponse(url="/profiles/select", status_code=303)
+
+    insights = get_patient_insights(db, active_profile.patient_id)
+    context = patient_dashboard_context(request, user)
+    context.update({
+        "active_page": "analytics",
+        "insights": insights,
+        "page_hint": "Your health trends and medicine usage analytics"
+    })
+    return render_template(templates, request, "patient_home.html", context)
+
+
+@router.get("/patient/history")
+def patient_history(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+    active_profile = resolve_active_profile(request, db, user)
+    if active_profile is None:
+        return RedirectResponse(url="/profiles/select", status_code=303)
+
+    timeline = get_patient_timeline(db, active_profile.patient_id)
+    context = patient_dashboard_context(request, user)
+    context.update({
+        "active_page": "history",
+        "timeline": timeline.get("data", {}),
+        "page_hint": "Your comprehensive clinical and medicine history"
+    })
+    return render_template(templates, request, "patient_home.html", context)
+
+
+@router.get("/patient/reports")
+def patient_reports(request: Request, db: Session = Depends(get_db), user=Depends(require_portal_roles("patient"))):
+    active_profile = resolve_active_profile(request, db, user)
+    if active_profile is None:
+        return RedirectResponse(url="/profiles/select", status_code=303)
+
+    context = patient_dashboard_context(request, user)
+    context.update({
+        "active_page": "reports",
+        "page_hint": "Your lab reports and clinical summaries"
+    })
     return render_template(templates, request, "patient_home.html", context)

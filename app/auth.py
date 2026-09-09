@@ -64,7 +64,10 @@ def _apply_rate_limit(key: str, limit: int, window_seconds: int) -> int | None:
 
 
 def hash_password(password: str) -> str:
-    return PASSWORD_CONTEXT.hash(password)
+    try:
+        return PASSWORD_CONTEXT.hash(password)
+    except Exception:
+        return PASSWORD_CONTEXT.hash(password, scheme="pbkdf2_sha256")
 
 
 def _verify_legacy_password(password: str, password_hash: str) -> bool:
@@ -91,8 +94,6 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 def needs_password_rehash(password_hash: str) -> bool:
     return not password_hash.startswith("$2")
-
-
 def ensure_csrf_token(request: Request) -> str:
     token = request.session.get("_csrf_token")
     if not token:

@@ -254,6 +254,9 @@ def _detect_environment() -> str:
     explicit = os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or ""
     if explicit:
         return explicit.strip().lower()
+    explicit = os.getenv("APP_ENV") or os.getenv("ENVIRONMENT") or os.getenv("ENV") or ""
+    if explicit:
+        return explicit.strip().lower()
     if _get_bool("PYTEST_CURRENT_TEST", False):
         return "testing"
     return "development"
@@ -272,9 +275,9 @@ def _build_settings() -> Settings:
         app_name=os.getenv("APP_NAME", os.getenv("CLINIC_NAME", "kash-ai")).strip() or "kash-ai",
         base_dir=base_dir,
         templates_dir=base_dir / "templates",
-        shared_templates_dir=base_dir / "shared" / "templates",
+        shared_templates_dir=base_dir / "app" / "shared" / "templates",
         static_dir=base_dir / "static",
-        shared_static_dir=base_dir / "shared" / "static",
+        shared_static_dir=base_dir / "app" / "shared" / "static",
         logs_dir=logs_dir,
         data_dir=base_dir / "data",
         backups_dir=base_dir / "backups",
@@ -282,6 +285,7 @@ def _build_settings() -> Settings:
         backup_interval_hours=_get_int("BACKUP_INTERVAL_HOURS", 6),
         samhita_pdfs_dir=base_dir / "samhita_pdfs",
         vector_store_dir=base_dir / "vector_store",
+
         # PROD-FIX-6: Normalize SQLite URL with timeout/cache query options.
         database_url=normalize_database_url(os.getenv("DATABASE_URL", "sqlite:///./ayurveda_clinic.db")),
         clinic_name=os.getenv("CLINIC_NAME", "Kash AI"),
@@ -297,8 +301,8 @@ def _build_settings() -> Settings:
         ollama_max_retries=_get_int("OLLAMA_MAX_RETRIES", 2),
         ollama_soft_timeout_seconds=_get_int("OLLAMA_SOFT_TIMEOUT_SECONDS", 18),
         ollama_keep_alive=os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
-        gemini_api_key="",
-        gemini_model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        gemini_api_key=os.getenv("GEMINI_API_KEY", "").strip(),
+        gemini_model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip() or "gemini-3.6-flash",
         vertex_ai_project=os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip(),
         vertex_ai_location=os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1",
         google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", ""),

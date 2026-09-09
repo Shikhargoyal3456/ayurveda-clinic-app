@@ -22,6 +22,7 @@
     <meta name="twitter:image" content="{{ seo_image }}">
     {% block meta %}{% endblock %}
     <link rel="stylesheet" href="/static/css/kash-ai.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script defer src="/static/js/new_app.js"></script>
     <script defer src="/static/js/error_handler.js"></script>
     <script defer src="/static/js/optimistic_ui.js"></script>
@@ -42,7 +43,7 @@
         <div class="navbar-container">
             <div class="navbar-brand">
                 <a href="/new" class="brand-link">
-                    <span class="brand-icon">🩺</span>
+                    <span class="brand-icon"><i data-lucide="stethoscope"></i></span>
                     <span class="brand-name">Kash AI</span>
                     <span class="brand-tag">Healthcare intelligence</span>
                 </a>
@@ -59,44 +60,24 @@
                 {% elif role_value == 'patient' %}
                     <a class="nav-link" href="/patient/dashboard">My Health</a>
                     <a class="nav-link" href="/new/appointments">Appointments</a>
-                    <a class="nav-link" href="/new/prescriptions">Prescriptions</a>
+                    <a class="nav-link" href="/order_medicines">Medicines</a>
                     <a class="nav-link" href="/new/ai-doctor">AI Assistant</a>
-                {% else %}
-                    <a class="nav-link" href="/new/admin">Admin</a>
                 {% endif %}
-                {% else %}
-                <a class="nav-link" href="/new#features">Features</a>
-                <a class="nav-link" href="/telemedicine/book">Consult</a>
-                <a class="nav-link" href="/auth/login">Login</a>
-                <a class="nav-link nav-cta" href="/auth/signup">Get Started</a>
                 {% endif %}
             </div>
 
-            <div class="navbar-user">
+            <div class="navbar-actions">
                 {% if user is defined and user %}
-                <div class="user-profile">
-                    <button class="user-menu-btn" type="button" id="userMenuBtn" aria-expanded="false">
+                <div class="user-menu">
+                    <button class="user-menu-btn" type="button">
                         <span class="user-avatar">{{ avatar_char }}</span>
                         <span class="user-name">{{ user.full_name or user.email }}</span>
-                        <span class="dropdown-arrow">▼</span>
                     </button>
-                    <div class="user-dropdown" id="userDropdown">
-                        <div class="dropdown-header">
-                            <div class="dropdown-avatar">{{ avatar_char }}</div>
-                            <div class="dropdown-info">
-                                <strong>{{ user.full_name or user.email }}</strong>
-                                <small>{{ user.email }}</small>
-                                <span class="role-badge">{{ role_value | title }}</span>
-                            </div>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <a href="/new/dashboard" class="dropdown-item">Dashboard</a>
-                        <a href="/new/settings" class="dropdown-item">Profile</a>
-                        <a href="/new/settings" class="dropdown-item">Settings</a>
-                        <div class="dropdown-divider"></div>
-                        <form method="post" action="/auth/logout" class="logout-form">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token | default('') }}">
-                            <button type="submit" class="dropdown-item logout logout-button logout-button--menu">
+                    <div class="user-dropdown">
+                        <a href="/new/profile" class="dropdown-item">Profile & Settings</a>
+                        <form action="/auth/logout" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token if csrf_token is defined else '' }}">
+                            <button type="submit" class="dropdown-item dropdown-item--logout">
                                 <span class="avatar-lg avatar-lg--logout">{{ avatar_char }}</span>
                                 <span>Logout</span>
                             </button>
@@ -126,7 +107,7 @@
     <footer class="footer">
         <div class="footer-container">
             <div class="footer-brand">
-                <span class="footer-icon">🩺</span>
+                <span class="footer-icon"><i data-lucide="stethoscope"></i></span>
                 <span class="footer-name">Kash AI</span>
                 <span class="footer-tagline">AI-powered healthcare intelligence for modern India.</span>
             </div>
@@ -161,5 +142,10 @@
         </div>
     </footer>
 </div>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.lucide) { lucide.createIcons(); }
+  });
+</script>
 </body>
 </html>

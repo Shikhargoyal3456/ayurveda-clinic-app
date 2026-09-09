@@ -1,0 +1,42 @@
+services:
+  kash-ai:
+    build: .
+    ports:
+      - "8000:8080"
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql+psycopg2://kash:ai123@postgres:5432/kash_ai
+      REDIS_URL: redis://redis:6379/0
+      PORT: 8080
+    depends_on:
+      - redis
+      - postgres
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: kash_ai
+      POSTGRES_USER: kash
+      POSTGRES_PASSWORD: ai123
+    ports:
+      - "5432:5432"
+    volumes:
+      - kash_ai_postgres:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  kash_ai_postgres:

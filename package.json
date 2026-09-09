@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
+    "run:app": "python run_all.py",
     "worker": "node src/queues/reminderWorker.js",
     "check": "node --check src/app.js && node --check src/queues/reminderWorker.js"
   },

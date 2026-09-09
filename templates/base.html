@@ -28,6 +28,8 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
     <script type="importmap">
 {
   "imports": {
@@ -393,13 +395,16 @@
             }
         };
 
-        if (doctorReviewRole) {
-            window.updateReviewBadge();
-            window.setInterval(window.updateReviewBadge, 30000);
-        }
+        if (window.lucide) { lucide.createIcons(); }
     });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) { lucide.createIcons(); }
+        });
     </script>
     {% block extra_scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>
+
 </html>

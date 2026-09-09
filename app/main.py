@@ -131,6 +131,7 @@ from routers.subscriptions import router as subscriptions_router
 from routers.telemedicine import router as telemedicine_router
 from routers.voice_consultation import router as voice_consultation_router
 from routers.voice_transcribe import router as voice_router
+from routers.sarvam_voice import router as sarvam_voice_router
 from routers.delivery import router as delivery_router
 from routers.debug import router as debug_router
 from routers.dashboard import router as dashboard_router
@@ -138,6 +139,12 @@ from routers.doctor_review import router as doctor_review_router
 from routers.google_auth import router as google_auth_router
 from routers.consultation import router as consultation_router
 from routers.device_check import router as device_check_router
+from app.routers.v2 import router as v2_router
+from app.routers.admin_api import router as admin_api_router
+from app.routers.dashboard_api import router as dashboard_api_router
+from app.routers.case_sheets_api import router as case_sheets_api_router
+
+
 from routes.demo import router as demo_router
 from routes.outcome import router as outcome_router
 from routes.payment import router as payment_router
@@ -231,16 +238,18 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
         response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com https://fonts.gstatic.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            "img-src 'self' data: https://checkout.razorpay.com; "
-            "font-src 'self' data: https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
-            "media-src 'self' https://d8j0ntlcm91z4.cloudfront.net; "
-            "connect-src 'self' ws: wss: https://checkout.razorpay.com https://lumberjack.razorpay.com; "
-            "frame-src https://api.razorpay.com https://checkout.razorpay.com; "
+            "default-src 'self' http://localhost:* http://127.0.0.1:* https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com https://fonts.gstatic.com; "
+            "style-src 'self' 'unsafe-inline' http://localhost:* http://127.0.0.1:* https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com https://fonts.googleapis.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* http://127.0.0.1:* https://checkout.razorpay.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
+            "img-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://checkout.razorpay.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
+            "font-src 'self' data: http://localhost:* http://127.0.0.1:* https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; "
+            "media-src 'self' data: blob: http://localhost:* http://127.0.0.1:* https://d8j0ntlcm91z4.cloudfront.net; "
+            "connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:* https://checkout.razorpay.com https://lumberjack.razorpay.com; "
+            "frame-src 'self' http://localhost:* http://127.0.0.1:* https://api.razorpay.com https://checkout.razorpay.com; "
             "frame-ancestors 'none';"
         )
+
+
         clear_request_id()
         return response
 
@@ -579,8 +588,7 @@ def create_app() -> FastAPI:
     if public_dir.exists():
         application.mount("/public", StaticFiles(directory=public_dir), name="public")
     application.include_router(public_clinic_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(startup_router)
+    application.include_router(startup_router)
     application.include_router(health_router)
     application.include_router(backup_router)
     application.include_router(export_router)
@@ -605,41 +613,37 @@ def create_app() -> FastAPI:
     application.include_router(device_check_router)
     application.include_router(voice_consultation_router)
     application.include_router(voice_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(ai_pharmacy_router)
+    application.include_router(sarvam_voice_router)
+    application.include_router(ai_pharmacy_router)
     application.include_router(ai_features_router)
     application.include_router(api_v1_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(marketplace_router)
+    application.include_router(marketplace_router)
     application.include_router(patient_portal_router)
     application.include_router(doctor_portal_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(pharmacy_portal_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(lab_portal_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(delivery_portal_router)
+    application.include_router(pharmacy_portal_router)
+    application.include_router(lab_portal_router)
+    application.include_router(delivery_portal_router)
     application.include_router(medicine_info_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(delivery_router)
+    application.include_router(order_medicines_router)
+    application.include_router(delivery_router)
+    application.include_router(v2_router)
+    application.include_router(admin_api_router)
+    application.include_router(dashboard_api_router)
+    application.include_router(case_sheets_api_router)
+
+
+
     application.include_router(debug_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(pharmacy_owner_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(lab_owner_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(lab_analyzer_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(pharmacy_router)
+    application.include_router(pharmacy_owner_router)
+    application.include_router(lab_owner_router)
+    application.include_router(lab_analyzer_router)
+    application.include_router(pharmacy_router)
     application.include_router(prescription_ocr_router)
     application.include_router(profiles_router)
     application.include_router(pure_ai_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(ecommerce_router)
-    # Enable medicine ordering
+    application.include_router(ecommerce_router)
     application.include_router(order_medicines_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(subscriptions_router)
+    application.include_router(subscriptions_router)
     application.include_router(admin_router)
     application.include_router(emr_router)
     application.include_router(ambient_emr_router)
@@ -647,8 +651,7 @@ def create_app() -> FastAPI:
     application.include_router(prescription_router)
     application.include_router(payment_router)
     application.include_router(outcome_router)
-    # FROZEN: not needed for clinic pilot v1
-    # application.include_router(demo_router)
+    application.include_router(demo_router)
     application.include_router(sales_router)
     application.include_router(statistics_router)
 
@@ -714,3 +717,6 @@ if __name__ == "__main__":
 
     port = int(os.getenv("PORT", 8000))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port)
+
+# Trigger reload: 2026-09-08T18:28:30
+

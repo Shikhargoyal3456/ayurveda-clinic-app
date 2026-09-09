@@ -135,10 +135,12 @@ def delivery_assignments():
 
 
 @router.get("/api/v1/notifications")
-def notifications(role: str = Query("patient")):
+def notifications(user: User = Depends(require_portal_roles("patient", "doctor", "pharmacy_owner", "lab_owner", "delivery_partner", "admin"))):
+    role = _role_of(user)
     return JSONResponse({"role": role, "notifications": notification_center(role)})
 
 
 @router.get("/api/v1/search")
-def search(role: str = Query("patient"), q: str = Query("")):
+def search(q: str = Query(""), user: User = Depends(require_portal_roles("patient", "doctor", "pharmacy_owner", "lab_owner", "delivery_partner", "admin"))):
+    role = _role_of(user)
     return JSONResponse(global_search(role, q))

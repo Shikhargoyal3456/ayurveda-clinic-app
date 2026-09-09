@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Patients | Kash AI v2{% endblock %}
+
+{% block page_content %}
+<div class="py-6">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+        <div class="md:flex md:items-center md:justify-between">
+            <div class="min-w-0 flex-1">
+                <h1 class="text-2xl font-semibold text-gray-900">Patient Registry</h1>
+            </div>
+            <div class="mt-4 flex md:mt-0 md:ml-4">
+                <a href="#" class="inline-flex items-center rounded-md border border-transparent bg-brand-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-brand-green-700 focus:outline-none focus:ring-2 focus:ring-brand-green-500 focus:ring-offset-2">
+                    Add Patient
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+        <!-- Search and filter bar -->
+        <div class="mt-4">
+            <form action="/v2/patients" method="get">
+                <div class="flex rounded-md shadow-sm">
+                    <div class="relative flex-grow focus-within:z-10">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <input type="search" name="q" id="patient-search" value="{{ search_query or '' }}" class="block w-full rounded-none rounded-l-md border-gray-300 pl-10 focus:border-brand-green-500 focus:ring-brand-green-500 sm:text-sm" placeholder="Search by name, phone, or email">
+                    </div>
+                    <button type="submit" class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-brand-green-500 focus:outline-none focus:ring-1 focus:ring-brand-green-500">
+                        <span>Search</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Patient list -->
+        <div class="mt-8 flex flex-col">
+            <div class="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
+                    <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-300">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Name</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Contact</th>
+                                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Registered On</th>
+                                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                                        <span class="sr-only">View</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 bg-white">
+                                {% for patient in patients %}
+                                <tr>
+                                    <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
+                                        <div class="flex items-center">
+                                            <div class="h-10 w-10 flex-shrink-0 bg-gray-200 rounded-full flex items-center justify-center">
+                                                <span class="text-gray-600 font-semibold">{{ patient.name[0] if patient.name else '?' }}</span>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="font-medium text-gray-900">{{ patient.name }}</div>
+                                                <div class="text-gray-500">{{ patient.gender.title() if patient.gender }}, {{ patient.age }} years</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        <div class="text-gray-900">{{ patient.phone }}</div>
+                                        <div class="text-gray-500">{{ patient.email }}</div>
+                                    </td>
+                                    <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                                        {{ patient.created_at.strftime('%d %b %Y') }}
+                                    </td>
+                                    <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                        <a href="/v2/patients/{{ patient.id }}" class="text-brand-green-600 hover:text-brand-green-900">View<span class="sr-only">, {{ patient.name }}</span></a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="whitespace-nowrap px-3 py-12 text-center text-sm text-gray-500">
+                                        <h3 class="text-lg font-medium text-gray-900">No patients found</h3>
+                                        <p class="mt-1 text-sm text-gray-500">
+                                            {% if search_query %}
+                                                No patients matched your search for "{{ search_query }}".
+                                            {% else %}
+                                                Get started by adding a new patient.
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
