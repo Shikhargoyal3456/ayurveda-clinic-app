@@ -30,7 +30,26 @@ export default function Navbar() {
   };
 
   return (
-    <header style={{ padding: '20px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B1512', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', position: 'relative', zIndex: 50 }}>
+    <>
+      <header style={{ 
+        height: '68px',
+        width: '100%',
+        boxSizing: 'border-box',
+        padding: '0 32px', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        background: 'rgba(11, 21, 18, 0.98)', 
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(16, 185, 129, 0.22)', 
+        position: 'fixed', 
+        top: 0, 
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.45)'
+      }}>
       {/* Brand Logo & Subtitle */}
       <Link to="/" style={{ display: 'flex', alignItems: 'baseline', gap: '8px', textDecoration: 'none' }}>
         <span style={{ fontSize: '1.4rem', fontWeight: '800', color: '#F4EEE1', letterSpacing: '-0.02em' }}>Kash AI</span>
@@ -127,5 +146,8 @@ export default function Navbar() {
         )}
       </div>
     </header>
+    {/* Static header spacer: locks document flow so content sticks flush below fixed header */}
+    <div style={{ height: '68px', width: '100%', flexShrink: 0 }} aria-hidden="true" />
+    </>
   );
 }

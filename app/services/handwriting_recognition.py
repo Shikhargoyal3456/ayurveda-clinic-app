@@ -31,18 +31,29 @@ logger = logging.getLogger(__name__)
 
 
 FREQUENCY_MAP = {
-    "od": "Once daily",
+    "od": "Once daily (Morning: 1, Afternoon: 0, Night: 0)",
     "qd": "Once daily",
-    "bd": "Twice daily",
-    "bid": "Twice daily",
-    "tds": "Three times daily",
-    "tid": "Three times daily",
+    "bd": "Twice daily (Morning: 1, Afternoon: 0, Night: 1)",
+    "bid": "Twice daily (Morning: 1, Afternoon: 0, Night: 1)",
+    "tds": "Three times daily (Morning: 1, Afternoon: 1, Night: 1)",
+    "tid": "Three times daily (Morning: 1, Afternoon: 1, Night: 1)",
     "qid": "Four times daily",
-    "hs": "At bedtime",
-    "sos": "As needed",
-    "prn": "As needed",
+    "hs": "At bedtime (Night: 1)",
+    "sos": "As needed (SOS)",
+    "prn": "As needed (PRN)",
     "stat": "Immediately",
+    "1-0-1": "1-0-1 [Morning: 1, Afternoon: 0, Night: 1] (Twice daily)",
+    "1-1-1": "1-1-1 [Morning: 1, Afternoon: 1, Night: 1] (Three times daily)",
+    "1-0-0": "1-0-0 [Morning: 1, Afternoon: 0, Night: 0] (Once daily)",
+    "0-0-1": "0-0-1 [Morning: 0, Afternoon: 0, Night: 1] (Night / Bedtime)",
+    "0-1-0": "0-1-0 [Morning: 0, Afternoon: 1, Night: 0] (Afternoon)",
+    "1-1-0": "1-1-0 [Morning: 1, Afternoon: 1, Night: 0] (Morning & Afternoon)",
+    "0-1-1": "0-1-1 [Morning: 0, Afternoon: 1, Night: 1] (Afternoon & Night)",
+    "1/2-0-1/2": "1/2-0-1/2 [Morning: 1/2, Afternoon: 0, Night: 1/2] (Half dose twice daily)",
+    "1 tsf": "1 teaspoonful",
+    "2 tsf": "2 teaspoonfuls",
 }
+
 INSTRUCTION_PATTERNS = [
     "before food",
     "after food",
@@ -223,9 +234,18 @@ class HandwritingRecognitionService:
 
     def _build_decoder_prompt(self) -> str:
         return (
-            "You are a careful medical prescription reading AI for India. Read this handwritten prescription image. "
-            "Do not hallucinate certainty. Focus on medicine names, dosage amount, unit, frequency, duration, and instructions.\n\n"
-            "Return JSON only. Do not use markdown, code fences, commentary, or trailing text. "
+            "You are an expert clinical pharmacologist and prescription reading specialist in India, skilled at deciphering cursive, difficult, and messy doctor handwriting.\n"
+            "Carefully analyze this handwritten prescription image, paying close attention to both Ayurvedic and modern allopathic formulations.\n\n"
+            "Key patterns to recognize:\n"
+            "- Formulation types: Tab, Cap, Syp, Churna, Vati, Gutika, Guggulu, Kwath, Kashayam, Asava, Arishta, Bhasma, Taila, Avaleha, Ghrita, Rasayana, Lepa.\n"
+            "- Timing and frequency: Medical prescriptions in India use 3-position slots representing Morning - Afternoon - Night (where '1' means take dose and '0' means skip dose):\n"
+            "  * 1-0-1: 1 in Morning, 0 in Afternoon (skip), 1 at Night (Twice daily)\n"
+            "  * 1-1-1: 1 in Morning, 1 in Afternoon, 1 at Night (Three times daily)\n"
+            "  * 1-0-0: 1 in Morning, 0 in Afternoon, 0 at Night (Once daily / Morning)\n"
+            "  * 0-0-1: 0 in Morning, 0 in Afternoon, 1 at Night (Night / Bedtime)\n"
+            "  * OD, BD, TDS, TID, QID, HS, SOS, PRN, stat, a.c. (before food), p.c. (after food).\n"
+            "- Adjuvants (Anupana): with warm water, with milk, with honey, empty stomach.\n\n"
+            "Return JSON only. Do not use markdown, code fences, commentary, or trailing text.\n"
             "Every key must be present. Use empty strings, empty arrays, or 0 when unsure.\n\n"
             "Return only valid JSON with this exact schema:\n"
             "{\n"
@@ -250,21 +270,21 @@ class HandwritingRecognitionService:
             '  "unreadable_parts": [],\n'
             '  "confidence_overall": 0\n'
             "}\n\n"
-            "Recognize abbreviations like OD, BD, TDS, QID, HS, SOS, PRN, stat. "
-            "If dosage details are written outside the medicine line, still attach them when reasonably likely. "
-            "If a medicine is unclear, keep raw_line_text and add a note in unreadable_parts instead of inventing values."
+            "If dosage details are written outside the medicine line, attach them appropriately. "
+            "If a medicine is unclear, preserve what you see in raw_line_text and add a note in unreadable_parts instead of inventing values."
         )
 
     def _build_decoder_retry_prompt(self) -> str:
         return (
-            "Read the prescription image and return a compact JSON object only. "
+            "Read the handwritten medical prescription image and return a compact JSON object only. "
             "No markdown. No prose. No code fences. No explanation.\n\n"
             "Required keys: doctor_name, patient_name, date, medicines, raw_decoded_text, unreadable_parts, confidence_overall.\n"
             "medicines must be an array of objects with keys: medicine_name, dosage, raw_line_text, confidence.\n"
             'dosage must be an object with keys: amount, unit, frequency, duration, instructions.\n\n'
-            "If you are uncertain, keep the field empty rather than guessing.\n"
-            "If you cannot read a line, preserve it in raw_line_text and mention it in unreadable_parts."
+            "Recognize formulations like Tab, Cap, Syp, Churna, Vati, Kwath, Asava, and 3-time frequencies like 1-0-1 (Morning: 1, Afternoon: 0, Night: 1), 1-1-1, 1-0-0, 0-0-1, OD, BD, TDS, HS, SOS.\n"
+            "If you cannot read a line clearly, preserve it in raw_line_text and note it in unreadable_parts."
         )
+
 
     async def _call_gemini_with_image(self, prompt: str, image_data: str, mime_type: str, *, strict_json: bool) -> str:
         if not is_gemini_configured():

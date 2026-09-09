@@ -10,6 +10,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import PatientDashboard from './pages/PatientDashboard';
 import OrderMedicines from './pages/OrderMedicines';
 import OCRDecoderPage from './pages/OCRDecoderPage';
+import DoctorAICopilot from './components/DoctorAICopilot';
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
             </Routes>
           </main>
           <Footer />
+          <DoctorAICopilot />
         </div>
       </BrowserRouter>
     </AuthProvider>

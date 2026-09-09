@@ -1,7 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export default function Footer() {
+  const location = useLocation();
+  if (['/doctor', '/admin'].includes(location.pathname)) {
+    return null;
+  }
   return (
     <footer style={{
       borderTop: '1px solid rgba(255, 255, 255, 0.08)',

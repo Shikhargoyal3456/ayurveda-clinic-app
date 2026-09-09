@@ -142,6 +142,7 @@ from routers.device_check import router as device_check_router
 from app.routers.v2 import router as v2_router
 from app.routers.admin_api import router as admin_api_router
 from app.routers.dashboard_api import router as dashboard_api_router
+from app.routers.case_sheets_api import router as case_sheets_api_router
 
 
 from routes.demo import router as demo_router
@@ -628,6 +629,7 @@ def create_app() -> FastAPI:
     application.include_router(v2_router)
     application.include_router(admin_api_router)
     application.include_router(dashboard_api_router)
+    application.include_router(case_sheets_api_router)
 
 
 

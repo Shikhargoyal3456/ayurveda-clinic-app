@@ -30,7 +30,8 @@ class AIProvider(Enum):
 
 logger = logging.getLogger("ai_provider")
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash").strip() or "gemini-3.6-flash"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip()
 VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
@@ -120,7 +121,7 @@ def ai_budget_fallback_message() -> str:
 
 
 def is_gemini_configured() -> bool:
-    return bool(VERTEX_AI_PROJECT)
+    return bool(GEMINI_API_KEY or VERTEX_AI_PROJECT)
 
 
 def _wait_for_vertex_slot() -> None:
@@ -164,7 +165,20 @@ def _run_vertex_with_backoff(operation, *, operation_name: str) -> Any:
 
 def _get_genai_client() -> genai.Client:
     global _GENAI_CLIENT
-    if _GENAI_CLIENT is not None:
+    with _GENAI_CLIENT_LOCK:
+        if _GENAI_CLIENT is not None:
+            return _GENAI_CLIENT
+        if GEMINI_API_KEY:
+            _GENAI_CLIENT = genai.Client(api_key=GEMINI_API_KEY)
+        elif VERTEX_AI_PROJECT:
+            _GENAI_CLIENT = genai.Client(
+                vertexai=True,
+                project=VERTEX_AI_PROJECT,
+                location=VERTEX_AI_LOCATION,
+                http_options=types.HttpOptions(api_version="v1"),
+            )
+        else:
+            raise RuntimeError("Gemini is not configured. Set GEMINI_API_KEY in .env.")
         return _GENAI_CLIENT
 
 
@@ -181,20 +195,6 @@ def close_genai_client() -> None:
             close_method()
     except Exception:
         logger.debug("Gemini client cleanup skipped during shutdown.", exc_info=True)
-    if not VERTEX_AI_PROJECT:
-        raise RuntimeError("VERTEX_AI_PROJECT is not configured.")
-    with _GENAI_CLIENT_LOCK:
-        if _GENAI_CLIENT is None:
-            _GENAI_CLIENT = genai.Client(
-                vertexai=True,
-                project=VERTEX_AI_PROJECT,
-                location=VERTEX_AI_LOCATION,
-                http_options=types.HttpOptions(api_version="v1"),
-            )
-        return _GENAI_CLIENT
-
-
-GEMINI_API_KEY = ""
 
 
 def build_gemini_part(data: bytes, mime_type: str) -> types.Part:
@@ -203,11 +203,13 @@ def build_gemini_part(data: bytes, mime_type: str) -> types.Part:
 
 def _model_candidates(explicit_model: str | None = None, model_candidates: list[str] | None = None) -> list[str]:
     models: list[str] = []
-    for candidate in [explicit_model, *(model_candidates or []), GEMINI_MODEL]:
+    defaults = [GEMINI_MODEL, "gemini-3.6-flash"]
+    for candidate in [explicit_model, *(model_candidates or []), *defaults]:
         model_name = str(candidate or "").strip()
         if model_name and model_name not in models:
             models.append(model_name)
     return models or [GEMINI_MODEL]
+
 
 
 def generate_gemini_content(

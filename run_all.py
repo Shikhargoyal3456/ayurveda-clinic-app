@@ -42,6 +42,17 @@ def main():
         stderr=None,
     )
 
+    # Wait for FastAPI backend to be ready
+    import socket
+    print("Waiting for FastAPI backend to initialize...")
+    for _ in range(30):
+        try:
+            with socket.create_connection(("127.0.0.1", 8000), timeout=0.5):
+                break
+        except (OSError, ConnectionRefusedError):
+            time.sleep(0.5)
+    print("Backend is ready!")
+
     # 2. Start React Vite Frontend (Port 5173)
     print("\n[2/2] Launching ReactJS Frontend on http://localhost:5173 ...")
     npm_cmd = "npm.cmd" if os.name == "nt" else "npm"

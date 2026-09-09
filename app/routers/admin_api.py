@@ -222,12 +222,14 @@ def get_admin_audit_logs(db: Session = Depends(get_db)):
     logs = db.query(AuditLog).order_by(AuditLog.created_at.desc()).limit(50).all()
     results = []
     for log in logs:
+        username = getattr(log, "username", None) or getattr(log, "actor_role", None) or f"User #{log.user_id or 'System'}"
         results.append({
             "id": log.id,
             "event_type": log.action,
-            "username": log.username or f"User #{log.user_id or 'System'}",
+            "username": username,
             "created_at": log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else "Recent",
         })
+
 
     if not results:
         results = [

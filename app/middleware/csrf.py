@@ -42,7 +42,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             except Exception:
                 pass
             if session_token and token and not secrets.compare_digest(token, session_token):
-                raise HTTPException(status_code=403, detail="Invalid CSRF token")
-
+                from starlette.responses import JSONResponse
+                return JSONResponse(status_code=403, content={"detail": "Invalid CSRF token"})
 
         return await call_next(request)
