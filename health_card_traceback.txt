@@ -1,0 +1,118 @@
+Traceback (most recent call last):
+  File "C:\Projects\ayurveda_project\app\main.py", line 220, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 156, in call_next
+    raise app_exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 141, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 176, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "contextlib.py", line 162, in __exit__
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_utils.py", line 82, in collapse_excgroups
+    raise exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 178, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\app\main.py", line 287, in dispatch
+    return await call_next(request)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 156, in call_next
+    raise app_exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 141, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Projects\ayurveda_project\app\middleware\rate_limiter.py", line 48, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 176, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "contextlib.py", line 162, in __exit__
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_utils.py", line 82, in collapse_excgroups
+    raise exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 178, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\app\middleware\security_headers.py", line 11, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 156, in call_next
+    raise app_exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 141, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 176, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "contextlib.py", line 162, in __exit__
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_utils.py", line 82, in collapse_excgroups
+    raise exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 178, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\app\monitoring.py", line 53, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 156, in call_next
+    raise app_exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\base.py", line 141, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\gzip.py", line 29, in __call__
+    await responder(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\gzip.py", line 126, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\gzip.py", line 46, in __call__
+    await self.app(scope, receive, self.send_with_compression)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\trustedhost.py", line 36, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\routing.py", line 714, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\routing.py", line 734, in app
+    await route.handle(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\routing.py", line 288, in handle
+    await self.app(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\routing.py", line 76, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\routing.py", line 73, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\fastapi\routing.py", line 301, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\fastapi\routing.py", line 214, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\starlette\concurrency.py", line 37, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\anyio\to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        func, args, abandon_on_cancel=abandon_on_cancel, limiter=limiter
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 2641, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Projects\ayurveda_project\.venv\Lib\site-packages\anyio\_backends\_asyncio.py", line 1033, in run
+    result = context.run(func, *args)
+  File "C:\Projects\ayurveda_project\app\routers\patient_health_routes.py", line 64, in health_card_page
+    return render_template(templates, request, "patients/health_card.html", {"doctor": doctor, "patient": patient, "clinic_name": settings.clinic_name, "doctor_name": settings.doctor_name or doctor.full_name or doctor.username, "passport": _payload(passport), "card_url": str(request.url), "qr_url": f"/patient/{patient.id}/health-card/qr", "flash": pop_flash(request), "csrf_token": ensure_csrf_token(request)})
+                                                                                                                                                                       ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Settings' object has no attribute 'doctor_name'[0m

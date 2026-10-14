@@ -136,13 +136,17 @@ from routers.delivery import router as delivery_router
 from routers.debug import router as debug_router
 from routers.dashboard import router as dashboard_router
 from routers.doctor_review import router as doctor_review_router
-from routers.google_auth import router as google_auth_router
+# Google OAuth disabled for beta
+# from routers.google_auth import router as google_auth_router
 from routers.consultation import router as consultation_router
 from routers.device_check import router as device_check_router
 from app.routers.v2 import router as v2_router
 from app.routers.admin_api import router as admin_api_router
 from app.routers.dashboard_api import router as dashboard_api_router
 from app.routers.case_sheets_api import router as case_sheets_api_router
+from app.routers.hospital_admission import router as hospital_admission_router
+from app.routers.emergency_log import router as emergency_log_router
+from app.routers.patient_health_routes import router as patient_health_router
 
 
 from routes.demo import router as demo_router
@@ -595,7 +599,8 @@ def create_app() -> FastAPI:
     application.include_router(audit_router)
     application.include_router(patient_linking_router)
     application.include_router(auth_router)
-    application.include_router(google_auth_router)
+    # Google OAuth disabled for beta
+    # application.include_router(google_auth_router)
     application.include_router(new_frontend_router)
     application.include_router(patients_router)
     application.include_router(patient_tools_router)
@@ -654,6 +659,9 @@ def create_app() -> FastAPI:
     application.include_router(demo_router)
     application.include_router(sales_router)
     application.include_router(statistics_router)
+    application.include_router(hospital_admission_router)
+    application.include_router(emergency_log_router)
+    application.include_router(patient_health_router)
 
     @application.post("/api/ai-chat")
     async def ai_chat(payload: AIChatRequest):

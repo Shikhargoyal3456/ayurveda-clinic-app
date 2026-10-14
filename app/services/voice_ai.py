@@ -1,5 +1,6 @@
 import logging
 import os
+import asyncio
 from pathlib import Path
 
 try:
@@ -85,7 +86,7 @@ def transcribe_audio(audio_file_path: str, language: str = "auto") -> str:
 from app.utils.groq_client import groq_client
 
 
-def structure_case_sheet(raw_transcript: str, patient_name: str) -> dict:
+async def structure_case_sheet(raw_transcript: str, patient_name: str) -> dict:
     system_prompt = "You are an Ayurvedic medical scribe. Return only valid JSON."
     user_prompt = (
         f"Extract all Ayurvedic case sheet fields for patient_name='{patient_name}'. "
@@ -98,7 +99,7 @@ def structure_case_sheet(raw_transcript: str, patient_name: str) -> dict:
     try:
         if groq_client.is_available():
             prompt = f"{system_prompt}\n\n{user_prompt}"
-            raw = groq_client.chat([{"role": "user", "content": prompt}], temperature=0.1, max_tokens=1500)
+            raw = await groq_client.chat([{"role": "user", "content": prompt}], temperature=0.1, max_tokens=1500)
             if raw:
                 import json
                 try:
@@ -109,7 +110,8 @@ def structure_case_sheet(raw_transcript: str, patient_name: str) -> dict:
                 except Exception:
                     pass
         if GEMINI_API_KEY:
-            raw = chat_with_gemini(
+            raw = await asyncio.to_thread(
+                chat_with_gemini,
                 [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
@@ -125,9 +127,9 @@ def structure_case_sheet(raw_transcript: str, patient_name: str) -> dict:
     return {
         "patient_name": patient_name,
         "raw_transcript": raw_transcript,
-        "symptoms": ["Fever", "Cough", "Digestive discomfort"],
-        "diagnosis": "Vata-Kapha imbalance",
-        "medicines": ["Triphala Churna", "Dashmool Kadha"],
-        "treatment_plan": "Rest, warm hydration, light diet for 5 days.",
-        "follow_up": "7 days from today",
+        "symptoms": [],
+        "diagnosis": "",
+        "medicines": [],
+        "treatment_plan": "",
+        "follow_up": "",
     }

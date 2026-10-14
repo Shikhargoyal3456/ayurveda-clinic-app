@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -36,20 +38,35 @@ async def extract_voice_data(payload: dict[str, object] = Body(default={})):
         return JSONResponse({"success": False, "error": "transcript is required"}, status_code=422)
 
     patient_name = str(payload.get("patient_name") or "Patient").strip()
-    structured = structure_case_sheet(transcript, patient_name=patient_name)
+    structured = await structure_case_sheet(transcript, patient_name=patient_name)
+    symptoms = structured.get("symptoms") or []
+    patient_age = structured.get("age")
+    patient_gender = structured.get("gender") or ""
+    if not any(re.search(pattern, transcript, re.IGNORECASE) for pattern in (r"\b\d{1,3}\s*(?:years?\s*old|year-old|yrs?\b)", r"\bage\s*(?:is\s*)?\d{1,3}\b")):
+        patient_age = None
+    if not re.search(r"\b(male|female|man|woman|boy|girl|he|she|his|her)\b", transcript, re.IGNORECASE):
+        patient_gender = ""
+    extracted = {
+        "patient_name": structured.get("patient_name") or patient_name,
+        "age": patient_age,
+        "gender": patient_gender,
+        "symptoms": symptoms,
+        "duration": structured.get("duration") or structured.get("duration_of_illness") or "",
+    }
 
     return {
         "success": True,
+        "extracted": extracted,
         "patient": {
             "name": structured.get("patient_name") or patient_name,
-            "age": structured.get("age", 45),
-            "gender": structured.get("gender", "male"),
+            "age": patient_age,
+            "gender": patient_gender,
             "phone": "",
         },
-        "symptoms": structured.get("symptoms") or ["fever (3 days)", "cough", "sore throat"],
-        "diagnosis": structured.get("diagnosis") or "Vata-Kapha imbalance",
-        "medicines": structured.get("medicines") or ["Triphala Churna", "Dashmool Kadha"],
-        "follow_up": structured.get("follow_up") or "7 days from today",
+        "symptoms": symptoms,
+        "diagnosis": structured.get("diagnosis") or "",
+        "medicines": structured.get("medicines") or [],
+        "follow_up": structured.get("follow_up") or "",
         "transcript": transcript,
         "structured_data": structured,
     }

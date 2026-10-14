@@ -92,6 +92,8 @@ class AyurvedaRAGEngine:
         self._model = None
         self._docs: list[dict[str, Any]] | None = None
         self._faiss_index = None
+        self._tfidf_vectorizer = None
+        self._tfidf_matrix = None
         self._resource_lock = Lock()
         self._ollama_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ollama-call")
         self._memory_cache: dict[str, dict[str, Any]] = {}
@@ -202,6 +204,8 @@ class AyurvedaRAGEngine:
             report = build_vector_store(force=force_rebuild)
             self._docs = None
             self._faiss_index = None
+            self._tfidf_vectorizer = None
+            self._tfidf_matrix = None
             return report
         finally:
             try:
@@ -211,22 +215,30 @@ class AyurvedaRAGEngine:
                 logger.warning("Failed to remove FAISS rebuild lock at %s", lock_path)
 
     def _load_store(self) -> None:
-        if self._docs is not None and self._faiss_index is not None:
+        if self._docs is not None and (self._faiss_index is not None or faiss is None):
             return
 
         with self._resource_lock:
-            if self._docs is not None and self._faiss_index is not None:
+            if self._docs is not None and (self._faiss_index is not None or faiss is None):
                 return
-            if not self._docs_path().exists() or not self._faiss_path().exists():
+            docs_path = self._docs_path()
+            faiss_path = self._faiss_path()
+            if not docs_path.exists() or (faiss is not None and not faiss_path.exists()):
+                if not docs_path.exists() and faiss is None:
+                    raise FileNotFoundError(f"Local RAG metadata is missing: {docs_path}")
                 if self._legacy_docs_path().exists():
                     logger.info("Legacy docs.pkl metadata found; rebuilding vector store metadata as docs.json.")
                 self.prepare(force_rebuild=False)
+            if not docs_path.exists():
+                raise FileNotFoundError(f"Local RAG metadata is missing: {docs_path}")
 
-            self._docs = json.loads(self._docs_path().read_text(encoding="utf-8"))
-            if faiss is None:
-                raise RuntimeError("faiss-cpu is required for retrieval.")
-            self._faiss_index = faiss.read_index(str(self._faiss_path()))
-
+            self._docs = json.loads(docs_path.read_text(encoding="utf-8"))
+            if faiss is not None and faiss_path.exists():
+                self._faiss_index = faiss.read_index(str(faiss_path))
+            else:
+                # docs.json also supports a local TF-IDF search when FAISS or
+                # the sentence-transformer embedding model is not installed.
+                self._faiss_index = None
 
     def warm_up(self) -> dict[str, Any]:
         ensure_runtime_dirs()
@@ -321,36 +333,79 @@ class AyurvedaRAGEngine:
             "model": GROQ_MODEL,
         }
 
+    def _retrieve_local_tfidf(self, query: str, docs: list[dict[str, Any]], top_k: int) -> list[RetrievalResult]:
+        with self._resource_lock:
+            if self._tfidf_vectorizer is None or self._tfidf_matrix is None:
+                texts = [str(item.get("text", "")) for item in docs]
+                if not any(text.strip() for text in texts):
+                    return []
+                vectorizer = TfidfVectorizer(
+                    ngram_range=(1, 2),
+                    max_features=50000,
+                    sublinear_tf=True,
+                )
+                matrix = vectorizer.fit_transform(texts)
+                self._tfidf_vectorizer = vectorizer
+                self._tfidf_matrix = matrix
+            vectorizer = self._tfidf_vectorizer
+            matrix = self._tfidf_matrix
+
+        query_vector = vectorizer.transform([query])
+        scores = (matrix @ query_vector.T).toarray().ravel()
+        limit = min(max(1, int(top_k or self._top_k())), len(docs))
+        indices = scores.argsort()[-limit:][::-1]
+        results: list[RetrievalResult] = []
+        for index in indices:
+            score = float(scores[int(index)])
+            if score < 0.03:
+                continue
+            item = docs[int(index)]
+            results.append(
+                RetrievalResult(
+                    source_file=str(item.get("source_file", "local Samhita corpus")),
+                    text=str(item.get("text", "")),
+                    score=score,
+                    chunk_id=str(item.get("chunk_id", index)),
+                )
+            )
+        return results
+
     def retrieve(self, query: str, top_k: int = 3) -> list[RetrievalResult]:
         try:
             self._load_store()
             docs = self._docs or []
             if not docs:
                 return []
-            limited_top_k = min(top_k or self._top_k(), len(docs))
-            query_vector = self._model_instance().encode(
-                [query],
-                convert_to_numpy=True,
-                normalize_embeddings=True,
-                show_progress_bar=False,
-            )
-            scores, indices = self._faiss_index.search(np.asarray(query_vector, dtype="float32"), limited_top_k)
-            results: list[RetrievalResult] = []
-            for score, index in zip(scores[0], indices[0], strict=False):
-                if index < 0 or index >= len(docs):
-                    continue
-                item = docs[int(index)]
-                results.append(
-                    RetrievalResult(
-                        source_file=str(item["source_file"]),
-                        text=str(item["text"]),
-                        score=float(score),
-                        chunk_id=str(item.get("chunk_id", index)),
+            if self._faiss_index is not None:
+                try:
+                    limited_top_k = min(top_k or self._top_k(), len(docs))
+                    query_vector = self._model_instance().encode(
+                        [query],
+                        convert_to_numpy=True,
+                        normalize_embeddings=True,
+                        show_progress_bar=False,
                     )
-                )
-            return results
+                    scores, indices = self._faiss_index.search(np.asarray(query_vector, dtype="float32"), limited_top_k)
+                    results: list[RetrievalResult] = []
+                    for score, index in zip(scores[0], indices[0], strict=False):
+                        if index < 0 or index >= len(docs):
+                            continue
+                        item = docs[int(index)]
+                        results.append(
+                            RetrievalResult(
+                                source_file=str(item["source_file"]),
+                                text=str(item["text"]),
+                                score=float(score),
+                                chunk_id=str(item.get("chunk_id", index)),
+                            )
+                        )
+                    if results:
+                        return results
+                except Exception as exc:
+                    logger.warning("FAISS/embedding retrieval unavailable; using local TF-IDF: %s", exc)
+            return self._retrieve_local_tfidf(query, docs, top_k)
         except Exception as exc:
-            logger.exception("FAISS retrieval failed: %s", exc)
+            logger.exception("Samhita retrieval failed: %s", exc)
             return []
 
     def _build_prompt(

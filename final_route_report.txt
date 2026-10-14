@@ -1,0 +1,28 @@
+# Route Verification
+
+Date: 2026-10-15. FastAPI TestClient with `raise_server_exceptions=False`; rendered templates were checked by response status. Authentication dependencies were overridden with an existing doctor/admin test context for clinical and hospital mutations. No 500 responses occurred in the requested sweep. A separate Uvicorn startup check served `GET /api` with HTTP 200.
+
+| Method | Route | Status | Result |
+| --- | --- | ---: | --- |
+| GET | `/new` | 200 | PASS |
+| GET | `/auth/login` | 200 | PASS |
+| GET | `/auth/signup` | 200 | PASS |
+| GET | `/dashboard` | 303 | PASS, authentication redirect |
+| GET | `/new/doctor` | 303 | PASS, authentication redirect |
+| GET | `/consultation/voice` | 200 | PASS |
+| GET | `/hospital/list` | 200 | PASS |
+| GET | `/hospital/admission` | 200 | PASS |
+| GET | `/hospital/api/hospitals` | 200 | PASS, five hospitals |
+| GET | `/api` | 200 | PASS |
+| POST | `/api/samhita/analyze` | 200 | PASS with authenticated doctor and fallback provider |
+| POST | `/api/voice/extract` | 200 | PASS |
+| POST | `/api/voice/transcribe` | 200 | Handler completed; synthetic audio placeholder could not be transcribed because Groq was unreachable |
+| POST | `/api/ai-chat` | 200 | PASS |
+| POST | `/hospital/api/admission/request` | 200 | PASS, authenticated admin test context |
+| PUT | `/hospital/api/admission/{id}` (discharge) | 200 | PASS |
+| PUT | `/hospital/api/admission/{id}` (repeat discharge) | 200 | PASS, idempotent |
+
+Hospital bed check on Apollo: 44 before request, 43 after request, 44 after discharge, and still 44 after repeated discharge. The API listed five hospitals. A separate anonymous POST to the hospital request route was not used in this authenticated end-to-end flow.
+
+
+

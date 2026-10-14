@@ -93,7 +93,7 @@
                         <h2><i class="fas fa-book-open"></i> Samhita Analysis</h2>
                         <p class="copilot-desc">Compare symptoms with classical Ayurvedic reasoning.</p>
                     </div>
-                    <button id="analyze-samhita-btn" class="btn-secondary" type="button">
+                    <button id="samhita-analyze-btn" class="btn-secondary" type="button">
                         <i class="fas fa-sparkles"></i> Analyze with Samhita
                     </button>
                 </div>
@@ -273,6 +273,65 @@ function getCSRFToken() {
     }
     return "";
 }
+
+function displaySamhitaResults(analysis) {
+    const value = (key) => analysis[key] || "No details returned for this section.";
+    const text = (id, content) => { document.getElementById(id).textContent = content; };
+    text("dosha-analysis", value("dosha_analysis"));
+    text("diet-favor", value("dietary_recommendations"));
+    text("diet-avoid", "See dietary recommendations above; confirm restrictions with the treating clinician.");
+    text("meal-plan", value("dietary_recommendations"));
+    text("herbal-formulations", value("herbal_formulations"));
+    text("lifestyle-regimen", value("lifestyle_regimen"));
+    text("treatment-recommendations", value("herbal_formulations"));
+    text("classical-reference", value("classical_reference"));
+    document.getElementById("samhita-results").classList.remove("hidden");
+}
+
+async function analyzeWithSamhita() {
+    const button = document.getElementById("samhita-analyze-btn");
+    const loading = document.getElementById("samhita-loading");
+    const originalLabel = button.innerHTML;
+    const symptoms = document.getElementById("symptoms").value.trim();
+    if (!symptoms) {
+        console.error("Samhita analysis requires symptoms.");
+        document.getElementById("samhita-results").classList.remove("hidden");
+        document.getElementById("dosha-analysis").textContent = "Enter patient symptoms before analysis.";
+        return;
+    }
+    button.disabled = true;
+    button.textContent = "⏳ Analyzing...";
+    loading.classList.remove("hidden");
+    try {
+        const response = await fetch("/api/samhita/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRF-Token": getCSRFToken() },
+            body: JSON.stringify({
+                symptoms,
+                age: document.getElementById("patientAge").value || null,
+                gender: document.getElementById("patientGender").value || "Unknown",
+                prakriti: document.getElementById("prakriti")?.value || "Unknown",
+                agni: document.getElementById("agni")?.value || "Unknown",
+                history: "None"
+            })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.success) throw new Error(payload.detail || payload.error || "Samhita request failed: " + response.status);
+        displaySamhitaResults(payload.analysis || {});
+    } catch (error) {
+        console.error("Samhita analysis failed:", error);
+        document.getElementById("samhita-results").classList.remove("hidden");
+        document.getElementById("dosha-analysis").textContent = "Analysis failed: " + error.message;
+    } finally {
+        loading.classList.add("hidden");
+        button.disabled = false;
+        button.innerHTML = originalLabel;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("samhita-analyze-btn")?.addEventListener("click", analyzeWithSamhita);
+});
 
 function detectLanguage(text) {
     if (/[\u0900-\u097F]/.test(text)) return "hi";

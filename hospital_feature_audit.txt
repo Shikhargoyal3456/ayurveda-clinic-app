@@ -1,0 +1,27 @@
+Hospital Admission feature audit
+Date: 2026-10-15
+Project: C:\Users\goyal\OneDrive\Desktop\ayurveda_project
+
+Requested file/model check before implementation:
+- app/models.py: ABSENT; this project uses the app/models/ package.
+- Hospital model in Python source: ABSENT.
+- HospitalAdmission model in Python source: ABSENT.
+- app/routers/hospital_admission.py: ABSENT.
+- app/routers/hospital_admission_ai.py: ABSENT.
+- routers/hospital_admission.py: ABSENT.
+- templates/hospital/list.html: ABSENT.
+- templates/hospital/admission.html: ABSENT.
+- scripts/seed_hospitals.py: ABSENT.
+
+Existing database inspection:
+- hospitals and hospital_admissions tables already existed, although no corresponding models/routes were present in source.
+- The legacy hospital_admissions table was missing emergency and required doctor_id, created_at, and updated_at without DB defaults.
+- Five requested sample hospital records already existed; seed script leaves existing availability counts unchanged.
+
+Integration points:
+- SQLAlchemy Base and init_db are in app/database.py.
+- Shared ORM models are in app/models/core.py and exported by app/models/__init__.py.
+- app/main.py registers routers in create_app().
+- templates/base.html exposes the page block and CSRF token meta tag.
+
+Implementation added the models and exported them, added an idempotent emergency-column compatibility step, registered a hospital router, created the listing/admission pages, and added a seed script. Admission mutation and status endpoints require a signed-in doctor/admin; doctor access is limited to their patients and admissions.

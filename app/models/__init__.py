@@ -3,6 +3,8 @@
 from app.models.core import (
     Doctor,
     Patient,
+    Hospital,
+    HospitalAdmission,
     CaseSheet,
     Appointment,
     PatientQuery,
@@ -27,6 +29,8 @@ from app.models.core import (
 __all__ = [
     "Doctor",
     "Patient",
+    "Hospital",
+    "HospitalAdmission",
     "CaseSheet",
     "Appointment",
     "PatientQuery",

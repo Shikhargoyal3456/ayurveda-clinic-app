@@ -1,0 +1,27 @@
+Route verification against the live Uvicorn server at http://127.0.0.1:8000 (redirects not followed). All requested route checks completed without HTTP 500s. Protected routes were verified separately with authenticated TestClient dependencies.
+
+GET  /new                                  200
+GET  /auth/login                           200
+GET  /dashboard                            303 (expected auth redirect)
+GET  /new/doctor                           303 (expected auth redirect)
+GET  /consultation/voice                   200
+GET  /hospital/list                        200
+GET  /hospital/admission                   200
+GET  /hospital/api/hospitals               200 (5 hospitals)
+GET  /api                                  200
+POST /api/voice/extract                    200, success=true (transcript field)
+POST /api/voice/transcribe                 200, success=true (multipart field=file, valid WAV)
+POST /api/voice/transcribe (no upload)     400, clear required-file response
+POST /api/ai-chat                          200
+POST /api/samhita/analyze (anonymous)      303 (expected auth redirect)
+POST /api/samhita/analyze (doctor session)  200, success=true, provider=groq, rag_used=true, 5 source entries, all 5 analysis sections populated
+POST /hospital/api/admission/request       401 (expected without clinician/admin session)
+POST /hospital/api/admission/request       200 (admin test session)
+PUT  /hospital/api/admission/{id} discharge 200
+PUT  /hospital/api/admission/{id} repeat discharge 200 (idempotent)
+
+Hospital bed count verified with fresh database sessions: 44 before request, 43 after request, 44 after discharge, and 44 after the repeated discharge. The test admission remains as a discharged audit record in the copied database. No 500 responses observed in the requested checks.
+
+Database verification: runtime SQLite file was C:\Projects\ayurveda_project\ayurveda.db; settings, .env, engine, Alembic fallback, and seed scripts resolve to the same root database from the project root. Schema version 2 was already compatible.
+
+Nonfatal environment warnings: SQLAlchemy ignores the SQLite `cache` query option without `uri=true`; PyMuPDF's `fitz` import is deprecated; `sentence_transformers` and FAISS are unavailable, and Samhita RAG successfully used the local TF-IDF fallback over vector_store/docs.json.

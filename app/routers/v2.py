@@ -38,6 +38,31 @@ def v2_login_page(request: Request):
     return RedirectResponse(url="/auth/login", status_code=303)
 
 
+@router.post("/login")
+def v2_login_submit():
+    return RedirectResponse(url="/auth/login", status_code=303)
+
+
+@router.get("/dashboard")
+def v2_dashboard_alias():
+    return RedirectResponse(url="/dashboard", status_code=303)
+
+
+@router.get("/patients")
+def v2_patients_alias():
+    return RedirectResponse(url="/patients", status_code=303)
+
+
+@router.get("/patients/{patient_id}")
+def v2_patient_alias(patient_id: int):
+    return RedirectResponse(url=f"/emr/patient/{patient_id}", status_code=303)
+
+
+@router.get("/logout")
+def v2_logout_alias():
+    return RedirectResponse(url="/auth/logout", status_code=303)
+
+
 def _require_admin(request: Request, db: Session = Depends(get_db)) -> Doctor:
     doctor = get_current_doctor(request, db)
     if doctor is None:

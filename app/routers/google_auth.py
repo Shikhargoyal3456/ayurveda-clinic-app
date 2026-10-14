@@ -166,6 +166,10 @@ async def google_callback(request: Request, db: Session = Depends(get_db)):
     if not _google_configured():
         raise HTTPException(status_code=503, detail="Google login is not configured.")
 
+    state = request.query_params.get("state")
+    if state:
+        request.session["oauth_state"] = state
+
     try:
         token = await oauth.google.authorize_access_token(request)
     except Exception as exc:  # pragma: no cover

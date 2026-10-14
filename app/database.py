@@ -139,6 +139,7 @@ def ensure_schema_compatibility() -> dict[str, object]:
 
 def _run_database_startup() -> None:
     Base.metadata.create_all(bind=engine)
+    _ensure_hospital_admission_compatibility()
     _ensure_feature_schema()
     _ensure_compatibility_views()
     _ensure_admin_seed_data()
@@ -150,6 +151,24 @@ def _run_database_startup() -> None:
     compatibility = ensure_schema_compatibility()
     verify_schema()
     logger.info("Database ready. Schema compatibility: %s", compatibility)
+
+
+def _ensure_hospital_admission_compatibility() -> None:
+    """Add columns required by the mapped hospital model to older local schemas."""
+    inspector = inspect(engine)
+    if not inspector.has_table("hospital_admissions"):
+        return
+    columns = {column["name"] for column in inspector.get_columns("hospital_admissions")}
+    if "emergency" not in columns:
+        default = "FALSE" if engine.dialect.name == "postgresql" else "0"
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    "ALTER TABLE hospital_admissions "
+                    f"ADD COLUMN emergency BOOLEAN NOT NULL DEFAULT {default}"
+                )
+            )
+        logger.info("Added emergency compatibility column to hospital_admissions.")
 
 
 def _activate_sqlite_fallback(exc: Exception) -> None:
@@ -170,7 +189,7 @@ def _activate_sqlite_fallback(exc: Exception) -> None:
 
 
 def init_db() -> None:
-    from app.models import Appointment, CaseSheet, ConsultationMetric, Doctor, DoctorActivityLog, Patient, PatientQuery  # noqa: F401
+    from app.models import Appointment, CaseSheet, ConsultationMetric, Doctor, DoctorActivityLog, Hospital, HospitalAdmission, Patient, PatientQuery  # noqa: F401
     from app.models import BillingCode, DietaryRecommendation, HerbalFormula, SamhitaAnalysis, TelemedicineSession, TongueAnalysis  # noqa: F401
     from models.ai_features import AIConversationHistory, AIPrediction, AIPrescriptionScan, MedicineInfoCache  # noqa: F401
     from models.emr import (  # noqa: F401

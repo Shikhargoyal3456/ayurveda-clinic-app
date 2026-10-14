@@ -1,6 +1,6 @@
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -59,6 +59,44 @@ class Patient(Base):
     patient_queries: Mapped[list["PatientQuery"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     pending_reviews: Mapped[list["PendingReview"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
     samhita_analyses: Mapped[list["SamhitaAnalysis"]] = relationship(back_populates="patient", cascade="all, delete-orphan")
+
+
+class Hospital(Base):
+    __tablename__ = "hospitals"
+    __table_args__ = {"extend_existing": True}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
+    address: Mapped[str] = mapped_column(Text, default="")
+    city: Mapped[str] = mapped_column(String(100), default="", index=True)
+    phone: Mapped[str] = mapped_column(String(20), default="")
+    email: Mapped[str] = mapped_column(String(100), default="")
+    bed_capacity: Mapped[int] = mapped_column(Integer, default=0)
+    available_beds: Mapped[int] = mapped_column(Integer, default=0)
+    emergency_available: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class HospitalAdmission(Base):
+    __tablename__ = "hospital_admissions"
+    __table_args__ = {"extend_existing": True}
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    patient_id: Mapped[int] = mapped_column(ForeignKey("patients.id"), index=True)
+    doctor_id: Mapped[int | None] = mapped_column(ForeignKey("doctors.id"), nullable=True, index=True)
+    hospital_id: Mapped[int] = mapped_column(ForeignKey("hospitals.id"), index=True)
+    admission_type: Mapped[str] = mapped_column(String(50), default="planned")
+    diagnosis: Mapped[str] = mapped_column(Text, default="")
+    reason_for_admission: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
+    bed_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    ward: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    emergency: Mapped[bool] = mapped_column(Boolean, default=False)
+    admission_requested_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    admitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    discharged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
 class CaseSheet(Base):

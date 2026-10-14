@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Hospital Admission - KASH AI{% endblock %}
+{% block page %}
+<section class="admission-page">
+    <a class="admission-back" href="/hospital/list">← All hospitals</a>
+    <div class="admission-card">
+        <p class="admission-eyebrow">CARE COORDINATION</p>
+        <h1>Request a hospital admission</h1>
+        <p class="admission-intro">Submit the patient and hospital details. The request will reserve one available bed.</p>
+        <form id="admission-form">
+            <label for="patient_id">Patient ID</label>
+            <input id="patient_id" name="patient_id" type="number" min="1" value="{{ patient.id if patient else '' }}" required>
+
+            <label for="hospital_id">Hospital</label>
+            <select id="hospital_id" name="hospital_id" required {% if not hospitals %}disabled{% endif %}>
+                <option value="">Choose a hospital</option>
+                {% for hospital in hospitals %}
+                <option value="{{ hospital.id }}" {% if hospital.available_beds <= 0 %}disabled{% endif %}>{{ hospital.name }} · {{ hospital.city }} · {{ hospital.available_beds }} beds{% if hospital.available_beds <= 0 %} (full){% endif %}</option>
+                {% endfor %}
+            </select>
+
+            <label for="reason">Reason for admission</label>
+            <textarea id="reason" name="reason" rows="4" maxlength="4000" required></textarea>
+
+            <label for="diagnosis">Diagnosis <span>(optional)</span></label>
+            <input id="diagnosis" name="diagnosis" type="text" maxlength="4000">
+
+            <label class="admission-check"><input id="emergency" name="emergency" type="checkbox"> Emergency admission</label>
+            <button id="admission-submit" type="submit" {% if not hospitals %}disabled{% endif %}>Submit request</button>
+        </form>
+        <div id="admission-result" role="status" aria-live="polite"></div>
+    </div>
+</section>
+<style>
+.admission-page{max-width:760px;margin:0 auto;padding:34px 22px 64px}.admission-back{display:inline-block;margin-bottom:18px;color:#176b4c;font-weight:700}.admission-card{padding:clamp(22px,5vw,42px);border:1px solid #dfe9e4;border-radius:20px;background:#fff;box-shadow:0 16px 45px rgba(26,66,48,.08)}.admission-eyebrow{margin:0;color:#47866d;font-size:.75rem;letter-spacing:.12em;font-weight:700}.admission-card h1{margin:7px 0;font-size:clamp(1.65rem,4vw,2.2rem)}.admission-intro{margin:0 0 24px;color:#66766f;line-height:1.6}.admission-card form{display:grid;gap:9px}.admission-card label{margin-top:7px;font-size:.9rem;font-weight:700;color:#263b31}.admission-card label span{font-weight:400;color:#7b8982}.admission-card input:not([type=checkbox]),.admission-card select,.admission-card textarea{width:100%;padding:12px;border:1px solid #d7e2dc;border-radius:10px;background:#fbfdfc;color:#20342b}.admission-card textarea{resize:vertical}.admission-check{display:flex;align-items:center;gap:9px}.admission-card button{margin-top:14px;padding:13px 16px;border:0;border-radius:10px;background:#176b4c;color:white;font-weight:700;cursor:pointer}.admission-card button:disabled{opacity:.55;cursor:not-allowed}#admission-result{margin-top:16px;white-space:pre-wrap;color:#33483d;line-height:1.6}.admission-whatsapp{display:inline-block;margin-top:8px;color:#176b4c;font-weight:700}
+</style>
+<script>
+document.getElementById("admission-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = document.getElementById("admission-submit");
+    const result = document.getElementById("admission-result");
+    button.disabled = true;
+    button.textContent = "Submitting…";
+    result.textContent = "";
+    try {
+        const response = await fetch("/hospital/api/admission/request", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || ""
+            },
+            body: JSON.stringify({
+                patient_id: Number(document.getElementById("patient_id").value),
+                hospital_id: Number(document.getElementById("hospital_id").value),
+                reason: document.getElementById("reason").value.trim(),
+                diagnosis: document.getElementById("diagnosis").value.trim(),
+                emergency: document.getElementById("emergency").checked
+            })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.detail || data.error || "Could not submit the admission request.");
+        result.textContent = `Request #${data.admission_id} submitted with status ${data.status}. ${data.remaining_beds} beds remain available.`;
+        if (data.whatsapp_url) {
+            const link = document.createElement("a");
+            link.className = "admission-whatsapp";
+            link.href = data.whatsapp_url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = "Open WhatsApp notification";
+            result.append(document.createElement("br"), link);
+        }
+    } catch (error) {
+        console.error("Hospital admission request failed:", error);
+        result.textContent = error.message;
+    } finally {
+        button.disabled = false;
+        button.textContent = "Submit request";
+    }
+});
+</script>
+{% endblock %}

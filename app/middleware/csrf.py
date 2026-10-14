@@ -7,8 +7,6 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
         super().__init__(app)
         self.excluded_paths = [
-            "/auth/google/login",
-            "/auth/google/callback",
             "/auth/login",
             "/auth/signup",
             "/healthz",

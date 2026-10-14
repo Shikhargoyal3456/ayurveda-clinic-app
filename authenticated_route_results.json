@@ -1,0 +1,189 @@
+[
+  {
+    "flow": "signup",
+    "status": 303,
+    "doctor_created": true
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/new/doctor",
+    "status": 303
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/consultation/voice",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/patients",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/appointments",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/followups",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/hospital/list",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/hospital/admission",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/emr/doctor-dashboard",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/emr/patient-registry",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/emr/lab-dashboard",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/analytics",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/payments/daily",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/emergency-log",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/emergency-log/export",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/patient/16/health-passport",
+    "status": 200
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/patient/16/health-card",
+    "status": 200,
+    "verification": "authenticated retest after optional setting fix"
+  },
+  {
+    "flow": "authenticated_route",
+    "path": "/patient/16/health-card/qr",
+    "status": 200
+  },
+  {
+    "flow": "admission_request",
+    "status": 200,
+    "detail": null,
+    "created": true
+  },
+  {
+    "flow": "admission_status",
+    "status": 200
+  },
+  {
+    "flow": "admission_discharge",
+    "status": 200,
+    "available_beds": 44
+  },
+  {
+    "flow": "manual_login",
+    "status": 303,
+    "location": "/new/dashboard",
+    "csrf_found": true
+  },
+  {
+    "flow": "login_route",
+    "path": "/new/doctor",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/consultation/voice",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/patients",
+    "status": 303
+  },
+  {
+    "flow": "login_route",
+    "path": "/appointments",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/followups",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/hospital/list",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/emr/doctor-dashboard",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/emr/patient-registry",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/emr/lab-dashboard",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/analytics",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/payments/daily",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/emergency-log",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/emergency-log/export",
+    "status": 200
+  },
+  {
+    "flow": "login_route",
+    "path": "/v2/dashboard",
+    "status": 303
+  },
+  {
+    "flow": "login_route",
+    "path": "/v2/patients",
+    "status": 303
+  }
+]

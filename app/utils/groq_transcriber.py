@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 from pathlib import Path
@@ -19,7 +20,11 @@ load_dotenv()
 class GroqTranscriber:
     def __init__(self) -> None:
         self.api_key = os.getenv("GROQ_API_KEY", "").strip()
-        self.client = Groq(api_key=self.api_key) if Groq is not None and self.api_key else None
+        self.client = (
+            Groq(api_key=self.api_key, max_retries=0, timeout=15.0)
+            if Groq is not None and self.api_key
+            else None
+        )
         self.model = "whisper-large-v3-turbo"
 
     def is_available(self) -> bool:
@@ -46,8 +51,8 @@ class GroqTranscriber:
                 )
 
             return str(response).strip() or None
-        except Exception as exc:  # pragma: no cover
-            print(f"Transcription error: {exc}")
+        except Exception:  # pragma: no cover
+            logging.getLogger(__name__).exception("Groq Whisper transcription failed")
             return None
         finally:
             if tmp_path and os.path.exists(tmp_path):

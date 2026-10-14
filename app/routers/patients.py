@@ -265,6 +265,11 @@ async def ai_assistant_query(
     return JSONResponse({"success": True, "data": answer})
 
 
+@router.get("/demo", include_in_schema=False)
+def demo_page_redirect():
+    return RedirectResponse(url="/investor-demo", status_code=303)
+
+
 # FROZEN: not needed for clinic pilot v1
 # @router.get("/demo")
 # def demo_page(

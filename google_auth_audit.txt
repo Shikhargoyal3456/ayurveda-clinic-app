@@ -1,0 +1,36 @@
+Google OAuth Audit - KASH AI
+Generated: 2026-10-15
+Scope: application Python/Jinja sources only; virtual environments and node_modules excluded. No secret values are included.
+
+Python files with OAuth-related code or references:
+- app/main.py: formerly imported and registered app.routers.google_auth; both registration lines are now removed.
+- app/routers/google_auth.py: OAuth implementation remains on disk but is no longer imported or registered.
+- app/config.py: retains google_client_id, google_client_secret, and google_redirect_uri settings and environment lookups as requested. No google_metadata_url setting found.
+- app/models/user.py: retains User.google_id field as requested.
+- app/database.py: retains compatibility migration/reference for users.google_id as requested.
+- app/middleware/csrf.py: OAuth-only CSRF exemptions were removed; manual auth exemptions remain.
+- app/routers/auth.py: removed one Google CTA from generated legacy login HTML; manual login code remains.
+
+Templates that rendered Google sign-in/signup buttons before removal:
+- templates/auth/login.html
+- templates/auth/signup.html
+- templates/auth/portal_register.html
+- templates/login.html
+- templates/signup.html
+- templates/new_login.html
+- templates/new_signup.html
+All listed buttons and OAuth-only client-side links were removed. templates/auth/google_choose_role.html remains on disk but is unreachable because its router is not registered.
+
+Configuration references retained:
+- app/config.py: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI / google_redirect_uri.
+- .env: OAuth variables remain untouched; values intentionally omitted.
+- No google_metadata_url reference found.
+
+Routes formerly declared by app/routers/google_auth.py under /auth/google:
+- GET /auth/google/login
+- GET /auth/google/callback
+- GET /auth/google/choose-role
+- POST /auth/google/complete-signup
+The router is no longer registered by app.main.
+
+Manual login/signup/logout route implementations were not modified. User.google_id and database compatibility code were not modified. Hospital, AI, RAG, and Samhita implementation files were not modified for this task.

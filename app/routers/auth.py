@@ -297,11 +297,6 @@ def _render_smart_login_page(csrf_token: str, preferred_role: str = "", flash: d
                 <a href="/auth/forgot-password" class="forgot-link">Forgot Password?</a>
             </div>
             <button type="submit" class="login-btn">Login</button>
-            <div class="divider"><span>or</span></div>
-            <a class="guest-btn" href="/auth/google/login{('?role=' + safe_role) if safe_role else ''}" style="background:#fff;border:1px solid #dbe3ef;color:#0f172a;">
-                <span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#fff;border:1px solid #e2e8f0;font-weight:800;color:#4285f4;">G</span>
-                <span style="margin-left:10px;">Continue with Google</span>
-            </a>
             <a class="guest-btn" href="/">Continue as Guest</a>
         </form>
         <div class="quick-portal-grid">
@@ -879,6 +874,7 @@ def signup_page(request: Request, db: Session = Depends(get_db)):
     )
 
 
+@router.post("/auth/signup")
 @router.post("/signup")
 @router.post("/register")
 def signup(

@@ -1,0 +1,90 @@
+SQLAlchemy model and database table audit
+Generated: 2026-10-15
+
+Model classes registered: 73
+
+AIConversationHistory: ai_conversation_history
+AIFeedback: ai_feedback
+AILog: ai_logs
+AILog: ai_logs
+AIPrediction: ai_predictions
+AIPrescriptionScan: ai_prescriptions_scanned
+Appointment: appointments
+AuditLog: audit_logs
+AyurTermCategory: ayur_term_categories
+AyurvedicTerm: ayurvedic_terms
+BillingCode: billing_codes
+CaseSheet: case_sheets
+ClinicSubscription: clinic_subscriptions
+ConsultationMetric: consultation_metrics
+ConsultationSession: consultation_sessions
+DeliveryPartner: delivery_partners
+DeliveryProfile: delivery_profiles
+DeliveryProfile: delivery_profiles
+DeviceLog: device_logs
+DietaryRecommendation: dietary_recommendations
+DoctorActivityLog: doctor_activity_log
+DoctorProfile: doctor_profiles
+DoctorProfile: doctor_profiles
+Doctor: doctors
+EMRAssessment: emr_assessments
+EMRAuditLog: emr_audit_logs
+EMRConsentForm: emr_consent_forms
+EMRConsultation: emr_consultations
+EMRLabOrder: emr_lab_orders
+EMROutcome: emr_outcomes
+EMRPatientProfile: emr_patient_profiles
+EMRPrescription: emr_prescriptions
+EMRVital: emr_vitals
+HerbalFormula: herbal_formulas
+HospitalAdmission: hospital_admissions
+Hospital: hospitals
+LabProfile: lab_profiles
+LabProfile: lab_profiles
+LabStore: lab_stores
+MedicineInfoCache: medicine_info_cache
+MedicineOrder: medicine_orders
+MedicineRequest: medicine_requests
+Medicine: medicines
+MasterMedicine: medicines_master
+OrderDelivery: order_deliveries
+Outcome: outcomes
+PatientAccountLink: patient_account_links
+PatientCarePlan: patient_care_plans
+PatientProfile: patient_profiles
+PatientProfile: patient_profiles
+PatientQuery: patient_queries
+PatientSamhitaQuery: patient_samhita_queries
+Patient: patients
+Payment: payments
+PendingReview: pending_reviews
+Pharmacy: pharmacies
+PharmacyInventory: pharmacy_inventory
+PharmacyProfile: pharmacy_profiles
+PharmacyProfile: pharmacy_profiles
+PharmacyStore: pharmacy_stores
+Prescription: prescriptions
+SamhitaAnalysis: samhita_analyses
+StockAdjustment: stock_adjustments
+StockAlert: stock_alerts
+SubscriptionUsage: subscription_usage
+Supplier: suppliers
+TelemedicineSession: telemedicine_sessions
+TongueAnalysis: tongue_analyses
+UserProfile: user_profiles
+UserProfile: user_profiles
+User: users
+User: users
+VoiceTranscript: voice_transcripts
+
+Requested AI tables:
+ai_conversation_history: PRESENT
+  columns: id, user_id, session_id, message, response, intent, created_at
+ai_predictions: PRESENT
+  columns: id, prediction_type, entity_id, prediction_data, accuracy, created_at
+samhita_analyses: PRESENT
+  columns: id, patient_id, consultation_id, symptoms, age, gender, prakriti, agni, history, dosha_analysis, dietary_recommendations, herbal_formulations, lifestyle_regimen, treatment_recommendations, follow_up_plan, classical_reference, raw_response, created_at, updated_at
+tongue_analyses: PRESENT
+  columns: id, patient_id, image_url, analysis_text, prakriti_prediction, created_at
+voice_transcripts: PRESENT
+  columns: id, session_id, transcript, timestamp, extracted_data

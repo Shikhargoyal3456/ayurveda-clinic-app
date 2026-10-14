@@ -35,7 +35,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 VERTEX_AI_PROJECT = os.getenv("VERTEX_AI_PROJECT", os.getenv("GOOGLE_CLOUD_PROJECT", "")).strip()
 VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1").strip() or "us-central1"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 AI_TIMEOUT = int(os.getenv("AI_TIMEOUT", "30"))
 _AI_SPEND_LOCK = Lock()
 _AI_SPEND_LEDGER = BASE_DIR / "logs" / "ai_spend_guard.json"
@@ -121,7 +121,18 @@ def ai_budget_fallback_message() -> str:
 
 
 def is_gemini_configured() -> bool:
-    return bool(GEMINI_API_KEY or VERTEX_AI_PROJECT)
+    # A Vertex project alone does not provide Application Default Credentials.
+    # Avoid probing ADC on each request; Google auth discovery may block on
+    # network metadata endpoints. The project path is enabled only when the
+    # runtime explicitly supplies a credentials file or opted-in ADC.
+    if GEMINI_API_KEY:
+        return True
+    if not VERTEX_AI_PROJECT:
+        return False
+    return bool(
+        os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+        or os.getenv("GOOGLE_ADC_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+    )
 
 
 def _wait_for_vertex_slot() -> None:

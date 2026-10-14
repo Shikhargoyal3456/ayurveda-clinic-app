@@ -1,0 +1,23 @@
+# AI Feature Verification
+
+Date: 2026-10-15
+Environment: `.venv.rebuilt` (Python 3.13.12, dependencies installed from `requirements.txt`). The original `.venv` was a OneDrive reparse-point tree with no valid `pyvenv.cfg`; removing it recursively hung. A complete clean environment is available at `.venv.rebuilt` and was used for all imports and checks. The old tree was retained to avoid damaging OneDrive-managed data.
+
+The route checks used FastAPI TestClient. The clinical analysis routes were run with the existing doctor dependency overridden for an authenticated test context. AI provider calls were stubbed unavailable for deterministic route/fallback verification. A separate direct Groq request was attempted and failed with Windows `WinError 10013` (outbound socket access denied); provider-backed output could not be verified from this host. No valid audio or tongue photo fixture was available. `/api/voice/transcribe` was exercised with a synthetic multipart WAV placeholder; the route returned HTTP 200 with `success=false` because the Groq transcription provider was unreachable. Tongue analysis was exercised with text input through the alias route.
+
+## AI endpoints
+
+| Route | Result | Notes |
+| --- | --- | --- |
+| POST `/api/samhita/analyze` | PASS, 200 | Exact requested sample; response `success=true`; dosha, dietary, herbs, lifestyle, and classical reference sections all populated by fallback. Requires authenticated doctor. |
+| POST `/api/voice/transcribe` | HTTP 200, provider failure | Synthetic multipart WAV placeholder reached the existing Whisper route; Groq networking failed, resulting in `success=false` / `Transcription failed`. A real audio sample is needed to validate transcription quality. |
+| POST `/api/voice/extract` | PASS, 200 | Transcript sample returned structured extraction via fallback. |
+| POST `/api/ai-chat` | PASS, 200 | `hello` returned safe fallback response. |
+| POST `/api/tongue/analyze` | PASS, 200 | Alias registered; text-input path returned structured fallback. Multipart image not exercised without a suitable fixture. Requires authenticated doctor. |
+| GET `/api/predict-churn` | PASS, 200 | Returned prediction payload. |
+| GET `/api/tongue-health-check` | PASS, 200 | Provider availability metadata endpoint. |
+
+Provider status: Groq credentials are configured and the model is `llama-3.3-70b-versatile`; the external request could not connect. Gemini API key and OpenAI API key are not configured. A Vertex project id alone is no longer treated as usable Gemini credentials; Gemini is enabled only with an API key or explicit ADC setup (`GOOGLE_APPLICATION_CREDENTIALS` / `GOOGLE_ADC_ENABLED`).
+
+Template check: `/consultation/voice` rendered HTTP 200. The Samhita button and results container exist; `analyzeWithSamhita()` posts to `/api/samhita/analyze`, displays all five required sections, shows a loading state, and logs errors with `console.error`.
+

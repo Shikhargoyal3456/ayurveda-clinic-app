@@ -1,0 +1,908 @@
+{
+  "samhita": {
+    "status_code": 200,
+    "response": {
+      "success": true,
+      "analysis": {
+        "summary": "**Ayurvedic Analysis for a 30‑year‑old male with 2‑day fever, cough, and body ache**\n\n---",
+        "dosha_analysis": "- **Primary Imbalance**: **Pitta**  \n  *Fever (उष्णता) is the cardinal sign of Pitta vitiation. The heat of the body, the burning sensation in the chest, and the systemic body ache point to an excess of Pitta.*\n\n- **Sub‑Dosha Affected**: **Kapha**  \n  *The productive cough and the sense of heaviness in the throat suggest a secondary Kapha aggravation, which often accompanies Pitta‑dominated febrile illnesses.*\n\n- **Explanation**  \n  - **Pitta** governs temperature, metabolism, and transformation. A sudden rise in body temperature, along with a burning sensation, indicates that the digestive fire (Agni) is overactive and the metabolic processes are generating excess heat.  \n  - **Kapha** is the humoral component that becomes congested when Pitta is hot; it manifests as mucus, cough, and a feeling of heaviness.  \n  - The combination of fever, cough, and body ache is a classic “Pitta‑Kapha” pattern seen in acute respiratory infections.\n\n---",
+        "dietary_recommendations": "### Foods to Favor (Pathya)\n| Food / Herb | Rationale |\n|-------------|-----------|\n| **Warm water (hot water)** | As per *Ashtanga Hridayam* (Hot water increases the power of digestion, cooks undigested food, good for throat diseases). It is cooling for Pitta and helps clear mucus. |\n| **Ginger (अद्रक)** | Pitta‑cooling, stimulates Agni, and has antitussive action. |\n| **Tulsi (तुलसी)** | Pitta‑balancing, antiviral, and supports lung function. |\n| **Turmeric (हल्दी)** | Pitta‑cooling, anti‑inflammatory, and boosts immunity. |\n| **Cooked rice or khichdi** | Easy to digest, supports Agni, and is neutral for Pitta. |\n| **Steamed or boiled vegetables (e.g., carrots, pumpkin)** | Light, cooling, and provide essential micronutrients. |\n| **Honey (मध)** | Pitta‑balancing, soothing for the throat, and has mild antimicrobial properties. |\n\n### Foods to Avoid (Apathya)\n| Food | Reason |\n|------|--------|\n| **Cold drinks & ice** | Increase Kapha, aggravate cough, and cool the stomach. |\n| **Heavy, fried, or oily foods** | Stagnate Agni, increase Kapha, and worsen body ache. |\n| **Dairy (milk, curd, cheese)** | Builds Kapha and can thicken mucus. |\n| **Spicy, pungent foods** | Exacerbate Pitta heat and irritate the throat. |\n| **Alcohol & caffeine** | Disrupt Agni and increase Pitta. |\n\n### Sample Meal Plan\n- **Breakfast**  \n  *Option 1*: Warm water + ½ tsp honey + 1 tsp grated ginger + ½ cup cooked oatmeal.  \n  *Option 2*: Warm milk (if tolerated) + 1 tsp turmeric + ½ cup boiled rice + a pinch of salt.\n\n- **Lunch**  \n  *Option 1*: Khichdi (rice + moong dal + carrots + cumin) + 1 cup warm ginger‑tulsi tea.  \n  *Option 2*: Steamed pumpkin + boiled egg + ½ cup warm water.\n\n- **Dinner**  \n  *Option 1*: Warm vegetable soup (carrot, pumpkin, coriander) + ½ cup boiled rice.  \n  *Option 2*: Steamed fish (if non‑vegetarian) + boiled spinach + ½ cup warm water.\n\n*All meals should be taken warm, not hot, and in moderate portions.*\n\n---",
+        "herbal_formulations": "### Primary Formulation\n| Item | Details |\n|------|---------|\n| **Name** | *Pitta‑Kapha Balancing Kashaya* (Pitta‑Kapha‑Shamaka Kashaya) |\n| **Ingredients** | Ginger (अद्रक) 1 cm, Tulsi (तुलसी) 1 cm, Turmeric (हल्दी) ½ cm, Licorice (गिलोय) ½ cm, Honey (मध) 1 tsp, Warm water 1 L |\n| **Dosage** | 1 tsp (≈5 ml) in 100 ml warm water |\n| **Timing** | 2× daily – after breakfast and after dinner |\n\n### Supportive Formulations\n| Formulation | Key Ingredients | Use |\n|-------------|-----------------|-----|\n| **Amalaki Kashaya** | Amla (आंवला) 1 cm, Ginger ½ cm, Honey 1 tsp | 1 tsp 3× daily – boosts immunity |\n| **Vidanga Kashaya** | Vidanga (विधान्ग) ½ cm, Ginger ½ cm, Honey 1 tsp | 1 tsp 2× daily – antitussive & antimicrobial |\n\n> **Note**: If the cough becomes dry or the fever spikes, increase the dosage of the primary kashaya to 2 tsp, but do not exceed 3 tsp per day.\n\n---",
+        "lifestyle_regimen": "### Daily Routine (Dinacharya)\n| Time | Activity | Purpose |\n|------|----------|---------|",
+        "treatment_recommendations": "",
+        "follow_up_plan": "",
+        "classical_reference": "### Classical Reference:\n- Text: Charaka Samhita\n- Chapter: Sutrasthana, Langhana-Brimhana principles\n- Verse: Use practitioner verification for exact verse citation\n\n### Supporting Logic:\nThe approach follows dosha assessment, agni correction, pathya-apathya, and staged chikitsa. This is educational support and should be reviewed by a qualified practitioner."
+      },
+      "analysis_id": 14,
+      "provider": "groq",
+      "rag_used": true,
+      "rag_sources": [
+        "Astanga-hrdayam. Eng.pdf",
+        "2015.43171.The-Sushruta-Samhita--Vol1_text.pdf",
+        "Astanga-hrdayam. Eng.pdf",
+        "Astanga-hrdayam. Eng.pdf",
+        "Astanga-hrdayam. Eng.pdf"
+      ],
+      "sources": [
+        "Astanga-hrdayam. Eng.pdf",
+        "2015.43171.The-Sushruta-Samhita--Vol1_text.pdf",
+        "Astanga-hrdayam. Eng.pdf",
+        "Astanga-hrdayam. Eng.pdf",
+        "Astanga-hrdayam. Eng.pdf"
+      ],
+      "authenticated": true
+    }
+  },
+  "voice_extract": {
+    "status_code": 200,
+    "response": {
+      "success": true,
+      "extracted": {
+        "patient_name": "Patient",
+        "age": null,
+        "gender": "",
+        "symptoms": [],
+        "duration": ""
+      },
+      "patient": {
+        "name": "Patient",
+        "age": null,
+        "gender": "",
+        "phone": ""
+      },
+      "symptoms": [],
+      "diagnosis": "",
+      "medicines": [],
+      "follow_up": "",
+      "transcript": "patient has fever and cough since two days",
+      "structured_data": {
+        "identification_details": {
+          "patient_name": "Patient",
+          "patient_id": null,
+          "age": null,
+          "gender": null,
+          "contact": null
+        },
+        "chief_complaints": "fever and cough",
+        "history_of_present_illness": "fever and cough since two days",
+        "past_history": null,
+        "personal_history": null,
+        "examination_findings": null,
+        "prakriti": null,
+        "vikriti": null,
+        "agni": null,
+        "koshta": null,
+        "nadi": null,
+        "diagnosis": null,
+        "treatment_plan": null,
+        "follow_up": null
+      }
+    }
+  },
+  "voice_transcribe": {
+    "status_code": 200,
+    "response": {
+      "success": true,
+      "transcript": "प्रफ़ब",
+      "model": "whisper-large-v3-turbo"
+    }
+  },
+  "ai_chat": {
+    "status_code": 200,
+    "response": {
+      "response": "**Jwara (Fever) in Ayurveda**\n\n| Aspect | Ayurvedic View |\n|--------|----------------|\n| **Definition** | “Jwara” is the Sanskrit term for fever, a sudden rise in body temperature due to an imbalance of the three doshas—Vata, Pitta, and Kapha. |\n| **Etiology** | • **Vata‑Pitta dominance** (most common): caused by external pathogens (viruses, bacteria), heat, stress, or consumption of heavy, oily, or fermented foods. <br>• **Pitta‑Kapha dominance**: often seen in infections that linger, such as urinary or respiratory tract infections. <br>• **Vata‑Kapha dominance**: typically associated with cold, damp climates or prolonged exposure to cold. |\n| **Common Symptoms** | • Sudden rise in body temperature (≥ 38 °C / 100.4 °F) <br>• Chills, sweating, headache, muscle aches, loss of appetite, nausea, vomiting, or diarrhea <br>• Depending on dosha dominance: dry skin (Vata), red or flushed skin (Pitta), or moist, pale skin (Kapha). |\n| **Diagnostic Features** | • **Pulse (Nadi)**: rapid, irregular, or deep pulse. <br>• **Tongue (Jivha)**: coated, red, or pale. <br>• **Skin**: dry or moist, warm or cool. |\n| **General Management** | 1. **Rest & Hydration** – warm fluids (coconut water, ginger‑tea, herbal decoctions). <br>2. **Diet** – light, warm, easy‑to‑digest foods: khichdi, steamed rice, boiled vegetables, and fresh fruit. Avoid fried, spicy, or cold foods. <br>3. **Herbal Remedies** – common preparations: *Pippali* (long pepper) decoction, *Tulsi* (holy basil) tea, *Ashwagandha* infusion, or",
+      "model": "groq",
+      "message": "What is Jwara in Ayurveda?",
+      "actions": {
+        "summary": "संक्षिप्त आयुर्वेदिक सलाह: नियमित दिनचर्या और हल्का आहार रखें।",
+        "prescription": "त्रिफला, गुनगुना पानी, और तले हुए भोजन से परहेज़ पर विचार करें।",
+        "follow_up": "7 दिन के भीतर फॉलो-अप रखें।"
+      }
+    }
+  },
+  "churn_post": {
+    "status_code": 200,
+    "response": {
+      "success": true,
+      "at_risk_patients": [
+        {
+          "patient_id": 1,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-3-1@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 2,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-3-2@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 3,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-3-3@demo.local",
+          "days_since_last_visit": 49,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 4,
+          "patient_name": "Shikhar Goyal",
+          "phone": "+91 93503 97175",
+          "email": "goyalshikhar67@gmail.com",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 5,
+          "patient_name": "Admission Test",
+          "phone": "9876543210",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 6,
+          "patient_name": "Feature Test Two",
+          "phone": "9876543210",
+          "email": "9876543210-1788092764@local.kash",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 7,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-6-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 8,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-6-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 9,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-6-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 10,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-8-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 11,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-8-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 12,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-8-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 13,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-10-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 14,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-10-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 15,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-10-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 16,
+          "patient_name": "Temporary Final Test Patient",
+          "phone": "9999999999",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 17,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-12-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 18,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-12-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 19,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-12-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        }
+      ],
+      "total_at_risk": 19,
+      "patients": [
+        {
+          "patient_id": 1,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-3-1@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 2,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-3-2@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 3,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-3-3@demo.local",
+          "days_since_last_visit": 49,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 4,
+          "patient_name": "Shikhar Goyal",
+          "phone": "+91 93503 97175",
+          "email": "goyalshikhar67@gmail.com",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 5,
+          "patient_name": "Admission Test",
+          "phone": "9876543210",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 6,
+          "patient_name": "Feature Test Two",
+          "phone": "9876543210",
+          "email": "9876543210-1788092764@local.kash",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 7,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-6-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 8,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-6-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 9,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-6-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 10,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-8-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 11,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-8-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 12,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-8-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 13,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-10-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 14,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-10-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 15,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-10-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 16,
+          "patient_name": "Temporary Final Test Patient",
+          "phone": "9999999999",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 17,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-12-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 18,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-12-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 19,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-12-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        }
+      ]
+    }
+  },
+  "churn_get": {
+    "status_code": 200,
+    "response": {
+      "success": true,
+      "at_risk_patients": [
+        {
+          "patient_id": 1,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-3-1@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 2,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-3-2@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 3,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-3-3@demo.local",
+          "days_since_last_visit": 49,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 4,
+          "patient_name": "Shikhar Goyal",
+          "phone": "+91 93503 97175",
+          "email": "goyalshikhar67@gmail.com",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 5,
+          "patient_name": "Admission Test",
+          "phone": "9876543210",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 6,
+          "patient_name": "Feature Test Two",
+          "phone": "9876543210",
+          "email": "9876543210-1788092764@local.kash",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 7,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-6-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 8,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-6-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 9,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-6-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 10,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-8-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 11,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-8-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 12,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-8-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 13,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-10-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 14,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-10-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 15,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-10-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 16,
+          "patient_name": "Temporary Final Test Patient",
+          "phone": "9999999999",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 17,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-12-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 18,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-12-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 19,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-12-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        }
+      ],
+      "total_at_risk": 19,
+      "patients": [
+        {
+          "patient_id": 1,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-3-1@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 2,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-3-2@demo.local",
+          "days_since_last_visit": 50,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 3,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-3-3@demo.local",
+          "days_since_last_visit": 49,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 4,
+          "patient_name": "Shikhar Goyal",
+          "phone": "+91 93503 97175",
+          "email": "goyalshikhar67@gmail.com",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 5,
+          "patient_name": "Admission Test",
+          "phone": "9876543210",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 6,
+          "patient_name": "Feature Test Two",
+          "phone": "9876543210",
+          "email": "9876543210-1788092764@local.kash",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 7,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-6-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 8,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-6-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 9,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-6-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 10,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-8-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 11,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-8-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 12,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-8-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 13,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-10-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 14,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-10-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 15,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-10-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 16,
+          "patient_name": "Temporary Final Test Patient",
+          "phone": "9999999999",
+          "email": "",
+          "days_since_last_visit": 999,
+          "appointment_count_90_days": 0,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 17,
+          "patient_name": "Anaya Mehta",
+          "phone": "9876543210",
+          "email": "demo-clinic-12-1@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 18,
+          "patient_name": "Rohan Iyer",
+          "phone": "9876543211",
+          "email": "demo-clinic-12-2@demo.local",
+          "days_since_last_visit": 0,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        },
+        {
+          "patient_id": 19,
+          "patient_name": "Meera Nair",
+          "phone": "9876543212",
+          "email": "demo-clinic-12-3@demo.local",
+          "days_since_last_visit": -1,
+          "appointment_count_90_days": 1,
+          "avg_gap_between_visits": 0,
+          "status": "At Risk"
+        }
+      ]
+    }
+  },
+  "tongue": {
+    "status_code": 200,
+    "response": {
+      "success": true,
+      "model": "groq",
+      "diagnosis": "The tongue shows dry, cracked coating, indicating a Vata‑Pitta imbalance with dryness.",
+      "prakriti": "Vata-Pitta",
+      "confidence": 0.7,
+      "recommendations": [
+        "Massage the tongue with warm sesame oil to moisten and balance Vata.",
+        "Drink warm water with a pinch of ginger or turmeric to soothe dryness and support digestion.",
+        "Gently scrape the tongue with a tongue scraper to remove coating and prevent further cracking."
+      ],
+      "diet_advice": "Opt for warm, moist, easily digestible foods; avoid cold, dry, and spicy items; incorporate ginger, turmeric, and honey for hydration and digestive support.",
+      "analysis": {
+        "id": null,
+        "image_url": "",
+        "analysis_text": "The tongue shows dry, cracked coating, indicating a Vata‑Pitta imbalance with dryness.",
+        "prakriti_prediction": "Vata-Pitta",
+        "created_at": null
+      }
+    }
+  }
+}

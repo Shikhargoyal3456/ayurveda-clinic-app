@@ -26,6 +26,8 @@ router = APIRouter(tags=["patient-whatsapp"])
 templates = Jinja2Templates(directory=str(settings.templates_dir))
 
 
+
+
 def _require_admin(doctor: Doctor) -> Doctor:
     configured = [item.strip().lower() for item in settings.admin_usernames if item.strip()]
     allowed_admins = configured or ["admin@ayurveda.com"]

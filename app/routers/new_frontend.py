@@ -301,6 +301,7 @@ def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/profile")
 @router.get("/settings")
 def settings_page(request: Request, db: Session = Depends(get_db)):
     user = _current_user_or_redirect(request, db)

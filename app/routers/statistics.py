@@ -304,6 +304,7 @@ def _compute_snapshot(db: Session, doctor: Doctor, days: int = 30, start_date: d
     }
 
 
+@router.get("/analytics", response_class=HTMLResponse)
 @router.get("/doctor/stats", response_class=HTMLResponse)
 def doctor_stats_page(request: Request, days: int = Query(default=30, ge=7, le=365), start_date: str | None = None, end_date: str | None = None, db: Session = Depends(get_db)):
     doctor = _resolve_doctor(request, db)

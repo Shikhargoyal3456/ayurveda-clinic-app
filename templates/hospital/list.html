@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Hospitals - KASH AI{% endblock %}
+{% block page %}
+<section class="hospital-page">
+    <header class="hospital-heading">
+        <p class="hospital-eyebrow">CARE NETWORK</p>
+        <h1>Hospitals</h1>
+        <p>Review current bed availability and request an admission.</p>
+    </header>
+    <div class="hospital-grid">
+        {% for hospital in hospitals %}
+        <article class="hospital-card">
+            <div class="hospital-card__top">
+                <div>
+                    <p class="hospital-city">{{ hospital.city }}</p>
+                    <h2>{{ hospital.name }}</h2>
+                </div>
+                {% if hospital.emergency_available %}<span class="hospital-badge">Emergency care</span>{% endif %}
+            </div>
+            <p class="hospital-address">{{ hospital.address }}{% if hospital.address and hospital.city %}, {% endif %}{{ hospital.city }}</p>
+            {% if hospital.phone %}<p class="hospital-contact">Phone: {{ hospital.phone }}</p>{% endif %}
+            <div class="hospital-beds"><strong>{{ hospital.available_beds }}</strong><span> beds available</span><small> of {{ hospital.bed_capacity }}</small></div>
+            <a class="hospital-button" href="/hospital/admission">Request admission <span aria-hidden="true">→</span></a>
+        </article>
+        {% else %}
+        <p class="hospital-empty">No hospitals are listed yet.</p>
+        {% endfor %}
+    </div>
+</section>
+<style>
+.hospital-page{max-width:1120px;margin:0 auto;padding:40px 22px 64px}.hospital-heading{margin-bottom:26px}.hospital-eyebrow,.hospital-city{font-size:.75rem;letter-spacing:.12em;font-weight:700;color:#47866d}.hospital-heading h1{margin:4px 0;font-size:2.2rem}.hospital-heading>p:last-child{color:#66766f}.hospital-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px}.hospital-card{padding:22px;border:1px solid #dfe9e4;border-radius:18px;background:#fff;box-shadow:0 12px 35px rgba(26,66,48,.06)}.hospital-card__top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.hospital-city{margin:0 0 5px;text-transform:uppercase}.hospital-card h2{font-size:1.2rem;margin:0}.hospital-badge{white-space:nowrap;padding:6px 9px;border-radius:999px;background:#fff2df;color:#995a12;font-size:.72rem;font-weight:700}.hospital-address,.hospital-contact{color:#65746d;font-size:.9rem;line-height:1.5}.hospital-beds{margin:20px 0;display:flex;align-items:baseline;gap:6px;color:#63736b}.hospital-beds strong{font-size:1.8rem;color:#176b4c}.hospital-beds small{font-size:.8rem}.hospital-button{display:flex;justify-content:space-between;padding:12px 15px;border-radius:10px;background:#176b4c;color:white;font-weight:700}.hospital-empty{padding:24px;color:#65746d}
+</style>
+{% endblock %}

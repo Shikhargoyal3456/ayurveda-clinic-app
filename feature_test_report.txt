@@ -1,0 +1,666 @@
+[
+  {
+    "method": "GET",
+    "path": "/",
+    "status_code": 302,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/auth/login",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/auth/signup",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/auth/logout",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/dashboard",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new/doctor",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new/patient",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new/admin",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/consultation/voice",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/patients",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/appointments",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/followups",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/list",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/admission",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/api/hospitals",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"hospitals\":[{\"id\":1,\"name\":\"Apollo Hospital\",\"address\":\"123 Main Road, Near City Ce"
+  },
+  {
+    "method": "GET",
+    "path": "/emr/doctor-dashboard",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/emr/patient-registry",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/emr/lab-dashboard",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/feature-status",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/device-check",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/analytics",
+    "status_code": 401,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/payments/daily",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/api",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"message\":\"Kash AI API is running!\",\"version\":\"1.0.0\",\"status\":\"healthy\",\"docs\":\"/docs\"}"
+  },
+  {
+    "method": "GET",
+    "path": "/demo",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new/profile",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-log",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-log/export",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/v2/dashboard",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/v2/patients",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "POST",
+    "path": "/auth/signup",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new/doctor",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/consultation/voice",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/patients",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/appointments",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/followups",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/list",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/admission",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emr/doctor-dashboard",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emr/patient-registry",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emr/lab-dashboard",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/analytics",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/payments/daily",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-log",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-log/export",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "Date,Patient,Keyword,Severity,Action "
+  },
+  {
+    "method": "GET",
+    "path": "/patient/16/health-passport",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/patient/{test_patient_id}/health-card",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> Health Card"
+  },
+  {
+    "method": "GET",
+    "path": "/patient/{test_patient_id}/health-card/qr",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "image/svg+xml health card QR"
+  },
+  {
+    "method": "POST",
+    "path": "/hospital/api/admission/request",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"message\":\"Admission request submitted.\",\"admission_id\":9,\"status\":\"pending\",\"remain"
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/api/admission/9",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"admission\":{\"id\":9,\"patient_id\":16,\"doctor_id\":11,\"hospital_id\":1,\"admission_type\":"
+  },
+  {
+    "method": "PUT",
+    "path": "/hospital/api/admission/9",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"status\":\"discharged\",\"available_beds\":44}"
+  },
+  {
+    "method": "GET",
+    "path": "/auth/logout",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/auth/login",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "POST",
+    "path": "/auth/login",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/new/doctor",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/consultation/voice",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/patients",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/appointments",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/followups",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/hospital/list",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emr/doctor-dashboard",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emr/patient-registry",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emr/lab-dashboard",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/analytics",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/payments/daily",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-log",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\"> <meta name=\"viewport\" content=\"width="
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-log/export",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "Date,Patient,Keyword,Severity,Action "
+  },
+  {
+    "method": "GET",
+    "path": "/v2/dashboard",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "GET",
+    "path": "/v2/patients",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": ""
+  },
+  {
+    "method": "POST",
+    "path": "/api/samhita/analyze",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"analysis\":{\"summary\":\"**Ayurvedic Analysis for a 30‑year‑old male with 2‑day fever,"
+  },
+  {
+    "method": "POST",
+    "path": "/api/voice/extract",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"extracted\":{\"patient_name\":\"Patient\",\"age\":null,\"gender\":\"\",\"symptoms\":[],\"duration"
+  },
+  {
+    "method": "POST",
+    "path": "/api/voice/transcribe",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"transcript\":\"प्रफ़ब\",\"model\":\"whisper-large-v3-turbo\"}"
+  },
+  {
+    "method": "POST",
+    "path": "/api/ai-chat",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"response\":\"**Jwara (Fever) in Ayurveda**\\n\\n| Aspect | Ayurvedic View |\\n|--------|---------------"
+  },
+  {
+    "method": "POST",
+    "path": "/api/predict-churn",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"at_risk_patients\":[{\"patient_id\":1,\"patient_name\":\"Anaya Mehta\",\"phone\":\"9876543210"
+  },
+  {
+    "method": "GET",
+    "path": "/api/predict-churn",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"at_risk_patients\":[{\"patient_id\":1,\"patient_name\":\"Anaya Mehta\",\"phone\":\"9876543210"
+  },
+  {
+    "method": "POST",
+    "path": "/api/tongue/analyze",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"model\":\"groq\",\"diagnosis\":\"The tongue shows dry, cracked coating, indicating a Vata"
+  },
+  {
+    "method": "POST",
+    "path": "/api/samhita/analyze",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "POST",
+    "path": "/api/voice/extract",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"extracted\":{\"patient_name\":\"Patient\",\"age\":null,\"gender\":\"\",\"symptoms\":[],\"duration"
+  },
+  {
+    "method": "POST",
+    "path": "/api/voice/transcribe",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":true,\"transcript\":\"प्रफ़ब\",\"model\":\"whisper-large-v3-turbo\"}"
+  },
+  {
+    "method": "POST",
+    "path": "/api/ai-chat",
+    "status_code": 200,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"response\":\"Hello! I’m Dr. Kash, your Ayurvedic assistant. How can I support you today with persona"
+  },
+  {
+    "method": "POST",
+    "path": "/api/tongue/analyze",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "POST",
+    "path": "/api/predict-churn",
+    "status_code": 303,
+    "is_500": false,
+    "is_expected_auth_redirect": true,
+    "body_snippet": ""
+  },
+  {
+    "method": "POST",
+    "path": "/hospital/api/admission/request",
+    "status_code": 401,
+    "is_500": false,
+    "is_expected_auth_redirect": false,
+    "body_snippet": "{\"success\":false,\"error\":\"Sign in to manage hospital admissions.\",\"detail\":\"Sign in to manage hospit"
+  }
+]

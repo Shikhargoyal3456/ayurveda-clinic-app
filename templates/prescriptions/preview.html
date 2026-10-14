@@ -9,7 +9,7 @@
 
 {% block header_actions %}
 <a href="/prescriptions/{{ prescription.id }}" class="btn btn-outline-dark btn-sm">Back to detail</a>
-<a href="/patients/{{ patient.id }}/prescriptions/history" class="btn btn-primary btn-sm">History</a>
+<a href="/prescriptions/{{ prescription.id }}" class="btn btn-primary btn-sm">Prescription</a>
 {% endblock %}
 
 {% block page %}
@@ -80,7 +80,7 @@
 
                 <div class="hero-actions">
                     <button type="submit" class="btn btn-primary btn-lg" data-loading-text="Sending...">Send Email</button>
-                    <button type="submit" class="btn btn-outline-dark btn-lg" formaction="/prescriptions/{{ prescription.id }}/download-preview" data-loading-text="Preparing PDF...">Download PDF</button>
+                    <button type="submit" class="btn btn-outline-dark btn-lg" formaction="/prescriptions/{{ prescription.id }}/download" formmethod="get" data-loading-text="Preparing PDF...">Download PDF</button>
                 </div>
             </form>
         </article>

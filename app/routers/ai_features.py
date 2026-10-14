@@ -27,7 +27,7 @@ from app.utils.ollama_client import ollama_client
 from app.utils.file_validator import validate_file_upload, validate_prompt_injection
 from app.models import Appointment, BillingCode, CaseSheet, Doctor, Patient, SamhitaAnalysis, TelemedicineSession, TongueAnalysis
 from app.utils.samhita_prompt import build_samhita_prompt
-from services.ai_provider import build_gemini_part, generate_gemini_content, is_gemini_configured, parse_json_response
+from services.ai_provider import build_gemini_part, generate_gemini_content, get_samhita_context, is_gemini_configured, parse_json_response
 from models.outcome import Outcome
 from models.prescription import Prescription
 from models.medicine import Medicine, PharmacyInventory
@@ -204,6 +204,12 @@ SAMHITA_SECTION_KEYS = {
     "follow up plan": "follow_up_plan",
     "ayurvedic reference": "classical_reference",
     "classical reference": "classical_reference",
+    "nidana": "dosha_analysis",
+    "diagnosis": "dosha_analysis",
+    "ama assessment": "dosha_analysis",
+    "agni status": "dosha_analysis",
+    "chikitsa": "herbal_formulations",
+    "pathya": "dietary_recommendations",
 }
 
 
@@ -218,7 +224,7 @@ def parse_samhita_response(response: str) -> dict[str, str]:
         normalized = re.sub(r"\s+", " ", heading).lower()
         normalized = re.sub(r"^\d+\.\s*", "", normalized)
 
-        if stripped.startswith("##") and not stripped.startswith("###") and normalized:
+        if (stripped.startswith("##") and not stripped.startswith("###") or re.match(r"^\d+[.)]\s+", stripped)) and normalized:
             matched_key = None
             for label, key in SAMHITA_SECTION_KEYS.items():
                 if label in normalized:
@@ -233,6 +239,14 @@ def parse_samhita_response(response: str) -> dict[str, str]:
     parsed = {key: "\n".join(lines).strip() for key, lines in sections.items() if "\n".join(lines).strip()}
     for key in SAMHITA_SECTION_KEYS.values():
         parsed.setdefault(key, "")
+    return parsed
+
+
+def _complete_samhita_analysis(parsed: dict[str, str], symptoms: str, prakriti: str, agni: str) -> dict[str, str]:
+    fallback = parse_samhita_response(_mock_samhita_response(symptoms, prakriti, agni))
+    for key in ("dosha_analysis", "dietary_recommendations", "herbal_formulations", "lifestyle_regimen", "classical_reference"):
+        if not _safe_text(parsed.get(key)):
+            parsed[key] = fallback[key]
     return parsed
 
 
@@ -383,8 +397,14 @@ async def analyze_samhita(
     if not symptoms:
         raise HTTPException(status_code=400, detail="Symptoms are required")
 
-    patient_id = data.get("patient_id")
-    consultation_id = data.get("consultation_id")
+    def optional_id(value: Any) -> int | None:
+        try:
+            return int(value) if value not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
+
+    patient_id = optional_id(data.get("patient_id"))
+    consultation_id = optional_id(data.get("consultation_id"))
     age_value = data.get("age")
     try:
         age = int(age_value) if age_value not in (None, "") else None
@@ -404,16 +424,36 @@ async def analyze_samhita(
         agni=agni,
         history=history,
     )
+    rag_context = await get_samhita_context({
+        "symptoms": symptoms,
+        "age": age,
+        "gender": gender,
+        "prakriti": prakriti,
+        "agni": agni,
+        "history": history,
+    })
+    rag_sources = [
+        line.removeprefix("Source: ").strip()
+        for line in rag_context.splitlines()
+        if line.startswith("Source: ") and line.removeprefix("Source: ").strip()
+    ]
+    rag_used = bool(rag_sources)
+    if rag_used:
+        prompt += (
+            "\n\nLOCAL SAMHITA REFERENCES RETRIEVED FROM THE PROJECT CORPUS:\n"
+            + rag_context[:6000]
+            + "\nUse these retrieved passages as grounding. Do not invent verse numbers or citations."
+        )
     raw_response, provider = await get_ai_response_with_fallback(prompt, temperature=0.35, max_tokens=1800)
     if not raw_response:
         raw_response = _mock_samhita_response(symptoms, prakriti, agni)
         provider = "mock"
 
-    parsed_response = parse_samhita_response(raw_response)
+    parsed_response = _complete_samhita_analysis(parse_samhita_response(raw_response), symptoms, prakriti, agni)
 
     analysis = SamhitaAnalysis(
-        patient_id=int(patient_id) if patient_id not in (None, "") else None,
-        consultation_id=int(consultation_id) if consultation_id not in (None, "") else None,
+        patient_id=patient_id,
+        consultation_id=consultation_id,
         symptoms=symptoms,
         age=age,
         gender=gender,
@@ -438,6 +478,9 @@ async def analyze_samhita(
         "analysis": parsed_response,
         "analysis_id": analysis.id,
         "provider": provider,
+        "rag_used": rag_used,
+        "rag_sources": rag_sources,
+        "sources": rag_sources,
         "authenticated": True,
     }
 
@@ -463,6 +506,7 @@ async def _generate_tongue_with_gemini(prompt: str, file_bytes: bytes = b"", mim
         return None
 
 
+@router.post("/api/tongue/analyze", include_in_schema=False)
 @router.post("/api/tongue-analyze")
 async def tongue_analyze(
     request: Request,
@@ -722,6 +766,7 @@ Format as JSON only.
     return {"success": True, "extracted": extracted}
 
 
+@router.post("/api/predict-churn", include_in_schema=False)
 @router.get("/api/predict-churn")
 async def predict_churn(
     db: Session = Depends(get_db),

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import logging
+import httpx
 from typing import Optional
 
 try:
@@ -12,8 +14,12 @@ except Exception:  # pragma: no cover
 class GroqClient:
     def __init__(self) -> None:
         self.api_key = os.getenv("GROQ_API_KEY", "").strip()
-        self.model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile").strip() or "llama-3.3-70b-versatile"
-        self.client = Groq(api_key=self.api_key) if Groq is not None and self.api_key else None
+        self.model = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b").strip() or "openai/gpt-oss-20b"
+        self.client = (
+            Groq(api_key=self.api_key, max_retries=0, timeout=httpx.Timeout(8.0, connect=3.0))
+            if Groq is not None and self.api_key
+            else None
+        )
 
     def is_available(self) -> bool:
         return self.client is not None and bool(self.api_key)
@@ -30,6 +36,7 @@ class GroqClient:
             )
             return getattr(response.choices[0].message, "content", None)
         except Exception:
+            logging.getLogger(__name__).exception("Groq chat completion failed")
             return None
 
 

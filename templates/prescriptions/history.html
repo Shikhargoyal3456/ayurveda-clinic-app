@@ -49,9 +49,9 @@
                         </td>
                         <td>
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <a href="/prescriptions/{{ item.id }}/preview" class="btn btn-sm btn-outline-primary">Preview</a>
+                                <a href="/prescriptions/{{ item.id }}" class="btn btn-sm btn-outline-primary">Preview</a>
                                 <a href="/prescriptions/{{ item.id }}/download" class="btn btn-sm btn-outline-dark">Download PDF</a>
-                                <form method="post" action="/prescriptions/{{ item.id }}/resend" data-loading-form data-confirm-submit="Resend prescription to {{ item.email_address or patient.email or 'the patient email on file' }}?">
+                                <form method="post" action="/prescriptions/{{ item.id }}/share/email" data-loading-form data-confirm-submit="Resend prescription to {{ item.email_address or patient.email or 'the patient email on file' }}?">
                                     <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token | default(csrf_token) }}">
                                     <button class="btn btn-sm btn-outline-success" data-loading-text="Resending...">Resend</button>
                                 </form>

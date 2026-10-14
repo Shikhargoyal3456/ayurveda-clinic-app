@@ -433,6 +433,74 @@ def share_prescription_via_email(
     return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
 
 
+@router.post("/prescriptions/{prescription_id}/send")
+async def send_preview_prescription(
+    prescription_id: int,
+    request: Request,
+    patient_email: str = Form(""),
+    diagnosis: str = Form(""),
+    follow_up_date: str = Form(""),
+    medicine_name: list[str] = Form(default=[]),
+    medicine_dosage: list[str] = Form(default=[]),
+    medicine_frequency: list[str] = Form(default=[]),
+    medicine_days: list[str] = Form(default=[]),
+    medicine_instructions: list[str] = Form(default=[]),
+    advice: str = Form(""),
+    db: Session = Depends(get_db),
+    doctor: Doctor = Depends(get_current_doctor),
+    _: None = Depends(verify_csrf),
+):
+    prescription = _prescription_for_doctor(db, doctor.id, prescription_id)
+    if diagnosis.strip():
+        prescription.diagnosis = diagnosis.strip()[:255]
+    prescription.advice = advice.strip()
+    medicines = []
+    for index, name in enumerate(medicine_name):
+        name = name.strip()
+        if not name:
+            continue
+        medicines.append({
+            "name": name[:255],
+            "dosage": medicine_dosage[index].strip()[:255] if index < len(medicine_dosage) else "",
+            "frequency": medicine_frequency[index].strip()[:255] if index < len(medicine_frequency) else "",
+            "duration": medicine_days[index].strip()[:255] if index < len(medicine_days) else "",
+            "instructions": medicine_instructions[index].strip()[:1000] if index < len(medicine_instructions) else "",
+        })
+    if medicine_name:
+        prescription.medicines = medicines
+    follow_up_value = follow_up_date.strip()
+    if follow_up_value:
+        try:
+            follow_up = datetime.strptime(follow_up_value, "%Y-%m-%d").date()
+            prescription.follow_up_days = max(0, (follow_up - datetime.now().date()).days)
+        except ValueError:
+            pass
+    recipient = patient_email.strip() or (prescription.patient.email or "").strip()
+    if recipient:
+        prescription.patient.email = recipient[:255]
+    commit_with_retry(db)
+
+    if not recipient:
+        set_flash(request, "Add the patient's email address before sending.", "danger")
+        return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
+    result = await send_prescription_email(
+        patient_email=recipient,
+        patient_name=prescription.patient.name,
+        doctor_name=_doctor_display_name(doctor),
+        prescription_data=_prescription_payload(prescription),
+    )
+    write_audit_event(
+        "prescription_preview_sent",
+        request,
+        prescription_id=prescription.id,
+        patient_id=prescription.patient_id,
+        doctor_id=doctor.id,
+        email_sent=bool(result.get("success")),
+    )
+    set_flash(request, "Prescription email sent." if result.get("success") else "Email could not be sent right now. Please try again.", "success" if result.get("success") else "danger")
+    return RedirectResponse(url=f"/prescriptions/{prescription.id}", status_code=303)
+
+
 @router.post("/prescriptions/{prescription_id}/share-email")
 async def share_prescription_via_email_api(
     prescription_id: int,

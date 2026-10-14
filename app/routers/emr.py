@@ -242,6 +242,7 @@ def emr_doctor_dashboard(request: Request, db: Session = Depends(get_db), doctor
     )
 
 
+@router.get("/patients")
 @router.get("/emr/patient-registry")
 def emr_patient_registry(
     request: Request,

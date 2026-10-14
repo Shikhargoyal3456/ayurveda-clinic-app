@@ -1,0 +1,33 @@
+Google OAuth Removal Route Verification
+Project: C:\Projects\ayurveda_project
+Date: 2026-10-15
+
+Application import: PASS (app import OK)
+Uvicorn startup: PASS (application startup completed)
+GET /auth/login: 200; no /auth/google/ link or Google sign-in button in rendered HTML
+GET /auth/signup: 200; no /auth/google/ link or Google signup button in rendered HTML
+POST /auth/login: 303 to /dashboard with session cookie using a temporary verified email/password account
+POST /auth/signup: 303 to /new/doctor with session cookie; test account removed after verification
+GET /auth/logout: 303 to /; session cleared
+Temporary authentication test records: removed
+
+Google OAuth routes (router unregistered):
+GET /auth/google/login: 404
+GET /auth/google/callback: 404
+GET /auth/google/choose-role: 404
+POST /auth/google/complete-signup: 404
+
+Unauthenticated route sweep (expected auth redirects are noted):
+GET /new: 200
+GET /dashboard: 303 (expected authentication redirect)
+GET /new/doctor: 303 (expected authentication redirect)
+GET /consultation/voice: 200
+GET /hospital/list: 200
+GET /hospital/admission: 200
+GET /hospital/api/hospitals: 200 (5 hospitals)
+GET /api: 200
+POST /api/samhita/analyze: 303 (expected doctor authentication redirect)
+POST /api/voice/extract: 200
+POST /api/ai-chat: 200
+
+No HTTP 500 responses in the listed checks. Hospital, AI, RAG, and Samhita implementation files were not changed during OAuth removal.

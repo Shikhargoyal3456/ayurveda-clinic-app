@@ -1,0 +1,54 @@
+KASH AI route and environment diagnostics
+Generated: 2026-10-14 (Asia/Calcutta)
+Project: C:\Users\goyal\OneDrive\Desktop\ayurveda_project
+Runtime used: C:\Users\goyal\AppData\Local\ayurveda-runtime\Scripts\python.exe (Python 3.13.12)
+Configured project .venv: unavailable; .venv points to inaccessible Python 3.14.2 executable.
+Server: uvicorn app.main:app on http://127.0.0.1:8000; startup completed and DB reported schema version 2, already compatible.
+
+Environment key presence (values intentionally omitted):
+- GROQ_API_KEY: SET
+- GEMINI_API_KEY: MISSING
+- OPENAI_API_KEY: MISSING
+- SECRET_KEY: SET
+- DATABASE_URL: SET (SQLite)
+- GOOGLE_CLIENT_ID: SET
+- GOOGLE_CLIENT_SECRET: SET
+Python check equivalent: GROQ: SET; GEMINI: MISSING; OPENAI: MISSING
+
+Final route pass (HTTP response without following redirects):
+| Method | Route | Status | Result / error |
+| GET | /new | 200 | PASS |
+| GET | /auth/login | 200 | PASS |
+| GET | /auth/signup | 200 | PASS |
+| GET | /dashboard | 303 | PASS: anonymous user redirected to /new/login |
+| GET | /new/doctor | 303 | PASS: anonymous user redirected to /auth/login |
+| GET | /consultation/voice | 200 | PASS |
+| GET | /hospital/list | 404 | FAIL: route not registered |
+| GET | /hospital/admission | 404 | FAIL: route not registered |
+| GET | /api/hospitals | 404 | FAIL: route not registered |
+| GET | /api | 200 | PASS |
+| POST | /api/samhita/analyze | 303 | AUTH REQUIRED: anonymous user redirected to /new/login; no JSON analysis returned |
+| POST | /api/voice/transcribe | 422 | EXPECTED INPUT VALIDATION: audio_file is required; no audio supplied |
+| POST | /api/voice/extract | 200 | PASS: structured fallback returned when external providers were unavailable |
+| POST | /api/ai-chat | 200 | PASS: mock fallback returned |
+| POST | /api/admission/request | 404 | FAIL: route not registered |
+
+Initial and final checks found no HTTP 500 responses. AI provider attempt: Groq was attempted for AI chat; outbound connection failed with WinError 10013 in this environment. Local fallback handled the request. The Samhita route itself was not invoked because its doctor-session dependency redirects anonymous requests.
+
+Samhita frontend static check: /consultation/voice returned 200; template contains id=samhita-analyze-btn, id=samhita-results, analyzeWithSamhita(), displaySamhitaResults(), loading UI, error logging, and a DOMContentLoaded listener.
+
+Other diagnostics:
+- App import registered 625 routes.
+- Startup emitted a passlib/bcrypt version warning (bcrypt has no __about__.__version__ attribute); startup continued.
+- Pre-fix voice extraction emitted RuntimeWarning: coroutine GroqClient.chat was never awaited. The helper and route were changed to await Groq and offload synchronous Gemini.
+- Google callback state handoff was added; an actual OAuth provider redirect/token exchange was not run.
+- No Hospital/HospitalAdmission model, hospital route, or scripts/seed_hospitals.py exists in this checkout. No data or database schema was invented.
+- Browser automation/console inspection was unavailable; frontend behavior was statically checked and the page HTTP response verified.
+- The literal curl/Python commands were not available in PATH; equivalent PowerShell HTTP requests and the alternate Python 3.13 runtime were used.
+
+Post-fix verification:
+- Python syntax compilation for the five modified Python modules passed under Python 3.13.12.
+- Voice extraction after the fix returned HTTP 200; server log contained no `coroutine 'GroqClient.chat' was never awaited` warning for that request.
+- All required Samhita UI static hooks passed presence checks.
+- Google OAuth callback state change was syntax-compiled; external OAuth flow remains untested.
+- `git diff --check` reports CRLF carriage-return whitespace for added lines in the pre-existing CRLF template. The file was not globally normalized to avoid a large unrelated diff.

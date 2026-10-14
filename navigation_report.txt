@@ -1,0 +1,2852 @@
+Template navigation audit: {"templates": 170, "targets": 407, "ok": 406, "broken": 0, "external": 2, "ignored": 53, "disabled_oauth": 1, "static_files": 2}
+[
+  {
+    "template": "add_case.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "add_case.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "add_case.html",
+    "method": "POST",
+    "target": "/patients/{{ patient.id }}/cases/transcribe-audio",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "add_case.html",
+    "method": "POST",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "add_case.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/accuracy_dashboard.html",
+    "method": "GET",
+    "target": "/admin/audit",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/accuracy_dashboard.html",
+    "method": "GET",
+    "target": "/admin/master-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/accuracy_dashboard.html",
+    "method": "GET",
+    "target": "/new/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/accuracy_dashboard.html",
+    "method": "GET",
+    "target": "/patient/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/activity_dashboard.html",
+    "method": "GET",
+    "target": "/admin/complete",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/activity_dashboard.html",
+    "method": "GET",
+    "target": "/admin/add-medicine",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/add_medicine.html",
+    "method": "GET",
+    "target": "/admin/master-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/add_medicine.html",
+    "method": "GET",
+    "target": "/admin/bulk-upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/add_medicine.html",
+    "method": "GET",
+    "target": "/admin/complete",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/add_medicine.html",
+    "method": "GET",
+    "target": "/admin/activity-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/audit_logs.html",
+    "method": "GET",
+    "target": "/new/admin",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/bulk_upload.html",
+    "method": "GET",
+    "target": "/admin/master-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/bulk_upload.html",
+    "method": "GET",
+    "target": "/static/templates/medicine_upload_template.csv",
+    "status": "OK",
+    "note": "static file exists"
+  },
+  {
+    "template": "admin/bulk_upload.html",
+    "method": "GET",
+    "target": "/admin/add-medicine",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/bulk_upload.html",
+    "method": "GET",
+    "target": "/admin/activity-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/complete_admin.html",
+    "method": "GET",
+    "target": "/admin/add-medicine",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/complete_admin.html",
+    "method": "GET",
+    "target": "/admin/activity-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/complete_admin.html",
+    "method": "GET",
+    "target": "/admin/bulk-upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/fallback.html",
+    "method": "GET",
+    "target": "/admin/users",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/fallback.html",
+    "method": "GET",
+    "target": "/admin/orders",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/fallback.html",
+    "method": "GET",
+    "target": "/healthz",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin/fallback.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin_orders.html",
+    "method": "GET",
+    "target": "/admin",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "admin_users.html",
+    "method": "GET",
+    "target": "/admin",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai/accuracy_dashboard.html",
+    "method": "POST",
+    "target": "/v2/api/ai-log/{{ log.id }}/feedback",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/demo",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/emr/clinical-decisions",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/doctor/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "POST",
+    "target": "/api/ai/analyze",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/emr/integrated-consultation/1",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/emr/clinical-decisions",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/emr/clinical-decisions",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_analyzer.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_doctor.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_doctor.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "ai_doctor.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/followups",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/emr/doctor-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/doctor/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/emr/consultation/{{ appointments[0].patient_id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "appointments.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/google_choose_role.html",
+    "method": "POST",
+    "target": "/auth/google/complete-signup",
+    "status": "DISABLED BY DESIGN",
+    "note": "Google OAuth is intentionally disabled"
+  },
+  {
+    "template": "auth/login.html",
+    "method": "POST",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/login.html",
+    "method": "GET",
+    "target": "/auth/forgot-password",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/login.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/portal_login.html",
+    "method": "POST",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/portal_login.html",
+    "method": "GET",
+    "target": "/auth/forgot-password?role={{ role_slug }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/portal_login.html",
+    "method": "GET",
+    "target": "/auth/register/{{ role_slug }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/portal_register.html",
+    "method": "GET",
+    "target": "/privacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/role_choice.html",
+    "method": "POST",
+    "target": "/auth/choose-role",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/signup.html",
+    "method": "GET",
+    "target": "/auth/register/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/login/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/login/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/login/lab",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/login/partner",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/new/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/register/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/register/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/register/lab",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/register/partner",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_entry.html",
+    "method": "GET",
+    "target": "/auth/register/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "POST",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/forgot-password",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/login/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/login/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/login/lab",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/login/partner",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/portal",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/new/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/register/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/register/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/register/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/register/lab",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "auth/smart_login.html",
+    "method": "GET",
+    "target": "/auth/register/partner",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "consultation/voice_consultation.html",
+    "method": "GET",
+    "target": "/device-check",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "consultation/voice_consultation.html",
+    "method": "GET",
+    "target": "/feature-status",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "consultation/voice_consultation.html",
+    "method": "GET",
+    "target": "/device-check",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "consultation/voice_consultation.html",
+    "method": "GET",
+    "target": "/api/voice/health",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/orders",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/subscription/smart-subscriptions",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard/superapp_dashboard.html",
+    "method": "GET",
+    "target": "/subscription/smart-subscriptions",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/followups",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/emr/doctor-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/pharmacy/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/payments/daily",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "POST",
+    "target": "/demo/reset",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/followups",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/edit",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/outcomes",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "POST",
+    "target": "/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ prescription.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "dashboard.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "debug_session.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "demo.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "demo.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "demo.html",
+    "method": "POST",
+    "target": "/demo/create-workspace",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/ayurveda/dashboard.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/ayurveda/dashboard.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/ayurveda/dashboard.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/ayurveda/dashboard.html",
+    "method": "GET",
+    "target": "/emr/ambient-scribe",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/ayurveda/dashboard.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/ayurveda/dashboard.html",
+    "method": "GET",
+    "target": "/doctor/dashboard#prescription-studio",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/new/patients/add",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/feature-status",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/device-check",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/doctor/stats",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/complete_dashboard.html",
+    "method": "GET",
+    "target": "/new/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/modern/dashboard.html",
+    "method": "GET",
+    "target": "/emr/lab-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/modern/dashboard.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/modern/dashboard.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/modern/dashboard.html",
+    "method": "GET",
+    "target": "/emr/lab-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/modern/dashboard.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/modern/dashboard.html",
+    "method": "GET",
+    "target": "/doctor/dashboard#prescription-studio",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "doctor/stats_dashboard.html",
+    "method": "GET",
+    "target": "/api/stats/export?format=csv&days={{ stats_days }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "edit_patient.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "edit_patient.html",
+    "method": "POST",
+    "target": "/patients/{{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "edit_patient.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emergency/log.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emergency/log.html",
+    "method": "GET",
+    "target": "/emergency-log/export",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emergency/log.html",
+    "method": "GET",
+    "target": "/emergency-log",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/_sidebar.html",
+    "method": "GET",
+    "target": "/doctor/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/_sidebar.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/_sidebar.html",
+    "method": "GET",
+    "target": "/emr/ambient-scribe",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/_sidebar.html",
+    "method": "GET",
+    "target": "/emr/prescription-viewer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/_sidebar.html",
+    "method": "GET",
+    "target": "/emr/clinical-reporting",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/doctor_dashboard.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/doctor_dashboard.html",
+    "method": "GET",
+    "target": "/device-check",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/doctor_dashboard.html",
+    "method": "GET",
+    "target": "/feature-status",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/doctor_dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/mobile_emr.html",
+    "method": "GET",
+    "target": "/emr/patient/{{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/panchakarma_scheduler.html",
+    "method": "GET",
+    "target": "/marketplace/panchakarma-booking",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_detail.html",
+    "method": "GET",
+    "target": "/emr/ambient-scribe?patient_id={{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_detail.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/appointments/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_detail.html",
+    "method": "GET",
+    "target": "/emr/patient-portal/{{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_detail.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_detail.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_detail.html",
+    "method": "GET",
+    "target": "/emr/prescription-viewer?patient_id={{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_portal.html",
+    "method": "GET",
+    "target": "/emr/prescription-viewer?patient_id={{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registration.html",
+    "method": "POST",
+    "target": "/emr/patient-registration",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/patient-registration",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/export/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/patient/{{ card.patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/consultation/{{ card.patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/ayurveda-consultation/{{ card.patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/patient-registration",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/patient_registry.html",
+    "method": "GET",
+    "target": "/emr/patient-registration",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/test_emr.html",
+    "method": "GET",
+    "target": "/emr/test-emr/registration",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/test_emr.html",
+    "method": "GET",
+    "target": "/emr/test-emr/soap",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/test_emr.html",
+    "method": "GET",
+    "target": "/emr/test-emr/prakriti",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "emr/vital_tracker.html",
+    "method": "GET",
+    "target": "/emr/patient-registry",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/diagnostics/lab-booking",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/diagnostics/lab-booking",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "error.html",
+    "method": "GET",
+    "target": "/",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "feature_status.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "followups.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "followups.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "health/articles.html",
+    "method": "GET",
+    "target": "/support/ai-assistant",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "health/articles.html",
+    "method": "GET",
+    "target": "/support/ai-assistant",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "health/articles.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "hospital/admission.html",
+    "method": "GET",
+    "target": "/hospital/list",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "hospital/list.html",
+    "method": "GET",
+    "target": "/hospital/admission",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "investors.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "investors.html",
+    "method": "GET",
+    "target": "/investor-demo",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "investors.html",
+    "method": "GET",
+    "target": "/admin/growth-dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "login.html",
+    "method": "GET",
+    "target": "/auth/register/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "login.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "login.html",
+    "method": "GET",
+    "target": "/auth/login/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "login.html",
+    "method": "GET",
+    "target": "/auth/register/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "loyalty/rewards_program.html",
+    "method": "GET",
+    "target": "/store/wellness-store",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "macros/logout.html",
+    "method": "POST",
+    "target": "/auth/logout",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "marketplace/panchakarma_booking.html",
+    "method": "GET",
+    "target": "/growth/waitlist",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_admin.html",
+    "method": "GET",
+    "target": "/new/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_admin.html",
+    "method": "GET",
+    "target": "/patient/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_admin.html",
+    "method": "GET",
+    "target": "/admin/audit",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_ai_doctor.html",
+    "method": "GET",
+    "target": "/new/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_ai_doctor.html",
+    "method": "GET",
+    "target": "/ai-doctor-live",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/feature-status",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/patient/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/order_medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new/profile",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "POST",
+    "target": "/auth/logout",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/new#features",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/diagnostics/lab-booking",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/portal",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/trust/verified-practitioners",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/community/wellness-feed",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/privacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/pricing",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/terms",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/privacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_base.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_claim_patient.html",
+    "method": "POST",
+    "target": "/new/claim-patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/new/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/new/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/consultation/voice",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/new/patients/add",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_dashboard.html",
+    "method": "GET",
+    "target": "/new/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_landing.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_landing.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_landing.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_landing.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_landing.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_login.html",
+    "method": "POST",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_login.html",
+    "method": "GET",
+    "target": "/auth/login/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_login.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_login.html",
+    "method": "GET",
+    "target": "/auth/login/admin",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_login.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/order_medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/patient/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/order_medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/device-check",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_patient_dashboard.html",
+    "method": "GET",
+    "target": "/order_medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_settings.html",
+    "method": "POST",
+    "target": "/auth/logout",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_settings.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_signup.html",
+    "method": "POST",
+    "target": "/auth/register",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_signup.html",
+    "method": "GET",
+    "target": "/terms",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "new_signup.html",
+    "method": "GET",
+    "target": "/privacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "order_medicines.html",
+    "method": "GET",
+    "target": "/prescription/decode-handwriting",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "order_medicines.html",
+    "method": "POST",
+    "target": "/patient/order/create",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "orders/confirmation.html",
+    "method": "GET",
+    "target": "/orders/invoice/{{ order.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "orders/confirmation.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "orders/tracking.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "orders/tracking.html",
+    "method": "GET",
+    "target": "/order-medicines?tab=upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "outcomes/list.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "outcomes/list.html",
+    "method": "POST",
+    "target": "/outcomes/add",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/handwriting_decoder.html",
+    "method": "GET",
+    "target": "/order-medicines?tab=scan",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/handwriting_decoder.html",
+    "method": "GET",
+    "target": "/order-medicines?tab=upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/legacy_portal.html",
+    "method": "GET",
+    "target": "/new/patient/my-health",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/legacy_portal.html",
+    "method": "GET",
+    "target": "/new/patient/my-health",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/legacy_portal.html",
+    "method": "GET",
+    "target": "/new/patient/my-health",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/simple_health.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/simple_health.html",
+    "method": "GET",
+    "target": "/order-medicines?tab=upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/simple_health.html",
+    "method": "GET",
+    "target": "/orders",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient/simple_health.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/new/ai-doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/order-medicines?tab=upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/lab-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/patient/symptom-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_home.html",
+    "method": "GET",
+    "target": "/patient/diet-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_order.html",
+    "method": "POST",
+    "target": "/patient/order/create",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/telemedicine/book",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/patient/symptom-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/orders",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/auth/login/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/auth/login/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/profiles/manage",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/profiles/select",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/patient/symptom-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/profiles/manage",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/device-check",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "POST",
+    "target": "/auth/logout",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/order-medicines",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/patient/symptom-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/orders",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patient_simple_base.html",
+    "method": "GET",
+    "target": "/contact",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patients/health_passport.html",
+    "method": "GET",
+    "target": "/patient/{{ patient.id }}/health-card",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "patients/health_passport.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "payments/daily.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "payments/daily.html",
+    "method": "POST",
+    "target": "/payments/add",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy/add_medicine.html",
+    "method": "GET",
+    "target": "/portal/pharmacy/bulk-upload",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy/bulk_upload.html",
+    "method": "GET",
+    "target": "/static/templates/medicine_bulk_template.csv",
+    "status": "OK",
+    "note": "static file exists"
+  },
+  {
+    "template": "pharmacy/bulk_upload.html",
+    "method": "GET",
+    "target": "/portal/pharmacy/add-medicine",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy/expiry_tracker.html",
+    "method": "GET",
+    "target": "/portal/pharmacy/add-medicine",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy/stock_alerts.html",
+    "method": "GET",
+    "target": "/portal/pharmacy/add-medicine",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy_portal.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy_portal.html",
+    "method": "POST",
+    "target": "/pharmacy/order/{{ order.id }}/confirm",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pharmacy_portal.html",
+    "method": "POST",
+    "target": "/pharmacy/order/{{ order.id }}/dispatch",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/partner_dashboard.html",
+    "method": "GET",
+    "target": "/portal/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/partner_dashboard.html",
+    "method": "GET",
+    "target": "/portal/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/portal_selector.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/portal_selector.html",
+    "method": "GET",
+    "target": "/auth/login/doctor",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/portal_selector.html",
+    "method": "GET",
+    "target": "/auth/login/pharmacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/portal_selector.html",
+    "method": "GET",
+    "target": "/auth/login/lab",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "portal/portal_selector.html",
+    "method": "GET",
+    "target": "/auth/login/partner",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ prescription.id }}/download",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "GET",
+    "target": "/order-medicines?source=prescription&prescription_id={{ prescription.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "GET",
+    "target": "/pharmacy/order/{{ prescription_token }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "POST",
+    "target": "/prescriptions/{{ prescription.id }}/share",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/detail.html",
+    "method": "POST",
+    "target": "/prescriptions/{{ prescription.id }}/share/email",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/form.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/form.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/form.html",
+    "method": "POST",
+    "target": "/prescriptions/create",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/form.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/history.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/prescriptions/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/history.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/history.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ item.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/history.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ item.id }}/download",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/history.html",
+    "method": "POST",
+    "target": "/prescriptions/{{ item.id }}/share/email",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/preview.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ prescription.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/preview.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ prescription.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/preview.html",
+    "method": "POST",
+    "target": "/prescriptions/{{ prescription.id }}/send",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "prescriptions/preview.html",
+    "method": "GET",
+    "target": "/prescriptions/{{ prescription.id }}/download",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pricing.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "pricing.html",
+    "method": "GET",
+    "target": "/auth/signup",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/add_profile.html",
+    "method": "POST",
+    "target": "/api/profiles/add",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/add_profile.html",
+    "method": "GET",
+    "target": "/profiles/select",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/manage_profiles.html",
+    "method": "GET",
+    "target": "/profiles/add",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/manage_profiles.html",
+    "method": "POST",
+    "target": "/api/profiles/delete/{{ profile.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/manage_profiles.html",
+    "method": "GET",
+    "target": "/profiles/select",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/manage_profiles.html",
+    "method": "GET",
+    "target": "/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "profiles/profile_selector.html",
+    "method": "GET",
+    "target": "/profiles/manage",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "schedule.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "schedule.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "schedule.html",
+    "method": "POST",
+    "target": "/patients/{{ patient.id }}/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "signup.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "signup.html",
+    "method": "POST",
+    "target": "/register",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "signup.html",
+    "method": "GET",
+    "target": "/privacy",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "signup.html",
+    "method": "GET",
+    "target": "/auth/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/doctor_consultations.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/doctor_consultations.html",
+    "method": "GET",
+    "target": "/doctor/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/doctor_consultations.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/doctor_consultations.html",
+    "method": "GET",
+    "target": "/appointments",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/guest_book.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/guest_book.html",
+    "method": "GET",
+    "target": "/auth/login/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "telemedicine/guest_book.html",
+    "method": "GET",
+    "target": "/auth/register/patient",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/components/app_shell.html",
+    "method": "GET",
+    "target": "/v2/logout",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/components/navigation.html",
+    "method": "GET",
+    "target": "/v2/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/components/navigation.html",
+    "method": "GET",
+    "target": "/v2/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/login.html",
+    "method": "POST",
+    "target": "/v2/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/login.html",
+    "method": "GET",
+    "target": "/auth/forgot-password",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/login.html",
+    "method": "GET",
+    "target": "/new/login",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/patients/registry.html",
+    "method": "GET",
+    "target": "/v2/patients",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "v2/patients/registry.html",
+    "method": "GET",
+    "target": "/v2/patients/{{ patient.id }}",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "view_cases.html",
+    "method": "GET",
+    "target": "/patients/{{ patient.id }}/cases/new",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "view_cases.html",
+    "method": "GET",
+    "target": "/ai-analyzer",
+    "status": "OK",
+    "note": "registered route/method"
+  },
+  {
+    "template": "view_cases.html",
+    "method": "GET",
+    "target": "/dashboard",
+    "status": "OK",
+    "note": "registered route/method"
+  }
+]
