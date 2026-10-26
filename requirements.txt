@@ -5,7 +5,7 @@ Authlib==1.7.2
 bcrypt==4.1.0
 boolean.py==5.0
 CacheControl==0.14.4
-certifi==2026.6.17
+certifi==2026.10.19
 cffi==2.1.0
 charset-normalizer==3.4.9
 circuitbreaker==2.0.0
